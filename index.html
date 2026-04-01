@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AccentOS — Accent Lighting Inc.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#ed1c24;--accent-dark:#c0151b;--accent-soft:#fdf0f0;
+  --bg:#f4f4f2;--surface:#fff;--surface2:#f8f8f6;
+  --sidebar-bg:#1a1a1a;--sidebar-hover:#2a2a2a;--sidebar-active:#2f2f2f;
+  --text:#1a1a1a;--text-2:#555;--text-3:#999;
+  --border:#e8e8e4;--border-light:#f0f0ec;
+  --green:#16a34a;--green-bg:#f0fdf4;
+  --yellow:#d97706;--yellow-bg:#fffbeb;
+  --blue:#2563eb;--blue-bg:#eff6ff;
+  --red-bg:#fef2f2;--purple:#7c3aed;--purple-bg:#f5f3ff;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --radius:10px;--radius-sm:6px;
+  --sidebar-w:224px;--sidebar-col:56px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
+.mono{font-family:'DM Mono',monospace;}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--sidebar-bg);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-box{background:var(--surface);border-radius:16px;padding:48px;width:380px;box-shadow:var(--shadow-lg);}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.login-logo img{height:30px;}
+.login-logo-text{font-size:20px;font-weight:700;}
+.login-logo-text .os{color:var(--accent);}
+.login-box h2{font-size:22px;font-weight:600;margin-bottom:6px;}
+.login-box p{color:var(--text-2);font-size:14px;margin-bottom:28px;}
+.fg{margin-bottom:16px;}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.fg input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .2s;}
+.fg input:focus{border-color:var(--accent);}
+.login-err{background:var(--red-bg);color:var(--accent);padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none;}
+.btn-login{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s;}
+.btn-login:hover{background:var(--accent-dark);}
+
+/* ── APP ── */
+#app{display:none;height:100vh;overflow:hidden;}
+#app.on{display:flex;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--sidebar-bg);color:#fff;display:flex;flex-direction:column;transition:width .25s,min-width .25s;overflow:hidden;z-index:10;flex-shrink:0;}
+.sidebar.col{width:var(--sidebar-col);min-width:var(--sidebar-col);}
+.sb-head{padding:16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07);min-height:64px;}
+.sb-logo{height:24px;flex-shrink:0;filter:brightness(0) invert(1);opacity:.9;}
+.sb-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;}
+.sb-name .os{color:var(--accent);}
+.sb-toggle{margin-left:auto;background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;padding:4px;border-radius:4px;flex-shrink:0;line-height:1;font-size:18px;transition:color .2s;}
+.sb-toggle:hover{color:#fff;}
+.sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0;}
+.sb-sect{padding:12px 16px 3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.22);white-space:nowrap;overflow:hidden;transition:opacity .2s;}
+.sidebar.col .sb-sect{opacity:0;}
+.ni{display:flex;align-items:center;gap:11px;padding:8px 16px;cursor:pointer;color:rgba(255,255,255,.58);font-size:13.5px;font-weight:500;transition:all .15s;white-space:nowrap;position:relative;}
+.ni:hover{background:var(--sidebar-hover);color:#fff;}
+.ni.active{background:var(--sidebar-active);color:#fff;}
+.ni.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--accent);border-radius:0 2px 2px 0;}
+.ni-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center;}
+.ni-label{overflow:hidden;transition:opacity .2s;}
+.sidebar.col .ni-label{opacity:0;pointer-events:none;}
+.sb-foot{padding:10px 14px;border-top:1px solid rgba(255,255,255,.07);}
+.user-chip{display:flex;align-items:center;gap:9px;padding:7px;border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;}
+.user-chip:hover{background:var(--sidebar-hover);}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.un{font-size:13px;font-weight:500;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;}
+.ur{font-size:11px;color:rgba(255,255,255,.28);}
+.sidebar.col .un,.sidebar.col .ur{opacity:0;}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:64px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.topbar-title{font-size:18px;font-weight:700;}
+.topbar-sub{font-size:13px;color:var(--text-3);margin-left:2px;}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.content{flex:1;overflow-y:auto;padding:28px;}
+
+/* ── COMPONENTS ── */
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);}
+.card-hd{padding:18px 20px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.card-title{font-size:14px;font-weight:700;}
+.card-body{padding:18px 20px;}
+.card-foot{padding:12px 20px;border-top:1px solid var(--border-light);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.stat-card{padding:20px;display:flex;flex-direction:column;gap:5px;}
+.stat-label{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;}
+.stat-value{font-size:30px;font-weight:700;font-family:'DM Mono',monospace;line-height:1.1;}
+.stat-sub{font-size:12px;color:var(--text-3);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);border:1px solid transparent;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-lg{padding:11px 22px;font-size:14px;}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-accent:hover{background:var(--accent-dark);}
+.btn-outline{background:transparent;border-color:var(--border);color:var(--text-2);}
+.btn-outline:hover{background:var(--bg);}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text-2);}
+.btn-ghost:hover{background:var(--bg);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#15803d;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.bg-green{background:var(--green-bg);color:var(--green);}
+.bg-yellow{background:var(--yellow-bg);color:var(--yellow);}
+.bg-red{background:var(--red-bg);color:var(--accent);}
+.bg-blue{background:var(--blue-bg);color:var(--blue);}
+.bg-gray{background:var(--border-light);color:var(--text-3);}
+.bg-purple{background:var(--purple-bg);color:var(--purple);}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface);}
+td{padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--bg);}
+
+/* TABS */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab-btn{padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;font-family:'Outfit',sans-serif;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* FORMS */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:80px;}
+.fhint{font-size:11px;color:var(--text-3);margin-top:4px;}
+.frow{display:flex;gap:14px;}
+.fcol{flex:1;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.on{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border-radius:14px;width:90%;max-width:680px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-lg);transform:translateY(12px);transition:transform .2s;}
+.overlay.on .modal{transform:translateY(0);}
+.modal-hd{padding:20px 24px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:2px 6px;border-radius:4px;}
+.modal-x:hover{background:var(--bg);}
+.modal-body{padding:24px;}
+.modal-foot{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+
+/* TOASTS */
+#toasts{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--text);color:#fff;padding:11px 18px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:500;box-shadow:var(--shadow-md);animation:toastIn .2s ease;max-width:320px;}
+.toast.ok{background:var(--green);}
+.toast.err{background:var(--accent);}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* MISC */
+.sep{height:1px;background:var(--border-light);margin:16px 0;}
+.muted{color:var(--text-3);font-size:13px;}
+.sm{font-size:12.5px;}
+.fw6{font-weight:600;}
+.mt16{margin-top:16px;}
+.mb16{margin-bottom:16px;}
+.flex{display:flex;}
+.fc{display:flex;align-items:center;}
+.gap8{gap:8px;}
+.gap12{gap:12px;}
+.mla{margin-left:auto;}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.dot-g{background:var(--green);}
+.dot-y{background:var(--yellow);}
+.dot-r{background:var(--accent);}
+.dot-gr{background:var(--text-3);}
+.srch{padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Outfit',sans-serif;font-size:13.5px;outline:none;background:var(--surface);min-width:220px;transition:border-color .2s;}
+.srch:focus{border-color:var(--accent);}
+.pill{padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text-2);transition:all .15s;}
+.pill.on,.pill:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+.chk{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;}
+.chk:last-child{border-bottom:none;}
+.chk-ico{font-size:15px;flex-shrink:0;margin-top:1px;}
+.done{text-decoration:line-through;color:var(--text-3);}
+.sec-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);margin-bottom:8px;}
+.na{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3);background:var(--border-light);padding:1px 6px;border-radius:3px;}
+.raw-block{background:#1a1a1a;color:#d0d0d0;border-radius:var(--radius-sm);padding:12px;font-size:11.5px;font-family:'DM Mono',monospace;line-height:1.6;white-space:pre-wrap;max-height:180px;overflow-y:auto;}
+.pbar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pfill{height:100%;border-radius:3px;transition:width .4s;}
+.sbar-wrap{display:flex;align-items:center;gap:7px;}
+.sbar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.sbar-fill{height:100%;border-radius:3px;}
+.snum{font-family:'DM Mono',monospace;font-size:11.5px;min-width:22px;text-align:right;color:var(--text-2);}
+.notif-row{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-light);}
+.notif-row:last-child{border-bottom:none;}
+.ni-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.ni-ico.acc{background:var(--accent-soft);}
+.ni-ico.grn{background:var(--green-bg);}
+.ni-ico.blu{background:var(--blue-bg);}
+.ni-text{font-size:13.5px;}
+.ni-time{font-size:11px;color:var(--text-3);margin-top:2px;}
+.alert{padding:12px 16px;border-radius:var(--radius-sm);font-size:13.5px;margin-bottom:14px;line-height:1.5;}
+.alert-info{background:var(--blue-bg);color:#1d4ed8;}
+.alert-warn{background:var(--yellow-bg);color:#92400e;}
+.alert-ok{background:var(--green-bg);color:#166534;}
+
+/* PIPELINE */
+.p-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.p-col{background:var(--bg);border-radius:var(--radius);padding:13px;min-height:360px;}
+.p-col-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.p-col-title{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2);}
+.p-count{font-size:11.5px;font-family:'DM Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:10px;color:var(--text-3);}
+.deal-card{background:var(--surface);border-radius:var(--radius-sm);padding:13px;margin-bottom:9px;border:1px solid var(--border);cursor:pointer;transition:box-shadow .15s,transform .15s;}
+.deal-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.deal-name{font-size:13.5px;font-weight:600;margin-bottom:3px;}
+.deal-co{font-size:12px;color:var(--text-3);margin-bottom:7px;}
+.deal-val{font-family:'DM Mono',monospace;font-size:13.5px;font-weight:500;color:var(--green);}
+.deal-meta{display:flex;align-items:center;justify-content:space-between;margin-top:7px;}
+.deal-rep{font-size:11px;color:var(--text-3);}
+.add-btn{width:100%;background:none;border:1.5px dashed var(--border);color:var(--text-3);padding:8px;border-radius:var(--radius-sm);cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;transition:all .15s;}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+
+/* VENDOR PANEL */
+.vp{position:fixed;right:0;top:0;bottom:0;width:460px;background:var(--surface);border-left:1px solid var(--border);box-shadow:var(--shadow-lg);z-index:200;transform:translateX(100%);transition:transform .25s;overflow-y:auto;display:flex;flex-direction:column;}
+.vp.on{transform:translateX(0);}
+.vp-hd{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;}
+.vp-body{padding:20px 22px;flex:1;}
+.score-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-light);}
+.score-row:last-child{border-bottom:none;}
+.score-lbl{font-size:12.5px;font-weight:500;color:var(--text-2);min-width:148px;}
+.score-inp{width:52px;border:1.5px solid var(--border);border-radius:4px;padding:4px 6px;font-family:'DM Mono',monospace;font-size:12.5px;text-align:center;outline:none;}
+.score-inp:focus{border-color:var(--accent);}
+.score-sbar{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden;}
+.score-sfill{height:100%;border-radius:4px;transition:width .3s;}
+
+/* TIER BADGES */
+.tier-a{background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
+.tier-b{background:#dbeafe;color:#1e40af;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
+.tier-c{background:var(--green-bg);color:var(--green);font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
+.tier-d{background:#fce7f3;color:#9d174d;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
+.tier-f{background:var(--red-bg);color:var(--accent);font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
+
+/* FEEDBACK */
+#fb-btn{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--sidebar-bg);color:#fff;border:none;padding:9px 20px;border-radius:24px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;z-index:400;box-shadow:var(--shadow-md);transition:all .2s;display:none;align-items:center;gap:7px;}
+#fb-btn:hover{background:#2a2a2a;transform:translateX(-50%) translateY(-2px);}
+#fb-btn.on{display:flex;}
+.fb-panel{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(10px);width:360px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow-lg);border:1px solid var(--border);z-index:401;opacity:0;pointer-events:none;transition:all .2s;}
+.fb-panel.on{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0);}
+.fb-hd{padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.fb-title{font-size:14px;font-weight:700;}
+.fb-page{font-size:11px;color:var(--text-3);background:var(--bg);padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;}
+.fb-body{padding:14px 18px;}
+.fb-types{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
+.fb-type{padding:4px 11px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text-2);transition:all .15s;}
+.fb-type.on,.fb-type:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+#fb-input{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Outfit',sans-serif;font-size:13.5px;resize:none;outline:none;min-height:76px;}
+#fb-input:focus{border-color:var(--accent);}
+
+/* CHAT */
+.chat-win{height:360px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg);border-radius:var(--radius-sm);}
+.cm{max-width:80%;}
+.cm.u{align-self:flex-end;}
+.cb{padding:10px 14px;border-radius:12px;font-size:13.5px;line-height:1.5;}
+.cm.u .cb{background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+.cm.a .cb{background:var(--surface);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px;}
+.cm.a .cl{font-size:10.5px;color:var(--text-3);margin-bottom:3px;font-weight:700;letter-spacing:.3px;}
+.chat-bar{display:flex;gap:9px;padding:11px 16px;border-top:1px solid var(--border);}
+.chat-bar input{flex:1;padding:9px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Outfit',sans-serif;font-size:14px;outline:none;}
+.chat-bar input:focus{border-color:var(--accent);}
+.dots{display:flex;gap:4px;padding:6px 0;}
+.dot-b{width:7px;height:7px;border-radius:50%;background:var(--text-3);animation:db .8s ease infinite;}
+.dot-b:nth-child(2){animation-delay:.15s;}
+.dot-b:nth-child(3){animation-delay:.3s;}
+@keyframes db{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-5px);}}
+.qchips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;}
+.chip{padding:5px 13px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-2);background:var(--surface);transition:all .15s;}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+
+/* QUOTE */
+.li-table{width:100%;border-collapse:collapse;}
+.li-table th{background:var(--bg);padding:7px 9px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);}
+.li-table td{padding:5px 7px;border-bottom:1px solid var(--border-light);}
+.li-table input{border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;font-family:'Outfit',sans-serif;font-size:13px;width:100%;outline:none;}
+.li-table input:focus{border-color:var(--accent);}
+.q-prev{background:var(--bg);border-radius:var(--radius);padding:20px;}
+
+/* CHANGE LOG */
+.cl-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;}
+.cl-row:last-child{border-bottom:none;}
+.cl-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3);min-width:120px;flex-shrink:0;padding-top:1px;}
+.cl-badge{flex-shrink:0;}
+.cl-text{color:var(--text-2);line-height:1.5;}
+.cl-user{font-weight:600;color:var(--text);}
+
+/* CSV IMPORT DROP ZONE */
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:all .2s;}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:var(--accent-soft);}
+.drop-zone .dz-icon{font-size:32px;margin-bottom:10px;}
+.drop-zone h3{font-size:15px;font-weight:600;margin-bottom:6px;}
+.drop-zone p{font-size:13px;color:var(--text-3);}
+
+/* RANKING BARS */
+.rank-bar-wrap{display:flex;align-items:center;gap:10px;}
+.rank-num{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;min-width:28px;text-align:right;}
+.rank-bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.rank-fill{height:100%;border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="https://cdn.lightsamerica.com/storelogos/6072.png" onerror="this.style.display='none'" alt="">
+      <span class="login-logo-text">Accent<span class="os">OS</span></span>
+    </div>
+    <h2>Employee Portal</h2>
+    <p>Internal use only — Accent Lighting Inc.</p>
+    <div id="login-err" class="login-err">Invalid credentials.</div>
+    <div class="fg"><label>Username</label><input id="li-u" autocomplete="username" placeholder="username"></div>
+    <div class="fg"><label>Password</label><input id="li-p" type="password" autocomplete="current-password" placeholder="password"></div>
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="sidebar" id="sb">
+    <div class="sb-head">
+      <img class="sb-logo" src="https://cdn.lightsamerica.com/storelogos/6072.png" onerror="this.style.display='none'" alt="">
+      <span class="sb-name">Accent<span class="os">OS</span></span>
+      <button class="sb-toggle" onclick="toggleSB()">☰</button>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sect">CORE</div>
+      <div class="ni active" onclick="goTo('dashboard')"><span class="ni-icon">⊞</span><span class="ni-label">Dashboard</span></div>
+      <div class="ni" onclick="goTo('pipeline')"><span class="ni-icon">◈</span><span class="ni-label">Sales Pipeline</span></div>
+      <div class="ni" onclick="goTo('quotes')"><span class="ni-icon">◻</span><span class="ni-label">Quote Generator</span></div>
+      <div class="sb-sect">INTELLIGENCE</div>
+      <div class="ni" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
+      <div class="ni" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Intelligence</span></div>
+      <div class="ni" onclick="goTo('changelog')"><span class="ni-icon">◑</span><span class="ni-label">Change Log</span></div>
+      <div class="sb-sect admin-only">ADMIN</div>
+      <div class="ni admin-only" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
+      <div class="ni admin-only" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
+      <div class="ni admin-only" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
+      <div class="ni" onclick="goTo('settings')"><span class="ni-icon">◫</span><span class="ni-label">Settings</span></div>
+    </div>
+    <div class="sb-foot">
+      <div class="user-chip" onclick="doLogout()">
+        <div class="avatar" id="u-av">M</div>
+        <div><div class="un" id="u-name">Michael Graf</div><div class="ur" id="u-role">Admin</div></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div><span class="topbar-title" id="pg-title">Dashboard</span><span class="topbar-sub" id="pg-sub"></span></div>
+      <div class="topbar-actions" id="pg-actions"></div>
+    </div>
+    <div class="content" id="pg-content"></div>
+  </div>
+</div>
+
+<!-- VENDOR SIDE PANEL -->
+<div class="vp" id="vp">
+  <div class="vp-hd">
+    <div>
+      <div style="font-size:18px;font-weight:700;" id="vp-name">Vendor</div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:3px;" id="vp-cat"></div>
+    </div>
+    <button class="modal-x" onclick="closeVP()">✕</button>
+  </div>
+  <div class="vp-body" id="vp-body"></div>
+</div>
+
+<!-- FEEDBACK -->
+<button id="fb-btn" onclick="toggleFB()">💬 Feedback</button>
+<div class="fb-panel" id="fb-panel">
+  <div class="fb-hd">
+    <span class="fb-title">Send Feedback</span>
+    <span class="fb-page" id="fb-page">—</span>
+  </div>
+  <div class="fb-body">
+    <div class="fb-types">
+      <div class="fb-type on" onclick="setFBType(this,'bug')">🐛 Bug</div>
+      <div class="fb-type" onclick="setFBType(this,'idea')">💡 Idea</div>
+      <div class="fb-type" onclick="setFBType(this,'question')">❓ Question</div>
+      <div class="fb-type" onclick="setFBType(this,'praise')">⭐ Praise</div>
+    </div>
+    <textarea id="fb-input" placeholder="Describe the issue or idea..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn btn-accent" style="flex:1;" onclick="submitFB()">Submit</button>
+      <button class="btn btn-outline" onclick="toggleFB()">Cancel</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:8px;">Saves to Supabase feedback table.</div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-title" id="m-title">—</span><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-foot" id="m-foot"></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+'use strict';
+
+// ── AUTH ──────────────────────────────────────────────────
+const USERS={
+  michael:{pass:'accent2026',name:'Michael Graf',role:'Admin',ini:'MG'},
+  paul:   {pass:'accent2026',name:'Paul Graf',   role:'Manager',ini:'PG'},
+  patrick:{pass:'accent2026',name:'Patrick Graf',role:'Manager',ini:'PG'}
+};
+let CU=null;
+
+function doLogin(){
+  const u=v('li-u').toLowerCase(),p=v('li-p','value');
+  if(USERS[u]&&USERS[u].pass===p){
+    CU={username:u,...USERS[u]};
+    $('login-screen').style.display='none';
+    $('app').classList.add('on');
+    $('u-av').textContent=CU.ini;
+    $('u-name').textContent=CU.name;
+    $('u-role').textContent=CU.role;
+    if(CU.role!=='Admin')qsa('.admin-only').forEach(el=>el.style.display='none');
+    $('fb-btn').classList.add('on');
+    goTo('dashboard');
+  } else { $('login-err').style.display='block'; }
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!$('app').classList.contains('on'))doLogin(); });
+function doLogout(){ if(confirm('Sign out?')){ CU=null; location.reload(); } }
+
+// ── SIDEBAR ───────────────────────────────────────────────
+let sbCol=false;
+function toggleSB(){ sbCol=!sbCol; $('sb').classList.toggle('col',sbCol); }
+
+// ── UTILS ─────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const qsa=s=>document.querySelectorAll(s);
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function v(id,prop='value'){return $(id)?.[prop]?.trim()??'';}
+function toast(msg,type=''){
+  const el=document.createElement('div');
+  el.className='toast'+(type?' '+type:'');
+  el.textContent=msg;
+  $('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+function openModal(title,body,foot=''){
+  $('m-title').textContent=title;
+  $('m-body').innerHTML=body;
+  $('m-foot').innerHTML=foot;
+  $('overlay').classList.add('on');
+}
+function closeModal(e){ if(!e||e.target===$('overlay')) $('overlay').classList.remove('on'); }
+function switchTab(btn,id){
+  btn.closest('.tab-bar').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const parent=btn.closest('.card,.content,[data-tabs]')||document.body;
+  parent.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  $(id)?.classList.add('active');
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+const PAGE_META={
+  dashboard: {t:'Dashboard',s:''},
+  pipeline:  {t:'Sales Pipeline',s:''},
+  quotes:    {t:'Quote Generator',s:''},
+  knowledge: {t:'Knowledge Engine',s:'AI-Powered Lighting Intelligence'},
+  vendors:   {t:'Vendor Intelligence',s:'Vendor Ranking 2026'},
+  changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
+  marketing: {t:'Marketing Hub',s:''},
+  roadmap:   {t:'Build Roadmap',s:'AccentOS v6.2'},
+  mgmt:      {t:'Management Dashboard',s:'Owner View'},
+  settings:  {t:'Settings',s:''},
+};
+let curPage='';
+function goTo(page){
+  curPage=page;
+  const m=PAGE_META[page]||{t:page,s:''};
+  $('pg-title').textContent=m.t;
+  $('pg-sub').textContent=m.s;
+  qsa('.ni').forEach(el=>{el.classList.remove('active');if(el.getAttribute('onclick')?.includes(`'${page}'`))el.classList.add('active');});
+  closeVP();
+  $('fb-page').textContent=page;
+  $('pg-actions').innerHTML='';
+  $('pg-content').innerHTML='';
+  const pages={dashboard,pipeline,quotes,knowledge,vendors,changelog,marketing,roadmap,mgmt,settings};
+  pages[page]?.($('pg-content'),$('pg-actions'));
+}
+
+// ── FEEDBACK ──────────────────────────────────────────────
+let fbType='bug',fbOpen=false;
+function toggleFB(){ fbOpen=!fbOpen; $('fb-panel').classList.toggle('on',fbOpen); $('fb-page').textContent=curPage; }
+function setFBType(btn,type){ qsa('.fb-type').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); fbType=type; }
+async function submitFB(){
+  const msg=$('fb-input')?.value?.trim();
+  if(!msg){toast('Write something first','err');return;}
+  const payload={page:curPage,type:fbType,message:msg,user_name:CU?.name||'Unknown',submitted_at:new Date().toISOString()};
+  const sbUrl=getS('aos-sb-url'),sbKey=getS('aos-sb-key');
+  if(sbUrl&&sbKey){
+    try{
+      const r=await fetch(`${sbUrl}/rest/v1/feedback`,{method:'POST',headers:{'Content-Type':'application/json','apikey':sbKey,'Authorization':'Bearer '+sbKey,'Prefer':'return=minimal'},body:JSON.stringify(payload)});
+      toast(r.ok?'Feedback sent!':'Feedback logged locally (Supabase error)',r.ok?'ok':'');
+    }catch{toast('Logged locally (no connection)');}
+  } else {
+    log('blu','💬',`[${fbType}] on ${curPage}: ${msg.slice(0,60)}`,'Just now');
+    toast('Feedback recorded — connect Supabase to persist','ok');
+  }
+  $('fb-input').value='';fbOpen=false;$('fb-panel').classList.remove('on');
+}
+
+// ── ACTIVITY LOG ──────────────────────────────────────────
+let activity=[];
+function log(color,icon,text,time){ activity.unshift({color,icon,text,time}); if(activity.length>30)activity.pop(); }
+log('grn','⚡','AccentOS v6.2 loaded — Vendor Ranking 2026 live','Today');
+
+// ══════════════════════════════════════════════════════════
+// ── VENDOR DATA — REAL DATA ONLY ─────────────────────────
+// ══════════════════════════════════════════════════════════
+// Score rules:
+//   null  = data not yet collected — never leave as 0
+//   'na'  = not applicable (case-by-case, LO-managed, N/A confirmed)
+//   0-10  = scored on documented evidence only
+// Weights (14 categories, must sum to 100):
+const CAT_WEIGHTS={
+  rebate:8, discount:9, warranty:7, spiff:8, marketing:6,
+  repSupport:8, freight:7, dropShip:5, stockBuyback:6,
+  imap:5, dropShipFee:4, creditTerms:5, returnPolicy:7, searchDemand:10
+};
+// Tier thresholds per scoring system:
+// A: 8.0-10 | B: 6.5-7.9 | C: 5.0-6.4 | D: 3.5-4.9 | F: 0-3.4
+const CAT_DEFS=[
+  {key:'rebate',      label:'Rebate Program'},
+  {key:'discount',    label:'Inside/Volume Discount'},
+  {key:'warranty',    label:'Warranty'},
+  {key:'spiff',       label:'Spiff Program'},
+  {key:'marketing',   label:'Marketing Funds'},
+  {key:'repSupport',  label:'Rep Support'},
+  {key:'freight',     label:'Freight Policy'},
+  {key:'dropShip',    label:'Drop Ship'},
+  {key:'stockBuyback',label:'Stock Buyback'},
+  {key:'imap',        label:'IMAP / Markup'},
+  {key:'dropShipFee', label:'Drop Ship Fee'},
+  {key:'creditTerms', label:'Credit Terms'},
+  {key:'returnPolicy',label:'Return / RGA Policy'},
+  {key:'searchDemand',label:'Search Demand'},
+];
+
+let VD=[
+  // ── SCORED FROM ACTUAL RESPONSE DATA ──
+  {id:1,name:'Acclaim Lighting',cat:'Decorative / Commercial',rep:'Williams Lighting',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:'na',marketing:'na',repSupport:4,freight:5,dropShip:8,stockBuyback:'na',imap:null,dropShipFee:8,creditTerms:null,returnPolicy:null,searchDemand:null},
+   notes:'Everything account-specific / case-by-case. No standard programs. One FFA day/week for display accounts. Scored as N/A per scoring rules.',
+   raw:'Rebate: No standard — account specific\nDiscount: No standard — account specific\nFreight: One FFA day/week (display accounts)\nSpiff: No standard — account specific\nMarketing: No standard — account specific\nStock Buyback: No standard\nDrop Ship: Yes\nWarranty: See January 2025 price book'},
+
+  {id:2,name:'Crystorama',cat:'Decorative — Lighting One',rep:'Williams Lighting',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:null,marketing:null,repSupport:6,freight:8,dropShip:8,stockBuyback:null,imap:null,dropShipFee:8,creditTerms:'na',returnPolicy:null,searchDemand:null},
+   notes:'Lighting One member — rebates/credit managed by LO corporate, N/A here. Freight FFA (CFP deal, retailer picks day). Spiff form exists per rep. No display allowance — standard program only.',
+   raw:'Rebate: Lighting One — N/A\nFreight: FFA — part of CFP deal, retailer picks day\nSpiff: Form exists (contact rep)\nDisplay: Standard program only\nCredit: Lighting One terms'},
+
+  {id:3,name:'Elegant Lighting',cat:'Decorative',rep:'Williams Lighting',status:'Active',
+   scores:{rebate:'na',discount:null,warranty:6,spiff:'na',marketing:'na',repSupport:6,freight:7,dropShip:8,stockBuyback:7,imap:7,dropShipFee:8,creditTerms:6,returnPolicy:5,searchDemand:null},
+   notes:'FFA at $100 min. 1:1 stock buyback on active boxed items. IMAP 2.0. Net30 with credit app. 15% restock fee on non-defective returns. No spiff or marketing funds. Warranty: integrated LED 3yr, outdoor 1yr, marine 5yr, landscape brass 5yr.',
+   raw:'Freight: FFA min $100\nBuyback: 1:1 active boxed items\nIMAP: 2.0\nCredit: Net30 (credit app required)\nReturn: 15% restock non-defective / special orders nonreturnable\nWarranty: Integrated LED 3yr / Outdoor 1yr / Marine 5yr / Landscape brass 5yr / Other 1yr\nSpiff: N/A\nMarketing: N/A'},
+
+  {id:4,name:'WAC Lighting',cat:'LED / Architectural',rep:'Williams Lighting',status:'Active',
+   scores:{rebate:6,discount:null,warranty:8,spiff:null,marketing:null,repSupport:6,freight:5,dropShip:8,stockBuyback:'na',imap:7,dropShipFee:8,creditTerms:7,returnPolicy:null,searchDemand:null},
+   notes:'2% rebate on incremental growth over prior year. $1,000 FFA threshold. 5-year warranty. IMAP enforced. Credit 1% 10 days / Net30. Spiff and marketing require custom program — not scored. Stock buyback case-by-case.',
+   raw:'Rebate: 2% incremental growth over prior year\nFreight: FFA $1,000\nWarranty: 5 years\nStock Buyback: Case-by-case\nSpiff: Custom program required\nMarketing: Custom required\nIMAP: Yes\nDrop Ship: Yes\nCredit: 1% 10 days, Net 30'},
+
+  {id:5,name:'Satco / Nuvo',cat:'Lamp / Decorative — Lighting One',rep:'Williams Lighting',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:5,spiff:null,marketing:null,repSupport:5,freight:5,dropShip:8,stockBuyback:'na',imap:7,dropShipFee:8,creditTerms:'na',returnPolicy:null,searchDemand:null},
+   notes:'Lighting One member — rebates, discounts, credit all LO-managed, N/A here. $1,000 FFA. Warranty varies: lamps 3-5yr, fixtures 1yr. Spiff and marketing require custom programs. Stock buyback case-by-case.',
+   raw:'Rebate: Lighting One — N/A\nFreight: FFA $1,000\nDiscount: None standard\nWarranty: Lamps 3-5yr / Fixtures 1yr\nSpiff: Custom required\nStock Buyback: Case-by-case\nMarketing: Custom required\nIMAP: Yes\nDrop Ship: Yes\nCredit: Lighting One terms'},
+
+  {id:6,name:'Minka Group',cat:'Fans / Decorative (Aire, Lavery, Metropolitan, Savoy)',rep:'Williams Lighting',status:'Active',
+   scores:{rebate:null,discount:6,warranty:7,spiff:null,marketing:null,repSupport:7,freight:8,dropShip:8,stockBuyback:8,imap:7,dropShipFee:8,creditTerms:6,returnPolicy:6,searchDemand:null},
+   notes:'Minka Aire 3.5% inside discount (fans). FFA everyday $250 min — best frequency in portfolio. 1:1 buyback current / 2:1 discontinued. Accent has EXCLUSIVE on fans. Warranty: 1yr product, 5yr LED, fan motor lifetime. IMAP 2.0. Net30.',
+   raw:'Discount: Minka Aire 3.5% (fans only)\nFreight: FFA $250 min — every day\nBuyback: 1:1 current / 2:1 discontinued\nExclusivity: Accent has EXCLUSIVE on fans\nWarranty: 1yr product / 5yr LED / Fan motor lifetime\nSpiff: Custom required\nMarketing: Custom required\nIMAP: 2.0\nDrop Ship: Yes\nCredit: Net 30'},
+
+  {id:7,name:'Hinkley Lighting',cat:'Decorative / Outdoor',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:null,discount:'na',warranty:null,spiff:7,marketing:null,repSupport:7,freight:6,dropShip:8,stockBuyback:7,imap:7,dropShipFee:null,creditTerms:6,returnPolicy:6,searchDemand:null},
+   notes:'FFA at $750. 2:1 buyback up to 5% of sales. Spiff via Hinkley Honors program (hinkleyrewards.com). IMAP 2.0. Net30 $15K credit limit. No marketing co-op until Platinum Plus Honors level. 15% restock / 6mo window.',
+   raw:'Freight: FFA $750\nBuyback: 2:1 up to 5% of sales\nSpiff: Hinkley Honors program — hinkleyrewards.com\nIMAP: 2.0\nCredit: Net30 / $15K limit\nReturn: 15% restock / 6 month window / defectives follow warranty\nMarketing: None 2025 (Platinum Plus Honors required)\nDrop Ship: Yes'},
+
+  {id:8,name:'Amba Products',cat:'Towel Warmers / Accessories',rep:'Direct',status:'Active',
+   scores:{rebate:'na',discount:6,warranty:null,spiff:'na',marketing:'na',repSupport:8,freight:4,dropShip:9,stockBuyback:9,imap:null,dropShipFee:9,creditTerms:5,returnPolicy:null,searchDemand:null},
+   notes:'11+ unit volume discount. No stock requirement — dropship on order receipt. No drop ship fee. Displays mostly free (freight only). Can convert to Net30 with 3 credit refs (currently prepay). CS: Amy Dillard customerservice@ambaproducts.com.',
+   raw:'Volume Discount: 11+ units\nFreight: PP&S (not FFA)\nDrop Ship: Yes — no fee\nDisplay: Most N/C, freight only\nStock Buyback: No stock requirement — very flexible\nSpiff: No\nMarketing: N/A\nCredit: Prepay (can become Net30 with 3 refs)\nCS: Amy Dillard customerservice@ambaproducts.com'},
+
+  {id:9,name:'Accord Lighting',cat:'Decorative (Martin Design Group)',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:'na',marketing:'na',repSupport:6,freight:8,dropShip:8,stockBuyback:'na',imap:7,dropShipFee:8,creditTerms:null,searchDemand:null,returnPolicy:3},
+   notes:'Free freight with displays, and on drop shipments. IMAP 2.2. Display allowance: -30% fixtures, -10% portables/furniture. All product made to order in Brazil — returns only for defects with replacement order. No rebate, spiff, or marketing.',
+   raw:'Freight: Free with displays / free on drop shipments\nIMAP: 2.2\nDisplay: -30% fixtures / -10% portables & furniture\nBuyback: N/A — made to order in Brazil\nReturn: Defects only, with replacement order\nSpiff: N/A\nMarketing: N/A\nCS: info@mymartindesigngroup.com'},
+
+  {id:10,name:'Varaluz',cat:'Decorative (Martin Design Group)',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:'na',marketing:'na',repSupport:6,freight:null,dropShip:8,stockBuyback:'na',imap:7,dropShipFee:8,creditTerms:null,returnPolicy:null,searchDemand:null},
+   notes:'IMAP 2.2 fixtures / 2.0 furniture. Display allowance typically -30-40% depending on market promo. Freight terms in attached docs. Returns per attached policy.',
+   raw:'IMAP: 2.2 fixtures / 2.0 furniture\nDisplay: -30-40% depending on market promo\nFreight: See attached docs\nCS: cs@varaluz.com / info@mymartindesigngroup.com'},
+
+  {id:11,name:'Emery Allen',cat:'Decorative (Martin Design Group)',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:'na',marketing:'na',repSupport:6,freight:8,dropShip:8,stockBuyback:'na',imap:7,dropShipFee:8,creditTerms:null,returnPolicy:null,searchDemand:null},
+   notes:'FFA. IMAP 2.0. No rebate, spiff, marketing, or buyback. CS: info@mymartindesigngroup.com.',
+   raw:'Freight: FFA\nIMAP: 2.0\nSpiff: N/A\nMarketing: N/A\nCS: info@mymartindesigngroup.com'},
+
+  {id:12,name:'Matthews Fan Co.',cat:'Fans (Martin Design Group)',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:'na',marketing:'na',repSupport:6,freight:9,dropShip:8,stockBuyback:'na',imap:null,dropShipFee:8,creditTerms:null,returnPolicy:null,searchDemand:null},
+   notes:'FFF (free freight forever) if 5+ current fans on display — best freight trigger in portfolio. No rebate, spiff, or marketing. CS: info@mymartindesigngroup.com.',
+   raw:'Freight: FFF with 5+ current fans on display\nSpiff: N/A\nMarketing: N/A\nBuyback: N/A\nCS: info@mymartindesigngroup.com'},
+
+  {id:13,name:'Zafferano America',cat:'Decorative / Portables',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:'na',marketing:'na',repSupport:6,freight:3,dropShip:7,stockBuyback:'na',imap:7,dropShipFee:4,creditTerms:null,returnPolicy:3,searchDemand:null},
+   notes:'Complex freight: $12 min under $100 / 10% $100-$250 / 5% $251-$1K / 3% $1K+. Drop ship $12/order — highest fee in portfolio. IMAP 2.0. Defect returns only. No rebate, spiff, or marketing.',
+   raw:'Freight: $12 min <$100 / 10% $100-250 / 5% $251-1000 / 3% $1000+\nDrop Ship: $12/order\nIMAP: 2.0\nReturn: Defects only\nSpiff: N/A\nMarketing: N/A\nBuyback: N/A\nCS: info@mymartindesigngroup.com'},
+
+  {id:14,name:'Sonneman',cat:'Architectural / Decorative',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:'na',marketing:'na',repSupport:6,freight:4,dropShip:8,stockBuyback:'na',imap:7,dropShipFee:8,creditTerms:null,returnPolicy:null,searchDemand:null},
+   notes:'FFA at $3,000 — highest threshold in portfolio. IMAP 2.0. Stock buyback case-by-case. No spiff, marketing, rebate.',
+   raw:'Freight: FFA $3,000 min\nBuyback: Case-by-case\nIMAP: 2.0\nSpiff: N/A\nMarketing: N/A\nCS: info@mymartindesigngroup.com'},
+
+  {id:15,name:'Kuzco / Alora Lighting',cat:'LED / Decorative',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:null,spiff:8,marketing:'na',repSupport:6,freight:null,dropShip:8,stockBuyback:'na',imap:7,dropShipFee:8,creditTerms:null,returnPolicy:null,searchDemand:null},
+   notes:'Spiff: 3% commission on all Kuzco sales — quarterly payout, direct deposit. Staff must enroll before claiming. No marketing co-op. IMAP 2.0. Warranty: kuzcolighting.com/pages/warranty.',
+   raw:'Spiff: 3% on all Kuzco sales / quarterly direct deposit / must enroll\nIMAP: 2.0\nDrop Ship: Yes\nWarranty: kuzcolighting.com/pages/warranty\nCS: info@mymartindesigngroup.com'},
+
+  {id:16,name:'LEDI Lighting',cat:'Commercial LED',rep:'Martin Design Group',status:'Active',
+   scores:{rebate:'na',discount:6,warranty:null,spiff:7,marketing:'na',repSupport:6,freight:8,dropShip:8,stockBuyback:'na',imap:'na',dropShipFee:8,creditTerms:6,returnPolicy:4,searchDemand:null},
+   notes:'Inside discounts on certain items (as marked on price card). All FFA except truck. Spiff 2% total sales — dealer must do $5K/month minimum. Net30. Custom cuts nonreturnable / non-custom 20% restock. No rebate or marketing.',
+   raw:'Discount: Certain items have inside pricing (as marked)\nFreight: All FFA except truck\nSpiff: 2% of total sales — min $5K/month dealer threshold\nDrop Ship: Yes — no fee\nCredit: Net30\nReturn: Custom nonreturnable / 20% restock non-custom\nMarketing: N/A'},
+
+  {id:17,name:'American Lighting',cat:'Commercial LED / Tape Light',rep:'Direct',status:'Active',
+   scores:{rebate:null,discount:null,warranty:null,spiff:null,marketing:null,repSupport:8,freight:5,dropShip:8,stockBuyback:6,imap:6,dropShipFee:5,creditTerms:4,returnPolicy:4,searchDemand:null},
+   notes:'Currently at DNP pricing. FFA at $1,500. Drop ship $5 fee. IMAP 1.8x DNP (below portfolio standard). Stock buyback 2:1 (waives restock). Return: 35% restock / 50% after 6mo / unlikely after 1yr. No current rebate or spiff — willing to build. Rep CS excellent.',
+   raw:'Pricing: DNP (current)\nFreight: FFA $1,500\nDrop Ship: $5 fee\nIMAP: 1.8x DNP\nBuyback: 2:1 waives restock\nReturn: 35% / 50% after 6mo / unlikely after 1yr\nCredit: Credit card on file (CA)\nSpiff: None — can build\nMarketing: None — can build'},
+
+  {id:18,name:'Nicor Lighting',cat:'Commercial LED',rep:'Direct',status:'Active',
+   scores:{rebate:5,discount:null,warranty:8,spiff:null,marketing:null,repSupport:7,freight:10,dropShip:8,stockBuyback:8,imap:null,dropShipFee:8,creditTerms:7,returnPolicy:4,searchDemand:null},
+   notes:'NO freight, no minimum — best freight policy in entire portfolio. 3:1 buyback on current product. Warranty mostly 5yr (traditional non-LED 1yr). Rebate available contingent on growth. Net30. 35% restock. Spiff on some promos.',
+   raw:'Freight: NONE — no minimum (best in portfolio)\nBuyback: 3:1 current product\nWarranty: Mostly 5yr / Traditional non-LED 1yr\nRebate: Available contingent on growth\nSpiff: Promo-based\nDrop Ship: Yes\nCredit: Net 30\nReturn: 35% restock\nCS: orders@nicorlighting.com'},
+
+  {id:19,name:'Aeropure Fans',cat:'Fans / Ventilation',rep:'Direct',status:'Active',
+   scores:{rebate:null,discount:null,warranty:null,spiff:null,marketing:null,repSupport:6,freight:5,dropShip:8,stockBuyback:null,imap:null,dropShipFee:8,creditTerms:6,returnPolicy:5,searchDemand:null},
+   notes:'FFA at $1,800. Display unit available with $2,500 min stocking order. Job-by-job quoting for volume. Ships from Memphis. MAP compliance required. 30-day returns. Net30.',
+   raw:'Freight: FFA $1,800\nDrop Ship: Yes (Memphis warehouse)\nDisplay: Unit available — $2,500 min stocking order\nReturn: 30 days\nMAP: Required\nCredit: Net30\nCS: Kelley Brewer info@aeropurefans.com'},
+
+  {id:20,name:'AFX Inc.',cat:'Commercial LED — Lighting One',rep:'Direct',status:'Active',
+   scores:{rebate:'na',discount:7,warranty:8,spiff:null,marketing:null,repSupport:7,freight:6,dropShip:8,stockBuyback:null,imap:null,dropShipFee:8,creditTerms:6,returnPolicy:null,searchDemand:null},
+   notes:'Lighting One member — Prestige Pricing (top discount tier). Rebates via LO, N/A here. Free Freight Thursdays. 5yr LED warranty. No current spiff. Open to display allowance discussions. Net30.',
+   raw:'Discount: Prestige Pricing (top tier through LO)\nRebate: Lighting One — N/A\nFreight: Free Freight Thursdays\nWarranty: 5yr LED\nSpiff: Not currently available\nDisplay: Open to exploring\nMarketing: N/A\nCredit: Net30\nCS: Tony Lazalde tlazalde@afxinc.com / Emily Carpenter ecarpenter@afxinc.com'},
+
+  {id:21,name:'Z-Lite',cat:'Decorative — Lighting One',rep:'Williams Lighting',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:5,spiff:'na',marketing:null,repSupport:7,freight:6,dropShip:7,stockBuyback:8,imap:7,dropShipFee:5,creditTerms:'na',returnPolicy:4,searchDemand:null},
+   notes:'LO member — rebates, discounts, credit LO-managed, N/A. Freight FFA 1x/week OR any day at $1,000. Drop ship $10/carton. Display 50%. Biannual stock exchange. Warranty: 1yr general / 3yr outdoor cast / 5yr marine / 3yr LED.',
+   raw:'Rebate: Lighting One — N/A\nFreight: FFA once/week OR any day $1,000+\nDrop Ship: $10/carton\nDisplay: 50%\nBuyback: Biannual exchange\nWarranty: 1yr / 3yr outdoor cast / 5yr marine / 3yr LED\nSpiff: No\nIMAP: 2.0\nCS: orderdesk@z-lite.com'},
+
+  {id:22,name:'Westgate Lighting',cat:'Commercial LED',rep:'Solutions in Lighting',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:5,spiff:'na',marketing:'na',repSupport:5,freight:null,dropShip:8,stockBuyback:null,imap:null,dropShipFee:8,creditTerms:6,returnPolicy:null,searchDemand:null},
+   notes:'No standard rebate, discount, spiff, or marketing. Freight: free with increased sales (not formally documented). Drop ship yes. Stock buyback can discuss. Warranty 1yr or 5yr depending on part. Net30.',
+   raw:'Discount: None\nRebate: None\nFreight: TBD (free with increased sales)\nDrop Ship: Yes\nBuyback: Can discuss\nWarranty: 1yr or 5yr (part-specific)\nSpiff: No\nMarketing: N/A\nCredit: Net30\nCS: sales@solutionsinlighting.com'},
+
+  {id:23,name:'Canarm',cat:'Fans / Commercial',rep:'Direct',status:'Active',
+   scores:{rebate:'na',discount:'na',warranty:5,spiff:'na',marketing:'na',repSupport:6,freight:null,dropShip:8,stockBuyback:null,imap:null,dropShipFee:8,creditTerms:6,returnPolicy:null,searchDemand:null},
+   notes:'No standard rebate, discount, spiff, or marketing. Drop ship yes. Stock buyback can discuss. Warranty 1yr+ (part-specific). Display opportunities discussed. Net30.',
+   raw:'Discount: None\nRebate: None\nDrop Ship: Yes\nBuyback: Can discuss\nWarranty: 1yr+ (part-specific)\nSpiff: No\nMarketing: N/A\nCredit: Net30\nCS: MJessop@canarm.ca'},
+];
+
+// Change log
+let CHANGELOG=[];
+function logChange(vendorName,cat,oldVal,newVal,user){
+  CHANGELOG.unshift({ts:new Date().toISOString(),vendor:vendorName,cat,oldVal,newVal,user:user||CU?.name||'Unknown'});
+}
+
+// ── SCORING HELPERS ───────────────────────────────────────
+function weightedScore(scores){
+  let wSum=0,wTotal=0;
+  CAT_DEFS.forEach(c=>{
+    const s=scores[c.key];
+    const w=CAT_WEIGHTS[c.key]||5;
+    if(typeof s==='number'){wSum+=s*w;wTotal+=w;}
+  });
+  return wTotal>=20?Math.round((wSum/wTotal)*10)/10:null; // need enough weighted data
+}
+function scoredCount(scores){return CAT_DEFS.filter(c=>typeof scores[c.key]==='number').length;}
+function tier(score){
+  if(score===null)return null;
+  if(score>=8)return'A';if(score>=6.5)return'B';if(score>=5)return'C';if(score>=3.5)return'D';return'F';
+}
+function tierBadge(t){if(!t)return`<span class="na">TBD</span>`;const cls={A:'tier-a',B:'tier-b',C:'tier-c',D:'tier-d',F:'tier-f'};return`<span class="${cls[t]||'tier-d'}">${t}</span>`;}
+function scoreColor(s){if(s===null||s==='na')return'var(--border)';if(s>=8)return'var(--green)';if(s>=6)return'var(--blue)';if(s>=4)return'var(--yellow)';return'var(--accent)';}
+function dispScore(s){if(s===null)return`<span class="na">—</span>`;if(s==='na')return`<span class="na">N/A</span>`;return s;}
+
+let vFilter='',vTier='All',vRep='All';
+
+// ── VENDORS PAGE ──────────────────────────────────────────
+function vendors(el,act){
+  act.innerHTML=`
+    <button class="btn btn-outline btn-sm" onclick="openCSVImport()">⬆ Import CSV</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="btn btn-accent btn-sm" onclick="openAddVendor()">+ Add Vendor</button>`;
+  renderVendors(el);
+}
+
+function renderVendors(container){
+  const reps=[...new Set(VD.map(v=>v.rep))].sort();
+  const filtered=VD.filter(v=>{
+    const q=vFilter.toLowerCase();
+    const ws=weightedScore(v.scores);const t=tier(ws);
+    return(!q||v.name.toLowerCase().includes(q)||v.cat.toLowerCase().includes(q)||v.rep.toLowerCase().includes(q))
+      &&(vTier==='All'||(vTier==='TBD'?t===null:t===vTier))
+      &&(vRep==='All'||v.rep===vRep);
+  }).sort((a,b)=>{
+    const wa=weightedScore(a.scores),wb=weightedScore(b.scores);
+    if(wa===null&&wb===null)return 0;if(wa===null)return 1;if(wb===null)return-1;return wb-wa;
+  });
+
+  const totalScored=VD.filter(v=>scoredCount(v.scores)>=5).length;
+  const needSD=VD.filter(v=>v.scores.searchDemand===null).length;
+
+  container.innerHTML=`
+  <div class="alert alert-warn mb16">
+    <strong>Search Demand</strong> is blank for all ${needSD} vendors — this is the highest-weighted category (10%). Upload Locally Lit keyword files to complete scoring.
+  </div>
+
+  <div class="g4 mb16">
+    <div class="card stat-card"><div class="stat-label">Total Vendors</div><div class="stat-value">${VD.length}</div><div class="stat-sub">All active lines</div></div>
+    <div class="card stat-card"><div class="stat-label">Scorable (5+ cats)</div><div class="stat-value">${totalScored}</div><div class="stat-sub">Eligible for tier</div></div>
+    <div class="card stat-card"><div class="stat-label">Avg Weighted Score</div><div class="stat-value">${(()=>{const s=VD.map(v=>weightedScore(v.scores)).filter(x=>x!==null);return s.length?(s.reduce((a,b)=>a+b,0)/s.length).toFixed(1):'—';})()}</div><div class="stat-sub">Scored vendors only</div></div>
+    <div class="card stat-card"><div class="stat-label">Missing Search Demand</div><div class="stat-value">${needSD}</div><div class="stat-sub">Needs keyword files</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd" style="padding-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <span class="card-title">Vendor Rankings</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input class="srch" placeholder="Search vendors, reps, categories..." value="${esc(vFilter)}" oninput="vFilter=this.value;renderVendors(document.getElementById('pg-content'))">
+        <select class="srch" style="min-width:140px;" onchange="vRep=this.value;renderVendors(document.getElementById('pg-content'))">
+          <option value="All" ${vRep==='All'?'selected':''}>All Reps</option>
+          ${reps.map(r=>`<option value="${esc(r)}" ${vRep===r?'selected':''}>${esc(r)}</option>`).join('')}
+        </select>
+        <div style="display:flex;gap:5px;">
+          ${['All','A','B','C','D','F','TBD'].map(t=>`<div class="pill ${vTier===t?'on':''}" onclick="vTier='${t}';renderVendors(document.getElementById('pg-content'))">${t}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:28px;">#</th>
+          <th>Vendor</th>
+          <th>Category</th>
+          <th>Rep</th>
+          <th>Tier</th>
+          <th>Score</th>
+          <th>Cats Scored</th>
+          ${CAT_DEFS.map(c=>`<th title="${c.label}" style="min-width:70px;">${c.label.split(' ')[0]}</th>`).join('')}
+          <th></th>
+        </tr></thead>
+        <tbody>
+          ${filtered.map((v,i)=>{
+            const ws=weightedScore(v.scores);const t=tier(ws);const sc=scoredCount(v.scores);
+            return`<tr>
+              <td class="mono muted">${i+1}</td>
+              <td style="font-weight:600;white-space:nowrap;">${esc(v.name)}</td>
+              <td class="sm muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.cat)}">${esc(v.cat)}</td>
+              <td class="sm muted">${esc(v.rep)}</td>
+              <td>${tierBadge(t)}</td>
+              <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
+              <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
+              ${CAT_DEFS.map(c=>{
+                const s=v.scores[c.key];
+                if(s===null)return`<td><span class="na">—</span></td>`;
+                if(s==='na')return`<td><span class="na">N/A</span></td>`;
+                return`<td><div class="sbar-wrap"><div class="sbar"><div class="sbar-fill" style="width:${s*10}%;background:${scoreColor(s)};"></div></div><span class="snum">${s}</span></div></td>`;
+              }).join('')}
+              <td><button class="btn btn-sm btn-outline" onclick="openVP(${v.id})">Edit</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-foot" style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);">
+      <span>Showing ${filtered.length} of ${VD.length} vendors</span>
+      <span>— = no data yet &nbsp;·&nbsp; N/A = not applicable &nbsp;·&nbsp; Score = weighted avg (${Object.values(CAT_WEIGHTS).reduce((a,b)=>a+b,0)} pts total)</span>
+    </div>
+  </div>`;
+}
+
+// ── VENDOR PANEL ──────────────────────────────────────────
+function openVP(id){
+  const v=VD.find(x=>x.id===id);if(!v)return;
+  const ws=weightedScore(v.scores);const t=tier(ws);const sc=scoredCount(v.scores);
+  $('vp-name').textContent=v.name;
+  $('vp-cat').textContent=v.cat+' · '+v.rep;
+  $('vp-body').innerHTML=`
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div class="sec-label">Weighted Score</div>
+        <div class="mono" style="font-size:38px;font-weight:700;line-height:1;color:${scoreColor(ws)};">${ws!==null?ws:'TBD'}</div>
+        <div class="sm muted mt16" style="margin-top:6px;">${sc}/${CAT_DEFS.length} categories scored</div>
+      </div>
+      <div style="text-align:right;">${tierBadge(t)}<div class="sm muted" style="margin-top:4px;">Min 5 cats to rank</div></div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="sec-label" style="margin-top:14px;margin-bottom:4px;">Scores by Category</div>
+    <div class="sm muted mb16" style="margin-bottom:10px;">Type 0-10, "na", or leave blank. Weight shown in parens.</div>
+    ${CAT_DEFS.map(c=>{
+      const s=v.scores[c.key];const w=CAT_WEIGHTS[c.key];
+      const numVal=(typeof s==='number')?s:null;
+      return`<div class="score-row">
+        <span class="score-lbl">${c.label} <span class="muted sm">(${w})</span></span>
+        ${s==='na'
+          ?`<span class="na">N/A</span><div class="score-sbar" style="flex:1;margin-left:8px;"><div class="score-sfill" style="width:0;"></div></div>`
+          :`<input class="score-inp" type="text" value="${numVal!==null?numVal:''}" placeholder="—" id="si-${c.key}" oninput="liveScore(${id},'${c.key}',this.value)">`+
+           `<div class="score-sbar"><div class="score-sfill" id="sf-${c.key}" style="width:${numVal!==null?numVal*10:0}%;background:${scoreColor(numVal)};"></div></div>`
+        }
+      </div>`;
+    }).join('')}
+
+    <div class="sep"></div>
+    <div class="field mt16" style="margin-top:14px;"><label>Tier Override</label>
+      <select id="vp-tier"><option value="">Auto (calculated)</option>${['A','B','C','D','F'].map(t=>`<option ${v.tier===t?'selected':''}>${t}</option>`).join('')}</select>
+      <div class="fhint">Leave as Auto unless manually overriding.</div>
+    </div>
+    <div class="field"><label>Rep Group</label><input id="vp-rep" value="${esc(v.rep)}"></div>
+    <div class="field"><label>Category</label><input id="vp-cat-inp" value="${esc(v.cat)}"></div>
+    <div class="field"><label>Status</label><select id="vp-status">
+      ${['Active','Inactive','Prospect','Phasing Out'].map(s=>`<option ${v.status===s?'selected':''}>${s}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>Notes</label><textarea id="vp-notes">${esc(v.notes||'')}</textarea></div>
+    <div class="card" style="margin-top:12px;">
+      <div class="card-hd" style="cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <span class="sec-label" style="margin:0;">Raw Response Data ▾</span>
+      </div>
+      <div style="display:none;padding:12px;"><div class="raw-block">${esc(v.raw||'No raw data.')}</div></div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:18px;">
+      <button class="btn btn-accent" style="flex:1;" onclick="saveVP(${id})">Save Changes</button>
+      <button class="btn btn-outline" onclick="closeVP()">Cancel</button>
+    </div>
+    <div class="sm muted" style="margin-top:9px;">Changes saved to session and logged to Change Log. Connect Supabase to persist.</div>`;
+  $('vp').classList.add('on');
+}
+
+function liveScore(id,cat,val){
+  const v=VD.find(x=>x.id===id);if(!v)return;
+  const trimmed=val.trim().toLowerCase();
+  let num=trimmed===''?null:(trimmed==='na'?'na':parseFloat(trimmed));
+  if(num!=='na'&&num!==null&&(isNaN(num)||num<0||num>10))return;
+  v.scores[cat]=num;
+  const fill=$('sf-'+cat);
+  if(fill){fill.style.width=(typeof num==='number'?num*10:0)+'%';fill.style.background=scoreColor(num);}
+  const ws=weightedScore(v.scores);
+  const big=document.querySelector('#vp-body .mono[style*="font-size:38px"]');
+  if(big)big.textContent=ws!==null?ws:'TBD';
+}
+
+function saveVP(id){
+  const v=VD.find(x=>x.id===id);if(!v)return;
+  const oldScores={...v.scores};
+  CAT_DEFS.forEach(c=>{
+    const inp=$('si-'+c.key);if(!inp)return;
+    const val=inp.value.trim().toLowerCase();
+    if(val==='na')v.scores[c.key]='na';
+    else if(val==='')v.scores[c.key]=null;
+    else{const n=parseFloat(val);if(!isNaN(n)&&n>=0&&n<=10)v.scores[c.key]=n;}
+    if(v.scores[c.key]!==oldScores[c.key]){
+      logChange(v.name,c.label,oldScores[c.key],v.scores[c.key]);
+    }
+  });
+  v.notes=$('vp-notes')?.value||v.notes;
+  v.cat=$('vp-cat-inp')?.value||v.cat;
+  v.rep=$('vp-rep')?.value||v.rep;
+  v.status=$('vp-status')?.value||v.status;
+  const to=$('vp-tier')?.value;v.tier=to||undefined;
+  log('blu','◇',`${v.name} scores updated`,'Just now');
+  toast('Saved — changes logged','ok');
+  closeVP();
+  renderVendors($('pg-content'));
+}
+function closeVP(){$('vp').classList.remove('on');}
+
+// ── CSV IMPORT ────────────────────────────────────────────
+function openCSVImport(){
+  openModal('Import Vendor Scores from CSV',`
+    <div class="alert alert-info mb16">Import from the <strong>Dashboard</strong> tab of Vendor_Ranking_2026_Master.xlsx. Export that sheet as CSV and drop it below. Vendor names must match exactly.</div>
+    <div class="drop-zone" id="dz" onclick="$('csv-inp').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+      <div class="dz-icon">📄</div>
+      <h3>Drop CSV file here or click to browse</h3>
+      <p>Export the Dashboard tab as CSV from Google Sheets</p>
+    </div>
+    <input type="file" id="csv-inp" accept=".csv" style="display:none" onchange="handleFileSelect(this)">
+    <div id="csv-preview" style="margin-top:14px;"></div>`,
+    `<button class="btn btn-outline" onclick="closeModal()">Cancel</button>`);
+}
+function handleDrop(e){e.preventDefault();$('dz').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)parseCSVFile(f);}
+function handleFileSelect(inp){const f=inp.files[0];if(f)parseCSVFile(f);}
+function parseCSVFile(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(lines.length<2){$('csv-preview').innerHTML='<div class="alert alert-warn">File appears empty or invalid.</div>';return;}
+    // Try to detect header row with vendor names and category columns
+    const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim());
+    let matched=0,skipped=0,preview=[];
+    lines.slice(1).forEach(line=>{
+      const cols=line.split(',').map(c=>c.replace(/"/g,'').trim());
+      const name=cols[0];if(!name)return;
+      const vnd=VD.find(v=>v.name.toLowerCase()===name.toLowerCase());
+      if(!vnd){skipped++;return;}
+      headers.forEach((h,i)=>{
+        const cat=CAT_DEFS.find(c=>c.label.toLowerCase()===h.toLowerCase()||c.key.toLowerCase()===h.toLowerCase());
+        if(!cat||!cols[i])return;
+        const val=cols[i].toLowerCase();
+        if(val==='na'||val==='n/a')vnd.scores[cat.key]='na';
+        else if(val===''||val==='-'||val==='—')vnd.scores[cat.key]=null;
+        else{const n=parseFloat(val);if(!isNaN(n)&&n>=0&&n<=10){logChange(vnd.name,cat.label,vnd.scores[cat.key],n,'CSV Import');vnd.scores[cat.key]=n;}}
+      });
+      matched++;preview.push(name);
+    });
+    $('csv-preview').innerHTML=`
+      <div class="alert alert-ok">✅ Matched ${matched} vendors. ${skipped} rows skipped (name not found).</div>
+      ${preview.length?`<div class="sm muted">Updated: ${preview.join(', ')}</div>`:''}
+      <div style="margin-top:12px;display:flex;gap:10px;">
+        <button class="btn btn-accent" onclick="closeModal();renderVendors($('pg-content'));toast('Import complete','ok');">Apply & Close</button>
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      </div>`;
+  };
+  reader.readAsText(file);
+}
+function exportCSV(){
+  const hdrs=['Vendor','Category','Rep','Status','Tier','Weighted Score','Cats Scored',...CAT_DEFS.map(c=>c.label)];
+  const rows=VD.map(v=>{const ws=weightedScore(v.scores);const t=tier(ws);const sc=scoredCount(v.scores);
+    return[v.name,v.cat,v.rep,v.status,t||'TBD',ws??'',sc,...CAT_DEFS.map(c=>v.scores[c.key]===null?'':v.scores[c.key]==='na'?'N/A':v.scores[c.key])];
+  });
+  const csv=[hdrs,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`VendorRanking_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  toast('Exported','ok');
+}
+function openAddVendor(){
+  openModal('Add Vendor',`
+    <div class="frow"><div class="fcol field"><label>Vendor Name *</label><input id="av-n" placeholder="e.g. Kichler Lighting"></div><div class="fcol field"><label>Category</label><input id="av-c" placeholder="e.g. Decorative"></div></div>
+    <div class="frow"><div class="fcol field"><label>Rep Group</label><input id="av-r" placeholder="e.g. Williams Lighting"></div><div class="fcol field"><label>Status</label><select id="av-s"><option>Active</option><option>Prospect</option><option>Inactive</option></select></div></div>
+    <div class="alert alert-info">All scores start blank. Fill them in using the Edit panel — never guess.</div>`,
+    `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="confirmAddV()">Add Vendor</button>`);
+}
+function confirmAddV(){
+  const name=$('av-n')?.value?.trim();if(!name){toast('Name required','err');return;}
+  const emptyScores={};CAT_DEFS.forEach(c=>emptyScores[c.key]=null);
+  VD.push({id:Date.now(),name,cat:$('av-c')?.value||'Uncategorized',rep:$('av-r')?.value||'Unknown',status:$('av-s')?.value||'Active',scores:emptyScores,notes:'',raw:''});
+  log('blu','◇',`New vendor added: ${name}`,'Just now');
+  closeModal();toast('Vendor added — fill scores in Edit panel','ok');
+  renderVendors($('pg-content'));
+}
+
+// ── CHANGE LOG ────────────────────────────────────────────
+function changelog(el){
+  el.innerHTML=`
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Vendor Score Change Log</span>
+      ${CHANGELOG.length?`<button class="btn btn-sm btn-outline" onclick="exportChangeLog()">⬇ Export</button>`:''}
+    </div>
+    <div class="card-body">
+      ${CHANGELOG.length===0?`<div class="empty-state" style="text-align:center;padding:40px;color:var(--text-3);"><div style="font-size:32px;margin-bottom:10px;">📋</div><h3 style="font-size:15px;font-weight:600;">No changes yet</h3><p style="font-size:13px;">Every score change made in Vendor Intelligence will appear here automatically.</p></div>`
+      :CHANGELOG.map(c=>`<div class="cl-row">
+        <div class="cl-time">${new Date(c.ts).toLocaleString()}</div>
+        <div style="flex:1;">
+          <span class="cl-user">${esc(c.vendor)}</span>
+          <span class="muted"> — ${esc(c.cat)}: </span>
+          <span style="color:var(--accent);font-weight:600;">${dispScore(c.oldVal)}</span>
+          <span class="muted"> → </span>
+          <span style="color:var(--green);font-weight:600;">${dispScore(c.newVal)}</span>
+          <span class="muted sm"> · by ${esc(c.user)}</span>
+        </div>
+      </div>`).join('')}
+    </div>
+    ${CHANGELOG.length?`<div class="card-foot muted sm">${CHANGELOG.length} changes this session</div>`:''}
+  </div>`;
+}
+function exportChangeLog(){
+  const hdrs=['Timestamp','Vendor','Category','Old Value','New Value','Changed By'];
+  const rows=CHANGELOG.map(c=>[new Date(c.ts).toLocaleString(),c.vendor,c.cat,c.oldVal??'',c.newVal??'',c.user]);
+  const csv=[hdrs,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`ChangeLog_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+
+// ══════════════════════════════════════════════════════════
+// ── PIPELINE ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+const STAGES=[{key:'prospect',label:'Lead / Prospect'},{key:'quoted',label:'Quote Sent'},{key:'ordered',label:'PO Received'},{key:'complete',label:'Installed / Done'}];
+let DEALS={prospect:[],quoted:[],ordered:[],complete:[]};let DEAL_ID=1;
+
+function pipeline(el,act){
+  act.innerHTML=`<button class="btn btn-accent btn-sm" onclick="openAddDeal()">+ New Deal</button>`;
+  renderPipeline(el);
+}
+function renderPipeline(el){
+  const all=Object.values(DEALS).flat();
+  const tv=all.reduce((s,d)=>s+(d.value||0),0);
+  el.innerHTML=`
+  <div style="margin-bottom:14px;"><div class="card" style="padding:14px 22px;display:flex;gap:28px;">
+    <div><div class="stat-label" style="font-size:11px;">Pipeline Value</div><div class="stat-value" style="font-size:22px;">$${tv.toLocaleString()}</div></div>
+    <div style="width:1px;background:var(--border);"></div>
+    <div><div class="stat-label" style="font-size:11px;">Active Deals</div><div class="stat-value" style="font-size:22px;">${all.length}</div></div>
+    <div style="width:1px;background:var(--border);"></div>
+    <div><div class="stat-label" style="font-size:11px;">Avg Deal</div><div class="stat-value" style="font-size:22px;">$${all.length?Math.round(tv/all.length).toLocaleString():'—'}</div></div>
+  </div></div>
+  <div class="p-cols">${STAGES.map(s=>`
+    <div class="p-col">
+      <div class="p-col-hd"><span class="p-col-title">${s.label}</span><span class="p-count">${(DEALS[s.key]||[]).length}</span></div>
+      <div>${(DEALS[s.key]||[]).map(d=>dealHTML(d,s.key)).join('')}</div>
+      <button class="add-btn" onclick="openAddDeal('${s.key}')">+ Add deal</button>
+    </div>`).join('')}
+  </div>`;
+}
+function dealHTML(d,k){return`<div class="deal-card" onclick="openDeal('${d.id}','${k}')"><div class="deal-name">${esc(d.name)}</div><div class="deal-co">${esc(d.company||'')}</div><div class="deal-val">$${(d.value||0).toLocaleString()}</div><div class="deal-meta"><span class="deal-rep">${esc(d.rep||'')}</span>${d.close?`<span class="badge bg-gray" style="font-size:10px;">${d.close}</span>`:''}</div></div>`;}
+function openAddDeal(def='prospect'){openModal('New Deal',`
+  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n"></div><div class="fcol field"><label>Company</label><input id="nd-c"></div></div>
+  <div class="frow"><div class="fcol field"><label>Value ($)</label><input id="nd-v" type="number"></div><div class="fcol field"><label>Close Date</label><input id="nd-cl" type="date"></div></div>
+  <div class="frow"><div class="fcol field"><label>Sales Rep</label><input id="nd-r"></div><div class="fcol field"><label>Stage</label><select id="nd-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===def?'selected':''}>${s.label}</option>`).join('')}</select></div></div>
+  <div class="field"><label>Notes</label><textarea id="nd-no"></textarea></div>`,
+  `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="saveDeal()">Add</button>`);}
+function saveDeal(){
+  const n=$('nd-n')?.value?.trim();if(!n){toast('Name required','err');return;}
+  const s=$('nd-s').value;
+  const d={id:'d'+(DEAL_ID++),name:n,company:$('nd-c')?.value,value:parseFloat($('nd-v')?.value)||0,close:$('nd-cl')?.value,rep:$('nd-r')?.value,notes:$('nd-no')?.value,stage:s};
+  DEALS[s].push(d);closeModal();log('acc','◈',`New deal: ${n}`,'Just now');toast('Deal added','ok');goTo('pipeline');
+}
+function openDeal(id,sk){
+  const d=DEALS[sk].find(x=>x.id===id);if(!d)return;
+  openModal(d.name,`
+    <div class="frow mb16"><div><div class="sec-label">Company</div>${esc(d.company||'—')}</div><div style="text-align:right;"><div class="sec-label">Value</div><div class="mono" style="font-size:20px;color:var(--green);">$${(d.value||0).toLocaleString()}</div></div></div>
+    <div class="frow mb16"><div><div class="sec-label">Rep</div>${esc(d.rep||'—')}</div><div><div class="sec-label">Close</div>${d.close||'—'}</div></div>
+    <div class="field"><label>Notes</label><textarea id="ed-no">${esc(d.notes||'')}</textarea></div>
+    <div class="field"><label>Stage</label><select id="ed-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===sk?'selected':''}>${s.label}</option>`).join('')}</select></div>`,
+    `<button class="btn btn-outline" style="color:var(--accent);border-color:var(--accent);" onclick="delDeal('${id}','${sk}')">Delete</button>
+     <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+     <button class="btn btn-accent" onclick="updDeal('${id}','${sk}')">Save</button>`);
+}
+function updDeal(id,os){
+  const ns=$('ed-s').value;const idx=DEALS[os].findIndex(x=>x.id===id);if(idx<0)return;
+  const d=DEALS[os][idx];d.notes=$('ed-no').value;
+  if(ns!==os){DEALS[os].splice(idx,1);d.stage=ns;DEALS[ns].push(d);}
+  closeModal();toast('Updated','ok');goTo('pipeline');
+}
+function delDeal(id,sk){if(!confirm('Remove this deal?'))return;DEALS[sk]=DEALS[sk].filter(x=>x.id!==id);closeModal();goTo('pipeline');}
+
+// ══════════════════════════════════════════════════════════
+// ── QUOTES ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+let QUOTES=[],QUOTE_ID=1,CQ=null,LI=[];
+function quotes(el,act){
+  act.innerHTML=`<button class="btn btn-outline btn-sm" onclick="goTo('quotes')">+ New</button>${QUOTES.length?`<button class="btn btn-outline btn-sm" onclick="showSaved()">Saved (${QUOTES.length})</button>`:''}`;
+  if(!LI.length)LI=[nLI()];
+  const qid=CQ?CQ.id:'QT-'+String(QUOTE_ID).padStart(4,'0');
+  el.innerHTML=`<div class="g2">
+    <div>
+      <div class="card mb16" style="margin-bottom:14px;"><div class="card-hd"><span class="card-title">Customer & Project</span></div><div class="card-body">
+        <div class="frow"><div class="fcol field"><label>Customer</label><input id="q-cu" value="${CQ?.customer||''}"></div><div class="fcol field"><label>Contact</label><input id="q-co" value="${CQ?.contact||''}"></div></div>
+        <div class="frow"><div class="fcol field"><label>Project Name</label><input id="q-pr" value="${CQ?.project||''}"></div><div class="fcol field"><label>Type</label><select id="q-ty">${['Commercial Office','Retail','Industrial','Hospitality','Healthcare','Residential','Other'].map(t=>`<option ${CQ?.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
+        <div class="frow"><div class="fcol field"><label>Sq Ft</label><input id="q-sf" type="number" value="${CQ?.sqft||''}"></div><div class="fcol field"><label>Budget</label><input id="q-bu" value="${CQ?.budget||''}"></div></div>
+        <div class="field"><label>Notes</label><textarea id="q-no">${CQ?.notes||''}</textarea></div>
+      </div></div>
+      <div class="card"><div class="card-hd"><span class="card-title">Line Items</span><button class="btn btn-sm btn-outline" onclick="addLI()">+ Row</button></div>
+        <div class="card-body" style="padding:13px;">
+          <div class="tbl-wrap"><table class="li-table"><thead><tr><th style="width:36%">Description</th><th style="width:10%">Qty</th><th style="width:14%">Price</th><th style="width:13%">Total</th><th style="width:17%">Category</th><th style="width:10%"></th></tr></thead><tbody id="li-body"></tbody></table></div>
+          <div style="display:flex;justify-content:flex-end;gap:18px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border);"><span class="muted sm">Subtotal</span><span class="mono fw6" id="q-sub">$0.00</span></div>
+        </div>
+      </div>
+    </div>
+    <div><div class="card" style="position:sticky;top:0;">
+      <div class="card-hd"><span class="card-title">Preview</span><span class="mono sm muted">${qid}</span></div>
+      <div class="card-body"><div class="q-prev">
+        <div style="display:flex;justify-content:space-between;margin-bottom:14px;">
+          <div><div style="font-size:16px;font-weight:700;" id="pv-pr">Project</div><div class="sm muted" id="pv-cu">Customer</div></div>
+          <div style="text-align:right;"><div class="mono sm muted">${qid}</div><div class="mono sm muted">${new Date().toLocaleDateString()}</div></div>
+        </div>
+        <div class="sm muted mb16" id="pv-meta" style="margin-bottom:8px;"></div>
+        <div id="pv-items" style="font-size:13px;"></div>
+        <div class="sep"></div>
+        <div style="display:flex;justify-content:space-between;"><span class="fw6">TOTAL</span><span class="mono" style="font-size:20px;font-weight:700;" id="pv-total">$0.00</span></div>
+        <div id="ai-area"></div>
+      </div></div>
+      <div class="card-foot" style="display:flex;gap:7px;flex-wrap:wrap;">
+        <button class="btn btn-accent btn-sm" onclick="saveQ()">💾 Save</button>
+        <button class="btn btn-outline btn-sm" onclick="aiSummary()">⚡ AI</button>
+        <button class="btn btn-outline btn-sm" onclick="printQ()">🖨 PDF</button>
+        <button class="btn btn-ghost btn-sm" onclick="CQ=null;LI=[nLI()];goTo('quotes')">Clear</button>
+      </div>
+    </div></div>
+  </div>`;
+  renderLI();updatePreview();
+}
+function nLI(){return{id:Date.now()+Math.random(),desc:'',qty:1,price:0,cat:'LED Fixtures'};}
+function addLI(){LI.push(nLI());renderLI();updatePreview();}
+function renderLI(){
+  const b=$('li-body');if(!b)return;
+  b.innerHTML=LI.map((li,i)=>`<tr>
+    <td><input value="${esc(li.desc)}" onchange="LI[${i}].desc=this.value;updatePreview()" placeholder="Description"></td>
+    <td><input type="number" value="${li.qty}" onchange="LI[${i}].qty=parseFloat(this.value)||0;renderLI();updatePreview()" style="text-align:center;"></td>
+    <td><input type="number" value="${li.price}" onchange="LI[${i}].price=parseFloat(this.value)||0;renderLI();updatePreview()"></td>
+    <td class="mono" style="font-weight:600;">$${(li.qty*li.price).toFixed(2)}</td>
+    <td><select onchange="LI[${i}].cat=this.value" style="border:1.5px solid var(--border);border-radius:4px;padding:3px;font-family:'Outfit',sans-serif;font-size:12px;width:100%;">${['LED Fixtures','Controls','Emergency','Track','Outdoor','Other'].map(c=>`<option ${li.cat===c?'selected':''}>${c}</option>`).join('')}</select></td>
+    <td><button onclick="LI.splice(${i},1);if(!LI.length)LI.push(nLI());renderLI();updatePreview()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:15px;">✕</button></td>
+  </tr>`).join('');
+}
+function updatePreview(){
+  const sub=LI.reduce((s,l)=>s+l.qty*l.price,0);
+  $('q-sub')&&($('q-sub').textContent='$'+sub.toFixed(2));
+  $('pv-pr')&&($('pv-pr').textContent=$('q-pr')?.value||'Project');
+  $('pv-cu')&&($('pv-cu').textContent=$('q-cu')?.value||'Customer');
+  const t=$('q-ty')?.value,sf=$('q-sf')?.value;
+  $('pv-meta')&&($('pv-meta').textContent=[t,sf?sf+' sq ft':''].filter(Boolean).join(' · '));
+  const ie=$('pv-items');
+  if(ie)ie.innerHTML=LI.filter(l=>l.desc||l.price>0).map(l=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-light);"><span>${esc(l.desc||'—')} <span class="muted">×${l.qty}</span></span><span class="mono" style="font-weight:500;">$${(l.qty*l.price).toFixed(2)}</span></div>`).join('');
+  $('pv-total')&&($('pv-total').textContent='$'+sub.toFixed(2));
+}
+function saveQ(){
+  const proj=$('q-pr')?.value?.trim();if(!proj){toast('Add project name first','err');return;}
+  const sub=LI.reduce((s,l)=>s+l.qty*l.price,0);
+  const qid=CQ?CQ.id:'QT-'+String(QUOTE_ID++).padStart(4,'0');
+  const q={id:qid,date:new Date().toLocaleDateString(),customer:$('q-cu')?.value||'',contact:$('q-co')?.value||'',project:proj,type:$('q-ty')?.value||'',sqft:$('q-sf')?.value||'',budget:$('q-bu')?.value||'',notes:$('q-no')?.value||'',lineItems:[...LI],total:sub};
+  const ex=QUOTES.findIndex(x=>x.id===qid);
+  if(ex>=0)QUOTES[ex]=q;else QUOTES.push(q);
+  CQ=null;log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');toast('Saved ('+qid+')','ok');
+}
+function showSaved(){
+  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.map(l=>({...l}));closeModal();goTo('quotes')"><div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div></div></div>`).join('')}</div>`,
+  `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
+}
+async function aiSummary(){
+  const key=getS('aos-api');if(!key){toast('Add API key in Settings','err');return;}
+  const proj=$('q-pr')?.value,cust=$('q-cu')?.value;
+  const total=LI.reduce((s,l)=>s+l.qty*l.price,0);
+  const items=LI.filter(l=>l.desc).map(l=>`${l.desc} ×${l.qty} @ $${l.price}`).join(', ');
+  const area=$('ai-area');
+  if(area)area.innerHTML=`<div class="sep"></div><div style="display:flex;gap:7px;color:var(--text-3);font-size:13px;"><div class="dots"><div class="dot-b"></div><div class="dot-b"></div><div class="dot-b"></div></div>Generating...</div>`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:`Write a 2-sentence professional commercial lighting quote summary. Customer: ${cust||'TBD'}. Project: ${proj}. Items: ${items}. Total: $${total.toFixed(2)}.`}]})});
+    const data=await r.json();const text=data.content?.[0]?.text||'Unable to generate.';
+    if(area)area.innerHTML=`<div class="sep"></div><div style="background:var(--accent-soft);border-radius:var(--radius-sm);padding:11px;font-size:13px;line-height:1.6;"><span style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;">AI Summary</span><br><br>${text}</div>`;
+  }catch{if(area)area.innerHTML=`<div class="sep"></div><div class="alert alert-warn">Could not connect.</div>`;}
+}
+function printQ(){
+  const proj=$('q-pr')?.value||'Quote',cust=$('q-cu')?.value||'';
+  const total=LI.reduce((s,l)=>s+l.qty*l.price,0);
+  const qid=CQ?CQ.id:'QT-'+String(QUOTE_ID).padStart(4,'0');
+  const date=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const rows=LI.filter(l=>l.desc||l.price>0).map(l=>`<tr><td style="padding:9px 11px;border-bottom:1px solid #eee;">${esc(l.desc||'—')}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:center;">${l.qty}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:right;">$${l.price.toFixed(2)}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:right;font-weight:600;">$${(l.qty*l.price).toFixed(2)}</td></tr>`).join('');
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Quote ${qid}</title><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"><style>body{font-family:'Outfit',sans-serif;margin:0;padding:40px;color:#1a1a1a;max-width:800px;margin:0 auto;}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:22px;border-bottom:3px solid #ed1c24;margin-bottom:26px;}.co{font-size:22px;font-weight:700;}.acc{color:#ed1c24;}table{width:100%;border-collapse:collapse;}.th{background:#f4f4f2;padding:9px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#555;}.tr-tot{background:#1a1a1a;color:#fff;}.tr-tot td{padding:13px 11px;font-family:'DM Mono',monospace;font-size:17px;font-weight:700;}.foot{margin-top:44px;padding-top:18px;border-top:1px solid #eee;font-size:12px;color:#999;text-align:center;}@media print{button{display:none;}}</style></head><body>
+  <div class="hdr"><div><div class="co">Accent<span class="acc">OS</span></div><div style="font-size:13px;color:#555;">Accent Lighting Inc. · Wichita, KS</div></div><div style="text-align:right;"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:#ed1c24;">${qid}</div><div style="font-size:13px;color:#555;">${date}</div><div style="margin-top:4px;padding:3px 9px;background:#ed1c24;color:#fff;border-radius:4px;font-weight:600;font-size:12px;display:inline-block;">COMMERCIAL QUOTE</div></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:26px;"><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:4px;">Customer</div><div style="font-size:15px;font-weight:600;">${esc(cust||'—')}</div><div style="color:#555;font-size:13px;">${esc($('q-co')?.value||'')}</div></div><div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:4px;">Project</div><div style="font-size:15px;font-weight:600;">${esc(proj)}</div><div style="color:#555;font-size:13px;">${esc($('q-ty')?.value||'')}${$('q-sf')?.value?' · '+$('q-sf').value+' sq ft':''}</div></div></div>
+  <table><thead><tr><th class="th">Description</th><th class="th" style="text-align:center;">Qty</th><th class="th" style="text-align:right;">Unit Price</th><th class="th" style="text-align:right;">Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr class="tr-tot"><td colspan="3">TOTAL</td><td style="text-align:right;">$${total.toFixed(2)}</td></tr></tfoot></table>
+  ${$('q-no')?.value?`<div style="margin-top:22px;padding:14px;background:#f8f8f6;border-radius:8px;font-size:13px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:4px;">Notes</div>${esc($('q-no').value)}</div>`:''}
+  <div class="foot">Accent Lighting Inc. · Commercial Lighting Solutions · Wichita, KS · Valid 30 days</div>
+  <div style="margin-top:22px;text-align:center;"><button onclick="window.print()" style="background:#ed1c24;color:#fff;border:none;padding:11px 30px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Print / Save as PDF</button></div>
+  </body></html>`);w.document.close();
+}
+
+// ══════════════════════════════════════════════════════════
+// ── KNOWLEDGE ENGINE ─────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+let CHAT=[];
+const QQ=['What fixture types work best for commercial office lighting?','How do I calculate lumens for a retail space?','What are the benefits of tunable white lighting?','Compare LED drivers: constant current vs constant voltage','Emergency lighting compliance basics'];
+function knowledge(el){
+  const hasKey=!!getS('aos-api');
+  el.innerHTML=`<div class="tab-bar" data-tabs><button class="tab-btn active" onclick="switchTab(this,'ke-chat')">Ask the Engine</button><button class="tab-btn" onclick="switchTab(this,'ke-ref')">Reference Data</button><button class="tab-btn" onclick="switchTab(this,'ke-cfg')">Config</button></div>
+  <div id="ke-chat" class="tab-pane active">
+    ${!hasKey?`<div class="alert alert-warn">⚠️ No API key. <a href="#" onclick="goTo('settings')" style="color:inherit;font-weight:600;">Add in Settings →</a></div>`:''}
+    <div class="qchips">${QQ.map(q=>`<div class="chip" onclick="sendChat(${JSON.stringify(q)})">💡 ${q}</div>`).join('')}</div>
+    <div class="card"><div class="card-body" style="padding:0;">
+      <div class="chat-win" id="cw">
+        ${CHAT.length?CHAT.map(m=>`<div class="cm ${m.r}">${m.r==='a'?`<div class="cl">ACCENT ENGINE</div>`:''}<div class="cb">${m.c}</div></div>`).join('')
+        :`<div style="text-align:center;padding:40px;color:var(--text-3);"><div style="font-size:32px;margin-bottom:10px;">⚡</div><h3 style="font-size:15px;font-weight:600;">Lighting Intelligence Engine</h3><p style="font-size:13px;">Ask about fixtures, controls, compliance, specs, or quoting.</p></div>`}
+        <div id="ti" style="display:none;" class="cm a"><div class="cl">ACCENT ENGINE</div><div class="cb"><div class="dots"><div class="dot-b"></div><div class="dot-b"></div><div class="dot-b"></div></div></div></div>
+      </div>
+      <div class="chat-bar"><input id="ci" placeholder="Ask about lighting..." onkeydown="if(event.key==='Enter')sendChat()"><button class="btn btn-accent btn-sm" onclick="sendChat()">Send</button>${CHAT.length?`<button class="btn btn-ghost btn-sm" onclick="CHAT=[];goTo('knowledge')">✕</button>`:''}</div>
+    </div></div>
+  </div>
+  <div id="ke-ref" class="tab-pane">
+    <div class="card"><div class="card-body">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Commercial Lighting Quick Reference</h3>
+      ${[['Lumen Output (Office)','40–60 fc general / 75+ fc task'],['Color Temp','3000K warm retail · 4000K office/industrial · 5000K healthcare'],['CRI','80+ commercial min · 90+ showroom/retail'],['Energy Code','ASHRAE 90.1 · CA Title 24 · IECC 2021 — verify local'],['Emergency','NFPA 101 · 1 fc min · 90 min battery'],['Dim-to-Off','0.1% premium · 1% standard LED'],['IMAP Standard','2.0× — portfolio baseline'],['Freight Benchmark','No min = best (Nicor) · FFA $250+ = good · $1K+ = average'],['Spiff Programs','Kuzco 3% · LEDI 2% · Hinkley Honors']].map(([k,v])=>`<div style="display:flex;gap:14px;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;"><span style="font-weight:600;min-width:190px;">${k}</span><span style="color:var(--text-2);">${v}</span></div>`).join('')}
+    </div></div>
+  </div>
+  <div id="ke-cfg" class="tab-pane">
+    <div class="card"><div class="card-body">
+      <div class="field"><label>Anthropic API Key</label><input type="password" id="ke-ak" placeholder="sk-ant-..." value="${getS('aos-api')?'••••••••••••••••':''}"><div class="fhint">Powers AI chat and Quote AI Summary.</div></div>
+      <div class="field"><label>Supabase URL</label><input id="ke-su" placeholder="https://xxx.supabase.co" value="${getS('aos-sb-url')||''}"></div>
+      <div class="field"><label>Supabase Anon Key</label><input type="password" id="ke-sk" placeholder="eyJ..."></div>
+      <button class="btn btn-accent btn-sm" onclick="saveKE()">Save</button>
+    </div></div>
+  </div>`;
+}
+function saveKE(){
+  const k=$('ke-ak')?.value,u=$('ke-su')?.value,sk=$('ke-sk')?.value;
+  if(k&&!k.includes('•'))sessionStorage.setItem('aos-api',k);
+  if(u)sessionStorage.setItem('aos-sb-url',u);
+  if(sk&&!sk.includes('•'))sessionStorage.setItem('aos-sb-key',sk);
+  toast('Saved','ok');
+}
+async function sendChat(pre){
+  const inp=$('ci');const msg=pre||inp?.value?.trim();if(!msg)return;
+  if(inp)inp.value='';const key=getS('aos-api');
+  CHAT.push({r:'u',c:msg});renderChat();$('ti').style.display='';scrollChat();
+  if(!key){setTimeout(()=>{$('ti').style.display='none';CHAT.push({r:'a',c:'⚠️ No API key. Go to <strong>Settings</strong> to add your key.'});renderChat();scrollChat();},500);return;}
+  try{
+    const msgs=CHAT.slice(0,-1).map(m=>({role:m.r==='a'?'assistant':'user',content:m.c}));msgs.push({role:'user',content:msg});
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:'You are the Accent Lighting Intelligence Engine — expert AI for Accent Lighting Inc., a commercial lighting distributor in Wichita, KS. Answer questions about commercial lighting: fixtures, lumens, color temp, controls, dimming, emergency lighting, energy codes, specs, quoting, and vendor comparisons. Be concise, practical, specific.',messages:msgs})});
+    const data=await r.json();const text=data.content?.[0]?.text||'Unable to respond.';
+    $('ti').style.display='none';CHAT.push({r:'a',c:text});renderChat();scrollChat();
+  }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error. Check your API key.'});renderChat();scrollChat();}
+}
+function renderChat(){const w=$('cw');if(!w)return;w.innerHTML=CHAT.map(m=>`<div class="cm ${m.r}">${m.r==='a'?`<div class="cl">ACCENT ENGINE</div>`:''}<div class="cb">${m.c}</div></div>`).join('')+`<div id="ti" style="display:none;" class="cm a"><div class="cl">ACCENT ENGINE</div><div class="cb"><div class="dots"><div class="dot-b"></div><div class="dot-b"></div><div class="dot-b"></div></div></div></div>`;}
+function scrollChat(){const w=$('cw');if(w)w.scrollTop=w.scrollHeight;}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function dashboard(el){
+  const allDeals=Object.values(DEALS).flat();
+  const tv=allDeals.reduce((s,d)=>s+(d.value||0),0);
+  const scoredV=VD.filter(v=>weightedScore(v.scores)!==null);
+  const avgScore=scoredV.length?(scoredV.reduce((s,v)=>s+weightedScore(v.scores),0)/scoredV.length).toFixed(1):null;
+
+  el.innerHTML=`
+  <div class="g4 mb16">
+    <div class="card stat-card"><div class="stat-label">Active Pipeline</div><div class="stat-value">$${tv.toLocaleString()}</div><div class="stat-sub">${allDeals.length} deals</div></div>
+    <div class="card stat-card"><div class="stat-label">Quotes Saved</div><div class="stat-value">${QUOTES.length}</div><div class="stat-sub">This session</div></div>
+    <div class="card stat-card"><div class="stat-label">Vendors Tracked</div><div class="stat-value">${VD.length}</div><div class="stat-sub">${scoredV.length} with scores</div></div>
+    <div class="card stat-card"><div class="stat-label">Avg Vendor Score</div><div class="stat-value">${avgScore||'—'}</div><div class="stat-sub">Scored vendors only</div></div>
+  </div>
+  <div class="g2 mb16">
+    <div class="card"><div class="card-hd"><span class="card-title">Quick Actions</span></div><div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+        <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="goTo('quotes')">✏ New Quote</button>
+        <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('pipeline')">+ Add Deal</button>
+        <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('knowledge')">⚡ Ask Engine</button>
+        <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('vendors')">📊 Vendor Scores</button>
+      </div>
+    </div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">System Status</span></div><div class="card-body">
+      ${sRow('AccentOS','live','v6.2 · Cloudflare Pages')}
+      ${sRow('Vendor Ranking','live','23 real vendors · 14 scoring categories')}
+      ${sRow('Search Demand','pending','Upload keyword files from Locally Lit')}
+      ${sRow('Supabase','pending','Run feedback SQL · wire persistence')}
+      ${sRow('Anthropic API',getS('aos-api')?'live':'pending',getS('aos-api')?'Key configured':'Add in Settings')}
+      ${sRow('GitHub Auto-Deploy','pending','Connect business account')}
+    </div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><span class="card-title">Score Coverage by Category</span></div><div class="card-body">
+      ${CAT_DEFS.map(c=>{
+        const scored=VD.filter(v=>typeof v.scores[c.key]==='number').length;
+        const pct=Math.round((scored/VD.length)*100);
+        const w=CAT_WEIGHTS[c.key];
+        return`<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12.5px;font-weight:600;">${c.label} <span class="muted" style="font-weight:400;">(wt:${w})</span></span><span class="mono sm muted">${scored}/${VD.length}</span></div><div class="pbar"><div class="pfill" style="width:${pct}%;background:${c.key==='searchDemand'?'var(--yellow)':pct===100?'var(--green)':'var(--blue)'}"></div></div></div>`;
+      }).join('')}
+    </div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">Top Vendors by Score</span></div><div class="card-body">
+      ${(()=>{const sv=VD.map(v=>({...v,ws:weightedScore(v.scores)})).filter(v=>v.ws!==null).sort((a,b)=>b.ws-a.ws).slice(0,8);
+      const max=sv[0]?.ws||10;
+      return sv.map((v,i)=>`<div style="margin-bottom:9px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;"><span class="mono sm muted">${i+1}</span><span style="font-size:13px;font-weight:600;">${esc(v.name)}</span><span style="margin-left:auto;">${tierBadge(tier(v.ws))}</span><span class="mono" style="font-size:13px;font-weight:700;color:${scoreColor(v.ws)};min-width:28px;text-align:right;">${v.ws}</span></div><div class="pbar"><div class="pfill" style="width:${Math.round((v.ws/10)*100)}%;background:${scoreColor(v.ws)};"></div></div></div>`).join('');})()}
+    </div></div>
+  </div>`;
+}
+function sRow(label,status,note){
+  const map={live:['dot-g','Live'],pending:['dot-y','Pending'],planned:['dot-gr','Planned']};
+  const[cls,txt]=map[status]||['dot-gr',status];
+  return`<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);gap:9px;"><span class="dot ${cls}"></span><span style="font-size:13.5px;font-weight:500;">${label}</span><span class="badge bg-${status==='live'?'green':status==='pending'?'yellow':'gray'}" style="margin-left:auto;">${txt}</span><span style="font-size:12px;color:var(--text-3);min-width:160px;text-align:right;">${note}</span></div>`;
+}
+
+// ── MARKETING ─────────────────────────────────────────────
+function marketing(el){el.innerHTML=`<div class="alert alert-info">Marketing Hub begins after Locally Lit scope decision is finalized.</div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><span class="card-title">Site Issues (Audit 2026-03-18)</span></div><div class="card-body">
+      ${[['Homepage H1','❌ Instagram hashtag — not a keyword heading','red'],['Product Titles','❌ Lead with brand name, not search query','red'],['Product Schema JSON-LD','❌ URL-encoded descriptions (%20) sitewide','red'],['AggregateRating','❌ Missing — no star ratings in Google','red'],['Featured Products Widget','⚠️ Empty tab on homepage','yellow'],['Canonical Tags','✅ Present','green'],['Add to Cart','✅ Functional','green'],['Alt Text','✅ Feed-populated','green']].map(([l,d,t])=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;"><span class="badge bg-${t==='red'?'red':t==='yellow'?'yellow':'green'}" style="flex-shrink:0;">${t==='red'?'Issue':t==='yellow'?'Warn':'OK'}</span><div><div style="font-weight:600;">${l}</div><div style="color:var(--text-3);font-size:12px;">${d}</div></div></div>`).join('')}
+    </div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">Agency Status</span></div><div class="card-body">
+      <div style="margin-bottom:18px;"><div class="sec-label">Locally Lit</div><span class="badge bg-yellow">Active Consideration</span><p style="font-size:13.5px;color:var(--text-2);line-height:1.6;margin-top:8px;">Scope split not finalized. AI-first posture approved.</p></div>
+      <div><div class="sec-label">Agital (Theme Builders)</div><span class="badge bg-blue">Awaiting Reply</span><p style="font-size:13.5px;color:var(--text-2);line-height:1.6;margin-top:8px;">Email sent 2026-03-18 re: 5 site issues. Items 1–2 need admin approval. Items 3–5 need template changes.</p></div>
+    </div></div>
+  </div>`;}
+
+// ── ROADMAP ───────────────────────────────────────────────
+function roadmap(el){el.innerHTML=`
+  <div class="g2 mb16">
+    <div class="card stat-card"><div class="stat-label">Version</div><div class="stat-value mono">v6.2</div><div class="stat-sub">${new Date().toLocaleDateString()}</div></div>
+    <div class="card stat-card"><div class="stat-label">Hosting</div><div class="stat-value" style="font-size:18px;">Cloudflare</div><div class="stat-sub">Pages — free, unlimited bandwidth</div></div>
+  </div>
+  <div class="card mb16"><div class="card-hd"><span class="card-title">v6.2 — This Build</span><span class="badge bg-green">Current</span></div><div class="card-body">
+    ${[[1,'23 real vendors from 2026 response data — zero placeholders'],[1,'14 scoring categories with configurable weights'],[1,'Weighted score calculation + auto tier (A/B/C/D/F)'],[1,'Full score editing with live change log'],[1,'CSV import — drop Dashboard sheet export to populate'],[1,'CSV export — versioned snapshot anytime'],[1,'Change Log page — every score edit tracked with user + timestamp'],[1,'Feedback widget — page-aware, Supabase-ready'],[1,'Quote Generator with PDF export + AI summary'],[1,'Sales Pipeline — 4-stage Kanban'],[1,'Knowledge Engine — AI chat + reference data'],[0,'Search Demand scores (needs Locally Lit keyword files)'],[0,'Supabase persistence (feedback, scores, pipeline)'],[0,'GitHub → Cloudflare auto-deploy'],[0,'Supabase Auth (replace hardcoded credentials)']].map(([d,l])=>`<div class="chk"><span class="chk-ico">${d?'✅':'⬜'}</span><span class="${d?'done':''}">${l}</span></div>`).join('')}
+  </div></div>
+  <div class="card mb16"><div class="card-hd"><span class="card-title">Supabase SQL — Run These</span></div><div class="card-body">
+    <div class="raw-block">-- Feedback table\nCREATE TABLE feedback (\n  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n  page text, type text, message text,\n  user_name text,\n  submitted_at timestamptz DEFAULT now()\n);\nALTER TABLE feedback ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "anon_insert" ON feedback FOR INSERT TO anon WITH CHECK (true);\nCREATE POLICY "admin_read" ON feedback FOR SELECT TO authenticated USING (true);</div>
+  </div></div>
+  <div class="card"><div class="card-hd"><span class="card-title">Open Loops</span></div><div class="card-body">
+    ${[['Search Demand','Upload Locally Lit keyword files → score all 23 vendors on highest-weight category'],['Cloudflare Deploy','Direct upload index.html to accent-os project on Cloudflare Pages'],['Supabase','Run feedback SQL → add URL + key in Settings'],['Tiers','Finish scoring → assign A/B/C/D/F based on weighted scores'],['Auth','Replace hardcoded credentials with Supabase Auth before wider rollout'],['GitHub','Connect business account (michaelg@accentlightinginc.com) for auto-deploy']].map(([t,d])=>`<div class="chk"><span class="badge bg-yellow" style="flex-shrink:0;font-size:10px;">${t}</span><span style="font-size:13.5px;">${d}</span></div>`).join('')}
+  </div></div>`;}
+
+// ── MGMT ──────────────────────────────────────────────────
+function mgmt(el){el.innerHTML=`
+  <div class="card mb16"><div class="card-hd"><span class="card-title">Pending Decisions</span></div><div class="card-body">
+    ${[{t:'Search Demand Scoring',d:'Vendor Ranking Search Demand (weight 10) is blank for all 23 vendors. Requires keyword/traffic data from Locally Lit or internal agency tool. This is the single highest-impact data gap.',s:'pending'},
+       {t:'Locally Lit Scope Split',d:'Agency relationship scope not finalized. AI-first posture approved. Need: what does Locally Lit own vs AccentOS + Michael?',s:'pending'},
+       {t:'Supabase + GitHub Business Accounts',d:'Create at michaelg@accentlightinginc.com. Unlocks auto-deploy and data persistence.',s:'pending'},
+       {t:'Director of BI & Operations Role',d:'Pitch one-pager not yet produced. Build milestone now strong enough to present.',s:'pending'},
+       {t:'Netlify Account',d:'All projects paused — hit credit/bandwidth limit. Recommend migrating to Cloudflare Pages (already used for CalcHub).',s:'pending'},
+       {t:'Full Build Approved',d:'Paul and Patrick Graf approved 2026-03-10. Monthly cost ~$5/mo.',s:'approved'}
+    ].map(d=>`<div style="padding:13px 0;border-bottom:1px solid var(--border-light);"><div style="display:flex;align-items:center;gap:9px;margin-bottom:5px;"><span class="badge bg-${d.s==='approved'?'green':'yellow'}">${d.s==='approved'?'Approved':'Pending'}</span><span style="font-weight:600;font-size:14px;">${d.t}</span></div><p style="font-size:13px;color:var(--text-2);line-height:1.6;">${d.d}</p></div>`).join('')}
+  </div></div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><span class="card-title">Build Timeline</span></div><div class="card-body">
+      ${[['2026-03-10','Owners approved AccentOS'],['2026-03-11','App shell v3 — light theme, 9 modules'],['2026-03-17','v4 — clean shell, no placeholders'],['2026-03-18','v5 — Quote Generator, AI chat, Vendor Intelligence'],['2026-03-18','v6 — Sales Pipeline, PDF export'],['2026-03-18','v6.1 — Real vendor data, feedback widget'],['Today','v6.2 — 23 vendors, 14 categories, change log, CSV import, Cloudflare']].map(([d,l])=>`<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;"><span class="mono sm muted" style="min-width:90px;flex-shrink:0;">${d}</span><span>${l}</span></div>`).join('')}
+    </div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">Cost</span></div><div class="card-body">
+      ${[['AccentOS Hosting','Cloudflare Pages free','$0/mo'],['Database','Supabase free tier','$0/mo'],['AI','Anthropic API ~pay-per-use','~$5/mo'],['Total','','~$5/mo']].map(([l,n,c],i)=>`<div style="display:flex;align-items:center;padding:9px 0;border-bottom:${i===3?'none':'1px solid var(--border-light)'};${i===3?'font-weight:700;border-top:2px solid var(--border);padding-top:13px;':''}font-size:13.5px;"><div style="flex:1;">${l}${n?`<div style="font-size:12px;color:var(--text-3);">${n}</div>`:''}</div><div class="mono" style="color:${i===3?'var(--green)':'var(--text)'};">${c}</div></div>`).join('')}
+    </div></div>
+  </div>`;}
+
+// ── SETTINGS ──────────────────────────────────────────────
+function settings(el){el.innerHTML=`<div class="g2">
+  <div>
+    <div class="card mb16"><div class="card-hd"><span class="card-title">API Keys</span></div><div class="card-body">
+      <div class="field"><label>Anthropic API Key</label><div style="display:flex;gap:7px;"><input type="password" id="s-ak" placeholder="sk-ant-..." value="${getS('aos-api')?'••••••••••••••••':''}" style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;"><button class="btn btn-outline btn-sm" onclick="const e=$('s-ak');e.type=e.type==='password'?'text':'password'">Show</button></div><div class="fhint">Powers Knowledge Engine AI + Quote AI Summary.</div></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-accent btn-sm" onclick="const v=$('s-ak').value;if(v&&!v.includes('•')){sessionStorage.setItem('aos-api',v);toast('API key saved','ok');goTo('settings');}else toast('Enter a valid key','err')">Save Key</button>
+        ${getS('aos-api')?`<span class="badge bg-green">✓ Configured</span>`:`<span class="badge bg-yellow">Not set</span>`}
+      </div>
+    </div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">Supabase</span></div><div class="card-body">
+      <div class="field"><label>Project URL</label><input id="s-su" placeholder="https://xxx.supabase.co" value="${getS('aos-sb-url')||''}"></div>
+      <div class="field"><label>Anon Key</label><input type="password" id="s-sk" placeholder="eyJ..."></div>
+      <button class="btn btn-accent btn-sm" onclick="const u=$('s-su').value,k=$('s-sk').value;if(u)sessionStorage.setItem('aos-sb-url',u);if(k&&!k.includes('•'))sessionStorage.setItem('aos-sb-key',k);toast('Saved','ok');goTo('settings')">Save Supabase</button>
+      <div class="alert alert-info" style="margin-top:12px;font-size:12.5px;">Project: <span class="mono" style="font-size:11px;">hsyjcrrazrzqngwkqsqa.supabase.co</span><br>Run feedback SQL from Build Roadmap to activate tables.</div>
+    </div></div>
+  </div>
+  <div>
+    <div class="card mb16"><div class="card-hd"><span class="card-title">System Info</span></div><div class="card-body">
+      ${[['Version','AccentOS v6.2'],['Hosting','Cloudflare Pages'],['Auth','Session (hardcoded — Supabase Auth pending)'],['Vendors','23 real vendors · 14 categories'],['Scoring','Weighted 0-10 · Auto tier A-F'],['ERP','Windward — planned'],['Ecommerce','BigCommerce — no API access']].map(([k,v])=>`<div style="display:flex;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;"><span style="font-weight:600;min-width:150px;color:var(--text-2);">${k}</span><span class="mono" style="font-size:12px;">${v}</span></div>`).join('')}
+    </div></div>
+    <div class="card"><div class="card-hd"><span class="card-title">Users</span></div><div class="card-body">
+      <div class="alert alert-warn mb16" style="margin-bottom:10px;font-size:12.5px;">Credentials hardcoded — migrate to Supabase Auth before wider rollout.</div>
+      ${Object.entries(USERS).map(([u,d])=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-light);"><div class="avatar" style="width:30px;height:30px;font-size:11px;">${d.ini}</div><div><div style="font-weight:600;font-size:13.5px;">${d.name}</div><div style="font-size:12px;color:var(--text-3);">${u} · ${d.role}</div></div><span class="badge bg-${d.role==='Admin'?'red':d.role==='Manager'?'blue':'gray'}" style="margin-left:auto;">${d.role}</span></div>`).join('')}
+    </div></div>
+  </div>
+</div>`;}
+
+// ── HELPERS ───────────────────────────────────────────────
+function getS(k){return sessionStorage.getItem(k)||'';}
+</script>
+</body>
+</html>
