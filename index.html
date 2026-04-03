@@ -315,7 +315,8 @@ tbody tr:hover td{background:var(--bg);}
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- LOGIN - TEMPORARILY DISABLED -->
+<!--
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
@@ -330,6 +331,7 @@ tbody tr:hover td{background:var(--bg);}
     <button class="btn-login" onclick="doLogin()">Sign In</button>
   </div>
 </div>
+-->
 
 <!-- APP -->
 <div id="app">
@@ -426,8 +428,10 @@ const USERS={
   paul:   {pass:'accent2026',name:'Paul Graf',   role:'Manager',ini:'PG'},
   patrick:{pass:'accent2026',name:'Patrick Graf',role:'Manager',ini:'PG'}
 };
-let CU=null;
+// AUTO-LOGIN AS MICHAEL (TEMPORARILY DISABLED LOGIN)
+let CU={username:'michael',...USERS.michael};
 
+/* ORIGINAL LOGIN FUNCTION - COMMENTED OUT
 function doLogin(){
   const u=v('li-u').toLowerCase(),p=v('li-p','value');
   if(USERS[u]&&USERS[u].pass===p){
@@ -443,6 +447,19 @@ function doLogin(){
   } else { $('login-err').style.display='block'; }
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!$('app').classList.contains('on'))doLogin(); });
+*/
+
+// Auto-login initialization
+window.addEventListener('DOMContentLoaded', () => {
+  $('app').classList.add('on');
+  $('u-av').textContent=CU.ini;
+  $('u-name').textContent=CU.name;
+  $('u-role').textContent=CU.role;
+  if(CU.role!=='Admin')qsa('.admin-only').forEach(el=>el.style.display='none');
+  $('fb-btn').classList.add('on');
+  goTo('dashboard');
+});
+
 function doLogout(){ if(confirm('Sign out?')){ CU=null; location.reload(); } }
 
 // ── SIDEBAR ───────────────────────────────────────────────
