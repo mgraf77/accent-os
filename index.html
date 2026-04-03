@@ -638,7 +638,7 @@ function renderVendors(container){
                style="padding:12px 20px;cursor:pointer;font-size:13px;font-weight:600;
                       border-bottom:2px solid ${vSection === tab.id ? 'var(--accent)' : 'transparent'};
                       color:${vSection === tab.id ? 'var(--accent)' : 'var(--text-2)'};
-                      transition:all 0.2s;">
+                      transition:all 0.2s;white-space:nowrap;">
             ${tab.label}
           </div>
         `).join('')}
@@ -668,22 +668,51 @@ function renderVendors(container){
   }
 }
 
+// Calculate adaptive tiers (top 20% = A, next 20% = B, etc.)
+function getAdaptiveTier(score, allScores) {
+  if (score === null || score === undefined) return null;
+  const sorted = [...allScores].filter(s => s !== null).sort((a, b) => b - a);
+  if (sorted.length === 0) return null;
+
+  const index = sorted.findIndex(s => s <= score);
+  if (index === -1) return 'F';
+
+  const percentile = (index / sorted.length) * 100;
+  if (percentile < 20) return 'A';
+  if (percentile < 40) return 'B';
+  if (percentile < 60) return 'C';
+  if (percentile < 80) return 'D';
+  return 'F';
+}
+
 function renderOverview(container) {
   const totalScored = VD.filter(v => scoredCount(v.scores) >= 5).length;
   const withScores = VD.filter(v => scoredCount(v.scores) > 0).length;
   const totalSales = VD.reduce((sum, v) => sum + (v.sales?.t || 0), 0);
 
-  const tierCounts = {
-    A: VD.filter(v => tier(weightedScore(v.scores)) === 'A').length,
-    B: VD.filter(v => tier(weightedScore(v.scores)) === 'B').length,
-    C: VD.filter(v => tier(weightedScore(v.scores)) === 'C').length,
-    D: VD.filter(v => tier(weightedScore(v.scores)) === 'D').length,
-    F: VD.filter(v => tier(weightedScore(v.scores)) === 'F').length,
-    TBD: VD.filter(v => tier(weightedScore(v.scores)) === null).length
+  // Calculate adaptive tiers
+  const allScores = VD.map(v => weightedScore(v.scores)).filter(s => s !== null);
+  const vendorsWithTiers = VD.filter(v => weightedScore(v.scores) !== null).map(v => ({
+    ...v,
+    tier: getAdaptiveTier(weightedScore(v.scores), allScores)
+  }));
+
+  const tierStats = {
+    A: { count: 0, sales: 0 },
+    B: { count: 0, sales: 0 },
+    C: { count: 0, sales: 0 },
+    D: { count: 0, sales: 0 },
+    F: { count: 0, sales: 0 }
   };
 
-  const topVendors = [...VD]
-    .filter(v => weightedScore(v.scores) !== null)
+  vendorsWithTiers.forEach(v => {
+    if (v.tier && tierStats[v.tier]) {
+      tierStats[v.tier].count++;
+      tierStats[v.tier].sales += v.sales?.t || 0;
+    }
+  });
+
+  const topVendors = [...vendorsWithTiers]
     .sort((a, b) => weightedScore(b.scores) - weightedScore(a.scores))
     .slice(0, 10);
 
@@ -699,53 +728,60 @@ function renderOverview(container) {
         <div class="stat-value">${withScores}</div>
         <div class="stat-sub">${(withScores/VD.length*100).toFixed(0)}% have scores</div>
       </div>
-      <div class="card stat-card">
-        <div class="stat-label">Total 5-Yr Sales</div>
+      <div class="stat-label">Total 5-Yr Sales</div>
         <div class="stat-value">${fmt$(totalSales)}</div>
         <div class="stat-sub">All vendors combined</div>
       </div>
       <div class="card stat-card">
-        <div class="stat-label">Rep Groups</div>
-        <div class="stat-value">${REP_DIRECTORY.length}</div>
-        <div class="stat-sub">Active representatives</div>
+        <div class="stat-label">Tiered Vendors</div>
+        <div class="stat-value">${vendorsWithTiers.length}</div>
+        <div class="stat-sub">Adaptive 20% buckets</div>
       </div>
     </div>
 
     <div class="g2 mb16">
       <div class="card">
-        <div class="card-hd"><span class="card-title">Tier Distribution</span></div>
+        <div class="card-hd"><span class="card-title">Tier Distribution (Adaptive 20% Buckets)</span></div>
         <div style="padding:20px;">
-          ${Object.entries(tierCounts).map(([t, count]) => `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                ${tierBadge(t === 'TBD' ? null : t)}
-                <span style="font-weight:600;">${t}</span>
+          ${['A', 'B', 'C', 'D', 'F'].map(t => `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-light);">
+              <div style="display:flex;align-items:center;gap:12px;flex:1;">
+                ${tierBadge(t)}
+                <div>
+                  <div style="font-weight:600;font-size:14px;">${t} Tier</div>
+                  <div style="font-size:12px;color:var(--text-3);">${tierStats[t].count} vendors</div>
+                </div>
               </div>
-              <span class="mono" style="font-weight:600;">${count}</span>
+              <div style="text-align:right;">
+                <div class="mono fw6" style="font-size:16px;">${fmt$(tierStats[t].sales)}</div>
+                <div style="font-size:11px;color:var(--text-3);">${((tierStats[t].sales / totalSales) * 100).toFixed(1)}% of total</div>
+              </div>
             </div>
           `).join('')}
         </div>
       </div>
 
       <div class="card">
-        <div class="card-hd"><span class="card-title">Top 10 Vendors</span></div>
-        <div class="tbl-wrap" style="max-height:400px;">
+        <div class="card-hd"><span class="card-title">Top 10 Vendors by Score</span></div>
+        <div class="tbl-wrap" style="max-height:450px;">
           <table>
             <thead>
               <tr>
-                <th>#</th>
+                <th>Rank</th>
                 <th>Vendor</th>
                 <th>Tier</th>
                 <th>Score</th>
+                <th>Sales</th>
               </tr>
             </thead>
             <tbody>
               ${topVendors.map((v, i) => `
-                <tr>
+                <tr style="cursor:pointer;" onclick="openVendorDetail(${v.id})">
                   <td class="mono">${i + 1}</td>
                   <td style="font-weight:600;">${esc(v.name)}</td>
-                  <td>${tierBadge(tier(weightedScore(v.scores)))}</td>
+                  <td>${tierBadge(v.tier)}</td>
                   <td class="mono fw6" style="color:${scoreColor(weightedScore(v.scores))};">${weightedScore(v.scores)}</td>
+                  <td class="mono">${fmt$(v.sales?.t)}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -756,25 +792,84 @@ function renderOverview(container) {
   `;
 }
 
+// Change tracking storage (in sessionStorage for now)
+function getChangeLog() {
+  const log = sessionStorage.getItem('vendor-changelog');
+  return log ? JSON.parse(log) : [];
+}
+
+function saveChangeLog(log) {
+  sessionStorage.setItem('vendor-changelog', JSON.stringify(log));
+}
+
+function logChange(vendorId, category, oldValue, newValue) {
+  const log = getChangeLog();
+  log.unshift({
+    id: Date.now(),
+    date: new Date().toISOString(),
+    user: CU.name,
+    vendorId,
+    vendorName: VD.find(v => v.id === vendorId)?.name,
+    category,
+    oldValue,
+    newValue
+  });
+  saveChangeLog(log);
+}
+
 function renderScores(container) {
-  const reps=[...new Set(VD.map(v=>v.rep).filter(Boolean))].sort();
-  let filtered=VD.filter(v=>{
-    const q=vFilter.toLowerCase();
-    const ws=weightedScore(v.scores);const t=tier(ws);
-    return(!q||v.name.toLowerCase().includes(q)||v.rep.toLowerCase().includes(q)||(v.cat||'').toLowerCase().includes(q))
-      &&(vTier==='All'||(vTier==='TBD'?t===null:t===vTier))
-      &&(vRep==='All'||v.rep===vRep)
-      &&(!vScoredOnly||scoredCount(v.scores)>0);
-  }).sort((a,b)=>{
-    const wa=weightedScore(a.scores),wb=weightedScore(b.scores);
-    if(wa===null&&wb===null)return(b.sales?.t||0)-(a.sales?.t||0);
-    if(wa===null)return 1;if(wb===null)return-1;return wb-wa;
+  // Get all vendors with scores for adaptive tier calculation
+  const allScores = VD.map(v => weightedScore(v.scores)).filter(s => s !== null);
+
+  let filtered = VD.filter(v => {
+    const q = vFilter.toLowerCase();
+    const ws = weightedScore(v.scores);
+    const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
+    return (!q || v.name.toLowerCase().includes(q) || (v.cat || '').toLowerCase().includes(q))
+      && (vTier === 'All' || (vTier === 'TBD' ? adaptiveTier === null : adaptiveTier === vTier))
+      && (!vScoredOnly || scoredCount(v.scores) > 0);
   });
 
-  const totalScored=VD.filter(v=>scoredCount(v.scores)>=5).length;
-  const withScores=VD.filter(v=>scoredCount(v.scores)>0).length;
+  // Default alphabetical sort by name
+  if (!vSortCol) vSortCol = 'name';
+  if (vSortDir === undefined) vSortDir = 1; // 1 = asc, -1 = desc
 
-  container.innerHTML=`
+  filtered.sort((a, b) => {
+    let aVal, bVal;
+    if (vSortCol === 'name') {
+      aVal = a.name;
+      bVal = b.name;
+    } else if (vSortCol === 'tier') {
+      aVal = getAdaptiveTier(weightedScore(a.scores), allScores) || 'ZZZ';
+      bVal = getAdaptiveTier(weightedScore(b.scores), allScores) || 'ZZZ';
+    } else if (vSortCol === 'score') {
+      aVal = weightedScore(a.scores) || -999;
+      bVal = weightedScore(b.scores) || -999;
+    } else if (vSortCol === 'cats') {
+      aVal = scoredCount(a.scores);
+      bVal = scoredCount(b.scores);
+    } else {
+      // Sorting by specific category
+      const cat = CAT_DEFS.find(c => c.key === vSortCol);
+      if (cat) {
+        aVal = a.scores[cat.key] === 'na' ? -1 : (a.scores[cat.key] || -999);
+        bVal = b.scores[cat.key] === 'na' ? -1 : (b.scores[cat.key] || -999);
+      } else {
+        aVal = 0;
+        bVal = 0;
+      }
+    }
+
+    if (typeof aVal === 'string') {
+      return vSortDir * aVal.localeCompare(bVal);
+    }
+    return vSortDir * (aVal - bVal);
+  });
+
+  const totalScored = VD.filter(v => scoredCount(v.scores) >= 5).length;
+  const withScores = VD.filter(v => scoredCount(v.scores) > 0).length;
+
+  container.innerHTML = `
   <div class="g4 mb16">
     <div class="card stat-card"><div class="stat-label">Total Vendors</div><div class="stat-value">${VD.length}</div><div class="stat-sub">All active lines</div></div>
     <div class="card stat-card"><div class="stat-label">Vendors Scored</div><div class="stat-value">${withScores}</div><div class="stat-sub">${(withScores/VD.length*100).toFixed(0)}% have scores</div></div>
@@ -785,12 +880,9 @@ function renderScores(container) {
   <div class="card">
     <div class="card-hd" style="padding-bottom:14px;flex-wrap:wrap;gap:10px;">
       <span class="card-title">Vendor Rankings</span>
+      <button class="btn btn-sm btn-outline" onclick="openScoringMatrix()">📊 Scoring Matrix</button>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <input class="srch" placeholder="Search vendors, reps..." value="${esc(vFilter)}" oninput="vFilter=this.value;renderVendors($('pg-content'))">
-        <select class="srch" style="min-width:140px;" onchange="vRep=this.value;renderVendors($('pg-content'))">
-          <option value="All" ${vRep==='All'?'selected':''}>All Reps</option>
-          ${reps.map(r=>`<option value="${esc(r)}" ${vRep===r?'selected':''}>${esc(r)}</option>`).join('')}
-        </select>
+        <input class="srch" placeholder="Search vendors..." value="${esc(vFilter)}" oninput="vFilter=this.value;renderVendors($('pg-content'))">
         <div style="display:flex;gap:5px;">
           ${['All','A','B','C','D','F','TBD'].map(t=>`<div class="pill ${vTier===t?'on':''}" onclick="vTier='${t}';renderVendors($('pg-content'))">${t}</div>`).join('')}
         </div>
@@ -802,34 +894,30 @@ function renderScores(container) {
     <div class="tbl-wrap" style="max-height:calc(100vh - 380px);overflow-y:auto;">
       <table>
         <thead><tr>
-          <th style="width:28px;">#</th>
-          <th>Vendor</th>
-          <th>Rep</th>
-          <th>Tier</th>
-          <th>Score</th>
-          <th>Cats</th>
-          <th>5-Yr Sales</th>
-          ${CAT_DEFS.map(c=>`<th title="${c.label} (wt:${c.weight})" style="min-width:52px;font-size:10px;">${c.label.split(' ')[0].substring(0,6)}</th>`).join('')}
+          <th onclick="sortScores('name')" style="cursor:pointer;">Vendor ${vSortCol==='name'?(vSortDir===1?'▲':'▼'):''}</th>
+          <th onclick="sortScores('tier')" style="cursor:pointer;">Tier ${vSortCol==='tier'?(vSortDir===1?'▲':'▼'):''}</th>
+          <th onclick="sortScores('score')" style="cursor:pointer;">Score ${vSortCol==='score'?(vSortDir===1?'▲':'▼'):''}</th>
+          <th onclick="sortScores('cats')" style="cursor:pointer;">Cats ${vSortCol==='cats'?(vSortDir===1?'▲':'▼'):''}</th>
+          ${CAT_DEFS.filter(c => c.key !== 'repScore').map(c=>`<th onclick="sortScores('${c.key}')" title="${c.label} (wt:${c.weight})" style="min-width:52px;font-size:10px;cursor:pointer;">${c.label.split(' ')[0].substring(0,6)} ${vSortCol===c.key?(vSortDir===1?'▲':'▼'):''}</th>`).join('')}
           <th></th>
         </tr></thead>
         <tbody>
           ${filtered.slice(0,200).map((v,i)=>{
-            const ws=weightedScore(v.scores);const t=tier(ws);const sc=scoredCount(v.scores);
+            const ws=weightedScore(v.scores);
+            const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
+            const sc=scoredCount(v.scores);
             return`<tr>
-              <td class="mono muted">${i+1}</td>
-              <td style="font-weight:600;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${esc(v.name)}">${esc(v.name)}</td>
-              <td class="sm muted" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(v.rep)||'—'}</td>
-              <td>${tierBadge(t)}</td>
+              <td style="font-weight:600;cursor:pointer;color:var(--accent);" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
+              <td>${tierBadge(adaptiveTier)}</td>
               <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
               <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
-              <td class="mono sm">${fmt$(v.sales?.t)}</td>
-              ${CAT_DEFS.map(c=>{
+              ${CAT_DEFS.filter(c => c.key !== 'repScore').map(c=>{
                 const s=v.scores[c.key];
                 if(s===null||s===undefined)return`<td><span class="na">—</span></td>`;
                 if(s==='na')return`<td><span class="na">N/A</span></td>`;
-                return`<td><div class="sbar-wrap"><div class="sbar"><div class="sbar-fill" style="width:${s*10}%;background:${scoreColor(s)};"></div></div><span class="snum">${s}</span></div></td>`;
+                return`<td onclick="openScoreDetail(${v.id},'${c.key}')" style="cursor:pointer;"><div class="sbar-wrap"><div class="sbar"><div class="sbar-fill" style="width:${s*10}%;background:${scoreColor(s)};"></div></div><span class="snum">${s}</span></div></td>`;
               }).join('')}
-              <td><button class="btn btn-sm btn-outline" onclick="openVP(${v.id})">Edit</button></td>
+              <td><button class="btn btn-sm btn-outline" onclick="openVendorEdit(${v.id})">Edit</button></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -837,9 +925,215 @@ function renderScores(container) {
     </div>
     <div class="card-foot" style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);">
       <span>Showing ${Math.min(filtered.length,200)} of ${filtered.length} vendors${filtered.length>200?' — use search to narrow':''}</span>
-      <span>— = no data · Score = weighted avg (${TOTAL_WEIGHT} pts)</span>
+      <span>— = no data · Tiers are adaptive (20% buckets) · Score = weighted avg (${TOTAL_WEIGHT} pts)</span>
     </div>
   </div>`;
+}
+
+let vSortCol = 'name';
+let vSortDir = 1;
+function sortScores(col) {
+  if (vSortCol === col) {
+    vSortDir *= -1;
+  } else {
+    vSortCol = col;
+    vSortDir = 1;
+  }
+  renderVendors($('pg-content'));
+}
+
+function openScoringMatrix() {
+  openModal('Scoring Matrix — 14 Categories', `
+    <div style="max-height:600px;overflow-y:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Weight</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${CAT_DEFS.map(c => `
+            <tr>
+              <td style="font-weight:600;">${c.label}</td>
+              <td class="mono">${c.weight}</td>
+              <td style="font-size:12px;color:var(--text-2);">${c.desc || 'Scoring criteria for vendor evaluation'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;">
+        <strong>Total Weight:</strong> ${TOTAL_WEIGHT} points<br>
+        <strong>Scoring Range:</strong> 0-10 per category<br>
+        <strong>Tiers:</strong> Adaptive 20% buckets (A = top 20%, B = next 20%, C/D/F follow)
+      </div>
+    </div>
+  `);
+}
+
+function openScoreDetail(vendorId, categoryKey) {
+  const v = VD.find(x => x.id === vendorId);
+  if (!v) return;
+
+  const cat = CAT_DEFS.find(c => c.key === categoryKey);
+  if (!cat) return;
+
+  const score = v.scores[categoryKey];
+  const meta = v._meta?.[categoryKey] || {};
+
+  openModal(`${cat.label} — ${v.name}`, `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="font-size:32px;font-weight:700;color:${scoreColor(score)};">${score === 'na' ? 'N/A' : (score || '—')}</div>
+        <div>
+          <div style="font-size:14px;color:var(--text-3);">Weight: ${cat.weight} points</div>
+          <div style="font-size:12px;color:var(--text-3);">Confidence: ${meta.c || '—'}</div>
+        </div>
+      </div>
+
+      ${meta.j ? `
+        <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:6px;">Justification</div>
+          <div style="font-size:13px;line-height:1.6;">${esc(meta.j)}</div>
+        </div>
+      ` : ''}
+
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Change History</div>
+      <div style="font-size:12px;color:var(--text-2);">No changes recorded</div>
+    </div>
+  `);
+}
+
+function openVendorEdit(vendorId) {
+  const v = VD.find(x => x.id === vendorId);
+  if (!v) return;
+
+  openModal(`Edit Vendor — ${v.name}`, `
+    <div class="fg"><label>Vendor Name</label><input id="ve-name" value="${esc(v.name)}"></div>
+    <div class="fg"><label>Rep Group</label><input id="ve-rep" value="${esc(v.rep || '')}"></div>
+    <div class="fg"><label>Status</label>
+      <select id="ve-status">
+        <option value="Active" ${v.status === 'Active' ? 'selected' : ''}>Active</option>
+        <option value="Closed" ${v.status === 'Closed' ? 'selected' : ''}>Closed</option>
+      </select>
+    </div>
+    <button class="btn btn-accent" onclick="saveVendorEdit(${vendorId})">Save Changes</button>
+  `);
+}
+
+function saveVendorEdit(vendorId) {
+  const v = VD.find(x => x.id === vendorId);
+  if (!v) return;
+
+  const newName = $('ve-name').value;
+  const newRep = $('ve-rep').value;
+  const newStatus = $('ve-status').value;
+
+  if (v.name !== newName) logChange(vendorId, 'Name', v.name, newName);
+  if (v.rep !== newRep) logChange(vendorId, 'Rep Group', v.rep, newRep);
+  if (v.status !== newStatus) logChange(vendorId, 'Status', v.status, newStatus);
+
+  v.name = newName;
+  v.rep = newRep;
+  v.status = newStatus;
+
+  closeModal();
+  renderVendors($('pg-content'));
+  toast('Vendor updated', 'ok');
+}
+
+function openVendorDetail(vendorId) {
+  const v = VD.find(x => x.id === vendorId);
+  if (!v) return;
+
+  const ws = weightedScore(v.scores);
+  const allScores = VD.map(vx => weightedScore(vx.scores)).filter(s => s !== null);
+  const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
+
+  // Find rep info
+  const repInfo = REP_DIRECTORY.find(r => r['Rep Company'] === v.rep);
+
+  const panel = document.createElement('div');
+  panel.id = 'vendor-detail-panel';
+  panel.style.cssText = 'position:fixed;top:0;right:0;bottom:0;width:600px;max-width:90vw;background:var(--surface);box-shadow:var(--shadow-lg);z-index:2000;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s;';
+
+  panel.innerHTML = `
+    <div style="position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px;z-index:1;">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+        <h2 style="font-size:20px;font-weight:700;margin:0;">${esc(v.name)}</h2>
+        <button class="btn btn-sm btn-outline" onclick="closeVendorDetail()">✕ Close</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${tierBadge(adaptiveTier)}
+        ${ws !== null ? `<span class="mono fw6" style="color:${scoreColor(ws)};font-size:18px;">${ws}</span>` : ''}
+        <span class="badge bg-gray">${scoredCount(v.scores)}/${CAT_DEFS.length} scored</span>
+      </div>
+    </div>
+
+    <div style="padding:20px;">
+      ${repInfo ? `
+        <div style="margin-bottom:24px;padding:16px;background:var(--surface2);border-radius:var(--radius);">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Rep Group</div>
+          <div style="font-weight:600;font-size:15px;margin-bottom:6px;">${esc(repInfo['Rep Company'])}</div>
+          ${repInfo['Primary Contact'] ? `<div style="font-size:13px;color:var(--text-2);">${esc(repInfo['Primary Contact'])}</div>` : ''}
+          ${repInfo['Phone'] ? `<div style="font-size:13px;color:var(--text-2);">📞 ${esc(repInfo['Phone'])}</div>` : ''}
+          ${repInfo['Email'] ? `<div style="font-size:13px;"><a href="mailto:${esc(repInfo['Email'])}" style="color:var(--accent);">${esc(repInfo['Email'])}</a></div>` : ''}
+        </div>
+      ` : ''}
+
+      ${v.sales?.t ? `
+        <div style="margin-bottom:24px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:12px;">5-Year Sales History</div>
+          <div style="display:flex;gap:12px;padding:16px;background:var(--surface2);border-radius:var(--radius);align-items:flex-end;height:120px;">
+            ${['2021','2022','2023','2024','2025'].map(y=>{
+              const val=v.sales[y]||0;
+              const maxV=Math.max(...['2021','2022','2023','2024','2025'].map(y2=>v.sales[y2]||0),1);
+              return`<div style="flex:1;text-align:center;">
+                <div style="height:80px;display:flex;align-items:flex-end;justify-content:center;">
+                  <div style="width:100%;height:${Math.max(val/maxV*100,3)}%;background:var(--blue);border-radius:3px 3px 0 0;"></div>
+                </div>
+                <div class="mono" style="font-size:10px;margin-top:4px;font-weight:600;">${y}</div>
+                <div class="mono" style="font-size:9px;color:var(--text-3);">${fmt$(val)}</div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="margin-top:8px;text-align:center;font-size:14px;font-weight:700;">Total: ${fmt$(v.sales.t)}</div>
+        </div>
+      ` : ''}
+
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:12px;">Scoring Breakdown</div>
+      <div style="display:grid;gap:12px;">
+        ${CAT_DEFS.map(c => {
+          const s = v.scores[c.key];
+          const m = v._meta?.[c.key] || {};
+          return `<div style="padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:13px;font-weight:600;">${c.label}</span>
+              <span style="font-size:11px;color:var(--text-3);">wt: ${c.weight}</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
+              <div style="font-size:20px;font-weight:700;color:${scoreColor(s)};min-width:40px;">${s === 'na' ? 'N/A' : (s || '—')}</div>
+              <div class="sbar" style="flex:1;"><div class="sbar-fill" style="width:${typeof s === 'number' ? s * 10 : 0}%;background:${scoreColor(s)};"></div></div>
+            </div>
+            ${m.j ? `<div style="font-size:11px;color:var(--text-3);line-height:1.4;">${esc(m.j)}</div>` : ''}
+            ${m.c ? `<div style="font-size:10px;color:var(--text-3);margin-top:4px;">Confidence: ${m.c}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(panel);
+  setTimeout(() => panel.style.transform = 'translateX(0)', 10);
+}
+
+function closeVendorDetail() {
+  const panel = $('vendor-detail-panel');
+  if (panel) {
+    panel.style.transform = 'translateX(100%)';
+    setTimeout(() => panel.remove(), 300);
+  }
 }
 
 function renderRepList(container) {
@@ -857,10 +1151,13 @@ function renderRepList(container) {
             <tr>
               <th>Rep Company</th>
               <th>Type</th>
+              <th>Website</th>
               <th>Primary Contact</th>
               <th>Phone</th>
               <th>Email</th>
-              <th>Website</th>
+              <th>Secondary Contact</th>
+              <th>Office Phone</th>
+              <th>Quote Email</th>
               <th>Vendors</th>
               <th>5-Yr Sales</th>
             </tr>
@@ -870,14 +1167,15 @@ function renderRepList(container) {
               <tr>
                 <td style="font-weight:600;">${esc(rep['Rep Company'] || '')}</td>
                 <td><span class="badge bg-gray">${esc(rep['Type'] || '—')}</span></td>
-                <td>${esc(rep['Primary Contact'] || rep['Secondary Contact'] || '—')}</td>
+                <td class="sm">${rep['Website'] ? `<a href="${esc(rep['Website'])}" target="_blank" style="color:var(--accent);">Visit</a>` : '—'}</td>
+                <td class="sm">${esc(rep['Primary Contact'] || '—')}</td>
                 <td class="mono sm">${esc(rep['Phone'] || rep['Office Phone'] || '—')}</td>
-                <td class="sm">${rep['Email'] || rep['Quote Email'] || rep['Office Email'] ?
-                  `<a href="mailto:${esc(rep['Email'] || rep['Quote Email'] || rep['Office Email'])}" style="color:var(--accent);">${esc(rep['Email'] || rep['Quote Email'] || rep['Office Email'])}</a>` : '—'}</td>
-                <td class="sm">${rep['Website'] ?
-                  `<a href="${esc(rep['Website'])}" target="_blank" style="color:var(--accent);">Visit</a>` : '—'}</td>
+                <td class="sm">${rep['Email'] ? `<a href="mailto:${esc(rep['Email'])}" style="color:var(--accent);">${esc(rep['Email'])}</a>` : '—'}</td>
+                <td class="sm">${esc(rep['Secondary Contact'] || '—')}</td>
+                <td class="mono sm">${esc(rep['Office Phone'] || '—')}</td>
+                <td class="sm">${rep['Quote Email'] ? `<a href="mailto:${esc(rep['Quote Email'])}" style="color:var(--accent);">${esc(rep['Quote Email'])}</a>` : '—'}</td>
                 <td class="mono">${rep['Vendor Count'] || 0}</td>
-                <td class="mono">${fmt$(rep['Total 5yr Sales'])}</td>
+                <td class="mono fw6">${fmt$(rep['Total 5yr Sales'])}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -890,6 +1188,8 @@ function renderRepList(container) {
 function renderRepView(container) {
   const reps = [...new Set(VD.map(v => v.rep).filter(Boolean))].sort();
   const selectedRep = vRep === 'All' && reps.length > 0 ? reps[0] : (vRep !== 'All' ? vRep : '');
+
+  const allScores = VD.map(v => weightedScore(v.scores)).filter(s => s !== null);
   const repVendors = VD.filter(v => v.rep === selectedRep).sort((a, b) => {
     const wa = weightedScore(a.scores), wb = weightedScore(b.scores);
     if (wa === null && wb === null) return (b.sales?.t || 0) - (a.sales?.t || 0);
@@ -911,7 +1211,7 @@ function renderRepView(container) {
         <div style="padding:16px;background:var(--surface2);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
           <div><span class="sm muted">Contact:</span> <strong>${esc(repInfo['Primary Contact'] || '—')}</strong></div>
           <div><span class="sm muted">Phone:</span> <strong>${esc(repInfo['Phone'] || repInfo['Office Phone'] || '—')}</strong></div>
-          <div><span class="sm muted">Email:</span> <strong>${repInfo['Email'] ? `<a href="mailto:${esc(repInfo['Email'])}" style="color:var(--accent);">${esc(repInfo['Email'])}</a>` : '—'}</strong></div>
+          <div><span class="sm muted">Email:</span> ${repInfo['Email'] ? `<strong><a href="mailto:${esc(repInfo['Email'])}" style="color:var(--accent);">${esc(repInfo['Email'])}</a></strong>` : '<strong>—</strong>'}</div>
           <div><span class="sm muted">Website:</span> ${repInfo['Website'] ? `<a href="${esc(repInfo['Website'])}" target="_blank" style="color:var(--accent);">Visit</a>` : '—'}</div>
         </div>
       ` : ''}
@@ -920,29 +1220,28 @@ function renderRepView(container) {
     <div class="card">
       <div class="card-hd">
         <span class="card-title">${esc(selectedRep)} — ${repVendors.length} Vendors</span>
+        <span class="sm muted">Rep Score category hidden from this view</span>
       </div>
-      <div class="tbl-wrap" style="max-height:calc(100vh - 340px);overflow-y:auto;">
+      <div class="tbl-wrap" style="max-height:calc(100vh - 380px);overflow-y:auto;">
         <table>
           <thead>
             <tr>
-              <th>#</th>
               <th>Vendor</th>
               <th>Tier</th>
               <th>Score</th>
-              <th>Scored Cats</th>
+              <th>Scored</th>
               <th>5-Yr Sales</th>
             </tr>
           </thead>
           <tbody>
             ${repVendors.map((v, i) => {
               const ws = weightedScore(v.scores);
-              const t = tier(ws);
+              const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
               const sc = scoredCount(v.scores);
               return `
                 <tr>
-                  <td class="mono muted">${i + 1}</td>
-                  <td style="font-weight:600;">${esc(v.name)}</td>
-                  <td>${tierBadge(t)}</td>
+                  <td style="font-weight:600;cursor:pointer;color:var(--accent);" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
+                  <td>${tierBadge(adaptiveTier)}</td>
                   <td>${ws !== null ? `<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>` : `<span class="na">TBD</span>`}</td>
                   <td class="mono sm">${sc}/${CAT_DEFS.length}</td>
                   <td class="mono">${fmt$(v.sales?.t)}</td>
@@ -973,7 +1272,7 @@ function renderInventory(container) {
 }
 
 function renderHistory(container) {
-  const years = ['2021', '2022', '2023', '2024', '2025'];
+  const years = ['2025', '2024', '2023', '2022', '2021'];
   const vendorsWithSales = VD.filter(v => v.sales && v.sales.t > 0)
     .sort((a, b) => (b.sales?.t || 0) - (a.sales?.t || 0));
 
@@ -988,20 +1287,18 @@ function renderHistory(container) {
           <thead>
             <tr>
               <th style="position:sticky;left:0;background:var(--surface);z-index:1;">Vendor</th>
-              <th>Rep</th>
               ${years.map(y => `<th class="mono">${y}</th>`).join('')}
               <th class="mono">5-Yr Total</th>
               <th>Trend</th>
             </tr>
           </thead>
           <tbody>
-            ${vendorsWithSales.slice(0, 100).map(v => {
+            ${vendorsWithSales.slice(0, 150).map(v => {
               const trend = v.sales.tr !== undefined ? v.sales.tr : 0;
               const trendColor = trend > 0 ? 'var(--green)' : trend < 0 ? 'var(--accent)' : 'var(--text-3)';
               return `
                 <tr>
-                  <td style="position:sticky;left:0;background:var(--surface);font-weight:600;white-space:nowrap;">${esc(v.name)}</td>
-                  <td class="sm muted">${esc(v.rep) || '—'}</td>
+                  <td style="position:sticky;left:0;background:var(--surface);font-weight:600;white-space:nowrap;cursor:pointer;color:var(--accent);" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
                   ${years.map(y => `<td class="mono sm">${v.sales[y] ? fmt$(v.sales[y]) : '—'}</td>`).join('')}
                   <td class="mono fw6">${fmt$(v.sales.t)}</td>
                   <td class="mono sm" style="color:${trendColor};">${trend > 0 ? '+' : ''}${(trend * 100).toFixed(0)}%</td>
@@ -1055,14 +1352,13 @@ function renderSales(container) {
         <table>
           <thead>
             <tr>
-              <th>#</th>
+              <th>Rank</th>
               <th>Vendor</th>
-              <th>Rep</th>
-              <th class="mono">2021</th>
-              <th class="mono">2022</th>
-              <th class="mono">2023</th>
-              <th class="mono">2024</th>
               <th class="mono">2025</th>
+              <th class="mono">2024</th>
+              <th class="mono">2023</th>
+              <th class="mono">2022</th>
+              <th class="mono">2021</th>
               <th class="mono">5-Yr Total</th>
               <th>% of Total</th>
             </tr>
@@ -1073,13 +1369,12 @@ function renderSales(container) {
               return `
                 <tr>
                   <td class="mono muted">${i + 1}</td>
-                  <td style="font-weight:600;">${esc(v.name)}</td>
-                  <td class="sm muted">${esc(v.rep) || '—'}</td>
-                  <td class="mono sm">${v.sales['2021'] ? fmt$(v.sales['2021']) : '—'}</td>
-                  <td class="mono sm">${v.sales['2022'] ? fmt$(v.sales['2022']) : '—'}</td>
-                  <td class="mono sm">${v.sales['2023'] ? fmt$(v.sales['2023']) : '—'}</td>
-                  <td class="mono sm">${v.sales['2024'] ? fmt$(v.sales['2024']) : '—'}</td>
+                  <td style="font-weight:600;cursor:pointer;color:var(--accent);" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
                   <td class="mono sm">${v.sales['2025'] ? fmt$(v.sales['2025']) : '—'}</td>
+                  <td class="mono sm">${v.sales['2024'] ? fmt$(v.sales['2024']) : '—'}</td>
+                  <td class="mono sm">${v.sales['2023'] ? fmt$(v.sales['2023']) : '—'}</td>
+                  <td class="mono sm">${v.sales['2022'] ? fmt$(v.sales['2022']) : '—'}</td>
+                  <td class="mono sm">${v.sales['2021'] ? fmt$(v.sales['2021']) : '—'}</td>
                   <td class="mono fw6">${fmt$(v.sales.t)}</td>
                   <td class="mono sm muted">${pct}%</td>
                 </tr>
@@ -1093,508 +1388,68 @@ function renderSales(container) {
 }
 
 function renderChangelog(container) {
+  const log = getChangeLog();
+
   container.innerHTML = `
     <div class="card">
       <div class="card-hd">
         <span class="card-title">Vendor Ranking Changelog</span>
+        <span class="sm muted">${log.length} changes tracked</span>
       </div>
       <div style="padding:20px;">
-        <div style="border-left:2px solid var(--accent);padding-left:16px;margin-bottom:20px;">
-          <div style="font-weight:700;margin-bottom:4px;">v6.4 — April 3, 2026</div>
-          <div class="sm muted mb8">Vendor data overhaul + navigation system</div>
-          <ul style="font-size:13px;line-height:1.7;color:var(--text-2);">
-            <li>Deleted 23 vendors (SATCO, NUVO, SAVOY HOUSE MERIDIAN, CANARM, OXYGEN, and others)</li>
-            <li>Marked ELK HOME and SAYLITE as Closed status</li>
-            <li>Merged KALCO ALLEGRI sales data into KALCO</li>
-            <li>Updated all rep group assignments from verified master file (471 vendors)</li>
-            <li>Added tabbed navigation: Overview, Scores, Rep List, Rep View, Inventory, History, Sales, Changelog</li>
-            <li>Built Overview dashboard with stats and tier distribution</li>
-            <li>Added Rep List with contact directory (30 rep groups)</li>
-            <li>Added Rep View for filtering vendors by rep group</li>
-            <li>Added History view with sales by year</li>
-            <li>Added Sales analysis with totals and percentages</li>
-          </ul>
-        </div>
-
-        <div style="border-left:2px solid var(--border-light);padding-left:16px;margin-bottom:20px;">
-          <div style="font-weight:700;margin-bottom:4px;">v6.3 — Previous Release</div>
-          <div class="sm muted mb8">Original vendor ranking system</div>
-          <ul style="font-size:13px;line-height:1.7;color:var(--text-2);">
-            <li>494 vendors with 14 scoring categories</li>
-            <li>Weighted scoring system (100 points)</li>
-            <li>Tier-based ranking (A-F)</li>
-            <li>CSV export and import functionality</li>
-            <li>Vendor detail panel with inline editing</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-
-function renderOverview(container) {
-  const totalScored = VD.filter(v => scoredCount(v.scores) >= 5).length;
-  const withScores = VD.filter(v => scoredCount(v.scores) > 0).length;
-  const totalSales = VD.reduce((sum, v) => sum + (v.sales?.t || 0), 0);
-
-  const tierCounts = {
-    A: VD.filter(v => tier(weightedScore(v.scores)) === 'A').length,
-    B: VD.filter(v => tier(weightedScore(v.scores)) === 'B').length,
-    C: VD.filter(v => tier(weightedScore(v.scores)) === 'C').length,
-    D: VD.filter(v => tier(weightedScore(v.scores)) === 'D').length,
-    F: VD.filter(v => tier(weightedScore(v.scores)) === 'F').length,
-    TBD: VD.filter(v => tier(weightedScore(v.scores)) === null).length
-  };
-
-  const topVendors = [...VD]
-    .filter(v => weightedScore(v.scores) !== null)
-    .sort((a, b) => weightedScore(b.scores) - weightedScore(a.scores))
-    .slice(0, 10);
-
-  container.innerHTML = `
-    <div class="g4 mb16">
-      <div class="card stat-card">
-        <div class="stat-label">Total Vendors</div>
-        <div class="stat-value">${VD.length}</div>
-        <div class="stat-sub">Active in system</div>
-      </div>
-      <div class="card stat-card">
-        <div class="stat-label">Vendors Scored</div>
-        <div class="stat-value">${withScores}</div>
-        <div class="stat-sub">${(withScores/VD.length*100).toFixed(0)}% have scores</div>
-      </div>
-      <div class="card stat-card">
-        <div class="stat-label">Total 5-Yr Sales</div>
-        <div class="stat-value">${fmt$(totalSales)}</div>
-        <div class="stat-sub">All vendors combined</div>
-      </div>
-      <div class="card stat-card">
-        <div class="stat-label">Rep Groups</div>
-        <div class="stat-value">${REP_DIRECTORY.length}</div>
-        <div class="stat-sub">Active representatives</div>
-      </div>
-    </div>
-
-    <div class="g2 mb16">
-      <div class="card">
-        <div class="card-hd"><span class="card-title">Tier Distribution</span></div>
-        <div style="padding:20px;">
-          ${Object.entries(tierCounts).map(([t, count]) => `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                ${tierBadge(t === 'TBD' ? null : t)}
-                <span style="font-weight:600;">${t}</span>
+        ${log.length === 0 ? `
+          <div style="text-align:center;padding:40px;color:var(--text-3);">
+            <div style="font-size:32px;margin-bottom:12px;">📝</div>
+            <p style="font-size:14px;">No changes recorded yet</p>
+            <p class="sm">Changes will appear here when vendors are edited</p>
+          </div>
+        ` : `
+          <div style="display:grid;gap:12px;">
+            ${log.map(change => `
+              <div style="padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                  <div>
+                    <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${esc(change.vendorName)}</div>
+                    <div style="font-size:12px;color:var(--text-3);">${new Date(change.date).toLocaleString()} • ${esc(change.user)}</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline" onclick="revertChange(${change.id})">Revert</button>
+                </div>
+                <div style="font-size:13px;padding:10px;background:var(--surface);border-radius:var(--radius-sm);">
+                  <strong>${change.category}:</strong>
+                  <span style="color:var(--accent);text-decoration:line-through;">${esc(change.oldValue || '—')}</span>
+                  → <span style="color:var(--green);font-weight:600;">${esc(change.newValue || '—')}</span>
+                </div>
               </div>
-              <span class="mono" style="font-weight:600;">${count}</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-hd"><span class="card-title">Top 10 Vendors</span></div>
-        <div class="tbl-wrap" style="max-height:400px;">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Vendor</th>
-                <th>Tier</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${topVendors.map((v, i) => `
-                <tr>
-                  <td class="mono">${i + 1}</td>
-                  <td style="font-weight:600;">${esc(v.name)}</td>
-                  <td>${tierBadge(tier(weightedScore(v.scores)))}</td>
-                  <td class="mono fw6" style="color:${scoreColor(weightedScore(v.scores))};">${weightedScore(v.scores)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderScores(container) {
-  const reps=[...new Set(VD.map(v=>v.rep).filter(Boolean))].sort();
-  let filtered=VD.filter(v=>{
-    const q=vFilter.toLowerCase();
-    const ws=weightedScore(v.scores);const t=tier(ws);
-    return(!q||v.name.toLowerCase().includes(q)||v.rep.toLowerCase().includes(q)||(v.cat||'').toLowerCase().includes(q))
-      &&(vTier==='All'||(vTier==='TBD'?t===null:t===vTier))
-      &&(vRep==='All'||v.rep===vRep)
-      &&(!vScoredOnly||scoredCount(v.scores)>0);
-  }).sort((a,b)=>{
-    const wa=weightedScore(a.scores),wb=weightedScore(b.scores);
-    if(wa===null&&wb===null)return(b.sales?.t||0)-(a.sales?.t||0);
-    if(wa===null)return 1;if(wb===null)return-1;return wb-wa;
-  });
-
-  const totalScored=VD.filter(v=>scoredCount(v.scores)>=5).length;
-  const withScores=VD.filter(v=>scoredCount(v.scores)>0).length;
-
-  container.innerHTML=`
-  <div class="g4 mb16">
-    <div class="card stat-card"><div class="stat-label">Total Vendors</div><div class="stat-value">${VD.length}</div><div class="stat-sub">All active lines</div></div>
-    <div class="card stat-card"><div class="stat-label">Vendors Scored</div><div class="stat-value">${withScores}</div><div class="stat-sub">${(withScores/VD.length*100).toFixed(0)}% have scores</div></div>
-    <div class="card stat-card"><div class="stat-label">Fully Ranked (5+)</div><div class="stat-value">${totalScored}</div><div class="stat-sub">Eligible for tier</div></div>
-    <div class="card stat-card"><div class="stat-label">Avg Score</div><div class="stat-value">${(()=>{const s=VD.map(v=>weightedScore(v.scores)).filter(x=>x!==null);return s.length?(s.reduce((a,b)=>a+b,0)/s.length).toFixed(1):'—';})()}</div><div class="stat-sub">Ranked vendors</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-hd" style="padding-bottom:14px;flex-wrap:wrap;gap:10px;">
-      <span class="card-title">Vendor Rankings</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <input class="srch" placeholder="Search vendors, reps..." value="${esc(vFilter)}" oninput="vFilter=this.value;renderVendors($('pg-content'))">
-        <select class="srch" style="min-width:140px;" onchange="vRep=this.value;renderVendors($('pg-content'))">
-          <option value="All" ${vRep==='All'?'selected':''}>All Reps</option>
-          ${reps.map(r=>`<option value="${esc(r)}" ${vRep===r?'selected':''}>${esc(r)}</option>`).join('')}
-        </select>
-        <div style="display:flex;gap:5px;">
-          ${['All','A','B','C','D','F','TBD'].map(t=>`<div class="pill ${vTier===t?'on':''}" onclick="vTier='${t}';renderVendors($('pg-content'))">${t}</div>`).join('')}
-        </div>
-        <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text-2);">
-          <input type="checkbox" ${vScoredOnly?'checked':''} onchange="vScoredOnly=this.checked;renderVendors($('pg-content'))"> Scored only
-        </label>
-      </div>
-    </div>
-    <div class="tbl-wrap" style="max-height:calc(100vh - 380px);overflow-y:auto;">
-      <table>
-        <thead><tr>
-          <th style="width:28px;">#</th>
-          <th>Vendor</th>
-          <th>Rep</th>
-          <th>Tier</th>
-          <th>Score</th>
-          <th>Cats</th>
-          <th>5-Yr Sales</th>
-          ${CAT_DEFS.map(c=>`<th title="${c.label} (wt:${c.weight})" style="min-width:52px;font-size:10px;">${c.label.split(' ')[0].substring(0,6)}</th>`).join('')}
-          <th></th>
-        </tr></thead>
-        <tbody>
-          ${filtered.slice(0,200).map((v,i)=>{
-            const ws=weightedScore(v.scores);const t=tier(ws);const sc=scoredCount(v.scores);
-            return`<tr>
-              <td class="mono muted">${i+1}</td>
-              <td style="font-weight:600;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${esc(v.name)}">${esc(v.name)}</td>
-              <td class="sm muted" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(v.rep)||'—'}</td>
-              <td>${tierBadge(t)}</td>
-              <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
-              <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
-              <td class="mono sm">${fmt$(v.sales?.t)}</td>
-              ${CAT_DEFS.map(c=>{
-                const s=v.scores[c.key];
-                if(s===null||s===undefined)return`<td><span class="na">—</span></td>`;
-                if(s==='na')return`<td><span class="na">N/A</span></td>`;
-                return`<td><div class="sbar-wrap"><div class="sbar"><div class="sbar-fill" style="width:${s*10}%;background:${scoreColor(s)};"></div></div><span class="snum">${s}</span></div></td>`;
-              }).join('')}
-              <td><button class="btn btn-sm btn-outline" onclick="openVP(${v.id})">Edit</button></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-    <div class="card-foot" style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);">
-      <span>Showing ${Math.min(filtered.length,200)} of ${filtered.length} vendors${filtered.length>200?' — use search to narrow':''}</span>
-      <span>— = no data · Score = weighted avg (${TOTAL_WEIGHT} pts)</span>
-    </div>
-  </div>`;
-}
-
-function renderRepList(container) {
-  const sorted = [...REP_DIRECTORY].sort((a, b) => (b['Total 5yr Sales'] || 0) - (a['Total 5yr Sales'] || 0));
-
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title">Rep Directory</span>
-        <span class="sm muted">${REP_DIRECTORY.length} rep groups</span>
-      </div>
-      <div class="tbl-wrap" style="max-height:calc(100vh - 240px);overflow-y:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Rep Company</th>
-              <th>Type</th>
-              <th>Primary Contact</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>Website</th>
-              <th>Vendors</th>
-              <th>5-Yr Sales</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${sorted.map(rep => `
-              <tr>
-                <td style="font-weight:600;">${esc(rep['Rep Company'] || '')}</td>
-                <td><span class="badge bg-gray">${esc(rep['Type'] || '—')}</span></td>
-                <td>${esc(rep['Primary Contact'] || rep['Secondary Contact'] || '—')}</td>
-                <td class="mono sm">${esc(rep['Phone'] || rep['Office Phone'] || '—')}</td>
-                <td class="sm">${rep['Email'] || rep['Quote Email'] || rep['Office Email'] ?
-                  `<a href="mailto:${esc(rep['Email'] || rep['Quote Email'] || rep['Office Email'])}" style="color:var(--accent);">${esc(rep['Email'] || rep['Quote Email'] || rep['Office Email'])}</a>` : '—'}</td>
-                <td class="sm">${rep['Website'] ?
-                  `<a href="${esc(rep['Website'])}" target="_blank" style="color:var(--accent);">Visit</a>` : '—'}</td>
-                <td class="mono">${rep['Vendor Count'] || 0}</td>
-                <td class="mono">${fmt$(rep['Total 5yr Sales'])}</td>
-              </tr>
             `).join('')}
-          </tbody>
-        </table>
+          </div>
+        `}
       </div>
     </div>
   `;
 }
 
-function renderRepView(container) {
-  const reps = [...new Set(VD.map(v => v.rep).filter(Boolean))].sort();
-  const selectedRep = vRep === 'All' && reps.length > 0 ? reps[0] : (vRep !== 'All' ? vRep : '');
-  const repVendors = VD.filter(v => v.rep === selectedRep).sort((a, b) => {
-    const wa = weightedScore(a.scores), wb = weightedScore(b.scores);
-    if (wa === null && wb === null) return (b.sales?.t || 0) - (a.sales?.t || 0);
-    if (wa === null) return 1; if (wb === null) return -1;
-    return wb - wa;
-  });
+function revertChange(changeId) {
+  if (!confirm('Revert this change?')) return;
 
-  const repInfo = REP_DIRECTORY.find(r => r['Rep Company'] === selectedRep);
+  const log = getChangeLog();
+  const changeIdx = log.findIndex(c => c.id === changeId);
+  if (changeIdx === -1) return;
 
-  container.innerHTML = `
-    <div class="card mb16">
-      <div class="card-hd">
-        <span class="card-title">Filter by Rep Group</span>
-        <select class="srch" style="min-width:200px;" onchange="vRep=this.value;renderVendors($('pg-content'))">
-          ${reps.map(r => `<option value="${esc(r)}" ${selectedRep === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}
-        </select>
-      </div>
-      ${repInfo ? `
-        <div style="padding:16px;background:var(--surface2);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
-          <div><span class="sm muted">Contact:</span> <strong>${esc(repInfo['Primary Contact'] || '—')}</strong></div>
-          <div><span class="sm muted">Phone:</span> <strong>${esc(repInfo['Phone'] || repInfo['Office Phone'] || '—')}</strong></div>
-          <div><span class="sm muted">Email:</span> <strong>${repInfo['Email'] ? `<a href="mailto:${esc(repInfo['Email'])}" style="color:var(--accent);">${esc(repInfo['Email'])}</a>` : '—'}</strong></div>
-          <div><span class="sm muted">Website:</span> ${repInfo['Website'] ? `<a href="${esc(repInfo['Website'])}" target="_blank" style="color:var(--accent);">Visit</a>` : '—'}</div>
-        </div>
-      ` : ''}
-    </div>
+  const change = log[changeIdx];
+  const vendor = VD.find(v => v.id === change.vendorId);
+  if (!vendor) return;
 
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title">${esc(selectedRep)} — ${repVendors.length} Vendors</span>
-      </div>
-      <div class="tbl-wrap" style="max-height:calc(100vh - 340px);overflow-y:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Vendor</th>
-              <th>Tier</th>
-              <th>Score</th>
-              <th>Scored Cats</th>
-              <th>5-Yr Sales</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${repVendors.map((v, i) => {
-              const ws = weightedScore(v.scores);
-              const t = tier(ws);
-              const sc = scoredCount(v.scores);
-              return `
-                <tr>
-                  <td class="mono muted">${i + 1}</td>
-                  <td style="font-weight:600;">${esc(v.name)}</td>
-                  <td>${tierBadge(t)}</td>
-                  <td>${ws !== null ? `<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>` : `<span class="na">TBD</span>`}</td>
-                  <td class="mono sm">${sc}/${CAT_DEFS.length}</td>
-                  <td class="mono">${fmt$(v.sales?.t)}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
+  // Revert the change
+  if (change.category === 'Name') vendor.name = change.oldValue;
+  else if (change.category === 'Rep Group') vendor.rep = change.oldValue;
+  else if (change.category === 'Status') vendor.status = change.oldValue;
 
-function renderInventory(container) {
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title">Inventory Management</span>
-        <span class="badge bg-yellow">Coming Soon</span>
-      </div>
-      <div style="padding:60px;text-align:center;color:var(--text-3);">
-        <div style="font-size:48px;margin-bottom:16px;">📦</div>
-        <p style="font-size:16px;font-weight:600;margin-bottom:8px;">Inventory tracking module in development</p>
-        <p class="sm">This section will display vendor inventory levels, stock alerts, and order history.</p>
-      </div>
-    </div>
-  `;
-}
+  // Remove from log
+  log.splice(changeIdx, 1);
+  saveChangeLog(log);
 
-function renderHistory(container) {
-  const years = ['2021', '2022', '2023', '2024', '2025'];
-  const vendorsWithSales = VD.filter(v => v.sales && v.sales.t > 0)
-    .sort((a, b) => (b.sales?.t || 0) - (a.sales?.t || 0));
-
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title">Sales History by Year</span>
-        <span class="sm muted">${vendorsWithSales.length} vendors with sales data</span>
-      </div>
-      <div class="tbl-wrap" style="max-height:calc(100vh - 240px);overflow-y:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th style="position:sticky;left:0;background:var(--surface);z-index:1;">Vendor</th>
-              <th>Rep</th>
-              ${years.map(y => `<th class="mono">${y}</th>`).join('')}
-              <th class="mono">5-Yr Total</th>
-              <th>Trend</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${vendorsWithSales.slice(0, 100).map(v => {
-              const trend = v.sales.tr !== undefined ? v.sales.tr : 0;
-              const trendColor = trend > 0 ? 'var(--green)' : trend < 0 ? 'var(--accent)' : 'var(--text-3)';
-              return `
-                <tr>
-                  <td style="position:sticky;left:0;background:var(--surface);font-weight:600;white-space:nowrap;">${esc(v.name)}</td>
-                  <td class="sm muted">${esc(v.rep) || '—'}</td>
-                  ${years.map(y => `<td class="mono sm">${v.sales[y] ? fmt$(v.sales[y]) : '—'}</td>`).join('')}
-                  <td class="mono fw6">${fmt$(v.sales.t)}</td>
-                  <td class="mono sm" style="color:${trendColor};">${trend > 0 ? '+' : ''}${(trend * 100).toFixed(0)}%</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-function renderSales(container) {
-  const vendorsWithSales = VD.filter(v => v.sales && v.sales.t > 0)
-    .sort((a, b) => (b.sales?.t || 0) - (a.sales?.t || 0));
-
-  const totalSales = vendorsWithSales.reduce((sum, v) => sum + (v.sales?.t || 0), 0);
-
-  container.innerHTML = `
-    <div class="card mb16">
-      <div class="g4">
-        <div class="stat-card">
-          <div class="stat-label">Total 5-Yr Sales</div>
-          <div class="stat-value">${fmt$(totalSales)}</div>
-          <div class="stat-sub">${vendorsWithSales.length} vendors</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg per Vendor</div>
-          <div class="stat-value">${fmt$(totalSales / vendorsWithSales.length)}</div>
-          <div class="stat-sub">Mean 5-year total</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Top Vendor</div>
-          <div class="stat-value" style="font-size:16px;">${esc(vendorsWithSales[0]?.name || '—')}</div>
-          <div class="stat-sub">${fmt$(vendorsWithSales[0]?.sales?.t)}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Vendors > $100K</div>
-          <div class="stat-value">${vendorsWithSales.filter(v => v.sales.t >= 100000).length}</div>
-          <div class="stat-sub">Major suppliers</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title">Sales Analysis</span>
-      </div>
-      <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Vendor</th>
-              <th>Rep</th>
-              <th class="mono">2021</th>
-              <th class="mono">2022</th>
-              <th class="mono">2023</th>
-              <th class="mono">2024</th>
-              <th class="mono">2025</th>
-              <th class="mono">5-Yr Total</th>
-              <th>% of Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${vendorsWithSales.map((v, i) => {
-              const pct = (v.sales.t / totalSales * 100).toFixed(1);
-              return `
-                <tr>
-                  <td class="mono muted">${i + 1}</td>
-                  <td style="font-weight:600;">${esc(v.name)}</td>
-                  <td class="sm muted">${esc(v.rep) || '—'}</td>
-                  <td class="mono sm">${v.sales['2021'] ? fmt$(v.sales['2021']) : '—'}</td>
-                  <td class="mono sm">${v.sales['2022'] ? fmt$(v.sales['2022']) : '—'}</td>
-                  <td class="mono sm">${v.sales['2023'] ? fmt$(v.sales['2023']) : '—'}</td>
-                  <td class="mono sm">${v.sales['2024'] ? fmt$(v.sales['2024']) : '—'}</td>
-                  <td class="mono sm">${v.sales['2025'] ? fmt$(v.sales['2025']) : '—'}</td>
-                  <td class="mono fw6">${fmt$(v.sales.t)}</td>
-                  <td class="mono sm muted">${pct}%</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
-function renderChangelog(container) {
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-hd">
-        <span class="card-title">Vendor Ranking Changelog</span>
-      </div>
-      <div style="padding:20px;">
-        <div style="border-left:2px solid var(--accent);padding-left:16px;margin-bottom:20px;">
-          <div style="font-weight:700;margin-bottom:4px;">v6.4 — April 3, 2026</div>
-          <div class="sm muted mb8">Vendor data overhaul + navigation system</div>
-          <ul style="font-size:13px;line-height:1.7;color:var(--text-2);">
-            <li>Deleted 23 vendors (SATCO, NUVO, SAVOY HOUSE MERIDIAN, CANARM, OXYGEN, and others)</li>
-            <li>Marked ELK HOME and SAYLITE as Closed status</li>
-            <li>Merged KALCO ALLEGRI sales data into KALCO</li>
-            <li>Updated all rep group assignments from verified master file (471 vendors)</li>
-            <li>Added tabbed navigation: Overview, Scores, Rep List, Rep View, Inventory, History, Sales, Changelog</li>
-            <li>Built Overview dashboard with stats and tier distribution</li>
-            <li>Added Rep List with contact directory (30 rep groups)</li>
-            <li>Added Rep View for filtering vendors by rep group</li>
-            <li>Added History view with sales by year</li>
-            <li>Added Sales analysis with totals and percentages</li>
-          </ul>
-        </div>
-
-        <div style="border-left:2px solid var(--border-light);padding-left:16px;margin-bottom:20px;">
-          <div style="font-weight:700;margin-bottom:4px;">v6.3 — Previous Release</div>
-          <div class="sm muted mb8">Original vendor ranking system</div>
-          <ul style="font-size:13px;line-height:1.7;color:var(--text-2);">
-            <li>494 vendors with 14 scoring categories</li>
-            <li>Weighted scoring system (100 points)</li>
-            <li>Tier-based ranking (A-F)</li>
-            <li>CSV export and import functionality</li>
-            <li>Vendor detail panel with inline editing</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  `;
+  renderVendors($('pg-content'));
+  toast('Change reverted', 'ok');
 }
 
 
