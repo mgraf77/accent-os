@@ -604,7 +604,7 @@ function scoreColor(s){if(s===null||s==='na')return'var(--border)';if(s>=8)retur
 function dispScore(s){if(s===null)return`<span class="na">—</span>`;if(s==='na')return`<span class="na">N/A</span>`;return s;}
 function fmt$(n){if(!n||isNaN(n))return'—';return'$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:0});}
 
-let vFilter='',vTier='All',vRep='All',vScoredOnly=false;
+let vFilter='',vTier='All',vRep='All',vScoredOnly=false,vSection='scores';
 
 // ── VENDORS PAGE ──────────────────────────────────────────
 function vendors(el,act){
