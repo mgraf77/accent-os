@@ -449,17 +449,6 @@ function doLogin(){
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!$('app').classList.contains('on'))doLogin(); });
 */
 
-// Auto-login initialization
-window.addEventListener('DOMContentLoaded', () => {
-  $('app').classList.add('on');
-  $('u-av').textContent=CU.ini;
-  $('u-name').textContent=CU.name;
-  $('u-role').textContent=CU.role;
-  if(CU.role!=='Admin')qsa('.admin-only').forEach(el=>el.style.display='none');
-  $('fb-btn').classList.add('on');
-  goTo('dashboard');
-});
-
 function doLogout(){ if(confirm('Sign out?')){ CU=null; location.reload(); } }
 
 // ── SIDEBAR ───────────────────────────────────────────────
@@ -2172,6 +2161,17 @@ function settings(el){el.innerHTML=`<div class="g2">
 
 // ── HELPERS ───────────────────────────────────────────────
 function getS(k){return sessionStorage.getItem(k)||'';}
+
+// ── AUTO-LOGIN INITIALIZATION (LOGIN TEMPORARILY DISABLED) ──
+window.addEventListener('DOMContentLoaded', () => {
+  $('app').classList.add('on');
+  $('u-av').textContent=CU.ini;
+  $('u-name').textContent=CU.name;
+  $('u-role').textContent=CU.role;
+  if(CU.role!=='Admin')qsa('.admin-only').forEach(el=>el.style.display='none');
+  $('fb-btn').classList.add('on');
+  goTo('dashboard');
+});
 </script>
 </body>
 </html>
