@@ -881,6 +881,7 @@ function renderScores(container) {
     <div class="card-hd" style="padding-bottom:14px;flex-wrap:wrap;gap:10px;">
       <span class="card-title">Vendor Rankings</span>
       <button class="btn btn-sm btn-outline" onclick="openScoringMatrix()">📊 Scoring Matrix</button>
+      <button class="btn btn-sm btn-outline" onclick="openScoringSystem()">📋 Scoring System</button>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <input class="srch" placeholder="Search vendors..." value="${esc(vFilter)}" oninput="vFilter=this.value;renderVendors($('pg-content'))">
         <div style="display:flex;gap:5px;">
@@ -971,6 +972,315 @@ function openScoringMatrix() {
     </div>
   `);
 }
+
+function openScoringSystem() {
+  const rubricData = {
+    'Rebates (10)': {
+      10: 'Rebates ≥6%',
+      9: '5-5.9%',
+      8: '4-4.9%',
+      7: '3-3.9%',
+      6: '2.5-2.9%',
+      5: '2-2.4%',
+      4: '1.5-1.9%',
+      3: '1-1.4%',
+      2: '<1%',
+      1: 'Exists but useless',
+      0: 'None'
+    },
+    'Discounts (8)': {
+      10: 'Discounts ≥20%',
+      9: '15-19%',
+      8: '12-14%',
+      7: '10-11%',
+      6: '8-9%',
+      5: '6-7%',
+      4: '4-5%',
+      3: '2-3%',
+      2: '<2%',
+      1: 'Rarely honored',
+      0: 'None'
+    },
+    'Credit Terms (6)': {
+      10: 'Net 120+',
+      9: 'Net 90',
+      8: 'Net 75',
+      7: 'Net 60',
+      6: 'Net 45',
+      5: 'Net 30',
+      4: 'Net 15',
+      3: 'COD w/ occasional flex',
+      2: 'COD only',
+      1: 'Strict prepayment',
+      0: 'No credit'
+    },
+    'Freight (8)': {
+      10: 'Free freight <$500',
+      9: 'Free $500-749',
+      8: 'Free $750-999',
+      7: 'Free $1000-1499',
+      6: 'Free $1500-1999',
+      5: 'Free $2000-2499',
+      4: 'Free $2500-2999',
+      3: 'Free $3000-3499',
+      2: 'Free $3500-3999',
+      1: 'Free $4000+',
+      0: 'No free freight'
+    },
+    'Returns/RGA (7)': {
+      10: 'Free returns, no restock fee, <7 days',
+      9: 'No restock fee, <14 days',
+      8: '≤10% restock fee, quick process',
+      7: '≤15% restock fee, 2-3 weeks',
+      6: '≤20% restock fee, slow',
+      5: '≤25% restock fee',
+      4: '25-30% restock fee',
+      3: '>30% restock fee',
+      2: 'Case-by-case approval',
+      1: 'Rare approvals only',
+      0: 'No returns accepted'
+    },
+    'IMAP/Markup (8)': {
+      10: 'Strict IMAP enforcement',
+      9: 'Strong enforcement',
+      8: 'Enforced with occasional issues',
+      7: 'Major accounts comply',
+      6: 'Spotty enforcement',
+      5: 'Weak enforcement',
+      4: 'Many violations',
+      3: 'Little enforcement or communication',
+      2: 'IMAP in name only',
+      1: 'No penalties ever',
+      0: 'No IMAP policy'
+    },
+    'Marketing Funds (7)': {
+      10: '≥3% MDF or co-op',
+      9: '2.5-2.9%',
+      8: '2-2.4%',
+      7: '1.5-1.9%',
+      6: '1.0-1.4%',
+      5: '0.8-0.9%',
+      4: '0.5-0.7%',
+      3: '0.3-0.4%',
+      2: '0.1-0.2%',
+      1: 'Exists but impossible to use',
+      0: 'None'
+    },
+    'Display (6)': {
+      10: '100% showroom coverage',
+      9: '75-99% coverage',
+      8: '50-74% coverage',
+      7: '40-49% coverage',
+      6: '30-39% coverage',
+      5: '20-29% coverage',
+      4: '15-19% coverage',
+      3: '10-14% coverage',
+      2: '5-9% coverage',
+      1: '<5% coverage',
+      0: 'No display program'
+    },
+    'Lights Am. (5)': {
+      10: '100% catalog on Lights America',
+      9: '90-99% on site',
+      8: '75-89% on site',
+      7: '60-74% on site',
+      6: '50-59% on site',
+      5: '40-49% on site',
+      4: '25-39% on site',
+      3: '10-24% on site',
+      2: '<10% on site',
+      1: 'Outdated listing only',
+      0: 'Not on Lights America'
+    },
+    'Web Listing (4)': {
+      10: 'Prominent dealer listing',
+      9: 'Listed prominently',
+      8: 'Listed but secondary',
+      7: 'Listed under general dealers',
+      6: 'Hidden in dealer list',
+      5: 'Rarely updated listing',
+      4: 'Outdated listing',
+      3: 'Requires digging to find',
+      2: 'Very poor listing',
+      1: 'Name only, no link',
+      0: 'Not listed on website'
+    },
+    'Rep Score (8)': {
+      10: 'Proactive, full support',
+      9: 'Excellent, solves issues fast',
+      8: 'Good support overall',
+      7: 'Reliable but not proactive',
+      6: 'Adequate service',
+      5: 'Average rep performance',
+      4: 'Below average',
+      3: 'Reactive only',
+      2: 'Rarely helpful',
+      1: 'Unreliable',
+      0: 'No rep assigned'
+    },
+    'DTC (7)': {
+      10: 'No DTC sales',
+      9: 'Controlled DTC only',
+      8: 'Minimal DTC presence',
+      7: 'Some DTC with limits',
+      6: 'Occasional DTC overlap',
+      5: 'Noticeable DTC presence',
+      4: 'Regular DTC activity',
+      3: 'Strong online DTC',
+      2: 'Frequent DTC competition',
+      1: 'Aggressive DTC strategy',
+      0: 'Heavy DTC undermining dealers'
+    },
+    'L1 Member (6)': {
+      10: 'Full Lighting One benefits',
+      9: 'Strong membership',
+      8: 'Partial benefits',
+      7: 'Weak participation',
+      6: 'Minimal benefits',
+      5: 'Member in name only',
+      4: 'Very little benefit',
+      3: 'Rarely active',
+      2: 'Essentially inactive',
+      1: 'Listed only',
+      0: 'Not a member'
+    },
+    'Demand (10)': {
+      10: 'Top 10% brand demand',
+      9: 'Very strong demand',
+      8: 'Strong demand',
+      7: 'Moderate-high demand',
+      6: 'Moderate demand',
+      5: 'Average demand',
+      4: 'Below average demand',
+      3: 'Weak demand',
+      2: 'Very low demand',
+      1: 'Almost no demand',
+      0: 'No measurable demand'
+    }
+  };
+
+  const financialTerms = ['Rebates (10)', 'Discounts (8)', 'Credit Terms (6)', 'Freight (8)', 'Returns/RGA (7)', 'IMAP/Markup (8)'];
+  const salesMarketing = ['Marketing Funds (7)', 'Display (6)', 'Lights Am. (5)', 'Web Listing (4)', 'Rep Score (8)', 'DTC (7)', 'L1 Member (6)', 'Demand (10)'];
+
+  const getCurrentWeights = () => {
+    return CAT_DEFS.map(c => ({ label: c.label, weight: c.weight, key: c.key }));
+  };
+
+  const currentWeights = getCurrentWeights();
+
+  openModal('Scoring System — Category Weights & 0–10 Rubric', `
+    <div style="max-height:70vh;overflow-y:auto;">
+      <!-- Category Groups -->
+      <div class="g2 mb16" style="margin-bottom:24px;">
+        <div>
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text-2);">FINANCIAL TERMS</h3>
+          <div style="display:grid;gap:8px;">
+            ${financialTerms.map(cat => {
+              const weight = currentWeights.find(w => w.label === cat)?.weight || 0;
+              const pct = ((weight / TOTAL_WEIGHT) * 100).toFixed(1);
+              return `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:var(--radius-sm);">
+                <span style="font-weight:600;font-size:13px;">${cat}</span>
+                <span class="mono" style="font-weight:700;color:var(--accent);">${pct}%</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div>
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text-2);">SALES, MARKETING & MARKET POSITION</h3>
+          <div style="display:grid;gap:8px;">
+            ${salesMarketing.map(cat => {
+              const weight = currentWeights.find(w => w.label === cat)?.weight || 0;
+              const pct = ((weight / TOTAL_WEIGHT) * 100).toFixed(1);
+              return `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:var(--radius-sm);">
+                <span style="font-weight:600;font-size:13px;">${cat}</span>
+                <span class="mono" style="font-weight:700;color:var(--blue);">${pct}%</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Rubric Table -->
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;margin-top:24px;">0–10 Scoring Rubric</h3>
+      <div style="overflow-x:auto;margin-bottom:24px;">
+        <table style="width:100%;font-size:11px;">
+          <thead>
+            <tr style="background:var(--surface2);">
+              <th style="padding:8px;text-align:center;position:sticky;left:0;background:var(--surface2);z-index:1;">Score</th>
+              ${Object.keys(rubricData).map(cat => `<th style="padding:8px;min-width:120px;">${cat}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${[10,9,8,7,6,5,4,3,2,1,0].map(score => `
+              <tr style="border-bottom:1px solid var(--border-light);">
+                <td style="padding:8px;text-align:center;font-weight:700;background:${score >= 8 ? 'var(--green-bg)' : score >= 6 ? 'var(--yellow-bg)' : score >= 4 ? 'var(--surface2)' : 'var(--red-bg)'};position:sticky;left:0;z-index:1;">${score}</td>
+                ${Object.keys(rubricData).map(cat => `
+                  <td style="padding:8px;font-size:10px;line-height:1.3;">${rubricData[cat][score]}</td>
+                `).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Weight Scenario Builder -->
+      <div style="margin-top:32px;padding:20px;background:var(--surface2);border-radius:var(--radius);border:2px solid var(--border);">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Weight Scenario Builder</h3>
+        <p style="font-size:12px;color:var(--text-3);margin-bottom:16px;">Test alternate weight distributions without affecting live scores. Weights must sum to 1.00.</p>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;font-size:12px;">
+          <div style="font-weight:700;padding:8px;">Category</div>
+          <div style="font-weight:700;padding:8px;text-align:center;">Live</div>
+          <div style="font-weight:700;padding:8px;text-align:center;">Scenario A</div>
+          <div style="font-weight:700;padding:8px;text-align:center;">Scenario B</div>
+
+          ${currentWeights.map((c, i) => `
+            <div style="padding:6px 8px;background:var(--surface);border-radius:4px;">${c.label}</div>
+            <div style="padding:6px 8px;text-align:center;background:var(--surface);border-radius:4px;" class="mono">${((c.weight / TOTAL_WEIGHT) * 100).toFixed(1)}%</div>
+            <div style="padding:6px 8px;text-align:center;background:var(--surface);border-radius:4px;">
+              <input type="number" id="scenario-a-${i}" step="0.1" min="0" max="100"
+                     value="${((c.weight / TOTAL_WEIGHT) * 100).toFixed(1)}"
+                     oninput="updateScenarioSum('a')"
+                     style="width:60px;padding:4px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;">
+            </div>
+            <div style="padding:6px 8px;text-align:center;background:var(--surface);border-radius:4px;">
+              <input type="number" id="scenario-b-${i}" step="0.1" min="0" max="100"
+                     value="${((c.weight / TOTAL_WEIGHT) * 100).toFixed(1)}"
+                     oninput="updateScenarioSum('b')"
+                     style="width:60px;padding:4px;text-align:center;border:1px solid var(--border);border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;">
+            </div>
+          `).join('')}
+
+          <div style="padding:8px;font-weight:700;border-top:2px solid var(--border);margin-top:8px;">Total</div>
+          <div style="padding:8px;text-align:center;font-weight:700;border-top:2px solid var(--border);margin-top:8px;" class="mono">100%</div>
+          <div id="scenario-a-sum" style="padding:8px;text-align:center;font-weight:700;border-top:2px solid var(--border);margin-top:8px;" class="mono">100.0%</div>
+          <div id="scenario-b-sum" style="padding:8px;text-align:center;font-weight:700;border-top:2px solid var(--border);margin-top:8px;" class="mono">100.0%</div>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function updateScenarioSum(scenario) {
+  const catCount = CAT_DEFS.length;
+  let sum = 0;
+
+  for (let i = 0; i < catCount; i++) {
+    const input = document.getElementById('scenario-' + scenario + '-' + i);
+    if (input) {
+      sum += parseFloat(input.value) || 0;
+    }
+  }
+
+  const sumEl = document.getElementById('scenario-' + scenario + '-sum');
+  if (sumEl) {
+    sumEl.textContent = sum.toFixed(1) + '%';
+    sumEl.style.color = Math.abs(sum - 100) < 0.1 ? 'var(--green)' : 'var(--accent)';
+    sumEl.style.fontWeight = '700';
+  }
+}
+
+
 
 function openScoreDetail(vendorId, categoryKey) {
   const v = VD.find(x => x.id === vendorId);
