@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AccentOS v6.4 — Accent Lighting Inc.</title>
+<title>AccentOS v6.6 — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -536,6 +536,117 @@ let activity=[];
 function log(color,icon,text,time){ activity.unshift({color,icon,text,time}); if(activity.length>30)activity.pop(); }
 log('grn','⚡','AccentOS v6.3 loaded — 494 vendors · 14 categories · Sales history','Today');
 
+// ── PRODUCT CATEGORY TAXONOMY (3-tier, matches accentlightinginc.com) ──────
+const PRODUCT_TAXONOMY = {
+  'Indoor Lighting': {
+    'Chandeliers': ['Mini Chandelier','Mid Chandelier','Large Chandelier','Linear / Island','Multi-System / Modular'],
+    'Pendants': ['Mini Pendant','Standard Pendant','Multi-Light Pendant'],
+    'Flush & Semi-Flush': ['Flush Mount','Semi-Flush Mount'],
+    'Sconces': ['Wall Sconce / Indoor','Bath / Vanity Bar','Foyer / Hall Lantern'],
+    'Recessed': ['Recessed Can / Trim','LED Wafer / Retrofit'],
+    'Lamps': ['Table Lamp','Floor Lamp','Desk / Task Lamp','Buffet / Accent Lamp','Torchiere / Arc','Cordless / Portable'],
+  },
+  'Exterior': {
+    'Wall-Mounted': ['Wall Sconce / Outdoor','Wall Mount / Flush','Wall Mount + Flush Combo'],
+    'Ceiling / Hanging': ['Ceiling Mount (Exterior)','Hanging / Pendant (Exterior)','Exterior Chandelier'],
+    'Post & Pier': ['Post / Pole','Post / Pier Head','Pier Mount'],
+    'Landscape': ['Path / Ground Light','Spot / Well Light','Flood / Security','Step / Brick Light','Solar'],
+    'Exterior Décor': ['Decor / Furniture / Mailbox'],
+    'Specialty Exterior': ['Patio / Garden Lamp'],
+  },
+  'Fans': {
+    'Standard Fans': ['Standard Ceiling Fan','Hugger / Low-Profile','Fandelier (Fan + Light)'],
+    'Location-Rated Fans': ['Damp Location Fan','Wet Location Fan'],
+    'Fan Accessories': ['Fan Blade','Light Kit','Fan Control / Remote','Fan Fitter','Portable / Wall Fan'],
+  },
+  'More Categories': {
+    'Bulbs & Lamps': ['LED Bulb','Specialty / Decorative Bulb','Smart Bulb','Fluorescent / CFL'],
+    'Mirrors': ['Decorative Mirror','Lighted Mirror / Electric Mirror'],
+    'Décor & Furniture': ['Furniture','Home Accents / Décor','Holiday / Seasonal'],
+    'Plumbing': ['Plumbing Fixture / Accessory'],
+  },
+  'Commercial': {
+    'Linear & Troffer': ['LED Troffer','Linear Strip / High-Output','Architectural Linear'],
+    'Track & Recessed': ['Track Head / Rail','Recessed Commercial','Monorail'],
+    'Industrial': ['High Bay','Low Bay','Warehouse / Outdoor Area'],
+    'Controls & Safety': ['Emergency / Exit','Occupancy Sensor / Timer','Dimmer / Control'],
+  },
+  'Controls & Accessories': {
+    'Controls': ['Dimmer Switch','Smart / Wi-Fi Control','Fan Control / Remote','Sensor / Timer','Transformer'],
+    'Hardware': ['Canopy / Extension Rod','Mounting Hardware','Replacement Glass / Shade','Lamp Parts / Fittings'],
+    'LED & Power': ['LED Strip / Tape','Driver / Power Supply','Under Cabinet LED'],
+  }
+};
+
+const vendorProductCats = {};
+function getVPCats(vid){ return vendorProductCats[vid] || new Set(); }
+function setVPCats(vid, s){ vendorProductCats[vid] = s; }
+
+const CAT_COLORS = {'Indoor Lighting':'#e65100','Exterior':'#1565c0','Fans':'#2e7d32','More Categories':'#00695c','Commercial':'#6a1b9a','Controls & Accessories':'#880e4f'};
+
+function renderCatChips(vid, max=3){
+  const cats = getVPCats(vid);
+  if(!cats.size) return '<span class="na">—</span>';
+  const arr = [...cats];
+  const shown = arr.slice(0, max);
+  const extra = arr.length - max;
+  let h = '<div style="display:flex;flex-wrap:wrap;gap:3px;">';
+  shown.forEach(k => {
+    const top = k.split('>')[0];
+    const type = k.split('>')[2] || k.split('>')[1] || top;
+    const col = CAT_COLORS[top] || '#666';
+    h += `<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:${col}18;color:${col};border:1px solid ${col}30;white-space:nowrap;">${type}</span>`;
+  });
+  if(extra > 0){
+    const title = arr.slice(max).map(k=>k.split('>')[2]||k.split('>')[1]).join(', ');
+    h += `<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg);color:var(--text-3);border:1px solid var(--border);cursor:pointer;" title="${title}">+${extra}</span>`;
+  }
+  h += '</div>';
+  return h;
+}
+
+let vCatFilter = '';
+
+function openCategoryEditor(vid, vname, onSave){
+  const existing = getVPCats(vid);
+  let body = '';
+  for(const [cat, subs] of Object.entries(PRODUCT_TAXONOMY)){
+    const col = CAT_COLORS[cat]||'#666';
+    body += `<div style="break-inside:avoid;margin-bottom:14px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${col};border-bottom:2px solid ${col}40;padding-bottom:4px;margin-bottom:6px;">${cat}</div>`;
+    for(const [sub, types] of Object.entries(subs)){
+      body += `<div style="font-size:11px;font-weight:600;color:var(--text-2);margin:6px 0 3px 0;">${sub}</div>`;
+      types.forEach(tp => {
+        const key = `${cat}>${sub}>${tp}`;
+        const chk = existing.has(key) ? 'checked' : '';
+        body += `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);padding:2px 0;cursor:pointer;"><input type="checkbox" value="${key}" ${chk} style="accent-color:${col};cursor:pointer;"> ${tp}</label>`;
+      });
+    }
+    body += `</div>`;
+  }
+  const overlay = document.createElement('div');
+  overlay.id = 'catEditorOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:var(--surface);border-radius:10px;width:820px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,0.2);"><div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;"><div><div style="font-size:13px;font-weight:700;">Product Categories</div><div style="font-size:11px;color:var(--text-3);margin-top:2px;">${vname}</div></div><div style="display:flex;align-items:center;gap:10px;"><span id="catEdCount" style="font-size:11px;color:var(--text-3);">0 selected</span><button class="btn btn-sm btn-accent" id="catEdSave">Save</button><button class="btn btn-sm btn-outline" onclick="document.getElementById('catEditorOverlay').remove()">Cancel</button></div></div><div style="overflow-y:auto;padding:16px 20px;flex:1;columns:3;column-gap:20px;">${body}</div></div>`;
+  document.body.appendChild(overlay);
+  function updateCount(){ document.getElementById('catEdCount').textContent = overlay.querySelectorAll('input:checked').length + ' selected'; }
+  overlay.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', updateCount));
+  updateCount();
+  document.getElementById('catEdSave').onclick = () => {
+    const sel = new Set();
+    overlay.querySelectorAll('input:checked').forEach(cb => sel.add(cb.value));
+    setVPCats(vid, sel);
+    overlay.remove();
+    if(onSave) onSave();
+  };
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+
+function totalRawScore(scores){
+  let sum=0, max=0;
+  CAT_DEFS.forEach(c => { const s=scores[c.key]; if(typeof s==='number'){sum+=s;max+=10;} });
+  return max > 0 ? {sum:Math.round(sum*10)/10, max} : null;
+}
+
 // ══════════════════════════════════════════════════════════
 // ── VENDOR RANKING MODULE — 494 VENDORS FROM MASTER XLSX ─
 // ══════════════════════════════════════════════════════════
@@ -825,9 +936,12 @@ function renderScores(container) {
     const q = vFilter.toLowerCase();
     const ws = weightedScore(v.scores);
     const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
+    const vcats = getVPCats(v.id);
+    const catMatch = !vCatFilter || [...vcats].some(k => k.startsWith(vCatFilter));
     return (!q || v.name.toLowerCase().includes(q) || (v.cat || '').toLowerCase().includes(q))
       && (vTier === 'All' || (vTier === 'TBD' ? adaptiveTier === null : adaptiveTier === vTier))
-      && (!vScoredOnly || scoredCount(v.scores) > 0);
+      && (!vScoredOnly || scoredCount(v.scores) > 0)
+      && catMatch;
   });
 
   // Default alphabetical sort by name
@@ -848,6 +962,11 @@ function renderScores(container) {
     } else if (vSortCol === 'cats') {
       aVal = scoredCount(a.scores);
       bVal = scoredCount(b.scores);
+    } else if (vSortCol === 'total') {
+      const ta = totalRawScore(a.scores); const tb = totalRawScore(b.scores);
+      aVal = ta ? ta.sum : -999; bVal = tb ? tb.sum : -999;
+    } else if (vSortCol === 'cats_filter') {
+      aVal = getVPCats(a.id).size; bVal = getVPCats(b.id).size;
     } else {
       // Sorting by specific category
       const cat = CAT_DEFS.find(c => c.key === vSortCol);
@@ -884,6 +1003,10 @@ function renderScores(container) {
       <button class="btn btn-sm btn-outline" onclick="openScoringSystem()">📋 Scoring System</button>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <input class="srch" placeholder="Search vendors..." value="${esc(vFilter)}" oninput="vFilter=this.value;renderVendors($('pg-content'))">
+        <select class="srch" style="min-width:160px;" onchange="vCatFilter=this.value;renderVendors($('pg-content'))">
+          <option value="" ${!vCatFilter?'selected':''}>All Categories</option>
+          ${Object.keys(PRODUCT_TAXONOMY).map(cat=>`<option value="${cat}" ${vCatFilter===cat?'selected':''}>${cat}</option>`).join('')}
+        </select>
         <div style="display:flex;gap:5px;">
           ${['All','A','B','C','D','F','TBD'].map(t=>`<div class="pill ${vTier===t?'on':''}" onclick="vTier='${t}';renderVendors($('pg-content'))">${t}</div>`).join('')}
         </div>
@@ -899,6 +1022,8 @@ function renderScores(container) {
           <th onclick="sortScores('tier')" style="cursor:pointer;">Tier ${vSortCol==='tier'?(vSortDir===1?'▲':'▼'):''}</th>
           <th onclick="sortScores('score')" style="cursor:pointer;">Score ${vSortCol==='score'?(vSortDir===1?'▲':'▼'):''}</th>
           <th onclick="sortScores('cats')" style="cursor:pointer;">Cats ${vSortCol==='cats'?(vSortDir===1?'▲':'▼'):''}</th>
+          <th onclick="sortScores('total')" style="cursor:pointer;min-width:70px;" title="Raw total score / max possible">Total ${vSortCol==='total'?(vSortDir===1?'▲':'▼'):''}</th>
+          <th onclick="sortScores('cats_filter')" style="cursor:pointer;min-width:80px;" title="Product categories assigned">Prod Cat ${vSortCol==='cats_filter'?(vSortDir===1?'▲':'▼'):''}</th>
           ${CAT_DEFS.filter(c => c.key !== 'repScore').map(c=>`<th onclick="sortScores('${c.key}')" title="${c.label} (wt:${c.weight})" style="min-width:52px;font-size:10px;cursor:pointer;">${c.label.split(' ')[0].substring(0,6)} ${vSortCol===c.key?(vSortDir===1?'▲':'▼'):''}</th>`).join('')}
           <th></th>
         </tr></thead>
@@ -912,6 +1037,8 @@ function renderScores(container) {
               <td>${tierBadge(adaptiveTier)}</td>
               <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
               <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
+              <td>${(()=>{const t=totalRawScore(v.scores);return t?`<span class="mono" style="font-size:11px;color:var(--text-2);">${t.sum}<span style="color:var(--text-3)">/${t.max}</span></span>`:'<span class="na">—</span>'})()}</td>
+              <td onclick="openCategoryEditor(v.id,v.name,()=>renderVendors($('pg-content')))" style="cursor:pointer;" title="Click to edit categories">${renderCatChips(v.id,3)}</td>
               ${CAT_DEFS.filter(c => c.key !== 'repScore').map(c=>{
                 const s=v.scores[c.key];
                 if(s===null||s===undefined)return`<td><span class="na">—</span></td>`;
@@ -1372,7 +1499,7 @@ function openVendorDetail(vendorId) {
     <div style="position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px;z-index:1;">
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
         <h2 style="font-size:20px;font-weight:700;margin:0;">${esc(v.name)}</h2>
-        <button class="btn btn-sm btn-outline" onclick="closeVendorDetail()">✕ Close</button>
+        <div style="display:flex;gap:6px;"><button class="btn btn-sm btn-outline" onclick="openVendorEdit(v.id)">✏️ Edit</button><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(v.id,'${esc(v.name)}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(v.id);renderVendors($('pg-content'))})">🏷️ Cats</button><button class="btn btn-sm btn-outline" onclick="closeVendorDetail()">✕ Close</button></div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${tierBadge(adaptiveTier)}
@@ -1412,6 +1539,7 @@ function openVendorDetail(vendorId) {
         </div>
       ` : ''}
 
+      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);"><div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Product Categories</div><div style="margin-bottom:8px;">${renderCatChips(v.id, 30)}</div><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(v.id,'${esc(v.name)}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(v.id);renderVendors($('pg-content'))})" style="font-size:10px;">🏷️ Edit Categories</button>${(()=>{const t=totalRawScore(v.scores);return t?`<div style="margin-top:8px;font-size:11px;color:var(--text-3);">Raw total: <strong style="color:var(--text);">${t.sum} / ${t.max}</strong> pts</div>`:''})()}</div>
       <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:12px;">Scoring Breakdown</div>
       <div style="display:grid;gap:12px;">
         ${CAT_DEFS.map(c => {
