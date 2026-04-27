@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AccentOS v6.8 — Accent Lighting Inc.</title>
+<title>AccentOS v6.9 — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -491,7 +491,7 @@ const PAGE_META={
   vendors:   {t:'Vendor Ranking',s:'Vendor Ranking 2026'},
   changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
   marketing: {t:'Marketing Hub',s:''},
-  roadmap:   {t:'Build Roadmap',s:'AccentOS v6.8'},
+  roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
   mgmt:      {t:'Management Dashboard',s:'Owner View'},
   settings:  {t:'Settings',s:''},
 };
@@ -534,7 +534,7 @@ async function submitFB(){
 // ── ACTIVITY LOG ──────────────────────────────────────────
 let activity=[];
 function log(color,icon,text,time){ activity.unshift({color,icon,text,time}); if(activity.length>30)activity.pop(); }
-log('grn','⚡','AccentOS v6.8 loaded — 494 vendors · 14 categories · Sales history','Today');
+log('grn','⚡','AccentOS v6.9 loaded — 494 vendors · 14 categories · Parent grouping','Today');
 
 // ── PRODUCT CATEGORY TAXONOMY (3-tier, matches accentlightinginc.com) ──────
 const PRODUCT_TAXONOMY = {
@@ -817,6 +817,52 @@ async function sbAppendChangelog(entry){
   }
 }
 
+// ── PARENT COMPANIES (v6.9) ─────────────────────────────────
+// Tables: parent_companies(id uuid, name, type, ...) +
+//         vendor_parent_assignments(vendor_id, parent_id, ...)
+// PARENT_COMPANIES: array of {id, name, type, notes}
+// VENDOR_PARENTS: vendor_id (number) -> parent_id (uuid string)
+// PARENT_BY_ID: parent_id (uuid string) -> {id, name, type, notes}
+let PARENT_COMPANIES = [];
+let VENDOR_PARENTS = {};
+let PARENT_BY_ID = {};
+
+async function sbLoadParents(){
+  if(!sbConfigured()) return false;
+  try{
+    const parents = await sbFetch('/parent_companies?select=id,name,type,notes&order=name.asc');
+    PARENT_COMPANIES = parents || [];
+    PARENT_BY_ID = {};
+    PARENT_COMPANIES.forEach(p => { PARENT_BY_ID[p.id] = p; });
+    const assigns = await sbFetch('/vendor_parent_assignments?select=vendor_id,parent_id');
+    VENDOR_PARENTS = {};
+    (assigns || []).forEach(a => { VENDOR_PARENTS[a.vendor_id] = a.parent_id; });
+    console.log(`[sb] Loaded ${PARENT_COMPANIES.length} parents, ${Object.keys(VENDOR_PARENTS).length} assignments`);
+    return PARENT_COMPANIES.length;
+  }catch(e){
+    console.warn('[sb] Load parents failed:', e.message);
+    return false;
+  }
+}
+
+// Get parent record for a vendor id, or null if standalone
+function getVendorParent(vendorId){
+  const pid = VENDOR_PARENTS[vendorId];
+  return pid ? PARENT_BY_ID[pid] || null : null;
+}
+
+// Get all sister vendors (excluding the source) for a given vendor id.
+// Returns array of vendor objects from VD.
+function getSisterVendors(vendorId){
+  const pid = VENDOR_PARENTS[vendorId];
+  if(!pid) return [];
+  const sisterIds = Object.keys(VENDOR_PARENTS)
+    .filter(vid => VENDOR_PARENTS[vid] === pid && Number(vid) !== Number(vendorId))
+    .map(Number);
+  if(typeof VD === 'undefined') return [];
+  return sisterIds.map(id => VD.find(v => v.id === id)).filter(Boolean);
+}
+
 
 // Pre-populate vendorProductCats from Vendor Profiles sheet (102 vendors mapped)
 function applyPrefillVendorCats(){
@@ -1011,6 +1057,7 @@ function dispScore(s){if(s===null)return`<span class="na">—</span>`;if(s==='na
 function fmt$(n){if(!n||isNaN(n))return'—';return'$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:0});}
 
 let vFilter='',vTier='All',vRep='All',vScoredOnly=false,vSection='scores';
+let vGroupByParent=false;
 
 
 // Brief rubric summary for column header tooltips (task 8).
@@ -1408,6 +1455,49 @@ function saveChangeLog(log) {
   // This shim exists for any legacy callers that expected to overwrite the log.
 }
 
+// ── v6.9 PARENT GROUPING HELPERS ───────────────────────────
+// Render one vendor row (used by both flat and grouped views).
+function buildScoresRow(v, allScores, opts={}){
+  const ws = weightedScore(v.scores);
+  const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
+  const sc = scoredCount(v.scores);
+  const indent = opts.indent ? 'padding-left:24px;' : '';
+  return `<tr>
+    <td style="font-weight:600;cursor:pointer;color:var(--accent);${indent}" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
+    <td>${tierBadge(adaptiveTier)}</td>
+    <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
+    <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
+    <td>${(()=>{const t=totalRawScore(v.scores);return t?`<span class="mono" style="font-size:11px;color:var(--text-2);">${t.sum}<span style="color:var(--text-3)">/${t.max}</span></span>`:'<span class="na">—</span>'})()}</td>
+    <td onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>renderVendors($('pg-content')))" style="cursor:pointer;" title="Click to edit categories">${renderCatChips(v.id,3)}</td>
+    ${CAT_DEFS.filter(c => c.key !== 'repScore').map(c=>{
+      const s=v.scores[c.key];
+      if(s===null||s===undefined)return`<td><span class="na">—</span></td>`;
+      if(s==='na')return`<td><span class="na">N/A</span></td>`;
+      return`<td onclick="openScoreDetail(${v.id},'${c.key}')" style="cursor:pointer;padding:2px;"><div style="background:${heatColor(s)};color:${heatTextColor(s)};border-radius:4px;padding:6px 0;text-align:center;font-family:'DM Mono',monospace;font-weight:700;font-size:13px;line-height:1;">${s}</div></td>`;
+    }).join('')}
+    <td><button class="btn btn-sm btn-outline" onclick="openVendorScoreEntry(${v.id})">Edit</button></td>
+  </tr>`;
+}
+
+// Render a parent group header row with rolled-up sales + average weighted score.
+function buildScoresParentHeader(parent, children, allScores){
+  const totalSales = children.reduce((sum, v) => sum + ((v.sales && v.sales.t) || 0), 0);
+  const childScores = children.map(v => weightedScore(v.scores)).filter(s => s !== null);
+  const avgScore = childScores.length ? (childScores.reduce((a,b)=>a+b,0)/childScores.length).toFixed(1) : null;
+  const colspan = 6 + CAT_DEFS.filter(c => c.key !== 'repScore').length + 1;
+  const salesFmt = totalSales >= 1000000 ? `$${(totalSales/1000000).toFixed(2)}M` : totalSales >= 1000 ? `$${(totalSales/1000).toFixed(0)}K` : `$${totalSales.toFixed(0)}`;
+  return `<tr style="background:linear-gradient(90deg,var(--surface2),var(--surface));border-top:2px solid var(--accent);">
+    <td colspan="${colspan}" style="padding:10px 12px;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <span style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;">🏢 ${esc(parent.name)}</span>
+        <span style="font-size:11px;color:var(--text-3);">${children.length} brand${children.length===1?'':'s'}</span>
+        <span style="font-size:11px;color:var(--text-2);">Combined sales: <span class="mono fw6">${salesFmt}</span></span>
+        ${avgScore ? `<span style="font-size:11px;color:var(--text-2);">Avg score: <span class="mono fw6" style="color:${scoreColor(parseFloat(avgScore))}">${avgScore}</span></span>` : ''}
+      </div>
+    </td>
+  </tr>`;
+}
+
 function renderScores(container) {
   // Get all vendors with scores for adaptive tier calculation
   const allScores = VD.map(v => weightedScore(v.scores)).filter(s => s !== null);
@@ -1497,6 +1587,9 @@ function renderScores(container) {
         <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text-2);">
           <input type="checkbox" ${vScoredOnly?'checked':''} onchange="vScoredOnly=this.checked;renderVendors($('pg-content'))"> Scored only
         </label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text-2);" title="Group vendors by corporate parent / umbrella brand">
+          <input type="checkbox" ${vGroupByParent?'checked':''} onchange="vGroupByParent=this.checked;renderVendors($('pg-content'))"> Group by parent
+        </label>
       </div>
     </div>
     <div class="tbl-wrap" style="max-height:calc(100vh - 380px);overflow-y:auto;">
@@ -1512,26 +1605,43 @@ function renderScores(container) {
           <th></th>
         </tr></thead>
         <tbody>
-          ${filtered.slice(0,200).map((v,i)=>{
-            const ws=weightedScore(v.scores);
-            const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
-            const sc=scoredCount(v.scores);
-            return`<tr>
-              <td style="font-weight:600;cursor:pointer;color:var(--accent);" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
-              <td>${tierBadge(adaptiveTier)}</td>
-              <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
-              <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
-              <td>${(()=>{const t=totalRawScore(v.scores);return t?`<span class="mono" style="font-size:11px;color:var(--text-2);">${t.sum}<span style="color:var(--text-3)">/${t.max}</span></span>`:'<span class="na">—</span>'})()}</td>
-              <td onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>renderVendors($('pg-content')))" style="cursor:pointer;" title="Click to edit categories">${renderCatChips(v.id,3)}</td>
-              ${CAT_DEFS.filter(c => c.key !== 'repScore').map(c=>{
-                const s=v.scores[c.key];
-                if(s===null||s===undefined)return`<td><span class="na">—</span></td>`;
-                if(s==='na')return`<td><span class="na">N/A</span></td>`;
-                return`<td onclick="openScoreDetail(${v.id},'${c.key}')" style="cursor:pointer;padding:2px;"><div style="background:${heatColor(s)};color:${heatTextColor(s)};border-radius:4px;padding:6px 0;text-align:center;font-family:'DM Mono',monospace;font-weight:700;font-size:13px;line-height:1;">${s}</div></td>`;
-              }).join('')}
-              <td><button class="btn btn-sm btn-outline" onclick="openVendorScoreEntry(${v.id})">Edit</button></td>
-            </tr>`;
-          }).join('')}
+          ${(()=>{
+            const cap = filtered.slice(0, 200);
+            if(!vGroupByParent){
+              return cap.map(v => buildScoresRow(v, allScores)).join('');
+            }
+            // Grouped mode: parents (sorted by combined sales desc) → independents
+            const byParent = {};
+            const independents = [];
+            cap.forEach(v => {
+              const pid = (typeof VENDOR_PARENTS!=='undefined') ? VENDOR_PARENTS[v.id] : null;
+              if(pid && PARENT_BY_ID[pid]){
+                if(!byParent[pid]) byParent[pid] = [];
+                byParent[pid].push(v);
+              } else {
+                independents.push(v);
+              }
+            });
+            // Sort parent groups by total combined sales desc
+            const parentIds = Object.keys(byParent).sort((a,b) => {
+              const sa = byParent[a].reduce((s,v) => s + ((v.sales && v.sales.t) || 0), 0);
+              const sb = byParent[b].reduce((s,v) => s + ((v.sales && v.sales.t) || 0), 0);
+              return sb - sa;
+            });
+            let html = '';
+            parentIds.forEach(pid => {
+              const parent = PARENT_BY_ID[pid];
+              const kids = byParent[pid];
+              html += buildScoresParentHeader(parent, kids, allScores);
+              html += kids.map(v => buildScoresRow(v, allScores, {indent:true})).join('');
+            });
+            if(independents.length){
+              const colspan = 6 + CAT_DEFS.filter(c => c.key !== 'repScore').length + 1;
+              html += `<tr style="background:var(--surface2);"><td colspan="${colspan}" style="padding:8px 12px;font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Independent Vendors (${independents.length})</td></tr>`;
+              html += independents.map(v => buildScoresRow(v, allScores)).join('');
+            }
+            return html;
+          })()}
         </tbody>
       </table>
     </div>
@@ -2045,19 +2155,37 @@ function openVendorScoreEntry(vendorId){
       Enter raw data from the vendor (rebate %, free freight $, etc.) and AccentOS suggests a score from the rubric.
       Click <strong>Apply</strong> to use the suggested score, or override manually.
     </div>
+    ${(()=>{
+      if(typeof getSisterVendors!=='function') return '';
+      const sisters = getSisterVendors(vendorId);
+      const parent = (typeof getVendorParent==='function') ? getVendorParent(vendorId) : null;
+      if(!sisters.length || !parent) return '';
+      return `<div style="font-size:12px;background:var(--surface2);border-left:3px solid var(--accent);padding:8px 12px;border-radius:6px;margin-bottom:14px;">
+        <strong style="color:var(--accent);">${esc(parent.name)}</strong> · ${sisters.length} sister brand${sisters.length===1?'':'s'}: ${sisters.map(s=>esc(s.name)).join(', ')}
+      </div>`;
+    })()}
     <div style="max-height:65vh;overflow-y:auto;padding-right:6px;">${rows}</div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap;">
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      ${(()=>{
+        if(typeof getSisterVendors!=='function') return '';
+        const sisters = getSisterVendors(vendorId);
+        if(!sisters.length) return '';
+        return `<button class="btn btn-outline" onclick="saveVendorScoreEntry(${vendorId}, true)" title="Save scores for this vendor AND propagate them to all sister brands under the same parent">🔗 Save & Apply to ${sisters.length} Sister${sisters.length===1?'':'s'}</button>`;
+      })()}
       <button class="btn btn-accent" onclick="saveVendorScoreEntry(${vendorId})">Save All Scores</button>
     </div>
   `);
 }
 
-function saveVendorScoreEntry(vendorId){
+function saveVendorScoreEntry(vendorId, propagateToSisters){
   const v = VD.find(x=>x.id===vendorId);
   if(!v) return;
   v._meta = v._meta || {};
   let changed=0;
+  // Capture the new values so we can propagate them to sisters if requested
+  const newValues = {};
+  const newJustifications = {};
   CAT_DEFS.forEach(c=>{
     const naBox = document.getElementById('se-na-'+c.key);
     const scInp = document.getElementById('se-score-'+c.key);
@@ -2066,6 +2194,7 @@ function saveVendorScoreEntry(vendorId){
     if(naBox && naBox.checked) newVal='na';
     else if(scInp && scInp.value!=='') newVal = parseFloat(scInp.value);
     else newVal = null;
+    newValues[c.key] = newVal;
     const old = v.scores[c.key];
     if(old !== newVal && !(old===null && newVal===null)){
       logChange(v.name, c.label, old===null?'—':old, newVal===null?'—':newVal);
@@ -2074,12 +2203,39 @@ function saveVendorScoreEntry(vendorId){
     }
     if(justInp){
       const j = justInp.value.trim();
+      newJustifications[c.key] = j;
       if(j){ v._meta[c.key] = Object.assign({}, v._meta[c.key]||{}, {j}); }
     }
   });
+
+  // v6.9 — propagate the same score set to sister brands under the same parent
+  let sisterCount = 0, sisterChanged = 0;
+  if(propagateToSisters && typeof getSisterVendors==='function'){
+    const sisters = getSisterVendors(vendorId);
+    sisterCount = sisters.length;
+    sisters.forEach(sv => {
+      sv._meta = sv._meta || {};
+      CAT_DEFS.forEach(c=>{
+        const newVal = newValues[c.key];
+        const old = sv.scores[c.key];
+        if(old !== newVal && !(old===null && newVal===null)){
+          logChange(sv.name, c.label, old===null?'—':old, (newVal===null?'—':newVal) + ' (sister-sync from ' + v.name + ')');
+          sv.scores[c.key] = newVal;
+          sisterChanged++;
+        }
+        const j = newJustifications[c.key];
+        if(j){ sv._meta[c.key] = Object.assign({}, sv._meta[c.key]||{}, {j}); }
+      });
+    });
+  }
+
   closeModal();
   renderVendors($('pg-content'));
-  toast(`${changed} score${changed===1?'':'s'} updated`, 'ok');
+  if(propagateToSisters && sisterCount){
+    toast(`${changed} score${changed===1?'':'s'} updated · ${sisterChanged} propagated to ${sisterCount} sister${sisterCount===1?'':'s'}`, 'ok');
+  } else {
+    toast(`${changed} score${changed===1?'':'s'} updated`, 'ok');
+  }
 }
 
 function openVendorEdit(vendorId) {
@@ -3287,7 +3443,7 @@ function dashboard(el){
       </div>
     </div></div>
     <div class="card"><div class="card-hd"><span class="card-title">System Status</span></div><div class="card-body">
-      ${sRow('AccentOS','live','v6.8 · Cloudflare Pages')}
+      ${sRow('AccentOS','live','v6.9 · Cloudflare Pages')}
       ${sRow('Vendor Ranking','live','494 vendors · 14 scoring categories')}
       ${sRow('Sales History','live','$39.7M · 2021–2025')}
       ${sRow('Supabase','pending','Run feedback SQL · wire persistence')}
@@ -3332,10 +3488,14 @@ function marketing(el){el.innerHTML=`<div class="alert alert-info">Marketing Hub
 // ── ROADMAP ───────────────────────────────────────────────
 function roadmap(el){el.innerHTML=`
   <div class="g2 mb16">
-    <div class="card stat-card"><div class="stat-label">Version</div><div class="stat-value mono">v6.8</div><div class="stat-sub">${new Date().toLocaleDateString()}</div></div>
+    <div class="card stat-card"><div class="stat-label">Version</div><div class="stat-value mono">v6.9</div><div class="stat-sub">${new Date().toLocaleDateString()}</div></div>
     <div class="card stat-card"><div class="stat-label">Hosting</div><div class="stat-value" style="font-size:18px;">Cloudflare</div><div class="stat-sub">Pages — free, unlimited bandwidth</div></div>
   </div>
-  <div class="card mb16"><div class="card-hd"><span class="card-title">v6.8 — This Build</span><span class="badge bg-green">Current</span></div><div class="card-body">
+  <div class="card mb16"><div class="card-hd"><span class="card-title">v6.9 — This Build</span><span class="badge bg-green">Current</span></div><div class="card-body">
+    ${[[1,'Parent company / umbrella grouping — 10 corporate parents, 39 vendor assignments live in Supabase'],[1,'Group by Parent toggle on Scores tab — collapsible parent groups with rolled-up combined sales + average score'],[1,'Apply to Sister Brands button on Edit Scores — propagates a score set to every vendor under the same parent in one click, with full changelog tracking'],[1,'Independent vendors render as a separate section below grouped parents'],[1,'Visual Comfort Group, Hudson Valley Lighting Group, Minka Group, Hinkley, WAC Group, Maxim Group, Coleto Brands, Acuity Brands, Current, Hunter Fan all mapped'],[0,'Score persistence to Supabase (vendor_scores table) — coming v6.10'],[0,'Vendor metadata persistence (vendor_overrides table) — coming v6.11']].map(([d,l])=>`<div class="chk"><span class="chk-ico">${d?'✅':'⬜'}</span><span class="${d?'done':''}">${l}</span></div>`).join('')}
+  </div></div>
+
+  <div class="card mb16"><div class="card-hd"><span class="card-title">v6.8 — Previous Build</span><span class="badge bg-amber">Shipped</span></div><div class="card-body">
     ${[[1,'Supabase persistence — categories + changelog write to and read from Supabase'],[1,'Confidence ratings (H/M/L) purged — removed from data and UI'],[1,'Vendor Intelligence renamed to Vendor Ranking'],[1,'Product categories pre-filled from Vendor Profiles sheet (102 vendors mapped, 98 IDs matched)'],[1,'History tab repurposed — vendor profile event timeline'],[1,'Sales chart redesigned — clean SVG line chart with Y-axis, dollar labels, area fill'],[1,'Edit Scores modal — manual data entry per category with rubric-suggested scores'],[1,'Advanced Filter button — multi-criteria (rep, category, tier, status, sales, score, scored cats, trend)'],[1,'Heatmap score cells — colored boxes with numbers'],[1,'Column header tooltips — rubric summary on hover for every category'],[1,'Scoring System modal cleaned up — condensed ~50%, "Rebates 10.0%" format fixed'],[1,'Weight Scenario Builder moved to its own ⚖️ Weight Scenarios modal'],[1,'Generate Outreach Email button on Rep View — drafts editable email per rep with all vendor terms'],[0,'Score edits not yet writing to Supabase (in-memory only — coming next)'],[0,'Email send integration (mailto only — no direct Gmail send yet)']].map(([d,l])=>`<div class="chk"><span class="chk-ico">${d?'✅':'⬜'}</span><span class="${d?'done':''}">${l}</span></div>`).join('')}
   </div></div>
   <div class="card mb16"><div class="card-hd"><span class="card-title">Supabase SQL — Run These</span></div><div class="card-body">
@@ -3379,12 +3539,12 @@ function settings(el){el.innerHTML=`<div class="g2">
       <div class="field"><label>Project URL</label><input id="s-su" placeholder="https://xxx.supabase.co" value="${getS('aos-sb-url')||''}"></div>
       <div class="field"><label>Anon Key</label><input type="password" id="s-sk" placeholder="eyJ..."></div>
       <button class="btn btn-accent btn-sm" onclick="const u=$('s-su').value,k=$('s-sk').value;if(u)sessionStorage.setItem('aos-sb-url',u);if(k&&!k.includes('•'))sessionStorage.setItem('aos-sb-key',k);toast('Saved','ok');goTo('settings')">Save Supabase</button>
-      <div class="alert alert-info" style="margin-top:12px;font-size:12.5px;"><strong>Project:</strong> <span class="mono" style="font-size:11px;">hsyjcrrazrzqngwkqsqa.supabase.co</span><br><strong>v6.8 setup (one-time):</strong><br>1. Run <code>supabase_setup.sql</code> in <a href="https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new" target="_blank" style="color:var(--accent);">SQL Editor</a><br>2. Copy <strong>anon</strong> key from <a href="https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/settings/api" target="_blank" style="color:var(--accent);">Project Settings → API</a><br>3. Paste above as <strong>Supabase Anon Key</strong> and click Save. Categories and changelog will persist immediately.</div>
+      <div class="alert alert-info" style="margin-top:12px;font-size:12.5px;"><strong>Project:</strong> <span class="mono" style="font-size:11px;">hsyjcrrazrzqngwkqsqa.supabase.co</span><br><strong>v6.9 setup (one-time):</strong><br>1. Run <code>supabase_setup.sql</code> in <a href="https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new" target="_blank" style="color:var(--accent);">SQL Editor</a><br>2. Copy <strong>anon</strong> key from <a href="https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/settings/api" target="_blank" style="color:var(--accent);">Project Settings → API</a><br>3. Paste above as <strong>Supabase Anon Key</strong> and click Save. Categories and changelog will persist immediately.</div>
     </div></div>
   </div>
   <div>
     <div class="card mb16"><div class="card-hd"><span class="card-title">System Info</span></div><div class="card-body">
-      ${[['Version','AccentOS v6.8'],['Hosting','Cloudflare Pages'],['Auth','Session (hardcoded — Supabase Auth pending)'],['Vendors','494 vendors · 14 categories · $39.7M sales history'],['Scoring','Weighted 0-10 · Auto tier A-F'],['ERP','Windward — planned'],['Ecommerce','BigCommerce — no API access']].map(([k,v])=>`<div style="display:flex;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;"><span style="font-weight:600;min-width:150px;color:var(--text-2);">${k}</span><span class="mono" style="font-size:12px;">${v}</span></div>`).join('')}
+      ${[['Version','AccentOS v6.9'],['Hosting','Cloudflare Pages'],['Auth','Session (hardcoded — Supabase Auth pending)'],['Vendors','494 vendors · 14 categories · $39.7M sales history · 10 corporate parents'],['Scoring','Weighted 0-10 · Auto tier A-F · Sister-brand propagation'],['ERP','Windward — planned'],['Ecommerce','BigCommerce — no API access']].map(([k,v])=>`<div style="display:flex;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;"><span style="font-weight:600;min-width:150px;color:var(--text-2);">${k}</span><span class="mono" style="font-size:12px;">${v}</span></div>`).join('')}
     </div></div>
     <div class="card"><div class="card-hd"><span class="card-title">Users</span></div><div class="card-body">
       <div class="alert alert-warn mb16" style="margin-bottom:10px;font-size:12.5px;">Credentials hardcoded — migrate to Supabase Auth before wider rollout.</div>
@@ -3410,6 +3570,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if(typeof sbConfigured==='function' && sbConfigured()){
     try { sbCatRows = await sbLoadCategories(); } catch(e){ console.warn(e); }
     try { await sbLoadChangelog(); } catch(e){ console.warn(e); }
+    try { await sbLoadParents(); } catch(e){ console.warn(e); }
   }
   // If Supabase has no category rows yet (fresh DB), seed in-memory from prefill
   // so the UI isn't empty. The next category save will start populating Supabase.
