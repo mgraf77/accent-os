@@ -739,6 +739,11 @@ async function sbLoadCategories(){
 // Upsert one vendor's categories.
 async function sbSaveCategories(vendorId, categoriesSet, userName){
   if(!sbConfigured()) return false;
+  if(vendorId === null || vendorId === undefined){
+    console.warn('[sb] sbSaveCategories called with no vendorId — aborting');
+    if(typeof toast==='function') toast('Internal error: no vendor ID', 'err');
+    return false;
+  }
   try{
     const arr = [...categoriesSet];
     await sbFetch('/vendor_categories', {
@@ -1512,7 +1517,7 @@ function renderScores(container) {
               <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
               <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
               <td>${(()=>{const t=totalRawScore(v.scores);return t?`<span class="mono" style="font-size:11px;color:var(--text-2);">${t.sum}<span style="color:var(--text-3)">/${t.max}</span></span>`:'<span class="na">—</span>'})()}</td>
-              <td onclick="openCategoryEditor(v.id,v.name,()=>renderVendors($('pg-content')))" style="cursor:pointer;" title="Click to edit categories">${renderCatChips(v.id,3)}</td>
+              <td onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>renderVendors($('pg-content')))" style="cursor:pointer;" title="Click to edit categories">${renderCatChips(v.id,3)}</td>
               ${CAT_DEFS.filter(c => c.key !== 'repScore').map(c=>{
                 const s=v.scores[c.key];
                 if(s===null||s===undefined)return`<td><span class="na">—</span></td>`;
@@ -2129,7 +2134,7 @@ function openVendorDetail(vendorId) {
     <div style="position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px;z-index:1;">
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
         <h2 style="font-size:20px;font-weight:700;margin:0;">${esc(v.name)}</h2>
-        <div style="display:flex;gap:6px;"><button class="btn btn-sm btn-outline" onclick="openVendorEdit(v.id)">✏️ Edit</button><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(v.id,'${esc(v.name)}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(v.id);renderVendors($('pg-content'))})">🏷️ Cats</button><button class="btn btn-sm btn-outline" onclick="closeVendorDetail()">✕ Close</button></div>
+        <div style="display:flex;gap:6px;"><button class="btn btn-sm btn-outline" onclick="openVendorEdit(${v.id})">✏️ Edit</button><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(${v.id});renderVendors($('pg-content'))})">🏷️ Cats</button><button class="btn btn-sm btn-outline" onclick="closeVendorDetail()">✕ Close</button></div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${tierBadge(adaptiveTier)}
@@ -2197,7 +2202,7 @@ function openVendorDetail(vendorId) {
         </div>
       ` : ''}
 
-      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);"><div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Product Categories</div><div style="margin-bottom:8px;">${renderCatChips(v.id, 30)}</div><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(v.id,'${esc(v.name)}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(v.id);renderVendors($('pg-content'))})" style="font-size:10px;">🏷️ Edit Categories</button>${(()=>{const t=totalRawScore(v.scores);return t?`<div style="margin-top:8px;font-size:11px;color:var(--text-3);">Raw total: <strong style="color:var(--text);">${t.sum} / ${t.max}</strong> pts</div>`:''})()}</div>
+      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);"><div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Product Categories</div><div style="margin-bottom:8px;">${renderCatChips(v.id, 30)}</div><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(${v.id});renderVendors($('pg-content'))})" style="font-size:10px;">🏷️ Edit Categories</button>${(()=>{const t=totalRawScore(v.scores);return t?`<div style="margin-top:8px;font-size:11px;color:var(--text-3);">Raw total: <strong style="color:var(--text);">${t.sum} / ${t.max}</strong> pts</div>`:''})()}</div>
       <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:12px;">Scoring Breakdown</div>
       <div style="display:grid;gap:12px;">
         ${CAT_DEFS.map(c => {
