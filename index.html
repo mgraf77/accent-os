@@ -1266,7 +1266,8 @@ function renderVendors(container){
     {id:'history',label:'History'},
     {id:'sales',label:'Sales'},
     {id:'weights',label:'Weights'},
-    {id:'changelog',label:'Changelog'}
+    {id:'changelog',label:'Changelog'},
+    {id:'repaudit',label:'Rep Audit'}
   ];
 
   container.innerHTML = `
@@ -1307,6 +1308,8 @@ function renderVendors(container){
     renderWeights(sectionContent);
   } else if (vSection === 'changelog') {
     renderChangelog(sectionContent);
+  } else if (vSection === 'repaudit') {
+    renderRepGroupAudit(sectionContent);
   }
 }
 
@@ -1576,7 +1579,9 @@ function renderScores(container) {
       <button class="btn btn-sm btn-outline" onclick="openFilterModal()" style="position:relative;">🔍 Filter${(()=>{const n=activeFilterCount();return n?` <span style="display:inline-block;background:var(--accent);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:4px;">${n}</span>`:'';})()}</button>
       ${activeFilterCount()>0?`<button class="btn btn-sm btn-outline" onclick="resetAdvancedFilters();renderVendors($('pg-content'))" title="Clear all filters">✕ Clear</button>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <input class="srch" placeholder="Search vendors..." value="${esc(vFilter)}" oninput="vFilter=this.value;renderVendors($('pg-content'))">
+        <input id="vendor-search-input" class="srch" placeholder="Search vendors..." value="${esc(vFilter)}"
+          oninput="vFilter=this.value;renderVendors($('pg-content'));const el=$('vendor-search-input');if(el){el.focus();const v=el.value;el.setSelectionRange(v.length,v.length);}"
+        ><button style="background:none;border:none;cursor:pointer;padding:0 6px;font-size:14px;color:var(--text-3);line-height:1;" title="Clear search" onclick="vFilter='';renderVendors($('pg-content'))" ${!`${esc(vFilter)}`?'style="visibility:hidden;"':''}>&times;</button>
         <select class="srch" style="min-width:160px;" onchange="vCatFilter=this.value;renderVendors($('pg-content'))">
           <option value="" ${!vCatFilter?'selected':''}>All Categories</option>
           ${Object.keys(PRODUCT_TAXONOMY).map(cat=>`<option value="${cat}" ${vCatFilter===cat?'selected':''}>${cat}</option>`).join('')}
@@ -1606,14 +1611,14 @@ function renderScores(container) {
         </tr></thead>
         <tbody>
           ${(()=>{
-            const cap = filtered.slice(0, 200);
             if(!vGroupByParent){
+              const cap = filtered.slice(0, 200);
               return cap.map(v => buildScoresRow(v, allScores)).join('');
             }
-            // Grouped mode: parents (sorted by combined sales desc) → independents
+            // Grouped mode: cap applied AFTER grouping so sibling sets aren't split
             const byParent = {};
             const independents = [];
-            cap.forEach(v => {
+            filtered.forEach(v => {
               const pid = (typeof VENDOR_PARENTS!=='undefined') ? VENDOR_PARENTS[v.id] : null;
               if(pid && PARENT_BY_ID[pid]){
                 if(!byParent[pid]) byParent[pid] = [];
@@ -1646,7 +1651,7 @@ function renderScores(container) {
       </table>
     </div>
     <div class="card-foot" style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);">
-      <span>Showing ${Math.min(filtered.length,200)} of ${filtered.length} vendors${filtered.length>200?' — use search to narrow':''}</span>
+      <span>Showing ${vGroupByParent ? filtered.length : Math.min(filtered.length,200)} of ${filtered.length} vendors${(!vGroupByParent && filtered.length>200)?' — use search to narrow':''}</span>
       <span>— = no data · Tiers are adaptive (20% buckets) · Score = weighted avg (${TOTAL_WEIGHT} pts)</span>
     </div>
   </div>`;
@@ -2171,9 +2176,9 @@ function openVendorScoreEntry(vendorId){
         if(typeof getSisterVendors!=='function') return '';
         const sisters = getSisterVendors(vendorId);
         if(!sisters.length) return '';
-        return `<button class="btn btn-outline" onclick="saveVendorScoreEntry(${vendorId}, true)" title="Save scores for this vendor AND propagate them to all sister brands under the same parent">🔗 Save & Apply to ${sisters.length} Sister${sisters.length===1?'':'s'}</button>`;
+        return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer;margin-right:auto;" title="Also apply these scores to all sister brands under the same parent"><input type="checkbox" id="sister-propagate-cb"> Apply to ${sisters.length} sister${sisters.length===1?'':'s'}</label>`;
       })()}
-      <button class="btn btn-accent" onclick="saveVendorScoreEntry(${vendorId})">Save All Scores</button>
+      <button class="btn btn-accent" onclick="saveVendorScoreEntry(${vendorId}, document.getElementById('sister-propagate-cb')?.checked||false)">Save All Scores</button>
     </div>
   `);
 }
@@ -2783,6 +2788,71 @@ function renderHistory(container) {
                 <div style="font-size:11px;color:var(--text-3);">${esc(e.user||'')}</div>
               </div>
             `).join('')}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderRepGroupAudit(container) {
+  // Flags parent companies where child vendors have mixed or missing rep assignments.
+  const issues = [];
+  if(typeof PARENT_COMPANIES!=='undefined' && PARENT_COMPANIES.length){
+    PARENT_COMPANIES.forEach(parent => {
+      const children = VD.filter(v => VENDOR_PARENTS[v.id] === parent.id);
+      if(!children.length) return;
+      const reps = [...new Set(children.map(v => v.rep||'').filter(Boolean))];
+      const blanks = children.filter(v => !v.rep);
+      if(reps.length > 1 || blanks.length){
+        issues.push({ parent, children, reps, blanks });
+      }
+    });
+  }
+  // Sort: most children first
+  issues.sort((a,b) => b.children.length - a.children.length);
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-hd">
+        <span class="card-title">Rep-Group Audit</span>
+        <span class="sm muted">${issues.length} parent${issues.length===1?'':'s'} with mixed or missing rep assignments</span>
+      </div>
+      <div style="padding:18px 20px 8px;">
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">Parent companies where child vendors have conflicting or blank rep group assignments. Fix these to ensure sister-vendor grouping works correctly.</p>
+        ${issues.length===0 ? `
+          <div style="text-align:center;padding:60px 20px;color:var(--text-3);">
+            <div style="font-size:42px;margin-bottom:10px;">✅</div>
+            <p style="font-size:15px;font-weight:600;margin-bottom:6px;">All clean</p>
+            <p style="font-size:13px;">No mixed or blank rep assignments detected across parent groups.</p>
+          </div>
+        ` : issues.map(issue => `
+          <div style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;background:var(--surface);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <span style="font-weight:700;font-size:14px;">${esc(issue.parent.name)}</span>
+              ${issue.reps.length>1 ? `<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-weight:600;">⚠ Mixed reps</span>` : ''}
+              ${issue.blanks.length ? `<span style="font-size:11px;background:var(--red-bg);color:var(--accent);padding:2px 8px;border-radius:4px;font-weight:600;">${issue.blanks.length} blank</span>` : ''}
+            </div>
+            <table style="width:100%;font-size:12px;border-collapse:collapse;">
+              <thead>
+                <tr style="color:var(--text-3);text-align:left;">
+                  <th style="padding:4px 8px;font-weight:600;">Vendor</th>
+                  <th style="padding:4px 8px;font-weight:600;">Rep Group</th>
+                  <th style="padding:4px 8px;font-weight:600;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${issue.children.map(v => `
+                  <tr style="border-top:1px solid var(--border-light);">
+                    <td style="padding:5px 8px;">${esc(v.name)}</td>
+                    <td style="padding:5px 8px;font-family:'DM Mono',monospace;">${v.rep ? esc(v.rep) : '<span style="color:var(--accent);">— blank —</span>'}</td>
+                    <td style="padding:5px 8px;">
+                      ${!v.rep ? '<span style="color:var(--accent);font-weight:600;">Needs assignment</span>' : (issue.reps.length>1 && v.rep !== issue.reps[0]) ? '<span style="color:#d97706;font-weight:600;">Differs from siblings</span>' : '<span style="color:var(--green);">OK</span>'}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
         `).join('')}
       </div>
