@@ -354,6 +354,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni admin-only" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
       <div class="ni admin-only" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
       <div class="ni admin-only" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
+      <div class="ni" onclick="goTo('repoutreach')"><span class="ni-icon">✉</span><span class="ni-label">Rep Outreach</span></div>
       <div class="ni" onclick="goTo('settings')"><span class="ni-icon">◫</span><span class="ni-label">Settings</span></div>
     </div>
     <div class="sb-foot">
@@ -506,7 +507,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,quotes,knowledge,vendors,changelog,marketing,roadmap,mgmt,settings};
+  const pages={dashboard,pipeline,quotes,knowledge,vendors,changelog,marketing,roadmap,mgmt,settings,repoutreach};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -2991,6 +2992,162 @@ function renderWeights(container){
   `;
 }
 
+
+// ── REP OUTREACH ─────────────────────────────────────────────────
+const OUTREACH_CATS=[
+  {key:'rebates',   label:'Rebate Program',         desc:'Annual rebates, growth incentives. Include % and thresholds.'},
+  {key:'discounts', label:'Inside / Volume Discounts',desc:'Standard discounts and volume-based pricing. Include % tiers.'},
+  {key:'credit',    label:'Credit Terms',            desc:'Payment terms (Net 30/45/60), early pay discounts.'},
+  {key:'freight',   label:'Freight Policy',          desc:'Prepaid thresholds, drop-ship fees, surcharges. Include $ amounts.'},
+  {key:'returns',   label:'Return / RGA Policy',     desc:'Restocking fees, RGA timeframes, damaged goods handling.'},
+  {key:'imap',      label:'IMAP / MAP Markup',       desc:'Minimum advertised price multiplier and enforcement details.'},
+  {key:'mktgFunds', label:'Marketing Co-op / MDF',   desc:'MDF %, reimbursement structure, ease of claim.'},
+  {key:'display',   label:'Display Allowance',       desc:'Display support: discounts, free displays, refresh programs.'},
+];
+
+function repoutreach(container){
+  const contactable = REP_DIRECTORY.filter(r=>r.Email);
+  let selRep = contactable[0]||null;
+
+  function fmtS(n){return n>=1000000?'$'+(n/1000000).toFixed(1)+'M':n>=1000?'$'+(n/1000).toFixed(0)+'K':'$'+Math.round(n);}
+
+  function getVendors(rep){
+    return VD.filter(v=>v.rep===rep['Rep Company']).sort((a,b)=>(b.sales?.t||0)-(a.sales?.t||0));
+  }
+
+  function buildEmail(rep,vendors){
+    const first=(rep['Primary Contact']||rep['Rep Company']).split(' ')[0];
+    const vendorSections=vendors.map(v=>{
+      const sc=v.scores||{};
+      const rows=OUTREACH_CATS.map(cat=>{
+        const s=sc[cat.key];
+        let onFile=s?s.justification.replace(/\. Details: nan/g,'').replace(/Scored based on manufacturer direct sales[^.]*\./,'').trim():'';
+        if(onFile==='[internal scoring]')onFile='';
+        return `<tr>
+          <td style="padding:10px 14px;border-bottom:1px solid #f0f0ec;vertical-align:top;width:36%;font-size:13px;">
+            <strong style="color:#1a1a1a;">${cat.label}</strong><br>
+            <span style="font-size:11px;color:#999;">${cat.desc}</span>
+          </td>
+          <td style="padding:10px 14px;border-bottom:1px solid #f0f0ec;vertical-align:top;width:32%;background:#EBF5FB;font-size:12px;color:${onFile?'#1a1a1a':'#aaa'};">${onFile||'No data on file'}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #f0f0ec;vertical-align:top;width:32%;background:#FEFCE8;font-size:12px;color:#aaa;font-style:italic;">Your correction or update (leave blank if above is correct)</td>
+        </tr>`;
+      }).join('');
+      const sales=v.sales?.t||0;
+      return `<div style="margin-bottom:28px;">
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e8e8e4;border-radius:8px;overflow:hidden;">
+          <thead>
+            <tr style="background:#1a1a1a;">
+              <td colspan="3" style="padding:14px 18px;">
+                <span style="font-size:15px;font-weight:700;color:#fff;">${v.name}</span>
+                <span style="font-size:12px;color:#999;margin-left:12px;">5-yr Accent purchases: ${fmtS(sales)}</span>
+              </td>
+            </tr>
+            <tr style="background:#f8f8f6;">
+              <td style="padding:7px 14px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;">Term / Category</td>
+              <td style="padding:7px 14px;font-size:11px;font-weight:700;color:#1a6fa0;text-transform:uppercase;letter-spacing:.05em;background:#EBF5FB;">What We Have on File</td>
+              <td style="padding:7px 14px;font-size:11px;font-weight:700;color:#a08700;text-transform:uppercase;letter-spacing:.05em;background:#FEFCE8;">Your Update / Correction</td>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:6px;padding:10px 14px;background:#f8f8f6;border:1px solid #e8e8e4;border-radius:6px;font-size:12px;color:#888;">Additional notes for ${v.name}: <br><br></div>
+      </div>`;
+    }).join('');
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;background:#f4f4f2;">
+<div style="max-width:760px;margin:0 auto;background:#fff;">
+  <div style="background:#1a1a1a;padding:26px 32px;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="background:#ed1c24;width:5px;height:40px;border-radius:3px;flex-shrink:0;"></div>
+      <div><div style="font-size:19px;font-weight:700;color:#fff;">ACCENT LIGHTING</div>
+      <div style="font-size:12px;color:#888;margin-top:2px;">Vendor Terms Verification — 2025–2026 Program Year</div></div>
+    </div>
+  </div>
+  <div style="padding:30px 32px;">
+    <p style="font-size:15px;color:#1a1a1a;margin:0 0 6px;">Hi ${first},</p>
+    <p style="font-size:14px;color:#444;line-height:1.6;margin:0 0 20px;">We're doing our annual vendor terms review and want to make sure everything we have on file for your lines is accurate. I've put together what we currently have for each vendor below — please take a look and reply with anything that needs updating.</p>
+    <div style="background:#f8f8f6;border:1px solid #e8e8e4;border-radius:8px;padding:14px 18px;margin-bottom:24px;">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Vendors covered in this email</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">${vendors.map(v=>`<span style="background:#fff;border:1px solid #e8e8e4;border-radius:4px;padding:3px 10px;font-size:12px;font-weight:600;color:#1a1a1a;">${v.name}</span>`).join('')}</div>
+    </div>
+    <div style="background:#EBF5FB;border-left:4px solid #1a6fa0;padding:11px 16px;margin-bottom:26px;border-radius:0 6px 6px 0;">
+      <div style="font-size:13px;font-weight:600;color:#1a6fa0;margin-bottom:3px;">How to respond</div>
+      <div style="font-size:13px;color:#1a1a1a;line-height:1.6;">The <strong>blue columns</strong> show what we have on file. The <strong>yellow columns</strong> are where you add corrections or additions. Just reply to this email — leave any yellow field blank if the blue info is already correct.</div>
+    </div>
+    ${vendorSections}
+    <div style="border-top:1px solid #e8e8e4;padding-top:22px;margin-top:4px;">
+      <p style="font-size:14px;color:#444;line-height:1.6;margin:0 0 10px;">We appreciate you taking the time on this — accurate terms help us make better buying and display decisions across your lines.</p>
+      <p style="font-size:14px;color:#444;margin:0 0 18px;">Just hit reply with any updates, or call if it's easier.</p>
+      <p style="font-size:14px;color:#1a1a1a;margin:0;">Thanks,<br><strong>Michael Graf</strong><br><span style="color:#888;">Accent Lighting Inc. — Wichita, KS</span><br><span style="color:#888;">316-636-1278 | michaelg@accentlightinginc.com</span></p>
+    </div>
+  </div>
+</div></body></html>`;
+  }
+
+  function render(){
+    if(!contactable.length){container.innerHTML=`<div class="card" style="padding:40px;text-align:center;color:var(--text-3);">No reps with email on file.</div>`;return;}
+    const vendors=selRep?getVendors(selRep):[];
+    const emailHTML=selRep?buildEmail(selRep,vendors):'';
+    const subject=selRep?`Vendor Terms Verification — ${selRep['Rep Company']} Lines (2025–2026)`:'';
+
+    container.innerHTML=`
+      <div style="display:grid;grid-template-columns:268px 1fr;gap:14px;height:calc(100vh-120px);overflow:hidden;">
+        <!-- LEFT: Rep list -->
+        <div style="overflow-y:auto;">
+          <div class="card" style="padding:14px 16px;margin-bottom:10px;">
+            <div class="card-title" style="margin-bottom:3px;">Rep Outreach</div>
+            <div style="font-size:12px;color:var(--text-3);">Select a rep → preview email → copy to Outlook.</div>
+          </div>
+          ${contactable.map(rep=>{
+            const vs=getVendors(rep);
+            const tot=vs.reduce((s,v)=>s+(v.sales?.t||0),0);
+            const on=selRep&&selRep['Rep Company']===rep['Rep Company'];
+            return `<div data-rep="${esc(rep['Rep Company'])}" onclick="document.dispatchEvent(new CustomEvent('roSelectRep',{detail:this.dataset.rep}))"
+              style="cursor:pointer;border-radius:8px;padding:11px 13px;margin-bottom:5px;border:1.5px solid ${on?'var(--accent)':'var(--border)'};background:${on?'var(--accent-soft)':'var(--surface)'};transition:all .15s;">
+              <div style="font-size:13px;font-weight:700;color:${on?'var(--accent)':'var(--text)'};">${esc(rep['Rep Company'])}</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:1px;">${esc(rep['Primary Contact']||'—')}</div>
+              <div style="display:flex;justify-content:space-between;margin-top:5px;">
+                <span style="font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:4px;color:var(--text-2);">${vs.length} vendors</span>
+                <span style="font-size:11px;color:var(--text-3);">${fmtS(tot)}</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <!-- RIGHT: Preview + actions -->
+        <div style="overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+          ${selRep?`
+          <div class="card" style="padding:11px 15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;">${esc(selRep['Rep Company'])}</div>
+              <div style="font-size:12px;color:var(--text-3);">To: ${esc(selRep['Primary Contact']||'')} &lt;${esc(selRep['Email'])}&gt;${selRep['Sec Email']?' · CC: '+esc(selRep['Sec Email']):''}</div>
+            </div>
+            <button class="btn btn-outline" style="font-size:12px;" onclick="navigator.clipboard.writeText(${JSON.stringify(subject)}).then(()=>{const t=$('ro-subj-toast');t.style.display='block';setTimeout(()=>t.style.display='none',3500);})">📋 Copy Subject Line</button>
+            <button class="btn btn-accent" style="font-size:13px;font-weight:600;" onclick="navigator.clipboard.writeText(${JSON.stringify(emailHTML)}).then(()=>{const t=$('ro-copy-toast');t.style.display='block';setTimeout(()=>t.style.display='none',6000);})">📋 Copy Email → Outlook</button>
+          </div>
+          <div id="ro-subj-toast" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 15px;font-size:13px;color:var(--text-2);">
+            Subject copied: <strong>${esc(subject)}</strong>
+          </div>
+          <div id="ro-copy-toast" style="display:none;background:var(--green-bg);border:1px solid var(--green);border-radius:8px;padding:10px 15px;font-size:13px;color:var(--green);font-weight:600;">
+            ✅ Email HTML copied — open a new Outlook message, set format to HTML, then paste (Ctrl+V). The blue/yellow columns will render correctly.
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="background:var(--surface2);border-bottom:1px solid var(--border);padding:9px 15px;font-size:12px;font-weight:600;color:var(--text-2);">
+              Email Preview · ${vendors.length} vendor${vendors.length===1?'':'s'} · ${OUTREACH_CATS.length} term categories each
+            </div>
+            <iframe style="width:100%;height:680px;border:none;" srcdoc="${emailHTML.replace(/\\/g,'\\\\').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}"></iframe>
+          </div>
+          `:`<div class="card" style="padding:60px;text-align:center;color:var(--text-3);">← Select a rep to preview their email.</div>`}
+        </div>
+      </div>`;
+
+    document.addEventListener('roSelectRep',function h(e){
+      selRep=contactable.find(r=>r['Rep Company']===e.detail)||selRep;
+      document.removeEventListener('roSelectRep',h);
+      render();
+    },{once:true});
+  }
+  render();
+}
 
 function renderChangelog(container) {
   const log = getChangeLog();
