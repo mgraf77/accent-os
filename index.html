@@ -2409,87 +2409,167 @@ function closeVendorDetail() {
 }
 
 // ── REP OUTREACH (Task 2) ──
-// Generates a per-rep outreach email showing every vendor in their book
-// with current terms/scores on file. Rep is asked to verify their own contact
-// info and confirm/correct each vendor's terms.
-
+// Generates a per-rep outreach email — formal 4-section format matching sent email
 function buildRepOutreachEmail(repName){
   const rep = REP_DIRECTORY.find(r => r['Rep Company'] === repName);
   const repVendors = VD.filter(v => v.rep === repName).sort((a,b) => (b.sales?.t||0)-(a.sales?.t||0));
   if(!repVendors.length) return null;
 
-  // Per-vendor terms block. Show categories that have either a score or a
-  // justification on file. The rep is asked to confirm or correct each.
-  const vendorBlocks = repVendors.map(v => {
-    const lines = [];
-    CAT_DEFS.forEach(c => {
-      const s = v.scores[c.key];
-      const m = (v._meta||{})[c.key] || {};
-      const j = (m.j||'').trim();
-      // Skip the Rep Score category - we don't want reps grading themselves
-      if(c.key === 'repScore') return;
-      if(s===null && !j) return;
-      const valDisp = s === 'na' ? 'N/A' : (typeof s === 'number' ? `${s}/10` : '—');
-      const noteDisp = j ? `  — ${j}` : '';
-      lines.push(`  • ${c.label}: ${valDisp}${noteDisp}`);
+  const TERM_CATS = [
+    {key:'rebates',   label:'Rebate program'},
+    {key:'discounts', label:'Inside/volume discount'},
+    {key:'credit',    label:'Credit terms'},
+    {key:'freight',   label:'Free freight threshold'},
+    {key:'returns',   label:'Returns/RGA'},
+    {key:'mktgFunds', label:'Marketing/co-op funds'},
+    {key:'display',   label:'Display program'},
+  ];
+
+  const buildVendorBlock = v => {
+    const lines = TERM_CATS.map(({key, label}) => {
+      const sc = v.scores?.[key];
+      const j = (v._meta?.[key]?.j || '').trim()
+        .replace(/\. Details: nan/g, '')
+        .replace(/Scored based on manufacturer direct sales[^.]*\./g, '')
+        .replace(/Vendor is on Lights America website\./g, '')
+        .replace(/Accent Lighting is listed under general dealers[^.]*\./g, '')
+        .trim();
+      let val;
+      if (!sc && !j) {
+        val = '(nothing on file — please provide)';
+      } else {
+        const hasDetail = j.length > 2;
+        if (hasDetail) {
+          const needsDetail = ['returns','display','mktgFunds','discounts'].includes(key);
+          val = needsDetail ? `${j} — please provide details` : `${j} — correct?`;
+        } else {
+          val = '(nothing on file — please provide)';
+        }
+      }
+      return `  ${label}:`.padEnd(32) + val;
     });
-    if(!lines.length) lines.push('  • (no terms recorded yet — please provide current details)');
-    const total5y = (v.sales && v.sales.t) || 0;
-    return `${v.name}` +
-           (total5y ? `  (5-yr sales: ${'$'+Math.round(total5y).toLocaleString('en-US')})` : '') +
-           `\n${lines.join('\n')}`;
-  }).join('\n\n');
+    const divider = '══════════════════════════════════════════';
+    return `${divider}\n${v.name.toUpperCase()}\n${divider}\n${lines.join('\n')}`;
+  };
 
-  // Rep contact verification block
-  const repInfoLines = [
-    `  • Rep Company: ${rep?.['Rep Company'] || repName}`,
-    rep?.['Type'] ? `  • Type: ${rep['Type']}` : null,
-    rep?.['Website'] ? `  • Website: ${rep['Website']}` : null,
-    rep?.['Primary Contact'] ? `  • Primary Contact: ${rep['Primary Contact']}` : null,
-    rep?.['Phone'] ? `  • Phone: ${rep['Phone']}` : null,
-    rep?.['Email'] ? `  • Email: ${rep['Email']}` : null,
-    rep?.['Secondary Contact'] ? `  • Secondary Contact: ${rep['Secondary Contact']}` : null,
-    rep?.['Sec Email'] ? `  • Secondary Email: ${rep['Sec Email']}` : null,
-    rep?.['Office Phone'] ? `  • Office Phone: ${rep['Office Phone']}` : null,
-    rep?.['Office Email'] ? `  • Office Email: ${rep['Office Email']}` : null,
-    rep?.['Quote Email'] ? `  • Quote Email: ${rep['Quote Email']}` : null,
-  ].filter(Boolean);
+  // Build all contacts on file for this rep
+  const contacts = [];
+  if(rep?.['Primary Contact'] && (rep?.['Email'] || rep?.['Office Email'])){
+    contacts.push({ name: rep['Primary Contact'], email: rep['Email'] || rep['Office Email'], phone: rep['Phone'] || rep['Office Phone'] || '' });
+  }
+  if(rep?.['Secondary Contact'] && rep?.['Sec Email']){
+    contacts.push({ name: rep['Secondary Contact'], email: rep['Sec Email'], phone: '' });
+  }
+  if(rep?.['Quote Email'] && !contacts.find(c => c.email === rep['Quote Email'])){
+    contacts.push({ name: 'Quotes', email: rep['Quote Email'], phone: '' });
+  }
 
-  const subject = `Vendor terms verification — ${repName}`;
+  const linecard = repVendors.map(v => `  [ ] ${v.name}`).join('\n');
+  const vendorBlocks = repVendors.map(buildVendorBlock).join('\n\n');
+
+  const secContactLine = rep?.['Sec Email']
+    ? `\n  Secondary:        ${rep['Secondary Contact'] || 'Secondary'} — ${rep['Sec Email']}`
+    : '';
+
+  const subject = `${repName} — Vendor Terms & Linecard Verification (2026 Review)`;
+
+  const defaultGreeting = contacts.length >= 2
+    ? contacts.slice(0,2).map(c => c.name.split(' ')[0]).join(' and ')
+    : (contacts[0]?.name.split(' ')[0] || repName);
+
   const body =
-`Hi,
+`${defaultGreeting},
 
-We're updating Accent Lighting's vendor ranking system for 2026. Could you take a few minutes to verify the information we have on file for ${repName} and the vendors you represent?
+I'm reaching out as part of a formal vendor ranking and terms review we're doing at Accent Lighting for 2026. We're evaluating every line we carry — looking at rebates, freight, terms, display programs, and channel policies — so we can prioritize growth and display investment with the vendors where the partnership structure works best for both sides. Lines with strong, well-documented terms get more floor space, more active selling, and more of our team's attention.
 
-PART 1 — YOUR CONTACT INFO ON FILE
-Please confirm the following is accurate, or send us any updates:
+You represent some significant lines for us, and I want to make sure we're working off accurate information before we finalize rankings and purchasing plans for the year.
 
-${repInfoLines.join('\n')}
 
-PART 2 — VENDOR TERMS WE HAVE ON FILE
-For each vendor below, please reply with any corrections or new details. Specifically: rebate %, discount %, credit terms, free freight thresholds, return policy, IMAP, marketing/co-op funds, display program details. If any line is blank, please provide the current value.
+SECTION 1 — CONTACT DIRECTORY
+
+Please confirm or correct the following:
+
+  Rep Company:      ${repName}
+  Primary Contact:  ${rep?.['Primary Contact'] || '(none on file)'}
+  Phone:            ${rep?.['Phone'] || rep?.['Office Phone'] || '(none on file)'}
+  Email:            ${rep?.['Email'] || rep?.['Office Email'] || '(none on file)'}
+  Website:          ${rep?.['Website'] || '(none on file)'}${secContactLine}
+
+Who should we contact for each of the following? (name + email + phone)
+
+  Quote requests:       ___________________________
+  RGA / returns:        ___________________________
+  Parts requests:       ___________________________
+  Co-op / MDF claims:   ___________________________
+  General questions:    ___________________________
+
+—
+
+SECTION 2 — LINECARD VERIFICATION
+
+Below is every line we have assigned to ${repName} in our system. Please:
+  • Check off each line you still actively represent for us
+  • Note any lines you no longer carry
+  • Add any lines you represent that aren't listed
+
+${linecard}
+
+Lines you represent that are NOT listed above:
+  ___________________________
+  ___________________________
+  ___________________________
+
+—
+
+SECTION 3 — VENDOR TERMS
+
+For each vendor, I've listed exactly what we have on file. Fields marked "(nothing on file)" are gaps we need filled. Fields with data just need a confirmation or correction.
+
+If it's easier, attach any dealer program sheets, price book terms, or vendor agreements and I'll pull the data from those directly — no need to fill this out manually if you have the docs.
 
 ${vendorBlocks}
 
-Reply directly with corrections — no need to format anything special. We'll update our records and send back a clean summary for your sign-off.
+—
 
-Thanks,
+SECTION 4 — ANYTHING ELSE
+
+Anything else you'd like us to have on file? New programs, line changes, preferred ordering windows, or anything that would help us work better together?
+
+I appreciate you taking the time on this. If it's easier, just attach any dealer program sheets, price book terms, or vendor agreements and I'll pull everything from those directly — no need to fill this all out manually if you have the docs.
+
+Please give me a call if you have any questions or would like to discuss anything prior to responding to this email.
+
+The information you provide goes directly into how we prioritize display space, purchasing decisions, and vendor relationships for 2026.
+
+
 Michael Graf
-Accent Lighting Inc.
-michaelg@accentlightinginc.com
+Accent Lighting, Inc.
+10322 E. Stonegate Lane, Suite 100
+Wichita, KS 67206
 316-636-1278
-`;
-  return { subject, body, to: rep?.['Email'] || rep?.['Office Email'] || rep?.['Quote Email'] || '', repVendors, rep };
+michaelg@accentlightinginc.com
+accentlightinginc.com`;
+
+  const defaultTo = contacts.map(c => c.email).filter(Boolean).join(', ');
+
+  return { subject, body, to: defaultTo, contacts, repVendors, rep };
 }
 
 function openRepOutreach(repName){
   const out = buildRepOutreachEmail(repName);
   if(!out){ toast('No vendors found for this rep', 'err'); return; }
-  const { subject, body, to, repVendors } = out;
+  const { subject, body, to: defaultTo, contacts, repVendors } = out;
 
-  const mailtoHref = `mailto:${encodeURIComponent(to||'')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // Build recipient checkbox list
+  const recipientRows = contacts.length > 0
+    ? contacts.map((c, i) => `
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;">
+          <input type="checkbox" class="ro-recipient-cb" data-email="${esc(c.email)}" data-name="${esc(c.name)}" ${i === 0 ? 'checked' : ''} onchange="(()=>{const checked=[...document.querySelectorAll('.ro-recipient-cb:checked')].map(el=>el.dataset.email);document.getElementById('ro-to').value=checked.join(', ');})()">
+          <span><strong>${esc(c.name)}</strong>${c.email ? ` — ${esc(c.email)}` : ''}${c.phone ? ` — ${esc(c.phone)}` : ''}</span>
+        </label>`).join('')
+    : `<div style="font-size:12px;color:var(--accent);">⚠ No contacts on file for this rep.</div>`;
 
-  openModal(`Rep Outreach — ${repName}`, `
+  openModal(`Outreach Email — ${repName}`, `
     <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
       <div style="flex:1;min-width:200px;padding:10px 12px;background:var(--surface2);border-radius:6px;font-size:12px;">
         <div style="color:var(--text-3);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Vendors</div>
@@ -2501,13 +2581,14 @@ function openRepOutreach(repName){
       </div>
       <div style="flex:1;min-width:200px;padding:10px 12px;background:var(--surface2);border-radius:6px;font-size:12px;">
         <div style="color:var(--text-3);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Recipient</div>
-        <div style="font-size:13px;font-weight:600;">${esc(to||'(no email on file — set one below)')}</div>
+        <div style="font-size:13px;font-weight:600;">${esc(defaultTo||'(no email on file — set one below)')}</div>
       </div>
     </div>
 
     <div class="fg" style="margin-bottom:10px;">
-      <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-3);">To</label>
-      <input id="ro-to" value="${esc(to)}" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:5px;font-family:monospace;font-size:13px;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;display:block;">Recipients — select who to send to</label>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;">${recipientRows}</div>
+      <input id="ro-to" value="${esc(defaultTo)}" placeholder="Or type emails manually" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:5px;font-family:monospace;font-size:12px;color:var(--text-3);">
     </div>
     <div class="fg" style="margin-bottom:10px;">
       <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-3);">Subject</label>
