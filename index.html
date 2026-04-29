@@ -992,19 +992,36 @@ const TOTAL_WEIGHT=CAT_DEFS.reduce((a,c)=>a+c.weight,0);
 
 
 // Expand raw compact data into working format
-let VD=VD_RAW.map(r=>({
-  id:r.id, name:r.n, status:r.st||'Active',
-  cat: r.tp||'', rep: r.rg||'', repContact:r.rc||'', repEmail:r.re||'',
-  scores: Object.fromEntries(
-    CAT_DEFS.map(c=>{
-      const s=r.s[c.key];
-      return [c.key, s ? s.v : null];
-    })
-  ),
-  notes:'', raw:'',
-  _meta: r.s, // preserve justification
-  sales: r.sl||{}
-}));
+const LA_ZERO_J = 'Not on Lights America — scored 0.';
+const BLANK_ZERO_CATS = ['rebates','discounts','mktgFunds','display','webListing'];
+const BLANK_ZERO_J = 'No information on file — assumed 0.';
+let VD=VD_RAW.map(r=>{
+  const sRaw = r.s || {};
+  const sAugmented = {...sRaw};
+  // Auto-score Lights America: blank = 0
+  if (!sRaw.lightsAm) {
+    sAugmented.lightsAm = { v: 0, j: LA_ZERO_J };
+  }
+  // Auto-score specified categories: blank = 0
+  BLANK_ZERO_CATS.forEach(cat => {
+    if (!sRaw[cat]) {
+      sAugmented[cat] = { v: 0, j: BLANK_ZERO_J };
+    }
+  });
+  return {
+    id:r.id, name:r.n, status:r.st||'Active',
+    cat: r.tp||'', rep: r.rg||'', repContact:r.rc||'', repEmail:r.re||'',
+    scores: Object.fromEntries(
+      CAT_DEFS.map(c=>{
+        const s=sAugmented[c.key];
+        return [c.key, s ? s.v : null];
+      })
+    ),
+    notes:'', raw:'',
+    _meta: sAugmented, // preserve justification
+    sales: r.sl||{}
+  };
+});
 
 // Change log
 let CHANGELOG=[];
@@ -2287,26 +2304,75 @@ function saveVendorEdit(vendorId) {
   toast('Vendor updated', 'ok');
 }
 
-function openVendorDetail(vendorId) {
+async function openVendorDetail(vendorId) {
   const v = VD.find(x => x.id === vendorId);
   if (!v) return;
 
   const ws = weightedScore(v.scores);
   const allScores = VD.map(vx => weightedScore(vx.scores)).filter(s => s !== null);
   const adaptiveTier = ws !== null ? getAdaptiveTier(ws, allScores) : null;
-
-  // Find rep info
   const repInfo = REP_DIRECTORY.find(r => r['Rep Company'] === v.rep);
 
-  const panel = document.createElement('div');
-  panel.id = 'vendor-detail-panel';
-  panel.style.cssText = 'position:fixed;top:0;right:0;bottom:0;width:600px;max-width:90vw;background:var(--surface);box-shadow:var(--shadow-lg);z-index:2000;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s;';
+  // Remove any existing modal
+  const existing = document.getElementById('vendor-detail-modal');
+  if (existing) existing.remove();
 
-  panel.innerHTML = `
-    <div style="position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px;z-index:1;">
-      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
-        <h2 style="font-size:20px;font-weight:700;margin:0;">${esc(v.name)}</h2>
-        <div style="display:flex;gap:6px;"><button class="btn btn-sm btn-outline" onclick="openVendorEdit(${v.id})">✏️ Edit</button><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(${v.id});renderVendors($('pg-content'))})">🏷️ Cats</button><button class="btn btn-sm btn-outline" onclick="closeVendorDetail()">✕ Close</button></div>
+  // Build sales chart SVG (reused from before)
+  const buildSalesChart = () => {
+    if (!v.sales?.t) return '';
+    const yrs=['2021','2022','2023','2024','2025'];
+    const vals=yrs.map(y=>v.sales[y]||0);
+    const maxV=Math.max(...vals,1), minV=Math.min(...vals,0);
+    const W=520, H=180, P={t:20,r:20,b:30,l:60};
+    const cw=W-P.l-P.r, ch=H-P.t-P.b;
+    const range=maxV-minV||maxV||1;
+    const xs=yrs.map((_,i)=>P.l+(cw*i/(yrs.length-1)));
+    const ys=vals.map(v=>P.t+ch-((v-minV)/range)*ch);
+    const path=xs.map((x,i)=>(i?'L':'M')+x.toFixed(1)+','+ys[i].toFixed(1)).join(' ');
+    const area=`M${xs[0]},${P.t+ch} L${xs.map((x,i)=>x+','+ys[i]).join(' L')} L${xs[xs.length-1]},${P.t+ch} Z`;
+    const ticks=4;
+    const tickVals=[];
+    for(let i=0;i<=ticks;i++) tickVals.push(minV+(range*i/ticks));
+    const fmtTick=v=>v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v.toFixed(0);
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px;">5-Year Sales Trend</div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:'DM Mono',monospace;">
+        ${tickVals.map((tv,i)=>{const y=P.t+ch-((tv-minV)/range)*ch;return`<line x1="${P.l}" y1="${y.toFixed(1)}" x2="${W-P.r}" y2="${y.toFixed(1)}" stroke="#e5e5e3" stroke-width="1" stroke-dasharray="${i===0?'0':'2,3'}"/><text x="${P.l-8}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#888">${fmtTick(tv)}</text>`;}).join('')}
+        <path d="${area}" fill="rgba(21,101,192,0.12)"/>
+        <path d="${path}" fill="none" stroke="#1565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        ${xs.map((x,i)=>`<circle cx="${x.toFixed(1)}" cy="${ys[i].toFixed(1)}" r="4" fill="#1565c0" stroke="white" stroke-width="2"/><text x="${x.toFixed(1)}" y="${(ys[i]-10).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#1565c0">${fmtTick(vals[i])}</text><text x="${x.toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="11" font-weight="600" fill="#555">${yrs[i]}</text>`).join('')}
+      </svg>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;">
+        <div><span style="color:var(--text-3);">5-Yr Total:</span> <strong>${fmt$(v.sales.t)}</strong></div>
+        ${v.sales.tr!==undefined?`<div><span style="color:var(--text-3);">Trend:</span> <strong style="color:${v.sales.tr>0?'var(--green)':v.sales.tr<0?'var(--accent)':'var(--text-3)'};">${v.sales.tr>0?'+':''}${(v.sales.tr*100).toFixed(0)}%</strong></div>`:''}
+      </div>
+    </div>`;
+  };
+
+  // Overlay + modal
+  const overlay = document.createElement('div');
+  overlay.id = 'vendor-detail-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = e => { if(e.target===overlay) closeVendorDetail(); };
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--surface);border-radius:12px;box-shadow:var(--shadow-lg);width:100%;max-width:760px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;';
+
+  // Vendor website: try to derive from name
+  const websiteGuess = v.website || '';
+
+  modal.innerHTML = `
+    <div style="position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:20px 24px;z-index:1;border-radius:12px 12px 0 0;">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
+        <div>
+          <h2 style="font-size:22px;font-weight:700;margin:0 0 4px;">${esc(v.name)}</h2>
+          ${websiteGuess ? `<a href="${esc(websiteGuess)}" target="_blank" style="font-size:12px;color:var(--accent);">🔗 ${esc(websiteGuess)}</a>` : `<span id="vd-website-link" style="font-size:12px;color:var(--text-3);">🔗 Searching for website...</span>`}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn btn-sm btn-outline" onclick="openVendorEdit(${v.id})">✏️ Edit</button>
+          <button class="btn btn-sm btn-outline" onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>{closeVendorDetail();openVendorDetail(${v.id});renderVendors($('pg-content'))})">🏷️ Cats</button>
+          <button class="btn btn-sm btn-outline" onclick="closeVendorDetail()">✕ Close</button>
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${tierBadge(adaptiveTier)}
@@ -2315,9 +2381,17 @@ function openVendorDetail(vendorId) {
       </div>
     </div>
 
-    <div style="padding:20px;">
+    <div style="padding:20px 24px;">
+
+      <!-- Vendor Overview -->
+      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);border-left:3px solid var(--accent);">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">About This Vendor</div>
+        <div id="vd-overview" style="font-size:13px;color:var(--text-2);line-height:1.6;">Loading overview...</div>
+      </div>
+
+      <!-- Rep Info -->
       ${repInfo ? `
-        <div style="margin-bottom:24px;padding:16px;background:var(--surface2);border-radius:var(--radius);">
+        <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);">
           <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Rep Group</div>
           <div style="font-weight:600;font-size:15px;margin-bottom:6px;">${esc(repInfo['Rep Company'])}</div>
           ${repInfo['Primary Contact'] ? `<div style="font-size:13px;color:var(--text-2);">${esc(repInfo['Primary Contact'])}</div>` : ''}
@@ -2326,55 +2400,34 @@ function openVendorDetail(vendorId) {
         </div>
       ` : ''}
 
-      ${v.sales?.t ? `
-        <div style="margin-bottom:24px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:12px;">5-Year Sales Trend</div>
-          ${(()=>{
-            const yrs=['2021','2022','2023','2024','2025'];
-            const vals=yrs.map(y=>v.sales[y]||0);
-            const maxV=Math.max(...vals,1);
-            const minV=Math.min(...vals,0);
-            const W=520, H=180, P={t:20,r:20,b:30,l:60};
-            const cw=W-P.l-P.r, ch=H-P.t-P.b;
-            const range = maxV-minV || maxV || 1;
-            const xs=yrs.map((_,i)=>P.l + (cw*i/(yrs.length-1)));
-            const ys=vals.map(v=>P.t + ch - ((v-minV)/range)*ch);
-            const path = xs.map((x,i)=>(i?'L':'M')+x.toFixed(1)+','+ys[i].toFixed(1)).join(' ');
-            const area = `M${xs[0]},${P.t+ch} L${xs.map((x,i)=>x+','+ys[i]).join(' L')} L${xs[xs.length-1]},${P.t+ch} Z`;
-            // Y-axis ticks
-            const ticks = 4;
-            const tickVals = [];
-            for(let i=0;i<=ticks;i++){ tickVals.push(minV + (range*i/ticks)); }
-            const fmtTick = v => v>=1000 ? '$'+(v/1000).toFixed(0)+'k' : '$'+v.toFixed(0);
-            return `
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
-                <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:'DM Mono',monospace;">
-                  ${tickVals.map((tv,i)=>{
-                    const y = P.t + ch - ((tv-minV)/range)*ch;
-                    return `
-                      <line x1="${P.l}" y1="${y.toFixed(1)}" x2="${W-P.r}" y2="${y.toFixed(1)}" stroke="#e5e5e3" stroke-width="1" stroke-dasharray="${i===0?'0':'2,3'}"/>
-                      <text x="${P.l-8}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#888">${fmtTick(tv)}</text>
-                    `;
-                  }).join('')}
-                  <path d="${area}" fill="rgba(21,101,192,0.12)" stroke="none"/>
-                  <path d="${path}" fill="none" stroke="#1565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  ${xs.map((x,i)=>`
-                    <circle cx="${x.toFixed(1)}" cy="${ys[i].toFixed(1)}" r="4" fill="#1565c0" stroke="white" stroke-width="2"/>
-                    <text x="${x.toFixed(1)}" y="${(ys[i]-10).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#1565c0">${fmtTick(vals[i])}</text>
-                    <text x="${x.toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="11" font-weight="600" fill="#555">${yrs[i]}</text>
-                  `).join('')}
-                </svg>
-                <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;">
-                  <div><span style="color:var(--text-3);">5-Yr Total:</span> <strong>${fmt$(v.sales.t)}</strong></div>
-                  ${v.sales.tr!==undefined?`<div><span style="color:var(--text-3);">Trend:</span> <strong style="color:${v.sales.tr>0?'var(--green)':v.sales.tr<0?'var(--accent)':'var(--text-3)'};">${v.sales.tr>0?'+':''}${(v.sales.tr*100).toFixed(0)}%</strong></div>`:''}
-                </div>
-              </div>
-            `;
-          })()}
-        </div>
-      ` : ''}
+      <!-- Sales Chart -->
+      ${buildSalesChart()}
 
-      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);"><div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Product Categories</div><div style="margin-bottom:8px;">${renderCatChips(v.id, 30)}</div><button class="btn btn-sm btn-outline" onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>{document.getElementById('vendor-detail-panel').remove();openVendorDetail(${v.id});renderVendors($('pg-content'))})" style="font-size:10px;">🏷️ Edit Categories</button>${(()=>{const t=totalRawScore(v.scores);return t?`<div style="margin-top:8px;font-size:11px;color:var(--text-3);">Raw total: <strong style="color:var(--text);">${t.sum} / ${t.max}</strong> pts</div>`:''})()}</div>
+      <!-- Stock Breakdown Placeholder -->
+      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);border:1px dashed var(--border);">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Stock Breakdown</div>
+        <div style="font-size:13px;color:var(--text-3);text-align:center;padding:20px 0;">
+          📦 Inventory data coming soon — requires Windward S5WebAPI integration
+        </div>
+      </div>
+
+      <!-- Detailed Sales Breakdown Placeholder -->
+      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);border:1px dashed var(--border);">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Sales Breakdown</div>
+        <div style="font-size:12px;color:var(--text-3);text-align:center;padding:20px 0;">
+          📊 Detailed breakdown by salesperson, margin, item, and invoice coming soon — requires Windward S5WebAPI integration
+        </div>
+      </div>
+
+      <!-- Product Categories -->
+      <div style="margin-bottom:20px;padding:14px;background:var(--surface2);border-radius:var(--radius);">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;">Product Categories</div>
+        <div style="margin-bottom:8px;">${renderCatChips(v.id, 30)}</div>
+        <button class="btn btn-sm btn-outline" onclick="openCategoryEditor(${v.id},'${esc(v.name).replace(/'/g,"\\'")}',()=>{closeVendorDetail();openVendorDetail(${v.id});renderVendors($('pg-content'))})" style="font-size:10px;">🏷️ Edit Categories</button>
+        ${(()=>{const t=totalRawScore(v.scores);return t?`<div style="margin-top:8px;font-size:11px;color:var(--text-3);">Raw total: <strong style="color:var(--text);">${t.sum} / ${t.max}</strong> pts</div>`:''})()}
+      </div>
+
+      <!-- Scoring Breakdown -->
       <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:12px;">Scoring Breakdown</div>
       <div style="display:grid;gap:12px;">
         ${CAT_DEFS.map(c => {
@@ -2393,19 +2446,71 @@ function openVendorDetail(vendorId) {
           </div>`;
         }).join('')}
       </div>
+
     </div>
   `;
 
-  document.body.appendChild(panel);
-  setTimeout(() => panel.style.transform = 'translateX(0)', 10);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // AI overview via Anthropic API
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `Write a single concise paragraph (3–5 sentences) about the lighting vendor "${v.name}" for an internal sales team reference. Cover: what types of products they make, their market positioning (residential, commercial, luxury, value, etc.), and any notable brand characteristics. Be factual and professional. If you don't have reliable information about this specific vendor, say so briefly.`
+        }]
+      })
+    });
+    const data = await resp.json();
+    const overviewEl = document.getElementById('vd-overview');
+    if (overviewEl) {
+      const text = data?.content?.[0]?.text || 'No overview available.';
+      overviewEl.textContent = text;
+    }
+  } catch(e) {
+    const overviewEl = document.getElementById('vd-overview');
+    if (overviewEl) overviewEl.textContent = 'Overview unavailable.';
+  }
+
+  // Website link lookup via AI
+  if (!websiteGuess) {
+    try {
+      const resp2 = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `What is the official website URL for the lighting manufacturer or vendor named "${v.name}"? Reply with ONLY the URL (e.g. https://example.com) and nothing else. If you are not confident, reply with exactly: unknown`
+          }]
+        })
+      });
+      const data2 = await resp2.json();
+      const url = (data2?.content?.[0]?.text || '').trim();
+      const linkEl = document.getElementById('vd-website-link');
+      if (linkEl && url && url !== 'unknown' && url.startsWith('http')) {
+        linkEl.outerHTML = `<a href="${url}" target="_blank" style="font-size:12px;color:var(--accent);">🔗 ${url}</a>`;
+      } else if (linkEl) {
+        linkEl.textContent = '🔗 Website not found';
+      }
+    } catch(e) {
+      const linkEl = document.getElementById('vd-website-link');
+      if (linkEl) linkEl.textContent = '';
+    }
+  }
 }
 
 function closeVendorDetail() {
-  const panel = $('vendor-detail-panel');
-  if (panel) {
-    panel.style.transform = 'translateX(100%)';
-    setTimeout(() => panel.remove(), 300);
-  }
+  const modal = document.getElementById('vendor-detail-modal');
+  if (modal) modal.remove();
 }
 
 // ── REP OUTREACH (Task 2) ──
