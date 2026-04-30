@@ -993,7 +993,7 @@ const TOTAL_WEIGHT=CAT_DEFS.reduce((a,c)=>a+c.weight,0);
 
 // Expand raw compact data into working format
 const LA_ZERO_J = 'Not on Lights America — scored 0.';
-const BLANK_ZERO_CATS = ['rebates','discounts','mktgFunds','display','webListing'];
+const BLANK_ZERO_CATS = ['rebates','discounts','mktgFunds'];
 const BLANK_ZERO_J = 'No information on file — assumed 0.';
 let VD=VD_RAW.map(r=>{
   const sRaw = r.s || {};
@@ -1790,42 +1790,42 @@ function openScoringSystem() {
       0: 'No returns accepted'
     },
     'IMAP/Markup (8)': {
-      10: 'Strict IMAP enforcement',
-      9: 'Strong enforcement',
-      8: 'Enforced with occasional issues',
-      7: 'Major accounts comply',
-      6: 'Spotty enforcement',
-      5: 'Weak enforcement',
-      4: 'Many violations',
-      3: 'Little enforcement or communication',
-      2: 'IMAP in name only',
-      1: 'No penalties ever',
-      0: 'No IMAP policy'
+      10: '2.5x or higher markup',
+      9: '2.3-2.49x markup',
+      8: '2.1-2.29x markup',
+      7: '2.0-2.09x markup',
+      6: '1.9-1.99x markup',
+      5: '1.8-1.89x markup (avg)',
+      4: '1.6-1.79x markup',
+      3: '1.4-1.59x markup',
+      2: '1.2-1.39x markup',
+      1: '<1.2x markup',
+      0: 'No IMAP / open pricing'
     },
     'Marketing Funds (7)': {
-      10: '≥3% MDF or co-op',
-      9: '2.5-2.9%',
-      8: '2-2.4%',
-      7: '1.5-1.9%',
-      6: '1.0-1.4%',
-      5: '0.8-0.9%',
-      4: '0.5-0.7%',
-      3: '0.3-0.4%',
-      2: '0.1-0.2%',
-      1: 'Exists but impossible to use',
-      0: 'None'
+      10: '5 MDF + 3 assets + 1 access + 1 cobrand (max all)',
+      9: '5 MDF + 3 assets + 1 of access/cobrand',
+      8: '4 MDF + 3 assets',
+      7: '3 MDF + 2-3 assets',
+      6: '2 MDF + 2 assets + access',
+      5: '1 MDF + 2 assets (avg)',
+      4: '1 MDF + 1 asset',
+      3: 'Token MDF + 1 asset',
+      2: 'Assets only no MDF',
+      1: 'Minimal asset library',
+      0: 'Nothing — no MDF, no assets'
     },
     'Display (6)': {
-      10: '100% showroom coverage',
-      9: '75-99% coverage',
-      8: '50-74% coverage',
-      7: '40-49% coverage',
-      6: '30-39% coverage',
-      5: '20-29% coverage',
-      4: '15-19% coverage',
-      3: '10-14% coverage',
-      2: '5-9% coverage',
-      1: '<5% coverage',
+      10: '4 discount + 2 promos + 4 buyback (1-for-1 all)',
+      9: '4 discount + 2 promos + 3 buyback',
+      8: '3-4 discount + 2 promos + 2-3 buyback',
+      7: '3 discount + 1-2 promos + 2 buyback',
+      6: '2-3 discount + 1 promos + 2 buyback',
+      5: '2 discount + 1 promos + 1 buyback (avg)',
+      4: '2 discount + 0-1 promos + 1 buyback',
+      3: '1-2 discount + occasional promos + no buyback',
+      2: '1 discount + no promos + no buyback',
+      1: '<25% discount + no promos + no buyback',
       0: 'No display program'
     },
     'Lights Am. (5)': {
@@ -1842,17 +1842,17 @@ function openScoringSystem() {
       0: 'Not on Lights America'
     },
     'Web Listing (4)': {
-      10: 'Prominent dealer listing',
-      9: 'Listed prominently',
-      8: 'Listed but secondary',
-      7: 'Listed under general dealers',
-      6: 'Hidden in dealer list',
-      5: 'Rarely updated listing',
-      4: 'Outdated listing',
-      3: 'Requires digging to find',
-      2: 'Very poor listing',
-      1: 'Name only, no link',
-      0: 'Not listed on website'
+      10: 'Featured/premier dealer (logo + top placement)',
+      9: 'Prominent w/ map pin, link, full info',
+      8: 'Listed with link + accurate contact info',
+      7: 'Standard dealer locator listing',
+      6: '—',
+      5: 'Listed but stale or incomplete info',
+      4: '—',
+      3: 'No locator — directs to contact rep',
+      2: '—',
+      1: 'Authorized but not on locator',
+      0: 'Not on vendor site at all'
     },
     'Rep Score (8)': {
       10: 'Proactive, full support',
@@ -1868,43 +1868,43 @@ function openScoringSystem() {
       0: 'No rep assigned'
     },
     'DTC (7)': {
-      10: 'No DTC sales',
-      9: 'Controlled DTC only',
-      8: 'Minimal DTC presence',
-      7: 'Some DTC with limits',
-      6: 'Occasional DTC overlap',
-      5: 'Noticeable DTC presence',
-      4: 'Regular DTC activity',
-      3: 'Strong online DTC',
-      2: 'Frequent DTC competition',
-      1: 'Aggressive DTC strategy',
-      0: 'Heavy DTC undermining dealers'
+      10: 'No DTC; refers to Accent specifically',
+      9: 'No DTC; routes to lighting showrooms',
+      8: 'Brand site, no checkout, dealer-only purchase',
+      7: '—',
+      6: '—',
+      5: 'Sells via showrooms + ecom dealers (Lumens/YLighting), not own ecom (avg)',
+      4: 'Showrooms + ecom dealers + light DTC',
+      3: 'Sells through designers / trade-only',
+      2: 'Active DTC + Amazon competing with dealers',
+      1: 'Aggressive DTC; outranks dealers in Google',
+      0: 'Sells DTC on own website'
     },
     'L1 Member (6)': {
-      10: 'Full Lighting One benefits',
-      9: 'Strong membership',
-      8: 'Partial benefits',
-      7: 'Weak participation',
-      6: 'Minimal benefits',
-      5: 'Member in name only',
-      4: 'Very little benefit',
-      3: 'Rarely active',
-      2: 'Essentially inactive',
-      1: 'Listed only',
-      0: 'Not a member'
+      10: 'Lighting One member',
+      9: '—',
+      8: '—',
+      7: '—',
+      6: '—',
+      5: '—',
+      4: '—',
+      3: '—',
+      2: '—',
+      1: '—',
+      0: 'Not a Lighting One member'
     },
     'Demand (10)': {
-      10: 'Top 10% brand demand',
-      9: 'Very strong demand',
-      8: 'Strong demand',
-      7: 'Moderate-high demand',
-      6: 'Moderate demand',
-      5: 'Average demand',
-      4: 'Below average demand',
-      3: 'Weak demand',
-      2: 'Very low demand',
-      1: 'Almost no demand',
-      0: 'No measurable demand'
+      10: '100K+ monthly US searches (top 1%)',
+      9: '50K-100K monthly searches',
+      8: '20K-50K monthly searches',
+      7: '10K-20K monthly searches',
+      6: '5K-10K monthly searches',
+      5: '1K-5K monthly searches (avg)',
+      4: '500-1K monthly searches',
+      3: '200-500 monthly searches',
+      2: '50-200 monthly searches',
+      1: '<50 monthly searches',
+      0: 'No measurable signal'
     }
   };
 
@@ -2089,23 +2089,23 @@ const RUBRIC_NUMERIC = {
     tiers:[[120,10],[90,9],[75,8],[60,7],[45,6],[30,5],[15,4],[1,3],[0,0]] },
   freight: { unit:'$_free_threshold_lower_better',
     tiers:[[0,10],[500,9],[750,8],[1000,7],[1500,6],[2000,5],[2500,4],[3000,3],[3500,2],[4000,1],[Infinity,0]] },
-  mktgFunds: { unit:'%', dir:'higher_better',
-    tiers:[[3,10],[2.5,9],[2,8],[1.5,7],[1,6],[0.8,5],[0.5,4],[0.3,3],[0.1,2],[0.01,1],[0,0]] },
-  display: { unit:'%_coverage', dir:'higher_better',
-    tiers:[[100,10],[75,9],[50,8],[40,7],[30,6],[20,5],[10,4],[5,3],[1,2],[0.01,1],[0,0]] },
+  imap: { unit:'markup_multiplier', dir:'higher_better',
+    tiers:[[2.5,10],[2.3,9],[2.1,8],[2.0,7],[1.9,6],[1.8,5],[1.6,4],[1.4,3],[1.2,2],[0.0001,1],[0,0]] },
+  demand: { unit:'monthly_searches', dir:'higher_better',
+    tiers:[[100000,10],[50000,9],[20000,8],[10000,7],[5000,6],[1000,5],[500,4],[200,3],[50,2],[1,1],[0,0]] },
 };
 
 // Plain-text rubric (for categories that don't fit a clean numeric scale).
 // Used to display rubric in Edit Scores modal so user can pick informed score.
 const RUBRIC_TEXT = {
   returns: ['Free <7d','No restock <14d','≤10% restock','≤15% restock 2-3wk','≤20% slow','≤25%','25-30%','>30%','Case-by-case','Rare only','None'],
-  imap: ['Strict','Strong','Enforced (occ. issues)','Major accounts comply','Spotty','Weak','Many violations','Little','In name only','No penalties','None'],
+  mktgFunds: ['Max all (5+3+1+1)','Strong (5+3+1)','4 MDF + 3 assets','3 MDF + 2-3 assets','2 MDF + 2 assets + access','1 MDF + 2 assets','1 MDF + 1 asset','Token MDF + 1 asset','Assets only','Minimal','Nothing'],
+  display: ['Max (4+2+4)','4 disc + 2 promo + 3 buyback','3-4 disc + 2 promo + 2-3 buyback','3 disc + 1-2 promo + 2 buyback','2-3 disc + 1 promo + 2 buyback','2+1+1','2 disc + 0-1 promo + 1 buyback','1-2 disc + occ promo + no buyback','1 disc + no promo + no buyback','<25% + no promo','No program'],
   lightsAm: ['On Lights America','—','—','—','—','—','—','—','—','—','Not on Lights America'],
-  webListing: ['Premier featured','Featured listing','—','—','—','—','—','General dealer locator','—','—','No locator'],
+  webListing: ['Featured/premier','Prominent w/ pin+link','Listed w/ link','Standard locator','—','Stale/incomplete','—','No locator (rep contact)','—','Authorized not listed','Not on site'],
   repScore: ['Rep is best in class','Excellent','Very good','Good','Above avg','Average','Below avg','Weak','Rare touch','Almost absent','No rep'],
-  dtc: ['No DTC','—','Tiny DTC','Small DTC','Modest DTC','Some DTC','Visible DTC','Active DTC','Aggressive DTC','—','Pure DTC competitor'],
-  l1Member: ['Active L1','—','—','—','—','—','—','—','—','—','Not L1'],
-  demand: ['Top brand pull','Strong','Above avg','Solid','Moderate','Average','Below avg','Weak','Niche','Rare','None'],
+  dtc: ['No DTC; refers to Accent','No DTC; lighting showrooms','No checkout','—','—','Showrooms+ecom dealers','+ light DTC','Trade/designers only','Active DTC+Amazon','Aggressive DTC','Sells DTC own site'],
+  l1Member: ['L1 member','—','—','—','—','—','—','—','—','—','Not L1 member'],
 };
 
 // Suggest a 0-10 score from a numeric raw value based on RUBRIC_NUMERIC tiers.
@@ -2139,7 +2139,9 @@ function openVendorScoreEntry(vendorId){
     const unitLabel = isNumeric ? (RUBRIC_NUMERIC[c.key].unit==='%' ? '%' :
                                     RUBRIC_NUMERIC[c.key].unit==='days_net' ? 'days (Net)' :
                                     RUBRIC_NUMERIC[c.key].unit.includes('threshold') ? '$ free freight threshold' :
-                                    RUBRIC_NUMERIC[c.key].unit.includes('coverage') ? '% showroom coverage' : '') : '';
+                                    RUBRIC_NUMERIC[c.key].unit.includes('coverage') ? '% showroom coverage' :
+                                    RUBRIC_NUMERIC[c.key].unit==='markup_multiplier' ? 'markup multiplier (e.g. 2.0)' :
+                                    RUBRIC_NUMERIC[c.key].unit==='monthly_searches' ? 'avg monthly US searches' : '') : '';
     return `
       <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--surface);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
