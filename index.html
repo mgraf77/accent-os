@@ -1356,16 +1356,19 @@ function renderVendors(container){
   }
 }
 
-// Calculate adaptive tiers (top 20% = A, next 20% = B, etc.)
+// Tier assignment: weighted score of 0 = auto-F. Remaining non-zero vendors
+// are ranked and split into 5 equal buckets (top 20% = A, next 20% = B,
+// next 20% = C, next 20% = D, bottom 20% = F). F is the largest bucket because
+// it contains both the zeros AND the bottom 20% of non-zero scoring vendors.
 function getAdaptiveTier(score, allScores) {
   if (score === null || score === undefined) return null;
-  const sorted = [...allScores].filter(s => s !== null).sort((a, b) => b - a);
-  if (sorted.length === 0) return null;
-
-  const index = sorted.findIndex(s => s <= score);
-  if (index === -1) return 'F';
-
-  const percentile = (index / sorted.length) * 100;
+  if (score === 0) return 'F';
+  const nonZero = [...allScores].filter(s => s !== null && s > 0).sort((a, b) => b - a);
+  if (nonZero.length === 0) return 'F';
+  // Find this score's rank among non-zero scores. Tied scores share the highest position.
+  const rank = nonZero.findIndex(s => s <= score);
+  if (rank === -1) return 'F';
+  const percentile = (rank / nonZero.length) * 100;
   if (percentile < 20) return 'A';
   if (percentile < 40) return 'B';
   if (percentile < 60) return 'C';
