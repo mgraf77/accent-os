@@ -2161,6 +2161,72 @@ const RUBRIC_NUMERIC = {
     tiers:[[100000,10],[50000,9],[20000,8],[10000,7],[5000,6],[1000,5],[500,4],[200,3],[50,2],[1,1],[0,0]] },
 };
 
+const RUBRIC_COMPONENTS = {
+  mktgFunds: {
+    label: 'Marketing Funds Components',
+    fields: [
+      {key:'mdfPct', label:'MDF / Co-op %', type:'number', min:0, max:10, step:0.1, suffix:'%', tip:'Annual MDF or co-op percentage of purchases'},
+      {key:'assetQuality', label:'Asset Quality', type:'select', options:[
+        {v:'none', l:'None — no assets provided'},
+        {v:'minimal', l:'Minimal — basic logos only'},
+        {v:'standard', l:'Standard — logos + product images'},
+        {v:'rich', l:'Rich — full kit (images, copy, video)'},
+        {v:'pro', l:'Pro — turnkey campaigns + designer support'}
+      ]},
+      {key:'portal', label:'Marketing Portal', type:'bool', tip:'Self-serve portal for assets and claims'},
+      {key:'cobrand', label:'Co-branded Materials', type:'bool', tip:'Vendor produces materials with dealer name/logo'}
+    ],
+    score: (v) => {
+      const mdf = parseFloat(v.mdfPct) || 0;
+      const aq = {none:0, minimal:1, standard:2, rich:3, pro:4}[v.assetQuality] || 0;
+      const portal = v.portal ? 1 : 0;
+      const cobrand = v.cobrand ? 1 : 0;
+      // MDF: 0=0pts, 0.5%=1, 1%=2, 1.5%=3, 2%=4, 3%+=5 (cap 5)
+      let mdfPts = 0;
+      if(mdf >= 3) mdfPts = 5;
+      else if(mdf >= 2) mdfPts = 4;
+      else if(mdf >= 1.5) mdfPts = 3;
+      else if(mdf >= 1) mdfPts = 2;
+      else if(mdf >= 0.5) mdfPts = 1;
+      const total = mdfPts + aq + portal + cobrand; // max 5+4+1+1 = 11
+      return Math.min(10, Math.round(total));
+    }
+  },
+  display: {
+    label: 'Display Program Components',
+    fields: [
+      {key:'discountPct', label:'Display Discount %', type:'number', min:0, max:100, step:1, suffix:'%', tip:'Discount off net on display product'},
+      {key:'promoCadence', label:'Promo Cadence', type:'select', options:[
+        {v:'none', l:'None — no promos'},
+        {v:'rare', l:'Rare — once a year or less'},
+        {v:'occasional', l:'Occasional — 2-3 times/year'},
+        {v:'regular', l:'Regular — quarterly'},
+        {v:'frequent', l:'Frequent — monthly+'}
+      ]},
+      {key:'buyback', label:'Display Buyback / Refresh', type:'select', options:[
+        {v:'none', l:'None — dealer keeps stale displays'},
+        {v:'limited', l:'Limited — case by case'},
+        {v:'standard', l:'Standard — annual swap allowed'},
+        {v:'generous', l:'Generous — funded refresh program'}
+      ]}
+    ],
+    score: (v) => {
+      const disc = parseFloat(v.discountPct) || 0;
+      // Discount: 0=0pts, 25%=2, 35%=3, 50%=5, 60%+=6
+      let discPts = 0;
+      if(disc >= 60) discPts = 6;
+      else if(disc >= 50) discPts = 5;
+      else if(disc >= 35) discPts = 3;
+      else if(disc >= 25) discPts = 2;
+      else if(disc >= 10) discPts = 1;
+      const cad = {none:0, rare:0, occasional:1, regular:2, frequent:2}[v.promoCadence] || 0;
+      const bb = {none:0, limited:1, standard:2, generous:2}[v.buyback] || 0;
+      const total = discPts + cad + bb; // max 6+2+2 = 10
+      return Math.min(10, Math.round(total));
+    }
+  }
+};
+
 // Plain-text rubric (for categories that don't fit a clean numeric scale).
 // Used to display rubric in Edit Scores modal so user can pick informed score.
 const RUBRIC_TEXT = {
@@ -2173,6 +2239,34 @@ const RUBRIC_TEXT = {
   dtc: ['No DTC; refers to Accent','No DTC; lighting showrooms','No checkout','—','—','Showrooms+ecom dealers','+ light DTC','Trade/designers only','Active DTC+Amazon','Aggressive DTC','Sells DTC own site'],
   l1Member: ['L1 member','—','—','—','—','—','—','—','—','—','Not L1 member'],
 };
+
+// Recompute and display the component-based score for mktgFunds / display.
+function recomputeComponentScore(catKey){
+  const cfg = RUBRIC_COMPONENTS[catKey];
+  if(!cfg) return;
+  const vals = {};
+  cfg.fields.forEach(f => {
+    const el = document.getElementById(`se-comp-${catKey}-${f.key}`);
+    if(!el) return;
+    if(f.type === 'bool') vals[f.key] = el.checked;
+    else vals[f.key] = el.value;
+  });
+  const score = cfg.score(vals);
+  const out = document.getElementById(`se-comp-result-${catKey}`);
+  if(out) out.textContent = score;
+  return {vals, score};
+}
+
+// Apply the computed component score to the main score input.
+function applyComponentScore(catKey){
+  const r = recomputeComponentScore(catKey);
+  if(!r) return;
+  const scInp = document.getElementById('se-score-'+catKey);
+  const naBox = document.getElementById('se-na-'+catKey);
+  if(scInp) scInp.value = r.score;
+  if(naBox) naBox.checked = false;
+  if(scInp) scInp.disabled = false;
+}
 
 // Suggest a 0-10 score from a numeric raw value based on RUBRIC_NUMERIC tiers.
 function suggestScore(catKey, rawVal){
@@ -2222,7 +2316,51 @@ function openVendorScoreEntry(vendorId){
             <label style="font-size:11px;color:var(--text-3);"><input id="se-na-${c.key}" type="checkbox" ${sc==='na'?'checked':''} onchange="if(this.checked){document.getElementById('se-score-${c.key}').value='';document.getElementById('se-score-${c.key}').disabled=true;}else{document.getElementById('se-score-${c.key}').disabled=false;}"> N/A</label>
           </div>
         </div>
-        ${isNumeric ? `
+        ${RUBRIC_COMPONENTS[c.key] ? (()=>{
+          const cfg = RUBRIC_COMPONENTS[c.key];
+          const existing = (v._meta?.[c.key]?.components) || {};
+          const fieldsHtml = cfg.fields.map(f => {
+            const cur = existing[f.key];
+            const fid = `se-comp-${c.key}-${f.key}`;
+            if(f.type === 'number'){
+              return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <label style="font-size:11px;color:var(--text-2);min-width:140px;">${f.label}</label>
+                <input id="${fid}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${cur!=null?cur:''}"
+                       oninput="recomputeComponentScore('${c.key}')"
+                       style="width:80px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-family:'DM Mono',monospace;text-align:right;">
+                ${f.suffix ? `<span style="font-size:11px;color:var(--text-3);">${f.suffix}</span>` : ''}
+                <span style="font-size:10px;color:var(--text-3);font-style:italic;flex:1;">${f.tip||''}</span>
+              </div>`;
+            } else if(f.type === 'select'){
+              return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <label style="font-size:11px;color:var(--text-2);min-width:140px;">${f.label}</label>
+                <select id="${fid}" onchange="recomputeComponentScore('${c.key}')"
+                        style="flex:1;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+                  <option value="">— select —</option>
+                  ${f.options.map(o => `<option value="${o.v}" ${cur===o.v?'selected':''}>${o.l}</option>`).join('')}
+                </select>
+              </div>`;
+            } else if(f.type === 'bool'){
+              return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <label style="font-size:11px;color:var(--text-2);min-width:140px;">${f.label}</label>
+                <label style="font-size:11px;color:var(--text-2);"><input id="${fid}" type="checkbox" ${cur?'checked':''} onchange="recomputeComponentScore('${c.key}')"> Yes</label>
+                <span style="font-size:10px;color:var(--text-3);font-style:italic;flex:1;">${f.tip||''}</span>
+              </div>`;
+            }
+            return '';
+          }).join('');
+          return `
+          <div style="background:var(--surface2);padding:10px;border-radius:6px;margin-bottom:6px;">
+            <div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:8px;">${cfg.label}</div>
+            ${fieldsHtml}
+            <div style="display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--border);">
+              <span style="font-size:11px;color:var(--text-3);">Computed score:</span>
+              <span id="se-comp-result-${c.key}" style="font-family:'DM Mono',monospace;font-weight:700;font-size:14px;color:var(--green);">—</span>
+              <button class="btn btn-sm btn-outline" onclick="applyComponentScore('${c.key}')" style="font-size:10px;margin-left:auto;">Apply to Score</button>
+            </div>
+          </div>
+          `;
+        })() : (isNumeric ? `
           <div style="display:flex;gap:8px;align-items:center;background:var(--surface2);padding:8px 10px;border-radius:6px;margin-bottom:6px;">
             <label style="font-size:11px;color:var(--text-2);min-width:95px;">Raw value:</label>
             <input id="se-raw-${c.key}" type="number" step="0.01" placeholder="${unitLabel}"
@@ -2239,7 +2377,7 @@ function openVendorScoreEntry(vendorId){
           <div style="font-size:11px;color:var(--text-3);background:var(--surface2);padding:6px 10px;border-radius:6px;margin-bottom:6px;">
             <strong style="color:var(--text-2);">Rubric:</strong> 10=${txtTiers[0]}; 8=${txtTiers[2]}; 5=${txtTiers[5]}; 0=${txtTiers[10]}
           </div>
-        ` : '')}
+        ` : ''))}
         <textarea id="se-just-${c.key}" rows="2" placeholder="Justification / source data (optional)"
                   style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:inherit;resize:vertical;">${esc(rawHint)}</textarea>
       </div>
@@ -2301,6 +2439,19 @@ function saveVendorScoreEntry(vendorId, propagateToSisters){
       const j = justInp.value.trim();
       newJustifications[c.key] = j;
       if(j){ v._meta[c.key] = Object.assign({}, v._meta[c.key]||{}, {j}); }
+    }
+    // v6.9 — capture component values for mktgFunds / display
+    if(RUBRIC_COMPONENTS && RUBRIC_COMPONENTS[c.key]){
+      const cfg = RUBRIC_COMPONENTS[c.key];
+      const compVals = {};
+      cfg.fields.forEach(f => {
+        const el = document.getElementById(`se-comp-${c.key}-${f.key}`);
+        if(!el) return;
+        if(f.type === 'bool') compVals[f.key] = el.checked;
+        else if(f.type === 'number') compVals[f.key] = el.value === '' ? null : parseFloat(el.value);
+        else compVals[f.key] = el.value || null;
+      });
+      v._meta[c.key] = Object.assign({}, v._meta[c.key]||{}, {components: compVals});
     }
   });
 
