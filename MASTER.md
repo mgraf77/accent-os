@@ -82,8 +82,8 @@ Founded: 1979 | Brick-and-mortar lighting showroom + ecommerce
 ## 3. ACCENTOS — CURRENT STATE
 
 ### Version
-**v6.9.6a** (as of 2026-05-04)  
-File size: ~568KB JS / 601KB total HTML | Split trigger: 900KB hard limit
+**v6.10.2** (as of 2026-05-04)  
+File size: ~651KB JS / ~680KB total HTML | Split trigger: 900KB hard limit (76% used)
 
 ### What's Live
 | Module | Status | Notes |
@@ -102,8 +102,16 @@ File size: ~568KB JS / 601KB total HTML | Split trigger: 900KB hard limit
 | Score States Persistence | ✅ Live | Verified/Unverified/N/A per category per vendor |
 | File Split (Track 0.1) | ✅ Live | index.html (shell) + module-vendor.js + module-pipeline.js + module-knowledge.js + module-marketing.js |
 | Auth / Login | ✅ Live | Track 0.2 Chunk A — Supabase Auth (email/password), 5-role system, JWT-backed session. 3 users seeded: Michael=Owner, Paul=Admin, Patrick=Admin. Tables: `user_profiles`, `audit_log`. Sidebar gated by `data-roles` whitelist. Anon JWT embedded (v6.9.6a) so login works on fresh browsers. Settings → Users panel still pending (Chunk B). |
-| Customers Module | 🔲 Scoped | Two open questions before building |
-| Employees Module | 🔲 Scoped | Two open questions before building |
+| Customers Module | 🔲 Scoped — LOCKED | Visibility: Sales+. Source: Windward CSV import (waiting). Schema in M02. UI build pending CSV. |
+| Employees Module | 🔲 Scoped — LOCKED | Visibility: Owner/Admin/Manager only (employees can NOT see own scores). Source: Windward CSV import (waiting). Schema in M02. UI build pending CSV. |
+| Owner Dashboard | ✅ Live | Mgmt Dashboard with Overview / KPIs / Goals / Team Activity / System sub-tabs (Track 4.1) |
+| KPI Master Registry | ✅ Live | 8-KPI seed catalog · per-role visibility · Owner-snapshot button (Track 4.2) |
+| Goals & OKRs | ✅ Live | 5-level hierarchy · parent/child tree · progress bars (Track 4.3) |
+| Co-op / Rebate Tracker | ✅ Live | coop_tracker · deadline alerts on Daily Brief (Track 2.3) |
+| Pipeline (Persistent) | ✅ Live | pipeline_deals · 8-factor probability · forecast / close-rate stats · archive view (Track 1.5) |
+| Quote Generator (Persistent) | ✅ Live | quotes + quote_lines · save/list/reopen/delete (Track 1.2) |
+| Daily Command Center | ✅ Live | Role-aware Today card · 10 brief tiles across roles (Track 1.3) |
+| Role-Based Dashboards | ✅ Live | Per-role landing — Warehouse / Sales / Owner+Admin+Manager variants (Track 3.2) |
 | CRM / Sales Pipeline | 🔲 Planned | Track 1 |
 | Daily Command Center | 🔲 Planned | Track 1 |
 

@@ -39,8 +39,9 @@
 - [x] **1.2** — Quote Generator — Persistence + Save/Retrieve
   - Shipped v6.10.0: quotes + quote_lines tables wired; load/save/delete; Saved Quotes modal with per-row Delete; quote.notes JSONB packs the type/sqft/budget/contact extras until schema gets first-class columns; QUOTE_ID seeded from highest-seen QT-#### number.
 
-- [x] **1.3** — Daily Command Center (partial — phase 1 with existing data)
-  - Shipped v6.9.8: top-of-dashboard "📌 Today" card with role-aware brief items: Unverified Scores (count + top vendors, click → Scores tab), Tier C Vendors (senior roles only), Activity (24h) (count + latest entry, click → Changelog), Unassigned Reps (senior roles, links Rep Audit), Mixed-Rep Parents (senior roles, links Rep Audit), Avg Vendor Score gauge. Each tile clickable where action exists. **Phase 2 deferred:** open-quotes-stale and pipeline-followup-due — both need M02 tables.
+- [x] **1.3** — Daily Command Center (phase 1 + phase 2)
+  - Phase 1 (v6.9.8): role-aware "📌 Today" card with 6 tiles (unverified scores, tier C, 24h activity, unassigned reps, mixed-rep parents, avg score gauge).
+  - Phase 2 (v6.10.2): added Closing ≤7d (deals with expected_close in next 7 days, weighted forecast), Stale Deals (no update 14d+), Stale Quotes (>7d unfollowed), Co-op Deadlines (≤30d open funds with $$ at risk).
 
 - [ ] **1.4** — CRM & Customer Intelligence
   - What: `customers` + `customer_interactions` tables, customer profile UI, RFM scoring, lifecycle tagging, basic timeline view
@@ -69,30 +70,23 @@
 ## TRACK 3 — Employee Intelligence
 
 - [ ] **3.1** — Employee Scorecards
-  - What: `employees` + `employee_scores` schema; scorecard UI per employee
-  - BLOCKS ON MICHAEL: **M07** AND **M08** (two scoping decisions: admin-only visibility? manual entry vs Windward CSV?)
+  - Scoping LOCKED via M08: visible to Owner/Admin/Manager only; Windward CSV import data source (waiting). Build UI + schema hooks; wire CSV when Michael provides file. Tables `employees` + `employee_scores` exist in M02.
 
-- [ ] **3.2** — Role-Based Dashboards
-  - What: per-role landing pages for the 6 role types beyond the 5 auth roles (Owner / Manager / Sales / Warehouse / Admin / + the variant in Phase 2B doc); Owner + Sales already spec'd
-  - Blocks: full personalization of daily experience
-  - BLOCKS ON MICHAEL: nothing immediate
+- [x] **3.2** — Role-Based Dashboards
+  - Shipped v6.10.2: `dashboard()` now branches by role. Warehouse = minimal (Inventory + activity feed). Sales = my-deals + my-quotes stats with probability per deal. Owner/Admin/Manager = full vendor + pipeline view with system status reflecting v6.10.x state. All variants share the role-aware Daily Brief.
 
 ---
 
 ## TRACK 4 — Owner Intelligence & Strategy
 
-- [ ] **4.1** — Owner Dashboard
-  - What: revenue · pipeline · team activity · goal progress · ecommerce snapshot — single-page Owner-only view
-  - Blocks: nothing immediate (assembles existing data)
-  - BLOCKS ON MICHAEL: nothing (depends on 1.4 + 1.5 + 2.3 being shipped)
+- [x] **4.1** — Owner Dashboard
+  - Shipped v6.10.2: Mgmt Dashboard restructured into 5 sub-tabs (Overview / KPIs / Goals & OKRs / Team Activity / System). Overview = YTD Won revenue, pipeline forecast, Co-op $ open, avg vendor score, pipeline-by-stage, quote velocity 30d, top 10 vendors.
 
-- [ ] **4.2** — KPI Master Registry
-  - What: `kpi_definitions` + `kpi_snapshots` schema; per-role KPI catalog (Financial, Sales, Ecommerce, Customer Intelligence); daily snapshot job
-  - BLOCKS ON MICHAEL: **M02**
+- [x] **4.2** — KPI Master Registry
+  - Shipped v6.10.2: 8-KPI seed catalog auto-loads on Owner first visit; renders per visible_to_roles. Owner-only "Snapshot today" writes one kpi_snapshots row per KPI per day (on_conflict on kpi_key+snapshot_date for safe re-run). audit_log on kpi_snapshot.
 
-- [ ] **4.3** — Goal Architecture / OKRs
-  - What: 5-level hierarchy (company → dept → team → individual → daily action); cascade UI
-  - BLOCKS ON MICHAEL: **M02**
+- [x] **4.3** — Goal Architecture / OKRs
+  - Shipped v6.10.2: 5-level hierarchy via parent_id. Tree view with progress bars. Edit modal auto-suggests level one deeper than parent. Delete cascades. audit_log on goal_create/edit/delete.
 
 ---
 

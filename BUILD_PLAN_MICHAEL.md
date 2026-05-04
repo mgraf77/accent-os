@@ -178,21 +178,11 @@
 
 ## CATEGORY: OWNER DECISIONS
 
-- [ ] **M07** — Customers module: 2 scoping questions
-  - Where: nothing — just decide
-  - Action: answer these and paste both answers to Claude:
-    1. Should employee scores be admin-only, or visible to the employee themselves?
-    2. Initial data source: manual entry only, or Windward CSV import?
-  - Then: paste to Claude → `M07 answers: (1) <admin-only OR visible-to-self>, (2) <manual OR Windward CSV>. Begin Track 1.4.`
-  - Unlocks: Track 1.4 (Customers / CRM)
+- [x] **M07** — Customers module: scoping LOCKED 2026-05-04
+  - Decision: customer scores visible to **Sales role and above**. Data source: **Windward CSV import** (waiting). Build module UI + schema hooks now; wire CSV import when Michael provides the file.
 
-- [ ] **M08** — Employees module: same 2 scoping questions
-  - Where: nothing — just decide (same as M07 but for employees)
-  - Action: answer:
-    1. Admin-only or visible-to-self?
-    2. Manual entry or Windward CSV?
-  - Then: paste to Claude → `M08 answers: (1) <…>, (2) <…>. Begin Track 3.1.`
-  - Unlocks: Track 3.1 (Employee Scorecards)
+- [x] **M08** — Employees module: scoping LOCKED 2026-05-04
+  - Decision: employee scores visible to **Owner / Admin / Manager only**. Employees CANNOT see their own scores. Data source: **Windward CSV import** (waiting). Manager role explicitly added as a viewer of employee data — reflect everywhere Manager appears in role visibility matrix.
 
 - [ ] **M18** — Website redesign: owner approval to go to production
   - Where: review the sandbox HTML files in Drive (per MASTER §7)

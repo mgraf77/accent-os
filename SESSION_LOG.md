@@ -7,11 +7,27 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, and BUILD_INTELLIGENCE.md fresh. Continue autonomous build from BUILD_PLAN_CLAUDE.md. With M02 + M01 done, all of Track 1.1 / 1.2 / 1.5 / 2.2 / 2.3 are now shipped — next unblocked items are **4.1 Owner Dashboard** (assemble existing data into a single Owner-only view), **4.2 KPI Master Registry** (kpi_definitions + kpi_snapshots wiring; needs a kpi seed list), **4.3 Goal Architecture / OKRs** (goals table; 5-level UI), and **3.2 Role-Based Dashboards** (per-role landing pages, partial via Daily Brief). Track 1.3 phase 2 (quote/pipeline tiles) can also be completed now that those tables exist. Track 1.4 (Customers/CRM) still blocks on **M07**. Track 3.1 (Employee Scorecards) still blocks on **M07/M08**. Suggested order: 1.3 phase 2 (quick win — extend brief tiles) → 4.1 Owner Dashboard → 4.2 KPI Registry → 4.3 OKRs → 3.2 Role Dashboards. Before each item, update TaskCreate. After each commit, append to BUILD_INTELLIGENCE.md.
+> Read BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, and BUILD_INTELLIGENCE.md fresh. M07 + M08 are LOCKED — Customers (1.4) and Employees (3.1) modules can both be built now without blocking on Michael. Customer scores: visible to Sales+. Employee scores: Owner/Admin/Manager only — employees cannot see their own scores. Both modules: build UI + schema hooks; wait for Windward CSV import (handled by Michael) for actual data. Schemas already exist in M02. Order suggested: **1.4 Customers/CRM** → **3.1 Employee Scorecards** → then any remaining Phase-3 modules from Track 5 that don't need external API keys (5.1 Knowledge Hub, 5.2 Job Tracker, 5.6 Price Book, 5.7 Vendor Deal Optimization, 5.16 Company Calendar). Token rules from prior session apply: doc-only updates batched into single commit at end; no narration between steps; status block after commits only. Append BUILD_INTELLIGENCE entries flagging tasks where a lighter approach would have saved tokens.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Autonomous session: 1.3p2 + 4.1 + 4.2 + 4.3 + 3.2 — SHIPPED
+**Version:** v6.10.2
+**Built/Changed:**
+- **1.3 phase 2** Daily Brief: Closing≤7d (forecast), Stale Quotes (>7d unfollowed). Phase-1 tiles retained.
+- **4.1 Owner Dashboard** Mgmt Dashboard restructured into 5-tab dispatcher (Overview/KPIs/Goals/Team Activity/System). Overview = revenue YTD + pipeline forecast + coop $ + avg score + by-stage breakdown + quote velocity + top vendors.
+- **4.2 KPI Master Registry** 8-KPI seed catalog auto-loads on Owner first visit; per-role visibility; Owner-only "Snapshot today" with on_conflict for safe re-run.
+- **4.3 Goals & OKRs** 5-level hierarchy via parent_id; tree view with progress bars; auto-suggest next level for sub-goals; cascade delete.
+- **3.2 Role-Based Dashboards** dashboard() now branches: Warehouse minimal / Sales my-deals view / Owner+Admin+Manager full. Daily Brief shared across all variants.
+- Team Activity tab: live audit_log feed (Owner-only RLS).
+- M07/M08 marked LOCKED in BUILD_PLAN_MICHAEL with locked decisions captured.
+**Decisions:** Customer/employee scoping locked (M07/M08). Customers: Sales+. Employees: Owner/Admin/Manager only — employees CANNOT see own scores. Both await Windward CSV.
+**Process change:** doc-only updates now batched into one end-of-session commit, separate from code commits. Saved meaningful tokens vs prior interleaved pattern.
+**Verified:** JS parses clean.
+**Open loops:** 1.4 Customers and 3.1 Employees ready to build (no Michael blocker now). Pipeline probability heuristics still need real win/loss data for recalibration.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Autonomous session: Track 1.1 + 1.2 + 1.5 + 2.2 + 2.3 — SHIPPED
 **Version:** v6.9.9 → v6.10.0 → v6.10.1
