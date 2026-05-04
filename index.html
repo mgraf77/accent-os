@@ -367,6 +367,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('activity')"><span class="ni-icon">◷</span><span class="ni-label">Activity Feed</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('reports')"><span class="ni-icon">⤓</span><span class="ni-label">Reports</span></div>
       <div class="ni" data-roles="Owner,Admin" onclick="goTo('portalpreview')"><span class="ni-icon">⊡</span><span class="ni-label">Portal Preview</span></div>
+      <div class="ni" data-roles="Owner,Admin" onclick="goTo('health')"><span class="ni-icon">⚙</span><span class="ni-label">Health Check</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('repoutreach')"><span class="ni-icon">✉</span><span class="ni-label">Rep Outreach</span></div>
@@ -697,6 +698,7 @@ const PAGE_META={
   activity:  {t:'Activity Feed',s:'Vendor changes · audit log · pipeline events'},
   reports:   {t:'Reports',s:'CSV exports for every dataset'},
   portalpreview: {t:'Portal Preview',s:'Preview the future Trade + Rep portals'},
+  health:    {t:'Health Check',s:'Schema · hydration · diagnostics'},
   roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
   mgmt:      {t:'Management Dashboard',s:'Owner View'},
   settings:  {t:'Settings',s:''},
@@ -712,7 +714,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,roadmap,mgmt,settings,repoutreach};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6469,5 +6471,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/pipeline_analytics.js?v=6.10.31"></script>
 <script src="js/quick_actions.js?v=6.10.32"></script>
 <script src="js/portal_preview.js?v=6.10.33"></script>
+<script src="js/health.js?v=6.10.34"></script>
 </body>
 </html>
