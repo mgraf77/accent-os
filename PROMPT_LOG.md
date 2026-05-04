@@ -24,3 +24,7 @@
 ### 2026-05-04 — Resume (post-5.14)
 **Prompt:** "resume"
 **Context:** User unpausing again after the 5.8/5.9/5.10/5.15/5.14 batch. WIP shows clean session-end state. Next pending: **5.12 Marketing Hub (full build)** — current `marketing()` page is a static placeholder showing site issues + agency status. Need to replace with real CRUD module: campaigns + assets + keep site-audit tab. Track 5 final remaining item.
+
+### 2026-05-04 — Resume + Track 6 entry
+**Prompt:** "give me a prompt to send to claud chat to have it give me instructions to unblock you. while i am doing that, resume the build and then i will send you the info you need when i get it and then you can resume from there and finish out track 6"
+**Context:** User asks for a prompt they can paste into Claude.ai to get walk-through instructions for the 22 pending Michael tasks (M03/M04/M05/M06/M09/M10/M11/M12/M13/M14/M15/M16/M17/M18/M19/M20 + the 6 SQL runs M24-M29). Provided prompt above. Meanwhile, I resume autonomous build starting at **6.8 Intelligent Alerts** — cheapest unblocked win because the `alerts` table already exists in M02 schema and the heuristics can compute over existing DEALS / QUOTES / COOP_FUNDS / INVENTORY / VD data.
