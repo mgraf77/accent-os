@@ -355,6 +355,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('deliveries')"><span class="ni-icon">▶</span><span class="ni-label">Deliveries</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('decisionengine')"><span class="ni-icon">★</span><span class="ni-label">Decision Engine</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('competitive')"><span class="ni-icon">⚖</span><span class="ni-label">Competitive Pricing</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('alerts')"><span class="ni-icon">!</span><span class="ni-label">Alerts</span></div>
       <div class="sb-sect">INTELLIGENCE</div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
@@ -606,9 +607,12 @@ async function hydrateFromSupabase(){
     try { await sbLoadCompetitorPrices(); } catch(e){ console.warn(e); }
     try { await sbLoadMarketingCampaigns(); } catch(e){ console.warn(e); }
     try { await sbLoadMarketingAssets(); } catch(e){ console.warn(e); }
+    try { await sbLoadAlerts(); } catch(e){ console.warn(e); }
     try { await sbLoadPipeline(); } catch(e){ console.warn(e); }
     try { await sbLoadKPIs(); } catch(e){ console.warn(e); }
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
+    // Run alert generator AFTER all data loaded — heuristics read from every module's state.
+    try { if(typeof generateAlertsFromData==='function') await generateAlertsFromData(); } catch(e){ console.warn(e); }
   }
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
@@ -673,6 +677,7 @@ const PAGE_META={
   deliveries: {t:'Deliveries',s:'Schedule + driver routing'},
   decisionengine: {t:'Decision Engine',s:'Sales · Pure-compute recommendations'},
   competitive: {t:'Competitive Pricing',s:'Track competitor prices vs ours'},
+  alerts:    {t:'Alerts',s:'Auto-generated from your data'},
   knowledge: {t:'Knowledge Engine',s:'AI-Powered Lighting Intelligence'},
   vendors:   {t:'Vendor Ranking',s:'Vendor Ranking 2026'},
   changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
@@ -693,7 +698,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,knowledge,vendors,changelog,calendar,marketing,roadmap,mgmt,settings,repoutreach};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,alerts,knowledge,vendors,changelog,calendar,marketing,roadmap,mgmt,settings,repoutreach};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6282,5 +6287,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/decision_engine.js?v=6.10.18"></script>
 <script src="js/competitive_pricing.js?v=6.10.19"></script>
 <script src="js/marketing.js?v=6.10.20"></script>
+<script src="js/alerts.js?v=6.10.21"></script>
 </body>
 </html>

@@ -139,7 +139,8 @@
 - [ ] **6.5** — Trade & Designer Portal (external-facing)
 - [ ] **6.6** — Vendor Rep Portal (external-facing)
 - [ ] **6.7** — AI Lighting Consultant (customer-facing chat for accentlightinginc.com)
-- [ ] **6.8** — Intelligent Alerts (Agentic Level 3 → 4 cross-system)
+- [x] **6.8** — Intelligent Alerts (Agentic Level 3 → 4 cross-system)
+  - Shipped v6.10.21: New "Alerts" sidebar entry (CORE, all roles). External JS module `js/alerts.js`. Uses existing `alerts` table from M02 schema — no new SQL needed. 9 generators auto-run on hydrate: deal_stale (14d+ no update, ≥$2K), coop_deadline (≤14d), quote_cold (>21d, ≥$500), inventory_low (below reorder_point), delivery_overdue (past schedule, not done), warranty_expiring (≤30d, open), showroom_expiring (≤14d), po_overdue (past expected_date, not received), score_dropped (≥3 points down in last 7d via CHANGELOG). Dedupe via (type, source_id) key — re-runs skip already-emitted alerts. 4 stat cards: unread / urgent / read+actioned / total. Filters: free-text + status + severity. Per-alert actions: Open → / Mark read / Done (actioned) / Dismiss. Click-through marks as read automatically. Mark-all-read button.
 - [ ] **6.9** — AI Demand Forecasting
 - [ ] **6.10** — AccentOS → accentlightinginc.com embed (employee tools on the public site, role-gated)
 - [ ] **6.11** — Windward ERP Live Integration (read-only via S5WebAPI Edge Function)
