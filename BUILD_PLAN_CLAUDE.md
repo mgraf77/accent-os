@@ -95,8 +95,9 @@
   - Shipped v6.10.7: "Internal Docs" tab on Knowledge Engine page. Two-pane layout (article list + viewer with markdown rendering). 7 categories. Search + category filter, pinned-first sort. Markdown subset (# / ## / ### headings, **bold**, *italic*, [text](url) links, - bullets, newlines). Edit modal with auto-derived slug, comma tags, pin toggle. Persistence on `articles` table from M21 schema (no-ops gracefully if table doesn't exist).
 - [x] **5.2** — Job Tracker (project-level work tracking)
   - Shipped v6.10.8: New "Job Tracker" page (CORE section, all roles). 4 stat cards (active/overdue/due≤7d/completed). Filters by status + priority + free-text. Auto job_number J-####. Edit modal links to existing customers (CUSTOMERS dropdown) and quotes (QUOTES dropdown), or accepts free-text customer name. Status-color badges. completed_at auto-set when status flips to complete. Persistence on `jobs` table from M21 schema.
-- [ ] **5.3** — Inventory Module (live data — currently display-only)
-  - BLOCKS ON MICHAEL: **M03** (Windward S5WebAPI confirmation) for live data; can ship CSV-import version without
+- [x] **5.3** — Inventory Module — CSV phase 1
+  - Shipped v6.10.9: replaced placeholder Inventory sub-tab with full CSV-import + filterable list. New `inventory_items` table (M22 SQL written, pending Michael run). 4 stat cards (tracked SKUs / units / inventory value / below-reorder). CSV import: paste-or-upload, header alias mapping (sku/qty/cost/etc.), vendor_name → vendor_id resolution against existing VD, preview-then-commit flow. Bulk upsert via on_conflict on (vendor_id, sku). Low-stock filter highlights rows red. Live Windward sync still ships with Track 6.11 — uses the same `inventory_items.import_source` column ('windward' vs 'csv').
+  - BLOCKS ON MICHAEL: **M22** (run inventory schema), **M03** + **M10** (Windward live data, future Track 6.11)
 - [ ] **5.4** — Purchase Orders
 - [ ] **5.5** — Trade Partner Network (external designers/contractors)
 - [ ] **5.6** — Price Book (catalog with margin analysis)

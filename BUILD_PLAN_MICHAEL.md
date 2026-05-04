@@ -31,6 +31,16 @@
   - Then: paste to Claude → `M02 done — core schema is in. Build out Track 1 in priority order.`
   - Unlocks: Tracks 1.1, 1.2, 1.4, 1.5, 2.2, 2.3, 4.2, 4.3 (everything that needs new tables)
 
+- [ ] **M22** — Run Inventory schema (Track 5.3 phase 1)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M22_inventory_schema.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return one row (`inventory_items` with `rls_enabled=true`).
+    4. Reload `https://accent-os.pages.dev`. The Inventory sub-tab on Vendor Ranking already ships (v6.10.9) with CSV-import + filterable list — once the table exists, imports persist and reload across sessions.
+  - Then: paste to Claude → `M22 done — inventory_items table is in. Import a CSV to test.`
+  - Unlocks: persistence for Track 5.3 CSV imports. The same table accepts live syncs from Track 6.11 (Windward) once M03 + M10 land — no schema migration required.
+
 - [ ] **M21** — Run Phase 3 schema (Calendar + Knowledge Hub + Job Tracker)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
