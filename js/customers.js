@@ -256,10 +256,22 @@ async function openCustomerDetail(customerId){
       });
     });
   }
+  // Extended cross-module links by name match (jobs, deliveries, warranty)
+  const matchByName = list => (list||[]).filter(x => {
+    const t = (x.customer_name || x.customer || '').toLowerCase().trim();
+    return t && c.name && t === c.name.toLowerCase().trim();
+  });
+  const linkedJobs = matchByName(typeof JOBS !== 'undefined' ? JOBS : []);
+  const linkedDeliveries = matchByName(typeof DELIVERIES !== 'undefined' ? DELIVERIES : []);
+  const linkedWarranty = matchByName(typeof WARRANTY_CLAIMS !== 'undefined' ? WARRANTY_CLAIMS : []);
+
   const timeline = [];
   ints.forEach(i => timeline.push({date: i.occurred_at, kind: i.type, label: i.subject || i.type, body: i.body, amount: i.amount, _id: i.id, _src:'interaction'}));
   linkedQuotes.forEach(q => timeline.push({date: q.date ? new Date(q.date).toISOString() : null, kind:'quote', label: `Quote ${q.id}`, body: q.project||'', amount: q.total, _src:'quote', _qid: q.id}));
   linkedDeals.forEach(d => timeline.push({date: d.updated_at, kind:'deal_'+d._stage, label: `Deal: ${d.name}`, body: d.notes||'', amount: d.value, _src:'deal', _did: d.id, _stage:d._stage}));
+  linkedJobs.forEach(j => timeline.push({date: j.updated_at || j.start_date, kind:'job', label: `Job ${j.job_number||''} — ${j.project_name||''}`, body: j.status||'', amount: null, _src:'job', _jid: j.id}));
+  linkedDeliveries.forEach(d => timeline.push({date: d.scheduled_date, kind:'delivery', label: `Delivery ${d.delivery_number||''}`, body: d.status||'', amount: null, _src:'delivery', _did: d.id}));
+  linkedWarranty.forEach(w => timeline.push({date: w.created_at, kind:'warranty', label: `Warranty ${w.claim_number||''}`, body: w.product_description||'', amount: w.cost_to_us||null, _src:'warranty', _wid: w.id}));
   timeline.sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
 
   const addr = c.address || {};
@@ -297,7 +309,7 @@ async function openCustomerDetail(customerId){
       ${timeline.length === 0 ? '<div style="padding:20px;text-align:center;color:var(--text-3);">No activity yet.</div>' : timeline.map(t => {
         const dt = t.date ? new Date(t.date) : null;
         const dateStr = dt && !isNaN(dt) ? dt.toLocaleDateString() : '—';
-        const iconMap = {quote:'◻', order:'$', call:'☏', email:'✉', visit:'⌂', note:'✎', support:'?', deal_won:'★', deal_lost:'✕'};
+        const iconMap = {quote:'◻', order:'$', call:'☏', email:'✉', visit:'⌂', note:'✎', support:'?', deal_won:'★', deal_lost:'✕', job:'▤', delivery:'▶', warranty:'⚠'};
         const ic = iconMap[t.kind] || '•';
         const amt = t.amount ? `<span class="mono fw6" style="margin-left:auto;">$${Number(t.amount).toLocaleString()}</span>` : '';
         const editBtn = t._src === 'interaction' ? `<button class="btn btn-outline btn-sm" style="font-size:9px;padding:2px 6px;" onclick="event.stopPropagation();openCustomerInteractionEdit('${c.id}','${t._id}')">edit</button>` : '';
