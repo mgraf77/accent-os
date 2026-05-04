@@ -116,7 +116,8 @@
 - [ ] **5.12** — Marketing Hub (full build — current `marketing` page is a scaffold)
 - [ ] **5.13** — E-Commerce Command Center
   - BLOCKS ON MICHAEL: **M04** (BigCommerce API key) AND **M05** (GMC API access)
-- [ ] **5.14** — Competitive Pricing Intelligence
+- [x] **5.14** — Competitive Pricing Intelligence
+  - Shipped v6.10.19: New "Competitive Pricing" page (CORE, Sales+ access). External JS module `js/competitive_pricing.js`. Schema in M28 (`competitor_prices` — append-only observations table; multiple snapshots per SKU+competitor). Latest-per-pair view in UI. Position calc: undercut (we &gt;5% below), parity (within 5%), premium (we &gt;5% above), unknown. our_price falls back to current INVENTORY.list_price for the SKU. 4 stat cards: SKUs tracked / undercutting / premium / avg vs competitor. Filters: SKU/desc/competitor search + competitor + position. SKU autocomplete from inventory; auto-fills description + our_price + vendor. Each row click-throughs to edit modal.
 - [x] **5.15** — Sales Decision Engine
   - Shipped v6.10.18: New "Decision Engine" page (CORE, Sales+ access). External JS module `js/decision_engine.js`. Pure-compute layer over DEALS + QUOTES + CUSTOMERS + CUSTOMER_INTERACTIONS + INVENTORY + CHANGELOG — no new schema. 5 recommendation kinds: CHASE (high prob × high value, not won), FOLLOW-UP (open quotes 7-60d old), AT-RISK (deals 14d+ stale ≥$2K), RETAIN (VIP/Active customers 60+ days quiet), UPSELL (recently won deals ≥$3K, 7-90d post-win). Each row click-throughs to the relevant page (deal detail, customer detail, etc.) via existing `goTo` + `setTimeout` pattern. 4 stat cards: chase / follow-up / at-risk / total estimated 30d impact. Filters by kind + min-impact threshold.
 - [x] **5.16** — Company Calendar

@@ -61,6 +61,16 @@
   - Then: paste to Claude → `M21 done — phase 3 schema is in. All three modules are now persistent.`
   - Unlocks: persistence for Tracks 5.1 (Knowledge Hub), 5.2 (Job Tracker), 5.16 (Company Calendar). Until M21 runs, the UIs work but persistence silently no-ops (toast warns on save).
 
+- [ ] **M28** — Run Competitive Pricing schema (Track 5.14)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M28_competitor_prices_schema.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return one row (`competitor_prices` with `rls_enabled=true`).
+    4. Reload `https://accent-os.pages.dev`. Competitive Pricing sidebar entry already ships (v6.10.19).
+  - Then: paste to Claude → `M28 done — competitor_prices table is in.`
+  - Unlocks: persistence for Track 5.14. Append-only observation log; latest snapshot per (SKU × competitor) shown in UI.
+
 - [ ] **M27** — Run Deliveries schema (Track 5.10)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:

@@ -7,11 +7,26 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST (per BUILD_INTELLIGENCE rule). Then PROMPT_LOG.md, SESSION_LOG.md, BUILD_PLAN_CLAUDE.md, BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md and commit before any build work. Continue autonomous build from the first incomplete `[ ]` item in BUILD_PLAN_CLAUDE.md without unresolved BLOCKS ON MICHAEL. Run `bash /workspaces/accent-os/scripts/status.sh` first. M24 is the newest pending Michael — Trade Partners + Warranty tables. Likely next items: 5.8 Showroom Display, 5.9 QR/Barcode, 5.10 Delivery Scheduling, 5.12 Marketing Hub (full build), 5.14 Competitive Pricing, 5.15 Sales Decision Engine. New modules ship as `js/<name>.js` external files (file split is in place — index.html is 681KB, plenty of headroom). Each new module gets a `<script src="js/<name>.js?v=…">` tag added before `</body>`. Token rules + crash-recovery rules unchanged.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / PROMPT_QUEUE.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. Continue autonomous build from first incomplete `[ ]`. Track 5 has only **5.12 Marketing Hub (full build)** remaining — that's a bigger lift than the compact CRUD modules. Could shift to Track 6 integration prep (most blocked on Michael API keys, see BUILD_PLAN_MICHAEL: M03/M04/M05/M06/M09/M10) or polish: deeper Daily Brief tiles for new modules, charts, global search across modules. M24/M25/M26/M27/M28 still pending Michael — UIs ship working but persistence silently no-ops until tables exist. New modules ship as external `js/<name>.js` files.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Resume + 5.8 + 5.9 + 5.10 + 5.15 + 5.14 — SHIPPED
+**Version:** v6.10.15 (5.8) → v6.10.16 (5.9) → v6.10.17 (5.10) → v6.10.18 (5.15) → v6.10.19 (5.14)
+**Built/Changed:**
+- **5.8 Showroom Display Management** (v6.10.15) — js/showroom_displays.js + sql/M25. Tracks vendor display programs: name, location, status (planned/installed/active/expiring/expired/removed), install/expires dates, participation cost vs co-op vs retail value, SKU list, contract terms. 4 stats inc. expiring ≤60d watch. Linked-coop-fund dropdown ties to existing COOP_FUNDS.
+- **5.9 QR/Barcode Labels** (v6.10.16) — js/labels.js + sql/M26. Two source modes (manual textarea / from inventory multi-select). QR via api.qrserver.com (free, no API key). 3 sizes × 2-6 columns × show-text toggle. Print via window.print() with injected `@media print` stylesheet hiding chrome. Save-named-batch flow optional.
+- **5.10 Delivery Scheduling** (v6.10.17) — js/deliveries.js + sql/M27. 6-state workflow, auto DLV-####. Customer dropdown auto-fills name+address from CUSTOMERS. Optional links to job/quote/PO. Time window, driver, vehicle, weight, signature-required toggle, failure reason. delivered_at auto-set on terminal status.
+- **5.15 Sales Decision Engine** (v6.10.18) — js/decision_engine.js. Pure-compute, no schema. 5 recommendation kinds (chase/follow-up/at-risk/retain/upsell). Click-throughs to relevant module via goTo + setTimeout. 4 stat cards inc. summed estimated 30d impact. Uses computeCustomerRFM (from customers module) + computeDealProbability (from pipeline) + DEALS / QUOTES / CUSTOMERS / INVENTORY.
+- **5.14 Competitive Pricing Intelligence** (v6.10.19) — js/competitive_pricing.js + sql/M28. Append-only observations table; latest-per-pair view in UI. Position calc (undercut/parity/premium) against our_price OR fallback to INVENTORY.list_price. SKU autocomplete from inventory pre-fills description + our_price + vendor.
+- **M25 / M26 / M27 / M28** added to BUILD_PLAN_MICHAEL (4 small SQL files for the new tables; Decision Engine needs no SQL).
+**Decisions:** Decision Engine ships pure-compute over already-loaded data — no hydrate call, no schema, instant ROI. Pattern matches 5.6 Price Book + 5.7 Deal Optimizer. Competitive Pricing schema chose append-only observations (not "latest only" upsert) so historical price drift becomes chartable later. QR Labels uses goqr.me public API for v1 — acceptable for non-sensitive SKU data; future v2 can swap to a pinned local lib if offline use is required.
+**Verified:** JS parses clean across inline + 16 external module files (906KB total payload). index.html stable around 686KB after each module add (well under 900KB cap thanks to the v6.10.12 file split).
+**Open loops:** M24/M25/M26/M27/M28 pending Michael (5 small SQL files; UIs ship working with persistence silently no-op until tables exist). Only 5.12 Marketing Hub remains in Track 5 — bigger lift, deferred. Track 6 mostly blocked on Michael API keys.
+**Process notes:** WIP file updated 5+ times across this session per crash-recovery rule. Each module pattern (CRUD with new schema) takes ~5-8 minutes once the schema is defined. Pure-compute modules (Decision Engine) take ~3 minutes since no persistence wiring is needed.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — M21/M22/M23 confirmed + file split (0.1 actually shipped) + 5.5 + 5.11 — SHIPPED
 **Version:** v6.10.12 (file split) → v6.10.13 (5.5) → v6.10.14 (5.11)
