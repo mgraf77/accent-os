@@ -5378,7 +5378,10 @@ function dashboard(el){
   <div class="card mb16" style="border-left:3px solid var(--accent);">
     <div class="card-hd">
       <span class="card-title">📌 Today · ${esc(role||'Welcome')}, ${esc(CU?.name?.split(' ')[0]||'')}</span>
-      <span class="sm muted">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="showDailyDigest()" title="Generate plaintext email digest">✉️ Email digest</button>
+        <span class="sm muted">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</span>
+      </div>
     </div>
     <div class="card-body">
       ${briefItems.length===0 ? `<div style="color:var(--text-3);font-size:13.5px;">All clear. No outstanding items today.</div>` : `
@@ -6511,5 +6514,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/portal_preview.js?v=6.10.33"></script>
 <script src="js/health.js?v=6.10.34"></script>
 <script src="js/inventory_analytics.js?v=6.10.35"></script>
+<script src="js/digest.js?v=6.10.36"></script>
 </body>
 </html>
