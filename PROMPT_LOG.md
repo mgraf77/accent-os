@@ -20,3 +20,7 @@
 ### 2026-05-04 — Resume building
 **Prompt:** "resume building"
 **Context:** User unpausing after auto-start config + prompt queue setup. Per CLAUDE.md auto-execute, resume by reading WIP → BUILD_PLAN → BUILD_INTELLIGENCE, then continue from first incomplete `[ ]`. WIP is at clean session-end state from last commit. PROMPT_QUEUE.md is empty (both seeded items closed). Next pending: **5.8 Showroom Display Management**.
+
+### 2026-05-04 — Resume (post-5.14)
+**Prompt:** "resume"
+**Context:** User unpausing again after the 5.8/5.9/5.10/5.15/5.14 batch. WIP shows clean session-end state. Next pending: **5.12 Marketing Hub (full build)** — current `marketing()` page is a static placeholder showing site issues + agency status. Need to replace with real CRUD module: campaigns + assets + keep site-audit tab. Track 5 final remaining item.
