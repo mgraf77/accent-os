@@ -578,6 +578,8 @@ async function hydrateFromSupabase(){
     try { await sbLoadScoreStates(); } catch(e){ console.warn(e); }
     try { await sbLoadVendorScores(); } catch(e){ console.warn(e); }
     try { await sbLoadVendorOverrides(); } catch(e){ console.warn(e); }
+    try { await sbLoadQuotes(); } catch(e){ console.warn(e); }
+    try { await sbLoadCoopFunds(); } catch(e){ console.warn(e); }
   }
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
@@ -962,6 +964,308 @@ async function sbLoadScoreStates(){
     console.warn('[sb] Load score states failed:', e.message);
     return false;
   }
+}
+
+// ── CO-OP / REBATE TRACKER (Track 2.3, coop_tracker table) ──
+let COOP_FUNDS = [];
+
+async function sbLoadCoopFunds(){
+  if(!sbConfigured()) return false;
+  try{
+    const rows = await sbFetch('/coop_tracker?select=id,vendor_id,fund_type,amount,currency,earned_period,deadline,status,notes,created_at&order=deadline.asc.nullslast,created_at.desc');
+    COOP_FUNDS = Array.isArray(rows) ? rows : [];
+    console.log(`[coop_tracker] Loaded ${COOP_FUNDS.length} fund rows`);
+    return COOP_FUNDS.length;
+  }catch(e){ console.warn('[sb] Load coop_tracker failed:', e.message); return false; }
+}
+
+async function sbSaveCoopFund(rec){
+  if(!sbConfigured()) return false;
+  try{
+    const body = {
+      id: rec.id || undefined,
+      vendor_id: String(rec.vendor_id),
+      fund_type: rec.fund_type,
+      amount: rec.amount === '' ? null : Number(rec.amount),
+      currency: rec.currency || 'USD',
+      earned_period: rec.earned_period || null,
+      deadline: rec.deadline || null,
+      status: rec.status || 'open',
+      notes: rec.notes || null,
+      updated_at: new Date().toISOString(),
+      updated_by: (CU?.name)||'Unknown'
+    };
+    const headers = {'Prefer': rec.id ? 'resolution=merge-duplicates,return=representation' : 'return=representation'};
+    const path = rec.id ? '/coop_tracker?on_conflict=id' : '/coop_tracker';
+    const res = await sbFetch(path, {
+      method: 'POST', headers, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Save coop_tracker failed:', e.message); return false; }
+}
+
+async function sbDeleteCoopFund(id){
+  if(!sbConfigured()) return false;
+  try{
+    await sbFetch(`/coop_tracker?id=eq.${encodeURIComponent(id)}`, {method:'DELETE', headers:{'Prefer':'return=minimal'}});
+    return true;
+  }catch(e){ console.warn('[sb] Delete coop_tracker failed:', e.message); return false; }
+}
+
+function renderCoopTracker(container){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const totals = {open:0, claimed:0, expired:0, atRisk:0, totalValue:0, openValue:0};
+  COOP_FUNDS.forEach(r => {
+    if(r.status === 'open') totals.open++;
+    else if(r.status === 'claimed') totals.claimed++;
+    else if(r.status === 'expired') totals.expired++;
+    const amt = Number(r.amount)||0;
+    totals.totalValue += amt;
+    if(r.status === 'open'){
+      totals.openValue += amt;
+      if(r.deadline){
+        const d = new Date(r.deadline);
+        const days = Math.round((d - today)/86400000);
+        if(days >= 0 && days <= 30) totals.atRisk++;
+      }
+    }
+  });
+
+  container.innerHTML = `
+    <div class="g4 mb16">
+      <div class="card stat-card"><div class="stat-label">Open Funds</div><div class="stat-value">${totals.open}</div><div class="stat-sub">$${totals.openValue.toLocaleString()} on the table</div></div>
+      <div class="card stat-card" style="${totals.atRisk?'border-left:3px solid var(--accent);':''}"><div class="stat-label">Deadline ≤30d</div><div class="stat-value" style="color:${totals.atRisk?'var(--accent)':'var(--text)'};">${totals.atRisk}</div><div class="stat-sub">Action needed</div></div>
+      <div class="card stat-card"><div class="stat-label">Claimed YTD</div><div class="stat-value">${totals.claimed}</div><div class="stat-sub">Money recovered</div></div>
+      <div class="card stat-card"><div class="stat-label">Total Tracked</div><div class="stat-value">$${(totals.totalValue/1000).toFixed(1)}K</div><div class="stat-sub">All statuses</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <span class="card-title">Co-op / Rebate Funds</span>
+        <button class="btn btn-accent btn-sm" onclick="openCoopEdit(null)">+ Add fund</button>
+      </div>
+      <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Vendor</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Period</th>
+              <th>Deadline</th>
+              <th>Status</th>
+              <th>Notes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${COOP_FUNDS.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">No funds tracked yet. Click "+ Add fund" to log a rebate or co-op claim.</td></tr>` : COOP_FUNDS.map(r => {
+              const v = VD.find(x => String(x.id) === String(r.vendor_id));
+              const vendorName = v ? v.name : `#${r.vendor_id}`;
+              const days = r.deadline ? Math.round((new Date(r.deadline) - today)/86400000) : null;
+              const deadlineCell = r.deadline ? `<span class="mono sm" style="color:${days!==null && days<=30 && r.status==='open' ? 'var(--accent)' : 'var(--text-2)'};">${r.deadline}${days!==null ? ` <span style="font-size:10px;color:var(--text-3);">(${days>=0?days+'d':'overdue'})</span>` : ''}</span>` : '<span class="muted sm">—</span>';
+              const statusBadge = {open:'bg-yellow', claimed:'bg-green', expired:'bg-red', rejected:'bg-gray'}[r.status] || 'bg-gray';
+              return `<tr>
+                <td style="font-weight:600;cursor:pointer;color:var(--accent);" onclick="if(${v?'true':'false'})openVendorDetail(${v?v.id:'null'});">${esc(vendorName)}</td>
+                <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc(r.fund_type)}</span></td>
+                <td class="mono fw6">${r.amount!=null ? '$'+Number(r.amount).toLocaleString() : '—'}</td>
+                <td class="sm">${esc(r.earned_period||'')}</td>
+                <td>${deadlineCell}</td>
+                <td><span class="badge ${statusBadge}">${esc(r.status)}</span></td>
+                <td class="sm" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.notes||'')}">${esc(r.notes||'')}</td>
+                <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="openCoopEdit('${r.id}')">Edit</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function openCoopEdit(fundId){
+  const rec = fundId ? COOP_FUNDS.find(r => r.id === fundId) : {fund_type:'rebate', currency:'USD', status:'open'};
+  if(!rec){ toast('Fund not found','err'); return; }
+  const isNew = !fundId;
+  const vendorOptions = VD.filter(v => !v.inactive).sort((a,b)=>a.name.localeCompare(b.name)).map(v =>
+    `<option value="${v.id}" ${String(rec.vendor_id)===String(v.id)?'selected':''}>${esc(v.name)}</option>`
+  ).join('');
+  openModal((isNew?'Add':'Edit')+' Fund', `
+    <div class="fg"><label>Vendor</label>
+      <select id="cf-vendor"><option value="">— pick a vendor —</option>${vendorOptions}</select>
+    </div>
+    <div class="fg"><label>Fund Type</label>
+      <select id="cf-type">
+        ${['rebate','co-op','mdf','spiff','other'].map(t => `<option value="${t}" ${rec.fund_type===t?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="frow">
+      <div class="fcol field"><label>Amount ($)</label><input id="cf-amount" type="number" step="0.01" value="${rec.amount||''}"></div>
+      <div class="fcol field"><label>Earned Period</label><input id="cf-period" placeholder="2025 Q4" value="${esc(rec.earned_period||'')}"></div>
+    </div>
+    <div class="frow">
+      <div class="fcol field"><label>Deadline</label><input id="cf-deadline" type="date" value="${rec.deadline||''}"></div>
+      <div class="fcol field"><label>Status</label>
+        <select id="cf-status">
+          ${['open','claimed','expired','rejected'].map(s => `<option value="${s}" ${rec.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="cf-notes" rows="2">${esc(rec.notes||'')}</textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">
+      ${!isNew ? `<button class="btn btn-outline" style="margin-right:auto;color:var(--accent);" onclick="deleteCoopFund('${rec.id}')">Delete</button>` : ''}
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="saveCoopFund(${isNew?'null':`'${rec.id}'`})">Save</button>
+    </div>
+  `);
+}
+
+async function saveCoopFund(fundId){
+  const vendorId = $('cf-vendor')?.value;
+  if(!vendorId){ toast('Pick a vendor first','err'); return; }
+  const rec = {
+    id: fundId || undefined,
+    vendor_id: vendorId,
+    fund_type: $('cf-type').value,
+    amount: $('cf-amount').value,
+    earned_period: $('cf-period').value,
+    deadline: $('cf-deadline').value || null,
+    status: $('cf-status').value,
+    notes: $('cf-notes').value
+  };
+  const saved = await sbSaveCoopFund(rec);
+  if(!saved){ toast('Save failed','err'); return; }
+  if(typeof saved === 'object' && saved.id){
+    const idx = COOP_FUNDS.findIndex(r => r.id === saved.id);
+    if(idx >= 0) COOP_FUNDS[idx] = saved; else COOP_FUNDS.unshift(saved);
+  } else {
+    await sbLoadCoopFunds();
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(fundId?'coop_edit':'coop_create', 'vendors', {fund_id: fundId||saved?.id, vendor_id: vendorId, type: rec.fund_type, status: rec.status});
+  closeModal();
+  renderVendors($('pg-content'));
+  toast('Fund '+(fundId?'updated':'added'), 'ok');
+}
+
+async function deleteCoopFund(id){
+  if(!confirm('Delete this fund record?')) return;
+  await sbDeleteCoopFund(id);
+  COOP_FUNDS = COOP_FUNDS.filter(r => r.id !== id);
+  if(typeof sbAuditLog==='function') sbAuditLog('coop_delete', 'vendors', {fund_id: id});
+  closeModal();
+  renderVendors($('pg-content'));
+  toast('Fund deleted', 'ok');
+}
+
+// ── QUOTES (Track 1.2, quotes + quote_lines tables) ──
+// Quote shape stays {id (=number), date, customer, contact, project, type,
+// sqft, budget, notes, lineItems, total}. JS id field maps to schema.number.
+// Schema also has uuid PK; we look it up via number for child line writes.
+
+async function sbLoadQuotes(){
+  if(!sbConfigured()) return false;
+  try{
+    const headers = await sbFetch('/quotes?select=id,number,customer_name,project_name,status,subtotal,total,notes,created_at&order=created_at.desc&limit=500');
+    if(!Array.isArray(headers)) return 0;
+    if(!headers.length){ QUOTES=[]; return 0; }
+    const ids = headers.map(h => h.id);
+    const linesUrl = `/quote_lines?select=quote_id,line_no,vendor_id,vendor_name,description,qty,unit_price,ext_price,notes&quote_id=in.(${ids.join(',')})`;
+    const lines = await sbFetch(linesUrl);
+    const linesByQuote = {};
+    (lines||[]).forEach(l => {
+      (linesByQuote[l.quote_id] = linesByQuote[l.quote_id] || []).push(l);
+    });
+    QUOTES = headers.map(h => {
+      let extra = {};
+      try { extra = h.notes ? JSON.parse(h.notes) : {}; } catch { extra = {}; }
+      const li = (linesByQuote[h.id]||[]).sort((a,b)=>a.line_no-b.line_no).map(l => ({
+        id: l.line_no, desc: l.description || '', qty: Number(l.qty)||0,
+        price: Number(l.unit_price)||0, cat: l.notes || 'LED Fixtures',
+        vendorId: l.vendor_id, vendorName: l.vendor_name
+      }));
+      return {
+        id: h.number || ('QT-' + String(QUOTE_ID++).padStart(4,'0')),
+        _uuid: h.id,
+        date: h.created_at ? new Date(h.created_at).toLocaleDateString() : '',
+        customer: h.customer_name || '',
+        contact: extra.contact || '',
+        project: h.project_name || '',
+        type: extra.type || '',
+        sqft: extra.sqft || '',
+        budget: extra.budget || '',
+        notes: extra.note || '',
+        lineItems: li,
+        total: Number(h.total)||0
+      };
+    });
+    // Bump QUOTE_ID past the highest seen number
+    QUOTES.forEach(q => {
+      const m = /QT-(\d+)/.exec(q.id);
+      if(m){ const n = parseInt(m[1],10); if(n >= QUOTE_ID) QUOTE_ID = n+1; }
+    });
+    console.log(`[quotes] Loaded ${QUOTES.length} quotes`);
+    return QUOTES.length;
+  }catch(e){ console.warn('[sb] Load quotes failed:', e.message); return false; }
+}
+
+async function sbSaveQuote(q){
+  if(!sbConfigured()) return false;
+  try{
+    const subtotal = (q.lineItems||[]).reduce((s,l)=>s + (l.qty*l.price), 0);
+    const extra = {contact: q.contact||'', type: q.type||'', sqft: q.sqft||'', budget: q.budget||'', note: q.notes||''};
+    const headerBody = {
+      number: q.id,
+      customer_name: q.customer || null,
+      project_name: q.project || null,
+      status: 'draft',
+      subtotal, tax: 0, total: q.total || subtotal,
+      notes: JSON.stringify(extra)
+    };
+    // Upsert header by number; need the UUID back to write lines.
+    const headerRes = await sbFetch('/quotes?on_conflict=number', {
+      method: 'POST',
+      headers: {'Prefer':'resolution=merge-duplicates,return=representation'},
+      body: JSON.stringify(headerBody)
+    });
+    const uuid = Array.isArray(headerRes) && headerRes[0] ? headerRes[0].id : q._uuid;
+    if(!uuid) throw new Error('No UUID returned from quotes upsert');
+    q._uuid = uuid;
+    // Replace all line items: delete then insert.
+    await sbFetch(`/quote_lines?quote_id=eq.${uuid}`, {
+      method: 'DELETE',
+      headers: {'Prefer':'return=minimal'}
+    });
+    const lineRows = (q.lineItems||[]).map((l,i) => ({
+      quote_id: uuid,
+      line_no: i + 1,
+      vendor_id: l.vendorId || null,
+      vendor_name: l.vendorName || null,
+      description: l.desc || null,
+      qty: Number(l.qty)||0,
+      unit_price: Number(l.price)||0,
+      ext_price: (Number(l.qty)||0) * (Number(l.price)||0),
+      notes: l.cat || null
+    }));
+    if(lineRows.length){
+      await sbFetch('/quote_lines', {
+        method: 'POST',
+        headers: {'Prefer':'return=minimal'},
+        body: JSON.stringify(lineRows)
+      });
+    }
+    return true;
+  }catch(e){ console.warn('[sb] Save quote failed:', e.message); return false; }
+}
+
+async function sbDeleteQuote(numberId){
+  if(!sbConfigured()) return false;
+  try{
+    await sbFetch(`/quotes?number=eq.${encodeURIComponent(numberId)}`, {
+      method: 'DELETE',
+      headers: {'Prefer':'return=minimal'}
+    });
+    return true;
+  }catch(e){ console.warn('[sb] Delete quote failed:', e.message); return false; }
 }
 
 // ── VENDOR OVERRIDES (Track 2.2, vendor_overrides table) ──
@@ -1774,7 +2078,8 @@ function renderVendors(container){
     {id:'sales',label:'Sales'},
     {id:'weights',label:'Weights'},
     {id:'changelog',label:'Changelog'},
-    {id:'repaudit',label:'Rep Audit'}
+    {id:'repaudit',label:'Rep Audit'},
+    {id:'coop',label:'Co-op Funds'}
   ];
 
   container.innerHTML = `
@@ -1817,6 +2122,8 @@ function renderVendors(container){
     renderChangelog(sectionContent);
   } else if (vSection === 'repaudit') {
     renderRepGroupAudit(sectionContent);
+  } else if (vSection === 'coop') {
+    renderCoopTracker(sectionContent);
   }
 }
 
@@ -4688,13 +4995,28 @@ function saveQ(){
   const proj=$('q-pr')?.value?.trim();if(!proj){toast('Add project name first','err');return;}
   const sub=LI.reduce((s,l)=>s+l.qty*l.price,0);
   const qid=CQ?CQ.id:'QT-'+String(QUOTE_ID++).padStart(4,'0');
-  const q={id:qid,date:new Date().toLocaleDateString(),customer:$('q-cu')?.value||'',contact:$('q-co')?.value||'',project:proj,type:$('q-ty')?.value||'',sqft:$('q-sf')?.value||'',budget:$('q-bu')?.value||'',notes:$('q-no')?.value||'',lineItems:[...LI],total:sub};
+  const q={id:qid,_uuid:CQ?._uuid,date:new Date().toLocaleDateString(),customer:$('q-cu')?.value||'',contact:$('q-co')?.value||'',project:proj,type:$('q-ty')?.value||'',sqft:$('q-sf')?.value||'',budget:$('q-bu')?.value||'',notes:$('q-no')?.value||'',lineItems:[...LI],total:sub};
   const ex=QUOTES.findIndex(x=>x.id===qid);
   if(ex>=0)QUOTES[ex]=q;else QUOTES.push(q);
-  CQ=null;log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');toast('Saved ('+qid+')','ok');
+  CQ=null;log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');
+  if(typeof sbSaveQuote === 'function'){
+    sbSaveQuote(q).then(ok => {
+      if(ok && typeof sbAuditLog==='function') sbAuditLog('quote_save', 'quotes', {quote_id: qid, total: sub});
+    });
+  }
+  toast('Saved ('+qid+')','ok');
+}
+
+function deleteQ(numberId){
+  if(!confirm('Delete quote '+numberId+'?')) return;
+  QUOTES = QUOTES.filter(q => q.id !== numberId);
+  if(typeof sbDeleteQuote === 'function') sbDeleteQuote(numberId);
+  if(typeof sbAuditLog==='function') sbAuditLog('quote_delete', 'quotes', {quote_id: numberId});
+  closeModal(); showSaved();
+  toast('Quote deleted', 'ok');
 }
 function showSaved(){
-  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.map(l=>({...l}));closeModal();goTo('quotes')"><div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div></div></div>`).join('')}</div>`,
+  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
   `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 async function aiSummary(){
@@ -4935,6 +5257,26 @@ function computeDailyBrief(role){
         detail: 'Parent groups with conflicting rep assignments',
         color: '#fef3c7', border: '#fcd34d', labelColor: '#92400e',
         action: `goTo('vendors');setTimeout(()=>{vSection='repaudit';renderVendors($('pg-content'));},50);`
+      });
+    }
+  }
+
+  // Coop fund deadlines (≤30 days, status=open)
+  if(typeof COOP_FUNDS !== 'undefined' && COOP_FUNDS.length){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const atRisk = COOP_FUNDS.filter(r => {
+      if(r.status !== 'open' || !r.deadline) return false;
+      const days = Math.round((new Date(r.deadline) - today)/86400000);
+      return days >= 0 && days <= 30;
+    });
+    if(atRisk.length > 0){
+      const value = atRisk.reduce((s,r) => s + (Number(r.amount)||0), 0);
+      items.push({
+        label: 'Co-op Deadlines',
+        value: `${atRisk.length}`,
+        detail: `$${value.toLocaleString()} at risk in next 30 days`,
+        color: '#fef2f2', border: '#fecaca', labelColor: '#991b1b',
+        action: `goTo('vendors');setTimeout(()=>{vSection='coop';renderVendors($('pg-content'));},50);`
       });
     }
   }
