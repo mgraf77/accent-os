@@ -7,11 +7,23 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / PROMPT_QUEUE.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Track 5 is fully complete** — every Phase-3 module shipped. Remaining: Track 6 integration prep. Unblocked Track 6 items (no Michael blocker): **6.5 Trade & Designer Portal** (external-facing), **6.6 Vendor Rep Portal** (external-facing), **6.7 AI Lighting Consultant** (could leverage existing knowledge() chat infrastructure), **6.8 Intelligent Alerts** (alerts table is already in M02 schema — pure-compute layer over existing data, fast win), **6.9 AI Demand Forecasting** (needs historical data, may be premature), **6.10 AccentOS embed** (needs production site approved per M18). Suggested order: 6.8 (cheapest win) → 6.7 → 6.5/6.6 (external auth design needed). All API-key-blocked items (6.1/6.2/6.3/6.4/6.11) wait on Michael per BUILD_PLAN_MICHAEL. M24/M25/M26/M27/M28/M29 still pending Michael — UIs ship working but persistence silently no-ops until tables exist.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / PROMPT_QUEUE.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. Session was paused mid-Track-6 while user fetches Michael-task answers from Claude.ai. Once user returns with M-task info, ship blocked Track 6 items in order: 6.1 GA4 (M06), 6.2 GSC (M06), 6.3 BigCommerce (M04), 6.4 Klaviyo (M09), 6.11 Windward (M03+M10). Remaining unblocked items not yet shipped: 6.5 Trade Portal + 6.6 Rep Portal (both need external auth design; defer until clear scope), 6.9 AI Demand Forecasting (needs Windward data per 6.11), 6.10 AccentOS embed (needs M18 site approval). M24/M25/M26/M27/M28/M29 schema runs still pending Michael.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Resume + 6.8 + 6.7 + Daily Brief polish — Track 6 entry
+**Version:** v6.10.21 (6.8) → v6.10.22 (bell icon polish) → v6.10.23 (6.7 phase 1) → v6.10.24 (Daily Brief tiles)
+**Built/Changed:**
+- **6.8 Intelligent Alerts** (v6.10.21) — js/alerts.js. Uses existing alerts table from M02 — no new SQL needed. 9 generators (deal_stale, coop_deadline, quote_cold, inventory_low, delivery_overdue, warranty_expiring, showroom_expiring, po_overdue, score_dropped) auto-run on hydrate. Dedupe via (type, source_id) key. 4 stat cards, filters, per-alert actions (Mark read / Done / Dismiss), Mark-all-read.
+- **6.8 polish — topbar bell icon** (v6.10.22) — 🔔 with unread count badge in topbar; dropdown shows top-5 unread alerts sorted by severity; click → marks read + navigates; "View all alerts" button; auto-refresh on goTo() via dispatcher wrap; outside-click closes dropdown.
+- **6.7 AI Lighting Consultant phase 1** (v6.10.23) — Customer Mode toggle on existing knowledge() page. Two modes (Internal / Customer) with different chip suggestions, intro text, chat label, and system prompt. Customer prompt: warm consumer tone, room-by-room recommendations, never reveals internal data, never reveals it's an AI on Claude. Mode persists in sessionStorage. Phase 2 (public iframe embed) deferred until M18 site approval + Track 6.10.
+- **Daily Brief tiles for new modules** (v6.10.24) — added 6 new tiles to dashboard's Today card: Unread Alerts (color shifts on urgent), Deliveries (today + overdue), Jobs Due ≤7d, Warranty Expiring ≤30d (senior+), POs Past Expected (senior only), Low Stock (red if any out-of-stock). Each tile click-throughs to its module.
+**Decisions:** Alerts use existing M02 table — no new schema. Topbar bell delivers immediate visibility without requiring users to navigate to /alerts. Customer Mode toggle ships value today (sales reps drafting customer responses) without waiting for the public-site embed. Daily Brief tiles consolidate cross-module surface area into the dashboard.
+**Verified:** JS parses clean across inline + 18 external module files (969KB total payload). index.html holding stable; bell icon + Daily Brief tiles inline with low LOC cost.
+**Open loops:** Session paused mid-Track-6 — user is fetching Michael-task answers from Claude.ai (got the prompt template earlier in session). Once those answers land, ship 6.1/6.2/6.3/6.4/6.11. M24-M29 schema runs still pending. 6.5/6.6/6.9/6.10 remain unblocked but need scoping decisions.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Resume + 5.12 Marketing Hub — TRACK 5 COMPLETE
 **Version:** v6.10.20

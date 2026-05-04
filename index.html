@@ -5626,6 +5626,123 @@ function computeDailyBrief(role){
     });
   }
 
+  // ── New-module Daily Brief tiles (Track 6.8 polish — surface module activity from the dashboard) ──
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayMs = today.getTime();
+  const day = 86400000;
+
+  // Unread alerts (everyone)
+  if(typeof ALERTS !== 'undefined' && ALERTS.length){
+    const unread = ALERTS.filter(a => a.status === 'unread');
+    if(unread.length > 0){
+      const urgent = unread.filter(a => a.severity === 'urgent').length;
+      items.push({
+        label: 'Unread Alerts',
+        value: `${unread.length}`,
+        detail: urgent > 0 ? `${urgent} urgent · click to view` : 'Auto-generated from your data',
+        color: urgent > 0 ? '#fef2f2' : '#fef3c7',
+        border: urgent > 0 ? '#fecaca' : '#fcd34d',
+        labelColor: urgent > 0 ? '#991b1b' : '#92400e',
+        action: `goTo('alerts')`
+      });
+    }
+  }
+
+  // Deliveries today + overdue (Sales/Warehouse + senior)
+  if(typeof DELIVERIES !== 'undefined' && DELIVERIES.length){
+    const todayStr = today.toISOString().slice(0,10);
+    const todayDel = DELIVERIES.filter(d => !['delivered','cancelled'].includes(d.status) && d.scheduled_date === todayStr);
+    const overdueDel = DELIVERIES.filter(d => !['delivered','cancelled'].includes(d.status) && d.scheduled_date && d.scheduled_date < todayStr);
+    const total = todayDel.length + overdueDel.length;
+    if(total > 0){
+      items.push({
+        label: 'Deliveries',
+        value: `${total}`,
+        detail: `${todayDel.length} today${overdueDel.length?' · '+overdueDel.length+' overdue':''}`,
+        color: overdueDel.length > 0 ? '#fef2f2' : '#eff6ff',
+        border: overdueDel.length > 0 ? '#fecaca' : '#bfdbfe',
+        labelColor: overdueDel.length > 0 ? '#991b1b' : '#1e40af',
+        action: `goTo('deliveries')`
+      });
+    }
+  }
+
+  // Jobs due ≤7d (everyone)
+  if(typeof JOBS !== 'undefined' && JOBS.length){
+    const cutoff = todayMs + 7*day;
+    const dueSoon = JOBS.filter(j => {
+      if(['complete','cancelled'].includes(j.status)) return false;
+      if(!j.due_date) return false;
+      const t = new Date(j.due_date).getTime();
+      return t >= todayMs && t <= cutoff;
+    });
+    if(dueSoon.length > 0){
+      items.push({
+        label: 'Jobs Due ≤7d',
+        value: `${dueSoon.length}`,
+        detail: dueSoon[0] ? `Next: ${dueSoon[0].project_name}` : '',
+        color: '#fffbeb', border: '#fde68a', labelColor: '#92400e',
+        action: `goTo('jobs')`
+      });
+    }
+  }
+
+  // Warranties expiring ≤30d (senior + Sales)
+  if(isSeniorRole && typeof WARRANTY_CLAIMS !== 'undefined' && WARRANTY_CLAIMS.length){
+    const cutoff = todayMs + 30*day;
+    const expiring = WARRANTY_CLAIMS.filter(w => {
+      if(['closed','denied','replaced','refunded'].includes(w.status)) return false;
+      if(!w.warranty_expires) return false;
+      const t = new Date(w.warranty_expires).getTime();
+      return t >= todayMs && t <= cutoff;
+    });
+    if(expiring.length > 0){
+      items.push({
+        label: 'Warranty Expiring',
+        value: `${expiring.length}`,
+        detail: `≤30d to file claims`,
+        color: '#fef3c7', border: '#fcd34d', labelColor: '#92400e',
+        action: `goTo('warranty')`
+      });
+    }
+  }
+
+  // POs past expected (senior only)
+  if(isSeniorRole && typeof POS !== 'undefined' && POS.length){
+    const overdue = POS.filter(p => {
+      if(['received','cancelled'].includes(p.status)) return false;
+      if(!p.expected_date) return false;
+      return new Date(p.expected_date).getTime() < todayMs;
+    });
+    if(overdue.length > 0){
+      const value = overdue.reduce((s,p)=>s+(Number(p.total)||0), 0);
+      items.push({
+        label: 'POs Past Expected',
+        value: `${overdue.length}`,
+        detail: `$${Math.round(value).toLocaleString()} pending receipt`,
+        color: '#fef2f2', border: '#fecaca', labelColor: '#991b1b',
+        action: `goTo('purchaseorders')`
+      });
+    }
+  }
+
+  // Inventory low (everyone — warehouse cares most)
+  if(typeof INVENTORY !== 'undefined' && INVENTORY.length){
+    const low = INVENTORY.filter(r => r.reorder_point != null && (Number(r.qty_available)||0) < Number(r.reorder_point));
+    if(low.length > 0){
+      const out = low.filter(r => (Number(r.qty_available)||0) === 0).length;
+      items.push({
+        label: 'Low Stock',
+        value: `${low.length}`,
+        detail: out > 0 ? `${out} out of stock · reorder needed` : 'Below reorder point',
+        color: out > 0 ? '#fef2f2' : '#fffbeb',
+        border: out > 0 ? '#fecaca' : '#fde68a',
+        labelColor: out > 0 ? '#991b1b' : '#92400e',
+        action: `goTo('vendors');setTimeout(()=>{vSection='inventory';renderVendors($('pg-content'));},50);`
+      });
+    }
+  }
+
   return items;
 }
 
