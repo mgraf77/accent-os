@@ -379,7 +379,10 @@ tbody tr:hover td{background:var(--bg);}
   <div class="main">
     <div class="topbar">
       <div><span class="topbar-title" id="pg-title">Dashboard</span><span class="topbar-sub" id="pg-sub"></span></div>
-      <div class="topbar-actions" id="pg-actions"></div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div id="bell-host" style="position:relative;"></div>
+        <div class="topbar-actions" id="pg-actions"></div>
+      </div>
     </div>
     <div class="content" id="pg-content"></div>
   </div>

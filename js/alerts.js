@@ -415,3 +415,90 @@ async function alertGoTo(alertId, page){
 function alertsUnreadCount(){
   return ALERTS.filter(a => a.status === 'unread').length;
 }
+
+// ── BELL ICON in topbar (rendered on every goTo + after hydrate) ──
+let bellOpen = false;
+
+function renderAlertBell(){
+  const host = $('bell-host');
+  if(!host) return;
+  const unread = alertsUnreadCount();
+  const top = ALERTS.filter(a => a.status === 'unread').sort((a,b) => {
+    const v = {urgent:0, warn:1, info:2};
+    const d = (v[a.severity]??9) - (v[b.severity]??9);
+    if(d) return d;
+    return new Date(b.created_at||0) - new Date(a.created_at||0);
+  }).slice(0,5);
+
+  const dot = unread > 0 ? `<span style="position:absolute;top:-3px;right:-3px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;">${unread > 99 ? '99+' : unread}</span>` : '';
+  const dropdown = bellOpen ? `
+    <div style="position:absolute;top:36px;right:0;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);z-index:50;max-height:480px;display:flex;flex-direction:column;">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <strong style="font-size:13px;">Alerts</strong>
+        <span class="muted sm">${unread} unread</span>
+      </div>
+      <div style="overflow-y:auto;flex:1;">
+        ${top.length === 0 ? '<div style="padding:30px 14px;text-align:center;color:var(--text-3);font-size:12px;">No unread alerts.</div>' : top.map(a => {
+          const sevColor = {urgent:'var(--accent)', warn:'var(--yellow)', info:'var(--blue)'}[a.severity] || 'var(--text-3)';
+          return `<div onclick="bellHandleClick('${a.id}','${esc(a.link||'alerts')}')" style="padding:10px 14px;border-bottom:1px solid var(--border-light);cursor:pointer;display:flex;gap:10px;align-items:flex-start;">
+            <span style="width:8px;height:8px;border-radius:50%;background:${sevColor};margin-top:5px;flex-shrink:0;"></span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:600;line-height:1.3;">${esc(a.title)}</div>
+              <div class="muted sm" style="font-size:11px;line-height:1.3;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.body||'')}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="padding:8px 14px;border-top:1px solid var(--border);text-align:center;">
+        <button class="btn btn-outline btn-sm" style="font-size:11px;" onclick="bellOpen=false;goTo('alerts')">View all alerts →</button>
+      </div>
+    </div>
+  ` : '';
+
+  host.innerHTML = `
+    <button onclick="bellToggle()" style="background:transparent;border:none;cursor:pointer;font-size:18px;padding:6px 8px;color:var(--text-2);position:relative;" title="${unread} unread alert${unread===1?'':'s'}">
+      ${unread > 0 ? '🔔' : '🔕'}
+      ${dot}
+    </button>
+    ${dropdown}
+  `;
+}
+
+function bellToggle(){
+  bellOpen = !bellOpen;
+  renderAlertBell();
+  // Close on outside click
+  if(bellOpen){
+    setTimeout(() => {
+      const closer = (e) => {
+        if(!$('bell-host')?.contains(e.target)){
+          bellOpen = false;
+          renderAlertBell();
+          document.removeEventListener('click', closer);
+        }
+      };
+      document.addEventListener('click', closer);
+    }, 0);
+  }
+}
+
+async function bellHandleClick(alertId, page){
+  bellOpen = false;
+  await alertGoTo(alertId, page);
+  renderAlertBell();
+}
+
+// Hook into goTo() to refresh bell on every page change
+(function(){
+  const origGoTo = (typeof goTo === 'function') ? goTo : null;
+  if(origGoTo && !window._bellGoToWrapped){
+    window._bellGoToWrapped = true;
+    window.goTo = function(page){
+      origGoTo(page);
+      try { renderAlertBell(); } catch {}
+    };
+  }
+})();
+
+// Initial render after script loads (in case page is already active)
+setTimeout(() => { try { renderAlertBell(); } catch {} }, 100);
