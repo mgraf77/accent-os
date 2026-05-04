@@ -5814,6 +5814,7 @@ function mgmt(el){
     {id:'kpis', label:'KPIs'},
     {id:'goals', label:'Goals & OKRs'},
     {id:'employees', label:'Employees'},
+    {id:'commission', label:'Commission'},
     {id:'activity', label:'Team Activity'},
     {id:'system', label:'System'}
   ];
@@ -5830,6 +5831,7 @@ function mgmt(el){
   else if(mgmtSection === 'kpis') renderKPIRegistry(c);
   else if(mgmtSection === 'goals') renderGoalsOKR(c);
   else if(mgmtSection === 'employees') renderEmployees(c);
+  else if(mgmtSection === 'commission') renderCommissionTracker(c);
   else if(mgmtSection === 'activity') renderTeamActivity(c);
   else if(mgmtSection === 'system') renderSystemPanel(c);
 }
@@ -6461,5 +6463,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/reports.js?v=6.10.27"></script>
 <script src="js/bulk_vendor_ops.js?v=6.10.28"></script>
 <script src="js/activity_feed.js?v=6.10.29"></script>
+<script src="js/commission.js?v=6.10.30"></script>
 </body>
 </html>
