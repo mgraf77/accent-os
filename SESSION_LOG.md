@@ -7,11 +7,21 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / PROMPT_QUEUE.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. Session was paused mid-Track-6 while user fetches Michael-task answers from Claude.ai. Once user returns with M-task info, ship blocked Track 6 items in order: 6.1 GA4 (M06), 6.2 GSC (M06), 6.3 BigCommerce (M04), 6.4 Klaviyo (M09), 6.11 Windward (M03+M10). Remaining unblocked items not yet shipped: 6.5 Trade Portal + 6.6 Rep Portal (both need external auth design; defer until clear scope), 6.9 AI Demand Forecasting (needs Windward data per 6.11), 6.10 AccentOS embed (needs M18 site approval). M24/M25/M26/M27/M28/M29 schema runs still pending Michael.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / PROMPT_QUEUE.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. Track 6.9 (Demand Forecasting) shipped autonomous. Remaining Track 6 unblocked but unshipped: 6.5 Trade & Designer Portal + 6.6 Vendor Rep Portal — both external-facing, need scoping decisions (which views/auth/branding) before I can build. If user is ready to scope those, ask: "What should the Trade Portal expose to external designers? Read-only inventory + price book? Quote requests? Order status? And does it need its own auth (separate from accentos staff users) or shared?" Otherwise hold for: M03/M10 → 6.11 Windward live, M04 → 6.3 BigCommerce + 5.13 E-Commerce Command Center, M05 → 5.13, M06 → 6.1/6.2 GA4+GSC, M09 → 6.4 Klaviyo, M18 → 6.10 AccentOS embed. Schema runs M24-M29 also pending; UIs ship working with persistence silently no-op until tables exist.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Resume + 6.9 AI Demand Forecasting
+**Version:** v6.10.25
+**Built/Changed:**
+- **6.9 AI Demand Forecasting** (v6.10.25) — new "Demand Forecast" page (CORE, Owner/Admin/Manager). External JS module `js/demand_forecast.js` (212 lines). Pure-compute, no schema. Velocity proxy: sum(qty in PO lines, last 90d) / 13 weeks. 5 recommendation kinds with weeks_of_stock thresholds (reorder_now <6, reorder_soon 6-9, overstock >26, normal, no_data). Suggested qty targets 14 weeks of forward demand minus current available + on-order. 4 stat cards, free-text + vendor + kind filters, topbar Export button → CSV of all reorder_now+reorder_soon SKUs with audit_log entry. Daily Brief tile "Reorder Now" (senior-only) shows count + summed suggested PO $.
+- BUILD_PLAN_CLAUDE.md: 6.9 marked `[x]` with full ship summary.
+**Decisions:** Velocity uses PO-line qty over the last 90 days as a proxy for sell-through (we order what we sell at steady state, modulo lead time offset). Documented heuristic constants inline (DEMAND_LEAD_WEEKS=4, DEMAND_SAFETY_WEEKS=2, DEMAND_TARGET_WEEKS=14, DEMAND_OVERSTOCK_WEEKS=26). When Track 6.11 (Windward live) lands, swap PO-line proxy for actual sales-line history without changing the UI. Daily Brief tile only fires for senior roles since reorder is a purchasing decision; warehouse already gets the existing "Low Stock" tile from reorder_point logic.
+**Verified:** index.html parses clean (sole inline `<script>` block). demand_forecast.js parses clean via `new Function(...)`. index.html now 674KB (74% of 900KB cap), 19 external module files at 12,172 LOC across js/. Status block shows shipped=36 / pending=10.
+**Open loops:** No Michael-task progress on this session — BUILD_PLAN_MICHAEL.md unchanged since M21/M22/M23. M24-M29 schema runs still pending; M03/M04/M05/M06/M09/M10/M18 all still required for downstream Track 6 items. Next unblocked but unshipped: 6.5 Trade & Designer Portal + 6.6 Vendor Rep Portal (both need scoping decisions on external auth + tool exposure before I build).
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Resume + 6.8 + 6.7 + Daily Brief polish — Track 6 entry
 **Version:** v6.10.21 (6.8) → v6.10.22 (bell icon polish) → v6.10.23 (6.7 phase 1) → v6.10.24 (Daily Brief tiles)
