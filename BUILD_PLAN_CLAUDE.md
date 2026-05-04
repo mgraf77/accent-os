@@ -33,16 +33,11 @@
 
 ## TRACK 1 — Highest Immediate Business Impact
 
-- [ ] **1.1** — Vendor numeric score persistence (full)
-  - What: `vendor_scores` table wiring — every numeric score write goes to Supabase. Currently only `data_state` persists via `vendor_score_states`; the score values themselves live only in VD_RAW
-  - Blocks: real outreach data integrity, score history
-  - BLOCKS ON MICHAEL: **M02** (vendor_scores table needs to be in the §0.4 SQL block first)
+- [x] **1.1** — Vendor numeric score persistence (full)
+  - Shipped v6.9.9: `sbLoadVendorScores` + `sbSaveVendorScore` (upsert by vendor_id+category_key), wired into save flow + sister-brand propagation. Numeric values now persist alongside data_state.
 
-- [ ] **1.2** — Quote Generator — Persistence + Save/Retrieve
-  - What: build `quotes` + `quote_lines` schema; UI: Save / List / Re-open; PDF/email export; tag to customer + project
-  - Value: $22.8K/yr per MASTER §5
-  - Blocks: 1.4 CRM (quotes are evidence of customer activity)
-  - BLOCKS ON MICHAEL: **M02**
+- [x] **1.2** — Quote Generator — Persistence + Save/Retrieve
+  - Shipped v6.10.0: quotes + quote_lines tables wired; load/save/delete; Saved Quotes modal with per-row Delete; quote.notes JSONB packs the type/sqft/budget/contact extras until schema gets first-class columns; QUOTE_ID seeded from highest-seen QT-#### number.
 
 - [x] **1.3** — Daily Command Center (partial — phase 1 with existing data)
   - Shipped v6.9.8: top-of-dashboard "📌 Today" card with role-aware brief items: Unverified Scores (count + top vendors, click → Scores tab), Tier C Vendors (senior roles only), Activity (24h) (count + latest entry, click → Changelog), Unassigned Reps (senior roles, links Rep Audit), Mixed-Rep Parents (senior roles, links Rep Audit), Avg Vendor Score gauge. Each tile clickable where action exists. **Phase 2 deferred:** open-quotes-stale and pipeline-followup-due — both need M02 tables.
@@ -53,10 +48,8 @@
   - Blocks: 1.5 Pipeline (deals attach to customers), 4.1 Owner Dashboard
   - BLOCKS ON MICHAEL: **M02** AND **M07** (decision: manual entry vs. Windward CSV import)
 
-- [ ] **1.5** — Sales Pipeline — Persistent + Loss Tracking
-  - What: `pipeline_deals` + `pipeline_events` schema; replace static stages with 8-factor dynamic probability model (lead source, customer history, segment, project type, quote age vs. baseline, comm recency, quote size, win/loss feedback); `probability_model_log` for recalibration history
-  - Blocks: 4.1 Owner Dashboard pipeline view
-  - BLOCKS ON MICHAEL: **M02**
+- [x] **1.5** — Sales Pipeline — Persistent + Loss Tracking
+  - Shipped v6.10.1: stages refactored to schema-compatible (lead/qualified/quoted/negotiating/won/lost/abandoned). 8-factor probability model `computeDealProbability` with weights {lead_source 10%, customer_history 18%, segment 8%, project_type 10%, quote_age 12%, comm_recency 12%, quote_size 10%, stage 20%}. Probability shown on every deal card + factor breakdown in detail modal. Forecast = Σ(value × probability) on Pipeline header. Close Rate stat (Won/(Won+Lost)). Archive view for lost/abandoned deals with loss reason capture. Persist via pipeline_deals; pipeline_events log on every stage change + note. Daily Brief gets new Stale Deals tile (no update in 14d).
 
 ---
 
@@ -65,16 +58,11 @@
 - [x] **2.1** — Parent Company / Brand Family Grouping UI
   - Shipped v6.9.7: collapsible parent groups in Scores tab (▼/▶ chevron, click row to toggle, Expand all / Collapse all buttons); parent badge in vendor detail header; Sister Brands card with click-through to each sister's detail. Pre-existing rolled-up sales + avg score retained.
 
-- [ ] **2.2** — Vendor Metadata, Notes & Override Persistence
-  - What: `vendor_overrides` table for editable fields (notes, custom rep group, tier override, inactive flag) — currently lives only in VD_RAW
-  - Blocks: durable vendor edits across sessions
-  - BLOCKS ON MICHAEL: **M02**
+- [x] **2.2** — Vendor Metadata, Notes & Override Persistence
+  - Shipped v6.9.9: `sbLoadVendorOverrides` + `sbSaveVendorOverride`. Edit modal extended with Tier Override (Auto/A/B/C), Notes textarea, Inactive checkbox + reason. `computeVendorTier` honors `v.tier_override` first.
 
-- [ ] **2.3** — Rebate & Co-Op Fund Tracker
-  - What: `coop_tracker` table; UI to log fund availability, deadlines, claim status per vendor; alerts when deadline <30d
-  - Note: HIGH priority — Money Left flag in MASTER §5
-  - Blocks: 4.1 Owner Dashboard money-left widget
-  - BLOCKS ON MICHAEL: **M02**
+- [x] **2.3** — Rebate & Co-Op Fund Tracker
+  - Shipped v6.10.0: new "Co-op Funds" sub-tab on Vendor Ranking page; load/save/delete via coop_tracker REST; 4-stat header (open count + $ on table, deadline ≤30d count, claimed YTD, total tracked); add/edit modal with vendor picker, fund_type, amount, period, deadline, status, notes. Daily Brief tile for ≤30d open funds with $$ at risk.
 
 ---
 

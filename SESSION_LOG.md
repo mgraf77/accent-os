@@ -7,11 +7,29 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, and BUILD_INTELLIGENCE.md fresh. Continue autonomous build from BUILD_PLAN_CLAUDE.md starting at the first incomplete `[ ]` item. Most remaining Track 1/2/3/4 items are blocked on **M02** (paste sql/M02_core_schema.sql). If M02 is `[x]` in BUILD_PLAN_MICHAEL.md, build Track 1.1 (vendor_scores wiring) → 1.2 (Quote Generator persistence) → 2.2 (vendor_overrides) → 2.3 (coop_tracker) → 1.5 (Pipeline) in order. If M02 is still `[ ]`, the only fully unblocked autonomous item is Track 3.2 (Role-Based Dashboards — partial, can extend the Daily Brief with role-specific landing pages). Before each item, update TaskCreate. After each commit, append to BUILD_INTELLIGENCE.md.
+> Read BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, and BUILD_INTELLIGENCE.md fresh. Continue autonomous build from BUILD_PLAN_CLAUDE.md. With M02 + M01 done, all of Track 1.1 / 1.2 / 1.5 / 2.2 / 2.3 are now shipped — next unblocked items are **4.1 Owner Dashboard** (assemble existing data into a single Owner-only view), **4.2 KPI Master Registry** (kpi_definitions + kpi_snapshots wiring; needs a kpi seed list), **4.3 Goal Architecture / OKRs** (goals table; 5-level UI), and **3.2 Role-Based Dashboards** (per-role landing pages, partial via Daily Brief). Track 1.3 phase 2 (quote/pipeline tiles) can also be completed now that those tables exist. Track 1.4 (Customers/CRM) still blocks on **M07**. Track 3.1 (Employee Scorecards) still blocks on **M07/M08**. Suggested order: 1.3 phase 2 (quick win — extend brief tiles) → 4.1 Owner Dashboard → 4.2 KPI Registry → 4.3 OKRs → 3.2 Role Dashboards. Before each item, update TaskCreate. After each commit, append to BUILD_INTELLIGENCE.md.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Autonomous session: Track 1.1 + 1.2 + 1.5 + 2.2 + 2.3 — SHIPPED
+**Version:** v6.9.9 → v6.10.0 → v6.10.1
+**Built/Changed:**
+- **1.1** vendor_scores: load + save numeric values to vendor_scores table; sister-brand propagation; merges with VD_RAW
+- **1.2** quotes + quote_lines: full CRUD; saved-quote list with Delete; QUOTE_ID seeded from existing rows
+- **2.2** vendor_overrides: edit modal extended (tier_override / notes / inactive + reason); computeVendorTier honors v.tier_override
+- **2.3** coop_tracker: new "Co-op Funds" sub-tab on Vendor Ranking; 4-stat header; Add/Edit modal with vendor picker; Daily Brief tile for ≤30d open funds
+- **1.5** pipeline_deals + pipeline_events: hard refactor of stages from 4-stage demo (prospect/quoted/ordered/complete) to schema 7-stage (lead/qualified/quoted/negotiating/won/lost/abandoned). 8-factor probability model with weighted heuristics. Forecast = Σ(value×prob); Close Rate stat; Archive view for lost/abandoned with loss reason capture; pipeline_events log on every stage_change + note
+- Daily Brief: new tiles for stale deals (no update 14d+) and coop deadlines
+- audit_log writes added for: deal_create / deal_update / deal_delete / quote_save / quote_delete / coop_create / coop_edit / coop_delete / vendor_edit (was already there)
+- scripts/status.sh: boot status report
+- BUILD_PLAN_MICHAEL: M01 + M02 marked done
+- BUILD_INTELLIGENCE: 7 new lessons across this session
+**Decisions:** Hard refactor of pipeline stages was right call (no real data, just demo). Probability heuristics shipped as-is — recalibration job is future work. Coop tracker as sub-tab + Daily Brief tile pattern works well for secondary modules.
+**Verified:** JS parses clean across all 4 commits.
+**Open loops:** 1.4 Customers/CRM blocks on M07. 3.1 Employees blocks on M07+M08. Pipeline probability heuristics are placeholders until probability_model_log gets real data.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Autonomous session: 0.2.B + 2.1 + 0.2.C SQL + 0.4 SQL + 1.3 phase 1 — SHIPPED
 **Version:** v6.9.7 → v6.9.8
