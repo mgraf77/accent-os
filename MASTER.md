@@ -229,6 +229,8 @@ LAYER 3 — OUTPUTS
 
 ## 5. ACCENTOS — FULL BUILD PLAN
 
+> **Active execution lists:** See [BUILD_PLAN_CLAUDE.md](./BUILD_PLAN_CLAUDE.md) and [BUILD_PLAN_MICHAEL.md](./BUILD_PLAN_MICHAEL.md) in repo root. The tracks below are the strategic plan; the BUILD_PLAN files are the working checklists Claude and Michael run in parallel each session.
+
 **Overall progress: ~12%** | Infrastructure: 30% | Daily Ops: 8% | Sales & Revenue: 5%
 
 ### TRACK 0 — Infrastructure (Do First — Unlocks Everything)

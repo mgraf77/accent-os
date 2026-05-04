@@ -5,9 +5,8 @@
 ## CURRENT PRIORITY QUEUE
 > Updated each session. This is what we work on next, in order.
 
-1. **Track 0.2 Chunk B** — Settings → Users panel (owner-only role assignment UI)
-2. **Track 1.2** — Quote Generator persistence ($22.8K/yr value)
-3. **Parent company grouping UI** — data already imported for 130 vendors, UI not built
+1. **Claude:** begin autonomous build from BUILD_PLAN_CLAUDE.md — start at first incomplete `[ ]` item
+2. **Michael:** work through BUILD_PLAN_MICHAEL.md on his own timeline; each completed M## unlocks downstream Claude work
 
 ### 2026-05-04 — Track 0.2 Chunk A: Supabase Auth + role-based sidebar — LIVE
 **Version:** v6.9.6a (auth code v6.9.6, anon-JWT bootstrap hotfix v6.9.6a)
