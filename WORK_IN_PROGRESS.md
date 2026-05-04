@@ -1,16 +1,15 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step. Shows exactly what was happening if Codespace dies.
 
-**Last updated:** 2026-05-04 — Track 5.6 ready to ship as v6.10.10
-**Current task:** 5.6 Price Book — committing
-**Step:** All code + docs written. JS parses clean (774KB). About to commit + push.
-**Files touched so far this task:**
-- index.html (Price Book sub-tab + renderPriceBook function)
-- BUILD_PLAN_CLAUDE.md (5.6 marked [x])
-- WORK_IN_PROGRESS.md (this file)
-**Commit status:** uncommitted
+**Last updated:** 2026-05-04 — starting Track 5.4 Purchase Orders
+**Current task:** 5.4 Purchase Orders
+**Step:** Planning. Will write M23 schema (purchase_orders + po_lines), build a top-level "Purchase Orders" page (CORE section), with manual create + line-item editor + status workflow (draft/sent/confirmed/partial/received/cancelled). Receipt action to optionally bump matching inventory_items.qty_on_hand.
+**Files touched so far this task:** none
+**Commit status:** clean working tree (last commit pushed: cc62822)
 **Next step if interrupted:**
-1. `git add index.html BUILD_PLAN_CLAUDE.md WORK_IN_PROGRESS.md`
-2. `git commit -m "v6.10.10: Track 5.6 — Price Book"`
-3. `git push origin main`
-4. Continue to next pending [ ] in BUILD_PLAN_CLAUDE.md — likely 5.4 Purchase Orders or 5.5 Trade Partner Network
+1. Write `sql/M23_purchase_orders_schema.sql` with purchase_orders + po_lines tables
+2. Add "Purchase Orders" sidebar entry (CORE section, Owner/Admin/Manager — sales+ optional)
+3. Add `purchaseOrders()` page render with list + stats + filters
+4. Add Edit modal with vendor dropdown + line-item editor
+5. Add receipt flow that increments inventory qty_on_hand for matching SKUs
+6. Add M23 to BUILD_PLAN_MICHAEL
