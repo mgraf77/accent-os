@@ -1,16 +1,20 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step. Shows exactly what was happening if Codespace dies.
 
-**Last updated:** 2026-05-04 — paused for user M-task answers · v6.10.24 ready
-**Current task:** Daily Brief tiles polish (v6.10.24) — committing
-**Step:** 6 new Daily Brief tiles added (alerts, deliveries, jobs, warranty, POs, inventory). JS parses clean (970KB total payload, 18 external modules). About to commit + push then pause until user returns with Michael-task answers from Claude.ai.
+**Last updated:** 2026-05-04 — 6.9 shipped, about to commit
+**Current task:** Track 6.9 AI Demand Forecasting — committing v6.10.25
+**Step:** Module + shell wiring complete. JS parses clean (inline + 19 external modules now). About to commit + push, then update SESSION_LOG + BUILD_INTELLIGENCE in a follow-up doc-only commit.
 **Files touched so far this task:**
-- index.html (computeDailyBrief — 6 new tiles appended after avg-score tile)
-- SESSION_LOG.md (full session entry covering 6.8 + bell + 6.7 + Daily Brief polish; next-prompt updated)
+- js/demand_forecast.js (new — 212 lines)
+- index.html (sidebar entry, PAGE_META, pages dispatcher, script tag, Daily Brief Reorder Now tile)
+- BUILD_PLAN_CLAUDE.md (6.9 marked [x])
+- PROMPT_LOG.md (logged resume prompt)
 - WORK_IN_PROGRESS.md (this)
 **Commit status:** uncommitted
 **Next step if interrupted:**
-1. `git add index.html SESSION_LOG.md WORK_IN_PROGRESS.md`
-2. Commit with message starting `v6.10.24: Daily Brief tiles for 6 new modules`
+1. `git add js/demand_forecast.js index.html BUILD_PLAN_CLAUDE.md PROMPT_LOG.md WORK_IN_PROGRESS.md`
+2. Commit `v6.10.25: Track 6.9 — AI Demand Forecasting (pure-compute over INVENTORY + PO_LINES)`
 3. `git push origin main`
-4. Pause. When user returns with M-task answers (M03/M04/M05/M06/M09/M10/M11/M12/M13/M18 etc.), ship blocked Track 6 items in order: 6.1 GA4, 6.2 GSC, 6.3 BC, 6.4 Klaviyo, 6.11 Windward live.
+4. Append SESSION_LOG entry. Add 1-2 BUILD_INTELLIGENCE lessons (notably: PO-line velocity as a proxy for sell-through is documented — when Track 6.11 lands, swap to real sales-line data without UI changes; and: 6.5/6.6/6.10 still need scoping decisions, 6.11 still blocked).
+5. Final doc-only commit + push.
+6. Pause.
