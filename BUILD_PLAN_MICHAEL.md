@@ -61,6 +61,16 @@
   - Then: paste to Claude → `M21 done — phase 3 schema is in. All three modules are now persistent.`
   - Unlocks: persistence for Tracks 5.1 (Knowledge Hub), 5.2 (Job Tracker), 5.16 (Company Calendar). Until M21 runs, the UIs work but persistence silently no-ops (toast warns on save).
 
+- [ ] **M29** — Run Marketing Hub schema (Track 5.12)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M29_marketing_schema.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return 2 rows (`marketing_campaigns`, `marketing_assets`) with `rls_enabled=true`.
+    4. Reload `https://accent-os.pages.dev`. Marketing Hub already ships (v6.10.20) replacing the prior static placeholder.
+  - Then: paste to Claude → `M29 done — marketing tables in.`
+  - Unlocks: persistence for Track 5.12. Campaigns + Assets become saveable; ROI / attribution stats build over time.
+
 - [ ] **M28** — Run Competitive Pricing schema (Track 5.14)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:

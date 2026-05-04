@@ -604,6 +604,8 @@ async function hydrateFromSupabase(){
     try { await sbLoadLabelBatches(); } catch(e){ console.warn(e); }
     try { await sbLoadDeliveries(); } catch(e){ console.warn(e); }
     try { await sbLoadCompetitorPrices(); } catch(e){ console.warn(e); }
+    try { await sbLoadMarketingCampaigns(); } catch(e){ console.warn(e); }
+    try { await sbLoadMarketingAssets(); } catch(e){ console.warn(e); }
     try { await sbLoadPipeline(); } catch(e){ console.warn(e); }
     try { await sbLoadKPIs(); } catch(e){ console.warn(e); }
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
@@ -5608,16 +5610,7 @@ function sRow(label,status,note){
 }
 
 // ── MARKETING ─────────────────────────────────────────────
-function marketing(el){el.innerHTML=`<div class="alert alert-info">Marketing Hub begins after Locally Lit scope decision is finalized.</div>
-  <div class="g2">
-    <div class="card"><div class="card-hd"><span class="card-title">Site Issues (Audit 2026-03-18)</span></div><div class="card-body">
-      ${[['Homepage H1','❌ Instagram hashtag — not a keyword heading','red'],['Product Titles','❌ Lead with brand name, not search query','red'],['Product Schema JSON-LD','❌ URL-encoded descriptions (%20) sitewide','red'],['AggregateRating','❌ Missing — no star ratings in Google','red'],['Featured Products Widget','⚠️ Empty tab on homepage','yellow'],['Canonical Tags','✅ Present','green'],['Add to Cart','✅ Functional','green'],['Alt Text','✅ Feed-populated','green']].map(([l,d,t])=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border-light);font-size:13.5px;"><span class="badge bg-${t==='red'?'red':t==='yellow'?'yellow':'green'}" style="flex-shrink:0;">${t==='red'?'Issue':t==='yellow'?'Warn':'OK'}</span><div><div style="font-weight:600;">${l}</div><div style="color:var(--text-3);font-size:12px;">${d}</div></div></div>`).join('')}
-    </div></div>
-    <div class="card"><div class="card-hd"><span class="card-title">Agency Status</span></div><div class="card-body">
-      <div style="margin-bottom:18px;"><div class="sec-label">Locally Lit</div><span class="badge bg-yellow">Active Consideration</span><p style="font-size:13.5px;color:var(--text-2);line-height:1.6;margin-top:8px;">Scope split not finalized. AI-first posture approved.</p></div>
-      <div><div class="sec-label">Agital (Theme Builders)</div><span class="badge bg-blue">Awaiting Reply</span><p style="font-size:13.5px;color:var(--text-2);line-height:1.6;margin-top:8px;">Email sent 2026-03-18 re: 5 site issues. Items 1–2 need admin approval. Items 3–5 need template changes.</p></div>
-    </div></div>
-  </div>`;}
+// marketing() — moved to js/marketing.js (Track 5.12 v6.10.20)
 
 // ── ROADMAP ───────────────────────────────────────────────
 function roadmap(el){el.innerHTML=`
@@ -6288,5 +6281,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/deliveries.js?v=6.10.17"></script>
 <script src="js/decision_engine.js?v=6.10.18"></script>
 <script src="js/competitive_pricing.js?v=6.10.19"></script>
+<script src="js/marketing.js?v=6.10.20"></script>
 </body>
 </html>
