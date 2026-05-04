@@ -4928,7 +4928,7 @@ async function sbDeleteDeal(id){
 }
 
 function pipeline(el,act){
-  act.innerHTML=`<button class="btn btn-accent btn-sm" onclick="openAddDeal()">+ New Deal</button>`;
+  act.innerHTML=`<button class="btn btn-outline btn-sm" onclick="openPipelineAnalytics()" title="Funnel · conversion · time-in-stage · loss reasons">📊 Analytics</button><button class="btn btn-accent btn-sm" onclick="openAddDeal()">+ New Deal</button>`;
   renderPipeline(el);
 }
 function renderPipeline(el){
@@ -6464,5 +6464,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/bulk_vendor_ops.js?v=6.10.28"></script>
 <script src="js/activity_feed.js?v=6.10.29"></script>
 <script src="js/commission.js?v=6.10.30"></script>
+<script src="js/pipeline_analytics.js?v=6.10.31"></script>
 </body>
 </html>
