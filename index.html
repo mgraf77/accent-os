@@ -364,6 +364,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('calendar')"><span class="ni-icon">▦</span><span class="ni-label">Calendar</span></div>
       <div class="sb-sect" data-roles="Owner,Admin,Manager">ADMIN</div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('activity')"><span class="ni-icon">◷</span><span class="ni-label">Activity Feed</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('reports')"><span class="ni-icon">⤓</span><span class="ni-label">Reports</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
@@ -692,6 +693,7 @@ const PAGE_META={
   changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
   calendar:  {t:'Company Calendar',s:'Trade shows · Training · Deadlines'},
   marketing: {t:'Marketing Hub',s:''},
+  activity:  {t:'Activity Feed',s:'Vendor changes · audit log · pipeline events'},
   reports:   {t:'Reports',s:'CSV exports for every dataset'},
   roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
   mgmt:      {t:'Management Dashboard',s:'Owner View'},
@@ -708,7 +710,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,knowledge,vendors,changelog,calendar,marketing,reports,roadmap,mgmt,settings,repoutreach};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,knowledge,vendors,changelog,calendar,marketing,activity,reports,roadmap,mgmt,settings,repoutreach};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6458,5 +6460,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/global_search.js?v=6.10.26"></script>
 <script src="js/reports.js?v=6.10.27"></script>
 <script src="js/bulk_vendor_ops.js?v=6.10.28"></script>
+<script src="js/activity_feed.js?v=6.10.29"></script>
 </body>
 </html>
