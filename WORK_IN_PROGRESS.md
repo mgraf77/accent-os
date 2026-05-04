@@ -1,18 +1,21 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step. Shows exactly what was happening if Codespace dies.
 
-**Last updated:** 2026-05-04 — v6.10.12 file split shipped, ready for 5.5
-**Current task:** v6.10.12 file split — committing
-**Step:** 9 modules extracted to js/. index.html 829→680KB. JS parses clean. About to commit + push, then start 5.5 Trade Partner Network.
+**Last updated:** 2026-05-04 — 5.5 + 5.11 ready to ship as v6.10.13 + v6.10.14
+**Current task:** Trade Partners + Warranty Tracker — committing
+**Step:** Both modules built as external JS files. JS parses clean. About to commit + push then close out the session with SESSION_LOG / BUILD_INTELLIGENCE updates.
 **Files touched so far this task:**
-- js/customers.js, employees.js, knowledge_hub.js, jobs.js, purchase_orders.js (committed in phase 1)
-- js/calendar.js, inventory.js, price_book.js, deal_optimizer.js (uncommitted)
-- index.html (4 more module blocks removed; 4 script tags added)
-- BUILD_PLAN_CLAUDE.md (0.1 entry rewritten with actual ship details)
-**Commit status:** uncommitted (calendar/inventory/price_book/deal_optimizer + index.html + BUILD_PLAN updates)
+- sql/M24_trade_partners_warranty_schema.sql (created)
+- js/trade_partners.js (created)
+- js/warranty.js (created)
+- index.html (sidebar + PAGE_META + dispatcher + hydrate + 2 script tags)
+- BUILD_PLAN_CLAUDE.md (5.5 + 5.11 marked [x])
+- BUILD_PLAN_MICHAEL.md (M24 entry added)
+- WORK_IN_PROGRESS.md (this file)
+**Commit status:** uncommitted (about to commit as one bundle)
 **Next step if interrupted:**
-1. `git add js/calendar.js js/inventory.js js/price_book.js js/deal_optimizer.js index.html BUILD_PLAN_CLAUDE.md WORK_IN_PROGRESS.md`
-2. `git commit -m "v6.10.12: file split phase 2 — 4 more modules extracted, 0.1 truly shipped"`
+1. `git add sql/M24_trade_partners_warranty_schema.sql js/trade_partners.js js/warranty.js index.html BUILD_PLAN_CLAUDE.md BUILD_PLAN_MICHAEL.md WORK_IN_PROGRESS.md`
+2. Commit with message starting `v6.10.13/14: Tracks 5.5 + 5.11 — Trade Partners + Warranty`
 3. `git push origin main`
-4. Start 5.5 Trade Partner Network as new external module file `js/trade_partners.js`. Schema: M24 (trade_partners table). Sidebar entry under CORE.
-5. After 5.5, ship 5.11 Warranty Tracker similarly (likely js/warranty.js, schema M25 or fold into M24).
+4. Update SESSION_LOG with this whole session's work + BUILD_INTELLIGENCE with file-split lessons. Final doc commit.
+5. Session continues to next pending [ ] in BUILD_PLAN_CLAUDE.md if budget allows; remaining unblocked items: 5.8 Showroom Display, 5.9 QR/Barcode, 5.10 Delivery Scheduling, 5.12 Marketing Hub, 5.14 Competitive Pricing, 5.15 Sales Decision Engine.

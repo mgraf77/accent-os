@@ -99,7 +99,8 @@
   - BLOCKS ON MICHAEL: **M22** (run inventory schema), **M03** + **M10** (Windward live data, future Track 6.11)
 - [x] **5.4** — Purchase Orders
   - Shipped v6.10.11: New "Purchase Orders" page (CORE section, Owner/Admin/Manager). Persistence on purchase_orders + po_lines tables (M23 SQL, pending Michael run). 4 stat cards (open count by status / past-expected count / open $ / received YTD). Filters: free-text + status + vendor. Auto PO-#### number. Edit modal: vendor dropdown from VD, line-item editor (in-modal table with add/remove rows + live ext_cost + auto-calc subtotal/total), tax + freight, related quote + job dropdowns. "Mark Received & Update Inventory" button increments inventory_items.qty_on_hand for matching SKU+vendor on receipt. Status badges color-coded.
-- [ ] **5.5** — Trade Partner Network (external designers/contractors)
+- [x] **5.5** — Trade Partner Network (external designers/contractors)
+  - Shipped v6.10.13: New "Trade Partners" page (CORE, Sales+ access). External JS module `js/trade_partners.js`. Persistence on `trade_partners` table from M24 schema. 7 partner types (designer/contractor/architect/builder/installer/electrician/other). 4 stat cards (active count, designer/architect/builder breakdown, trade subtotal, avg rating). Filters: free-text + type + status. Edit modal with name/company/contact/address/license/rating/preferred terms/notes/linked-customer dropdown. Status workflow: active/prospect/inactive.
 - [x] **5.6** — Price Book (catalog with margin analysis)
   - Shipped v6.10.10: New "Price Book" sub-tab on Vendor Ranking. Pure-compute view over inventory_items + VD — no new schema. Computes margin = (list-cost)/list and markup = (list-cost)/cost per SKU; joins vendor tier + score from VD. 4 stat cards (SKUs in book / avg margin / high-margin count / vendor count). Filters: free-text, vendor, tier, in-stock-only. Sort by margin descending. Color-codes margin column (green ≥50%, blue ≥30%, accent <30%). Shows "empty until inventory loaded" placeholder when INVENTORY is empty.
 - [x] **5.7** — Vendor Deal Optimization (recommend negotiation moves from score deltas)
@@ -107,7 +108,8 @@
 - [ ] **5.8** — Showroom Display Management (display program tracking)
 - [ ] **5.9** — QR/Barcode (warehouse + showroom labeling)
 - [ ] **5.10** — Delivery Scheduling
-- [ ] **5.11** — Warranty Tracker
+- [x] **5.11** — Warranty Tracker
+  - Shipped v6.10.14: New "Warranty" page (CORE, all roles). External JS module `js/warranty.js`. Persistence on `warranty_claims` table from M24 schema. 7-state workflow: open → sent_to_vendor → approved/denied → replaced/refunded → closed. 3 severity levels (cosmetic/functional/safety). Auto W-#### claim numbering. 4 stat cards (open count by sub-status, warranty expiring ≤30d, open cost-to-us $, resolved count). Filters: free-text + status + vendor. Edit modal links to vendors (VD), customers (CUSTOMERS dropdown OR free-text), and quotes (QUOTES dropdown). Auto-sets resolution_date when status flips to closed/denied/refunded/replaced. Severity color-coded.
 - [ ] **5.12** — Marketing Hub (full build — current `marketing` page is a scaffold)
 - [ ] **5.13** — E-Commerce Command Center
   - BLOCKS ON MICHAEL: **M04** (BigCommerce API key) AND **M05** (GMC API access)

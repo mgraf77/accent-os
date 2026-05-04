@@ -61,6 +61,16 @@
   - Then: paste to Claude → `M21 done — phase 3 schema is in. All three modules are now persistent.`
   - Unlocks: persistence for Tracks 5.1 (Knowledge Hub), 5.2 (Job Tracker), 5.16 (Company Calendar). Until M21 runs, the UIs work but persistence silently no-ops (toast warns on save).
 
+- [ ] **M24** — Run Trade Partner + Warranty schema (Tracks 5.5 + 5.11)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M24_trade_partners_warranty_schema.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return 2 rows (`trade_partners`, `warranty_claims`) with `rls_enabled=true`.
+    4. Reload `https://accent-os.pages.dev`. Trade Partners + Warranty sidebar entries already ship (v6.10.13/v6.10.14).
+  - Then: paste to Claude → `M24 done — trade_partners + warranty_claims tables in.`
+  - Unlocks: persistence for Tracks 5.5 (Trade Partner Network) and 5.11 (Warranty Tracker).
+
 - [ ] **M11** — Fix Supabase MCP permissions (Track 0.3)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
