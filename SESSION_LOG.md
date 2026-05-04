@@ -7,11 +7,25 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / PROMPT_QUEUE.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. Continue autonomous build from first incomplete `[ ]`. Track 5 has only **5.12 Marketing Hub (full build)** remaining — that's a bigger lift than the compact CRUD modules. Could shift to Track 6 integration prep (most blocked on Michael API keys, see BUILD_PLAN_MICHAEL: M03/M04/M05/M06/M09/M10) or polish: deeper Daily Brief tiles for new modules, charts, global search across modules. M24/M25/M26/M27/M28 still pending Michael — UIs ship working but persistence silently no-ops until tables exist. New modules ship as external `js/<name>.js` files.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / PROMPT_QUEUE.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Track 5 is fully complete** — every Phase-3 module shipped. Remaining: Track 6 integration prep. Unblocked Track 6 items (no Michael blocker): **6.5 Trade & Designer Portal** (external-facing), **6.6 Vendor Rep Portal** (external-facing), **6.7 AI Lighting Consultant** (could leverage existing knowledge() chat infrastructure), **6.8 Intelligent Alerts** (alerts table is already in M02 schema — pure-compute layer over existing data, fast win), **6.9 AI Demand Forecasting** (needs historical data, may be premature), **6.10 AccentOS embed** (needs production site approved per M18). Suggested order: 6.8 (cheapest win) → 6.7 → 6.5/6.6 (external auth design needed). All API-key-blocked items (6.1/6.2/6.3/6.4/6.11) wait on Michael per BUILD_PLAN_MICHAEL. M24/M25/M26/M27/M28/M29 still pending Michael — UIs ship working but persistence silently no-ops until tables exist.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Resume + 5.12 Marketing Hub — TRACK 5 COMPLETE
+**Version:** v6.10.20
+**Built/Changed:**
+- **5.12 Marketing Hub (full build)** — replaced static `marketing()` placeholder (site issues + agency status only) with full multi-tab module in `js/marketing.js`. 4 tabs:
+  - Overview: 4 stats (active campaign count / budget vs spent / ROI color-coded / leads-deals conversion); by-type breakdown; recent activity feed.
+  - Campaigns: CRUD across 8 types × 5 statuses. Filters: free-text + type + status. Edit modal with collapsible promotion-specific (discount %/$ + promo SKUs) and attribution (leads / deals_won / revenue_attributed) sections that auto-expand when those fields have values. ROI computed per row.
+  - Asset Library: 6 asset types (image/document/video/link/template/other), grid view with type icons + tag chips + URL passthrough, linked-vendor + linked-campaign cross-refs.
+  - Site Audit: preserved from prior placeholder.
+- **M29 SQL** added (sql/M29_marketing_schema.sql): marketing_campaigns + marketing_assets tables, idempotent, same RLS pattern as M02.
+**Decisions:** Consolidated all campaign types (email/print/digital/social/event/promo/co_op/other) into a single `marketing_campaigns` table distinguished by `type` field rather than separate tables per type. Promotions get extra fields (discount_pct/discount_amount/promo_skus) that are NULL for non-promo types — clean and simple. Assets table is separate because the lifecycle is different (assets are reusable across campaigns; campaigns reference them via FK). Inline `marketing()` removed from index.html and replaced with a comment marker; the external module's `marketing()` function takes over via the goTo dispatcher.
+**Verified:** JS parses clean across inline + 17 external module files (937KB total payload). index.html stable at 681KB. Track 5 fully complete (every 5.x item shipped).
+**Open loops:** M29 pending Michael (UI works without it; persistence silently no-ops until SQL runs). Track 6 is the next frontier — most items blocked on Michael API keys, but 6.5/6.6/6.7/6.8/6.9/6.10 are unblocked and could ship. 6.8 Intelligent Alerts is the cheapest win (alerts table already in M02 schema). Polish opportunities: Daily Brief tiles for new modules, charts, global search, MODULE_REGISTRY refactor to reduce shell touchpoints per new module.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Resume + 5.8 + 5.9 + 5.10 + 5.15 + 5.14 — SHIPPED
 **Version:** v6.10.15 (5.8) → v6.10.16 (5.9) → v6.10.17 (5.10) → v6.10.18 (5.15) → v6.10.19 (5.14)
