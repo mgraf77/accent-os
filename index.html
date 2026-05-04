@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AccentOS v6.9 — Accent Lighting Inc.</title>
+<title>AccentOS v6.9.6 — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -317,7 +317,6 @@ tbody tr:hover td{background:var(--bg);}
 <body>
 
 <!-- LOGIN - TEMPORARILY DISABLED -->
-<!--
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
@@ -327,12 +326,11 @@ tbody tr:hover td{background:var(--bg);}
     <h2>Employee Portal</h2>
     <p>Internal use only — Accent Lighting Inc.</p>
     <div id="login-err" class="login-err">Invalid credentials.</div>
-    <div class="fg"><label>Username</label><input id="li-u" autocomplete="username" placeholder="username"></div>
+    <div class="fg"><label>Email</label><input id="li-u" type="email" autocomplete="username" placeholder="you@accentlightinginc.com"></div>
     <div class="fg"><label>Password</label><input id="li-p" type="password" autocomplete="current-password" placeholder="password"></div>
-    <button class="btn-login" onclick="doLogin()">Sign In</button>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Sign In</button>
   </div>
 </div>
--->
 
 <!-- APP -->
 <div id="app">
@@ -344,19 +342,19 @@ tbody tr:hover td{background:var(--bg);}
     </div>
     <div class="sb-nav">
       <div class="sb-sect">CORE</div>
-      <div class="ni active" onclick="goTo('dashboard')"><span class="ni-icon">⊞</span><span class="ni-label">Dashboard</span></div>
-      <div class="ni" onclick="goTo('pipeline')"><span class="ni-icon">◈</span><span class="ni-label">Sales Pipeline</span></div>
-      <div class="ni" onclick="goTo('quotes')"><span class="ni-icon">◻</span><span class="ni-label">Quote Generator</span></div>
+      <div class="ni active" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('dashboard')"><span class="ni-icon">⊞</span><span class="ni-label">Dashboard</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('pipeline')"><span class="ni-icon">◈</span><span class="ni-label">Sales Pipeline</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('quotes')"><span class="ni-icon">◻</span><span class="ni-label">Quote Generator</span></div>
       <div class="sb-sect">INTELLIGENCE</div>
-      <div class="ni" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
-      <div class="ni" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
-      <div class="ni" onclick="goTo('changelog')"><span class="ni-icon">◑</span><span class="ni-label">Change Log</span></div>
-      <div class="sb-sect admin-only">ADMIN</div>
-      <div class="ni admin-only" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
-      <div class="ni admin-only" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
-      <div class="ni admin-only" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
-      <div class="ni" onclick="goTo('repoutreach')"><span class="ni-icon">✉</span><span class="ni-label">Rep Outreach</span></div>
-      <div class="ni" onclick="goTo('settings')"><span class="ni-icon">◫</span><span class="ni-label">Settings</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('changelog')"><span class="ni-icon">◑</span><span class="ni-label">Change Log</span></div>
+      <div class="sb-sect" data-roles="Owner,Admin,Manager">ADMIN</div>
+      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('repoutreach')"><span class="ni-icon">✉</span><span class="ni-label">Rep Outreach</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('settings')"><span class="ni-icon">◫</span><span class="ni-label">Settings</span></div>
     </div>
     <div class="sb-foot">
       <div class="user-chip" onclick="doLogout()">
@@ -424,34 +422,177 @@ tbody tr:hover td{background:var(--bg);}
 <script>
 'use strict';
 
-// ── AUTH ──────────────────────────────────────────────────
-const USERS={
-  michael:{pass:'accent2026',name:'Michael Graf',role:'Admin',ini:'MG'},
-  paul:   {pass:'accent2026',name:'Paul Graf',   role:'Manager',ini:'PG'},
-  patrick:{pass:'accent2026',name:'Patrick Graf',role:'Manager',ini:'PG'}
-};
-// AUTO-LOGIN AS MICHAEL (TEMPORARILY DISABLED LOGIN)
-let CU={username:'michael',...USERS.michael};
+// ── AUTH (v6.9.6 — Supabase Auth, role-based) ─────────────
+// Roles: Owner, Admin, Manager, Sales, Warehouse.
+// Login uses Supabase Auth email/password. Role pulled from user_profiles.
+// JWT stored in sessionStorage 'aos-jwt' for refresh persistence.
+const ROLES = ['Owner','Admin','Manager','Sales','Warehouse'];
+let CU = null;  // { user_id, email, full_name, role, initials, jwt }
 
-/* ORIGINAL LOGIN FUNCTION - COMMENTED OUT
-function doLogin(){
-  const u=v('li-u').toLowerCase(),p=v('li-p','value');
-  if(USERS[u]&&USERS[u].pass===p){
-    CU={username:u,...USERS[u]};
-    $('login-screen').style.display='none';
-    $('app').classList.add('on');
-    $('u-av').textContent=CU.ini;
-    $('u-name').textContent=CU.name;
-    $('u-role').textContent=CU.role;
-    if(CU.role!=='Admin')qsa('.admin-only').forEach(el=>el.style.display='none');
-    $('fb-btn').classList.add('on');
-    goTo('dashboard');
-  } else { $('login-err').style.display='block'; }
+function jwtKey(){ return sessionStorage.getItem('aos-jwt') || ''; }
+function setJwt(t){ if(t) sessionStorage.setItem('aos-jwt', t); else sessionStorage.removeItem('aos-jwt'); }
+
+// Initials from a full name like "Michael Graf" → "MG". Fallback to email[0].
+function deriveInitials(fullName, email){
+  if(fullName){
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if(parts.length >= 2) return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+    if(parts[0]) return parts[0].slice(0,2).toUpperCase();
+  }
+  return (email||'?').slice(0,2).toUpperCase();
 }
-document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!$('app').classList.contains('on'))doLogin(); });
-*/
 
-function doLogout(){ if(confirm('Sign out?')){ CU=null; location.reload(); } }
+// Fetch helper for Supabase Auth endpoints (no Authorization bearer needed for /token).
+async function sbAuthFetch(path, opts={}){
+  const anon = sessionStorage.getItem('aos-sb-key') || '';
+  if(!anon) throw new Error('Supabase anon key not set — open Settings first');
+  const url = SUPABASE_URL + '/auth/v1' + path;
+  const headers = Object.assign({
+    'apikey': anon,
+    'Content-Type': 'application/json'
+  }, opts.headers || {});
+  const r = await fetch(url, Object.assign({}, opts, {headers}));
+  const text = await r.text();
+  if(!r.ok){ throw new Error(`Auth ${r.status}: ${text}`); }
+  try { return text ? JSON.parse(text) : null; } catch { return null; }
+}
+
+// Look up the profile row for the signed-in user (role, full_name, initials).
+async function sbFetchProfile(userId){
+  if(!sbConfigured()) return null;
+  try{
+    const rows = await sbFetch(`/user_profiles?user_id=eq.${encodeURIComponent(userId)}&select=user_id,email,full_name,role,initials&limit=1`);
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  }catch(e){ console.warn('[auth] profile fetch failed:', e.message); return null; }
+}
+
+// Best-effort audit log writer. Silently no-ops if not signed in or table missing.
+async function sbAuditLog(action, module, metadata){
+  if(!sbConfigured() || !CU || !CU.user_id) return;
+  try{
+    await sbFetch('/audit_log', {
+      method: 'POST',
+      headers: {'Prefer':'return=minimal'},
+      body: JSON.stringify({
+        user_id: CU.user_id,
+        user_email: CU.email,
+        action: action,
+        module: module || null,
+        metadata: metadata || null
+      })
+    });
+  }catch(e){ console.warn('[audit_log]', e.message); }
+}
+
+// Show/hide nav items based on role's data-roles whitelist.
+// Items without data-roles are visible to everyone. Owner sees everything.
+function applyRoleVisibility(role){
+  document.querySelectorAll('[data-roles]').forEach(el => {
+    const allowed = (el.getAttribute('data-roles')||'').split(',').map(s=>s.trim()).filter(Boolean);
+    el.style.display = (!allowed.length || allowed.includes(role)) ? '' : 'none';
+  });
+}
+
+async function doLogin(){
+  const errEl = $('login-err'); if(errEl) errEl.style.display='none';
+  const email = (v('li-u')||'').trim().toLowerCase();
+  const pass  = v('li-p','value');
+  if(!email || !pass){ if(errEl){ errEl.textContent='Enter email and password.'; errEl.style.display='block'; } return; }
+  if(!sbConfigured()){
+    if(errEl){ errEl.textContent='Supabase not configured — open Settings first.'; errEl.style.display='block'; }
+    return;
+  }
+  const btn = $('btn-login'); if(btn){ btn.disabled=true; btn.textContent='Signing in…'; }
+  try{
+    const auth = await sbAuthFetch('/token?grant_type=password', {
+      method: 'POST',
+      body: JSON.stringify({email, password: pass})
+    });
+    if(!auth || !auth.access_token || !auth.user){ throw new Error('Invalid response from auth server'); }
+    setJwt(auth.access_token);
+    const profile = await sbFetchProfile(auth.user.id);
+    if(!profile){
+      setJwt('');
+      throw new Error('No profile found for this user — owner must assign a role.');
+    }
+    CU = {
+      user_id: auth.user.id,
+      email: auth.user.email,
+      name: profile.full_name || auth.user.email,
+      role: profile.role,
+      initials: profile.initials || deriveInitials(profile.full_name, auth.user.email),
+      jwt: auth.access_token
+    };
+    activateApp();
+    sbAuditLog('login', 'auth', {email: CU.email});
+    await hydrateFromSupabase();
+    goTo('dashboard');
+  }catch(e){
+    setJwt('');
+    if(errEl){ errEl.textContent = e.message.includes('Invalid login') ? 'Invalid credentials.' : e.message; errEl.style.display='block'; }
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='Sign In'; }
+  }
+}
+document.addEventListener('keydown', e => {
+  if(e.key==='Enter' && !$('app').classList.contains('on')) doLogin();
+});
+
+// Try to rehydrate a session from a stored JWT. Returns true on success.
+async function tryRestoreSession(){
+  const tok = jwtKey();
+  if(!tok || !sbConfigured()) return false;
+  try{
+    const u = await sbAuthFetch('/user', { headers: {'Authorization': 'Bearer ' + tok} });
+    if(!u || !u.id) return false;
+    const profile = await sbFetchProfile(u.id);
+    if(!profile){ setJwt(''); return false; }
+    CU = {
+      user_id: u.id,
+      email: u.email,
+      name: profile.full_name || u.email,
+      role: profile.role,
+      initials: profile.initials || deriveInitials(profile.full_name, u.email),
+      jwt: tok
+    };
+    return true;
+  }catch(e){ setJwt(''); return false; }
+}
+
+function activateApp(){
+  $('login-screen').style.display='none';
+  $('app').classList.add('on');
+  $('u-av').textContent = CU.initials;
+  $('u-name').textContent = CU.name;
+  $('u-role').textContent = CU.role;
+  applyRoleVisibility(CU.role);
+  $('fb-btn').classList.add('on');
+}
+
+async function hydrateFromSupabase(){
+  let sbCatRows = 0;
+  if(typeof sbConfigured==='function' && sbConfigured()){
+    try { sbCatRows = await sbLoadCategories(); } catch(e){ console.warn(e); }
+    try { await sbLoadChangelog(); } catch(e){ console.warn(e); }
+    try { await sbLoadParents(); } catch(e){ console.warn(e); }
+    try { await sbLoadScoreStates(); } catch(e){ console.warn(e); }
+  }
+  if(!sbCatRows){
+    try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
+  }
+}
+
+async function doLogout(){
+  if(!confirm('Sign out?')) return;
+  await sbAuditLog('logout', 'auth');
+  const tok = jwtKey();
+  if(tok && sbConfigured()){
+    try { await sbAuthFetch('/logout', {method:'POST', headers:{'Authorization':'Bearer '+tok}}); } catch(e){}
+  }
+  setJwt('');
+  CU = null;
+  location.reload();
+}
 
 // ── SIDEBAR ───────────────────────────────────────────────
 let sbCol=false;
@@ -704,9 +845,12 @@ async function sbFetch(path, opts={}){
   const key = sbKey();
   if(!key) throw new Error('Supabase anon key not set — open Settings');
   const url = SUPABASE_URL + '/rest/v1' + path;
+  // When a user is signed in, send their JWT as Authorization so RLS sees auth.uid().
+  // apikey header always carries the anon key.
+  const jwt = (typeof jwtKey==='function' ? jwtKey() : '') || key;
   const headers = Object.assign({
     'apikey': key,
-    'Authorization': 'Bearer ' + key,
+    'Authorization': 'Bearer ' + jwt,
     'Content-Type': 'application/json',
     'Prefer': 'return=representation'
   }, opts.headers || {});
@@ -2688,6 +2832,9 @@ function saveVendorScoreEntry(vendorId, propagateToSisters){
 
   closeModal();
   renderVendors($('pg-content'));
+  if(typeof sbAuditLog === 'function' && (changed || sisterChanged)){
+    sbAuditLog('score_save', 'vendors', {vendor_id: vendorId, vendor_name: v.name, changed, sister_count: sisterCount, sister_changed: sisterChanged});
+  }
   if(propagateToSisters && sisterCount){
     toast(`${changed} score${changed===1?'':'s'} updated · ${sisterChanged} propagated to ${sisterCount} sister${sisterCount===1?'':'s'}`, 'ok');
   } else {
@@ -4547,29 +4694,19 @@ function settings(el){el.innerHTML=`<div class="g2">
 // ── HELPERS ───────────────────────────────────────────────
 function getS(k){return sessionStorage.getItem(k)||'';}
 
-// ── AUTO-LOGIN INITIALIZATION (LOGIN TEMPORARILY DISABLED) ──
+// ── BOOT (v6.9.6) ──
+// 1. Try to restore an authenticated session from the stored JWT.
+// 2. If restored: hydrate Supabase data and show the app.
+// 3. Otherwise: leave the login screen visible and wait for doLogin().
 window.addEventListener('DOMContentLoaded', async () => {
-  $('app').classList.add('on');
-  $('u-av').textContent=CU.ini;
-  $('u-name').textContent=CU.name;
-  $('u-role').textContent=CU.role;
-  if(CU.role!=='Admin')qsa('.admin-only').forEach(el=>el.style.display='none');
-  $('fb-btn').classList.add('on');
-
-  // Hydrate from Supabase if configured; otherwise apply local prefill
-  let sbCatRows = 0;
-  if(typeof sbConfigured==='function' && sbConfigured()){
-    try { sbCatRows = await sbLoadCategories(); } catch(e){ console.warn(e); }
-    try { await sbLoadChangelog(); } catch(e){ console.warn(e); }
-    try { await sbLoadParents(); } catch(e){ console.warn(e); }
-    try { await sbLoadScoreStates(); } catch(e){ console.warn(e); }
+  const restored = await tryRestoreSession();
+  if(!restored){
+    // Login screen is shown by default (no #app.on). Nothing else to do.
+    return;
   }
-  // If Supabase has no category rows yet (fresh DB), seed in-memory from prefill
-  // so the UI isn't empty. The next category save will start populating Supabase.
-  if(!sbCatRows){
-    try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
-  }
-
+  activateApp();
+  await hydrateFromSupabase();
+  sbAuditLog('session_resume', 'auth');
   goTo('dashboard');
 });
 </script>
