@@ -351,6 +351,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('tradepartners')"><span class="ni-icon">◆</span><span class="ni-label">Trade Partners</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('warranty')"><span class="ni-icon">⚠</span><span class="ni-label">Warranty</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('showrooms')"><span class="ni-icon">▣</span><span class="ni-label">Showroom Displays</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('labels')"><span class="ni-icon">▥</span><span class="ni-label">Labels</span></div>
       <div class="sb-sect">INTELLIGENCE</div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
@@ -597,6 +598,7 @@ async function hydrateFromSupabase(){
     try { await sbLoadTradePartners(); } catch(e){ console.warn(e); }
     try { await sbLoadWarrantyClaims(); } catch(e){ console.warn(e); }
     try { await sbLoadShowroomDisplays(); } catch(e){ console.warn(e); }
+    try { await sbLoadLabelBatches(); } catch(e){ console.warn(e); }
     try { await sbLoadPipeline(); } catch(e){ console.warn(e); }
     try { await sbLoadKPIs(); } catch(e){ console.warn(e); }
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
@@ -660,6 +662,7 @@ const PAGE_META={
   tradepartners: {t:'Trade Partners',s:'Designers · Contractors · Architects'},
   warranty:  {t:'Warranty Tracker',s:'Defective product claims · Vendor RMAs'},
   showrooms: {t:'Showroom Displays',s:'Display program tracking'},
+  labels:    {t:'Labels',s:'QR + Barcode label printing'},
   knowledge: {t:'Knowledge Engine',s:'AI-Powered Lighting Intelligence'},
   vendors:   {t:'Vendor Ranking',s:'Vendor Ranking 2026'},
   changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
@@ -680,7 +683,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,knowledge,vendors,changelog,calendar,marketing,roadmap,mgmt,settings,repoutreach};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,knowledge,vendors,changelog,calendar,marketing,roadmap,mgmt,settings,repoutreach};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6273,5 +6276,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/trade_partners.js?v=6.10.13"></script>
 <script src="js/warranty.js?v=6.10.14"></script>
 <script src="js/showroom_displays.js?v=6.10.15"></script>
+<script src="js/labels.js?v=6.10.16"></script>
 </body>
 </html>

@@ -61,6 +61,16 @@
   - Then: paste to Claude → `M21 done — phase 3 schema is in. All three modules are now persistent.`
   - Unlocks: persistence for Tracks 5.1 (Knowledge Hub), 5.2 (Job Tracker), 5.16 (Company Calendar). Until M21 runs, the UIs work but persistence silently no-ops (toast warns on save).
 
+- [ ] **M26** — Run Label Batches schema (Track 5.9 — optional)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M26_label_batches_schema.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return one row (`label_batches` with `rls_enabled=true`).
+    4. Reload `https://accent-os.pages.dev`. Labels page already ships (v6.10.16); table only enables the "Save batch" button to actually persist.
+  - Then: paste to Claude → `M26 done — label_batches table is in.`
+  - Unlocks: persistence for saved label batches in Track 5.9. The Labels page works without M26 — printing labels is in-memory and uses no DB write. Only "Save batch" needs the table.
+
 - [ ] **M25** — Run Showroom Display schema (Track 5.8)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
