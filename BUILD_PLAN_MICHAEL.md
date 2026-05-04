@@ -31,7 +31,7 @@
   - Then: paste to Claude → `M02 done — core schema is in. Build out Track 1 in priority order.`
   - Unlocks: Tracks 1.1, 1.2, 1.4, 1.5, 2.2, 2.3, 4.2, 4.3 (everything that needs new tables)
 
-- [ ] **M23** — Run Purchase Orders schema (Track 5.4)
+- [x] **M23** — Run Purchase Orders schema (Track 5.4)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
     1. Open `sql/M23_purchase_orders_schema.sql` from the repo. Copy its contents.
@@ -41,7 +41,7 @@
   - Then: paste to Claude → `M23 done — purchase_orders + po_lines tables in. Test PO create + receipt flow.`
   - Unlocks: persistence for Track 5.4. Receipt flow auto-increments inventory_items.qty_on_hand once M22 also lands.
 
-- [ ] **M22** — Run Inventory schema (Track 5.3 phase 1)
+- [x] **M22** — Run Inventory schema (Track 5.3 phase 1)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
     1. Open `sql/M22_inventory_schema.sql` from the repo. Copy its contents.
@@ -51,7 +51,7 @@
   - Then: paste to Claude → `M22 done — inventory_items table is in. Import a CSV to test.`
   - Unlocks: persistence for Track 5.3 CSV imports. The same table accepts live syncs from Track 6.11 (Windward) once M03 + M10 land — no schema migration required.
 
-- [ ] **M21** — Run Phase 3 schema (Calendar + Knowledge Hub + Job Tracker)
+- [x] **M21** — Run Phase 3 schema (Calendar + Knowledge Hub + Job Tracker)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
     1. Open `sql/M21_phase3_schema.sql` from the repo (already written by Claude). Copy its contents.
