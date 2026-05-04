@@ -3511,6 +3511,29 @@ async function openVendorDetail(vendorId) {
         }).join('')}
       </div>
 
+      ${(()=>{
+        // Vendor 360° cross-references
+        const myPOs = (typeof POS!=='undefined'?POS:[]).filter(p => p.vendor_id === v.id || (p.vendor_name && p.vendor_name.toLowerCase() === v.n.toLowerCase()));
+        const myCoop = (typeof COOP_FUNDS!=='undefined'?COOP_FUNDS:[]).filter(f => f.vendor_id === v.id);
+        const myWarranty = (typeof WARRANTY_CLAIMS!=='undefined'?WARRANTY_CLAIMS:[]).filter(w => w.vendor_id === v.id);
+        const myDisplays = (typeof SHOWROOM_DISPLAYS!=='undefined'?SHOWROOM_DISPLAYS:[]).filter(d => d.vendor_id === v.id);
+        const myInv = (typeof INVENTORY!=='undefined'?INVENTORY:[]).filter(it => it.vendor_id === v.id || (it.vendor_name && v.n && it.vendor_name.toLowerCase() === v.n.toLowerCase()));
+        const total = myPOs.length + myCoop.length + myWarranty.length + myDisplays.length + myInv.length;
+        if(total === 0) return '';
+        const block = (label, items, extraFn) => items.length ? `<div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px;">${label} · ${items.length}</div>
+          <div style="font-size:11px;color:var(--text-2);">${extraFn(items.slice(0,3))}${items.length>3?` <span class="muted">+${items.length-3} more</span>`:''}</div>
+        </div>` : '';
+        return `<div style="margin-top:24px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:12px;">Vendor 360° · Cross-References</div>
+          ${block('Purchase Orders', myPOs, items => items.map(p => `<strong>${esc(p.po_number||'')}</strong> $${Math.round(p.total||0).toLocaleString()} · ${p.status||''}`).join(' · '))}
+          ${block('Inventory SKUs', myInv, items => `${items.length>3?'Including':''} ${items.slice(0,3).map(it=>esc(it.sku)).join(', ')}`)}
+          ${block('Co-op Funds', myCoop, items => items.map(f => `${esc(f.fund_type||'fund')} $${Number(f.amount||0).toLocaleString()} (${f.status||''})`).join(' · '))}
+          ${block('Showroom Displays', myDisplays, items => items.map(d => `${esc(d.display_name||'display')} (${d.status||''})`).join(' · '))}
+          ${block('Warranty Claims', myWarranty, items => items.map(w => `${esc(w.claim_number||'')} · ${w.status||''}`).join(' · '))}
+        </div>`;
+      })()}
+
     </div>
   `;
 
