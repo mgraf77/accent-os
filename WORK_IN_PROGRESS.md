@@ -1,18 +1,9 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step. Shows exactly what was happening if Codespace dies.
 
-**Last updated:** 2026-05-04 — Track 5.3 ready to ship as v6.10.9
-**Current task:** 5.3 Inventory Module CSV phase 1 — committing
-**Step:** All code + docs written. JS parses clean (766KB). About to git add + commit.
-**Files touched so far this task:**
-- sql/M22_inventory_schema.sql (committed earlier in WIP checkpoint)
-- index.html (renderInventory replaced + sbLoadInventory in hydrate)
-- BUILD_PLAN_CLAUDE.md (5.3 marked [x])
-- BUILD_PLAN_MICHAEL.md (M22 entry added)
-- WORK_IN_PROGRESS.md (this file)
-**Commit status:** uncommitted (~7 files staged when commit fires)
-**Next step if interrupted:**
-1. `git add index.html BUILD_PLAN_CLAUDE.md BUILD_PLAN_MICHAEL.md WORK_IN_PROGRESS.md`
-2. `git commit -m "v6.10.9: Track 5.3 — Inventory Module CSV phase 1"`
-3. `git push origin main`
-4. Continue to next pending [ ] item — likely 5.4 Purchase Orders or 5.6 Price Book (also Windward-dependent — could ship CSV phase 1 same pattern)
+**Last updated:** 2026-05-04 — starting Track 5.6 Price Book
+**Current task:** 5.6 Price Book — catalog with margin analysis
+**Step:** Planning. Will build as a pure-compute view over inventory_items (already exists from 5.3) + vendor data. No new schema. Filters: vendor, margin tier, in-stock only. Stats: total SKUs / avg margin / margin distribution by tier. Sub-tab on Vendor Ranking.
+**Files touched so far this task:** none yet
+**Commit status:** clean working tree (last commit pushed: 3066a48)
+**Next step if interrupted:** Read the renderInventory() pattern at index.html (search "5.3 INVENTORY"), build a parallel renderPriceBook() that pivots margin = (list_price - unit_cost)/list_price. Add as sub-tab "Price Book" alongside the optimizer. No persistence needed — pure compute.
