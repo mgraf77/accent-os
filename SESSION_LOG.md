@@ -7,11 +7,27 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, and BUILD_INTELLIGENCE.md fresh. M07 + M08 are LOCKED — Customers (1.4) and Employees (3.1) modules can both be built now without blocking on Michael. Customer scores: visible to Sales+. Employee scores: Owner/Admin/Manager only — employees cannot see their own scores. Both modules: build UI + schema hooks; wait for Windward CSV import (handled by Michael) for actual data. Schemas already exist in M02. Order suggested: **1.4 Customers/CRM** → **3.1 Employee Scorecards** → then any remaining Phase-3 modules from Track 5 that don't need external API keys (5.1 Knowledge Hub, 5.2 Job Tracker, 5.6 Price Book, 5.7 Vendor Deal Optimization, 5.16 Company Calendar). Token rules from prior session apply: doc-only updates batched into single commit at end; no narration between steps; status block after commits only. Append BUILD_INTELLIGENCE entries flagging tasks where a lighter approach would have saved tokens.
+> Read SESSION_LOG.md and BUILD_PLAN_CLAUDE.md fresh. Read BUILD_INTELLIGENCE.md and apply all lessons before touching any code. Continue autonomous build from the first incomplete `[ ]` item in BUILD_PLAN_CLAUDE.md that has no unresolved BLOCKS ON MICHAEL dependency. Run `bash /workspaces/accent-os/scripts/status.sh` first so I can see current state. Then build without stopping. Likely starting points after this session: **5.6 Price Book** (depends on Windward product data — probably ship a CSV-import phase 1), or move into Track 6 integration prep (most are blocked on Michael API keys, see BUILD_PLAN_MICHAEL). M21 SQL is awaiting Michael — calendar_events / articles / jobs UIs already shipped (v6.10.6–6.10.8) but persistence silently no-ops until M21 runs. Token rules from prior session apply: doc-only updates batched into single commit at end; no narration between steps. Append BUILD_INTELLIGENCE entries flagging tasks where a lighter approach would have saved tokens.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Autonomous session: 1.4 + 3.1 + 5.7 + 5.16 + 5.1 + 5.2 — SHIPPED
+**Version:** v6.10.3 → v6.10.8 (6 code commits)
+**Built/Changed:**
+- **1.4 CRM & Customer Intelligence** (v6.10.3) — Customers page, persistence on customers + customer_interactions, RFM compute (12-mo window), 5 segments (VIP/Active/Lapsed/Lost/Prospect), merged activity timeline (interactions + linked quotes by name + linked deals by company name), Add/Edit interaction modal.
+- **3.1 Employee Scorecards** (v6.10.4) — 6th tab on Mgmt Dashboard, restricted-view banner, persistence on employees + employee_scores, pivot grid period × metric × score, 8 default metric keys + custom, current-quarter period default, on_conflict on (employee_id, period, metric_key).
+- **5.7 Vendor Deal Optimizer** (v6.10.5) — "Deal Optimizer" sub-tab on Vendor Ranking, pure-compute layer over existing data, 5 recommendation kinds (Renegotiate / Investigate / Replace / Upgrade / Cut), summed estimated annual impact stat.
+- **5.16 Company Calendar** (v6.10.6) — Calendar page, month grid + agenda list, 7 color-coded categories, click empty day to add event prefilled. Persistence on calendar_events table from M21 schema.
+- **5.1 Knowledge Hub** (v6.10.7) — "Internal Docs" tab on Knowledge Engine page, two-pane (list + viewer), markdown rendering subset, 7 categories, search + category filter, pinned-first sort, Edit modal with auto-slug + tags + pin toggle. Persistence on articles table from M21 schema.
+- **5.2 Job Tracker** (v6.10.8) — New "Job Tracker" page (CORE, all roles), 4 stat cards, filter by status + priority + free-text, auto J-#### number, links to existing customers + quotes via dropdowns. Persistence on jobs table from M21 schema.
+- **M21 SQL written** — `sql/M21_phase3_schema.sql` adds calendar_events / articles / jobs tables. Idempotent. Pending Michael run. M21 added to BUILD_PLAN_MICHAEL with clear "Then" prompt.
+**Decisions:** Three Phase-3 modules (5.1/5.2/5.16) all depend on the M21 schema bundle, so they were built simultaneously and ship together. UIs render correctly without M21 — persistence silently no-ops (logs at INFO instead of WARN) until table exists. Calendar lives top-level in INTELLIGENCE; Knowledge Hub nested as a tab within existing Knowledge Engine (avoid sidebar clutter); Job Tracker top-level in CORE (warehouse + sales need access).
+**Process change:** Doc-only updates batched into single commit at end (per BUILD_INTELLIGENCE rule from last session). 6 code commits, 1 doc commit.
+**Verified:** JS parses clean across all 6 commits. File size 750KB / 900KB split trigger.
+**Open loops:** M21 (Michael runs SQL) unlocks persistence for the three Phase-3 modules. RFM + employee + deal optimizer heuristics will sharpen as more data accumulates. Customer↔quote / customer↔deal UUID linkage is name-match only today; could be hardened by adding customer dropdowns to quote/deal modals.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Autonomous session: 1.3p2 + 4.1 + 4.2 + 4.3 + 3.2 — SHIPPED
 **Version:** v6.10.2

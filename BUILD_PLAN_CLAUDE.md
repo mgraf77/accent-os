@@ -43,11 +43,8 @@
   - Phase 1 (v6.9.8): role-aware "📌 Today" card with 6 tiles (unverified scores, tier C, 24h activity, unassigned reps, mixed-rep parents, avg score gauge).
   - Phase 2 (v6.10.2): added Closing ≤7d (deals with expected_close in next 7 days, weighted forecast), Stale Deals (no update 14d+), Stale Quotes (>7d unfollowed), Co-op Deadlines (≤30d open funds with $$ at risk).
 
-- [ ] **1.4** — CRM & Customer Intelligence
-  - What: `customers` + `customer_interactions` tables, customer profile UI, RFM scoring, lifecycle tagging, basic timeline view
-  - Value: $19.2K/yr per MASTER §5
-  - Blocks: 1.5 Pipeline (deals attach to customers), 4.1 Owner Dashboard
-  - BLOCKS ON MICHAEL: **M02** AND **M07** (decision: manual entry vs. Windward CSV import)
+- [x] **1.4** — CRM & Customer Intelligence
+  - Shipped v6.10.3: Customers page (sidebar) with persistence on customers + customer_interactions. RFM compute (recency/frequency/monetary in 12-mo window), 5 segments (VIP/Active/Lapsed/Lost/Prospect). Detail modal: profile + RFM stats + merged activity timeline (interactions + linked quotes by name + linked deals by company name). Add/Edit interaction modal. customer_id ↔ quote_id / deal_id UUID linkage is a follow-up — schema supports it but save flows still use name-match.
 
 - [x] **1.5** — Sales Pipeline — Persistent + Loss Tracking
   - Shipped v6.10.1: stages refactored to schema-compatible (lead/qualified/quoted/negotiating/won/lost/abandoned). 8-factor probability model `computeDealProbability` with weights {lead_source 10%, customer_history 18%, segment 8%, project_type 10%, quote_age 12%, comm_recency 12%, quote_size 10%, stage 20%}. Probability shown on every deal card + factor breakdown in detail modal. Forecast = Σ(value × probability) on Pipeline header. Close Rate stat (Won/(Won+Lost)). Archive view for lost/abandoned deals with loss reason capture. Persist via pipeline_deals; pipeline_events log on every stage change + note. Daily Brief gets new Stale Deals tile (no update in 14d).
@@ -69,8 +66,8 @@
 
 ## TRACK 3 — Employee Intelligence
 
-- [ ] **3.1** — Employee Scorecards
-  - Scoping LOCKED via M08: visible to Owner/Admin/Manager only; Windward CSV import data source (waiting). Build UI + schema hooks; wire CSV when Michael provides file. Tables `employees` + `employee_scores` exist in M02.
+- [x] **3.1** — Employee Scorecards
+  - Shipped v6.10.4: Employees added as 6th tab on Mgmt Dashboard (Owner/Admin/Manager only — restricted view banner). Persistence on employees + employee_scores. Directory list with avg-score color coding. Detail modal: pivot grid of period × metric × score with click-through edit. 8 default metric keys (revenue_attainment, quote_close_rate, avg_deal_size, customer_satisfaction, tickets_resolved, on_time_delivery, attendance, training_complete) — custom metric keys preserved on edit. Period default = current quarter. on_conflict on (employee_id, period, metric_key) for safe re-save. Banner notes Windward CSV is the eventual data source; manual entry works today.
 
 - [x] **3.2** — Role-Based Dashboards
   - Shipped v6.10.2: `dashboard()` now branches by role. Warehouse = minimal (Inventory + activity feed). Sales = my-deals + my-quotes stats with probability per deal. Owner/Admin/Manager = full vendor + pipeline view with system status reflecting v6.10.x state. All variants share the role-aware Daily Brief.
@@ -94,14 +91,17 @@
 
 > Each is a standalone module. Parallel-buildable once §0.4 schema is in place.
 
-- [ ] **5.1** — Knowledge Hub (internal docs, vendor playbooks, rep contact protocols)
-- [ ] **5.2** — Job Tracker (project-level work tracking)
+- [x] **5.1** — Knowledge Hub (internal docs, vendor playbooks, rep contact protocols)
+  - Shipped v6.10.7: "Internal Docs" tab on Knowledge Engine page. Two-pane layout (article list + viewer with markdown rendering). 7 categories. Search + category filter, pinned-first sort. Markdown subset (# / ## / ### headings, **bold**, *italic*, [text](url) links, - bullets, newlines). Edit modal with auto-derived slug, comma tags, pin toggle. Persistence on `articles` table from M21 schema (no-ops gracefully if table doesn't exist).
+- [x] **5.2** — Job Tracker (project-level work tracking)
+  - Shipped v6.10.8: New "Job Tracker" page (CORE section, all roles). 4 stat cards (active/overdue/due≤7d/completed). Filters by status + priority + free-text. Auto job_number J-####. Edit modal links to existing customers (CUSTOMERS dropdown) and quotes (QUOTES dropdown), or accepts free-text customer name. Status-color badges. completed_at auto-set when status flips to complete. Persistence on `jobs` table from M21 schema.
 - [ ] **5.3** — Inventory Module (live data — currently display-only)
   - BLOCKS ON MICHAEL: **M03** (Windward S5WebAPI confirmation) for live data; can ship CSV-import version without
 - [ ] **5.4** — Purchase Orders
 - [ ] **5.5** — Trade Partner Network (external designers/contractors)
 - [ ] **5.6** — Price Book (catalog with margin analysis)
-- [ ] **5.7** — Vendor Deal Optimization (recommend negotiation moves from score deltas)
+- [x] **5.7** — Vendor Deal Optimization (recommend negotiation moves from score deltas)
+  - Shipped v6.10.5: "Deal Optimizer" sub-tab on Vendor Ranking page. Pure-compute layer over existing data — no new schema. 5 recommendation kinds: RENEGOTIATE (≥$25K spend + low pricing/freight/returns score), INVESTIGATE (any cat dropped ≥2 points in last 90d via CHANGELOG), REPLACE (inactive flag but >$1K in 2024–25 sales), UPGRADE (Tier B + avg ≥7.5 across ≥3 cats + ≥$5K), CUT (low spend + low score + near-zero recent activity). Stats header: count per kind + summed estimated annual impact. Click row → vendor detail.
 - [ ] **5.8** — Showroom Display Management (display program tracking)
 - [ ] **5.9** — QR/Barcode (warehouse + showroom labeling)
 - [ ] **5.10** — Delivery Scheduling
@@ -111,7 +111,8 @@
   - BLOCKS ON MICHAEL: **M04** (BigCommerce API key) AND **M05** (GMC API access)
 - [ ] **5.14** — Competitive Pricing Intelligence
 - [ ] **5.15** — Sales Decision Engine
-- [ ] **5.16** — Company Calendar
+- [x] **5.16** — Company Calendar
+  - Shipped v6.10.6: Calendar page (sidebar INTELLIGENCE, all roles). Two views: month grid + agenda list. Prev / Next / Today nav. 7 categories color-coded (trade_show / training / deadline / holiday / meeting / launch / other) with legend. Click empty day → New Event prefilled to that date. Detail modal: starts/ends, location, URL, description. Persistence on `calendar_events` table from M21 schema.
 
 ---
 

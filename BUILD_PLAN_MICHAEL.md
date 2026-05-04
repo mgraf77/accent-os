@@ -31,6 +31,16 @@
   - Then: paste to Claude → `M02 done — core schema is in. Build out Track 1 in priority order.`
   - Unlocks: Tracks 1.1, 1.2, 1.4, 1.5, 2.2, 2.3, 4.2, 4.3 (everything that needs new tables)
 
+- [ ] **M21** — Run Phase 3 schema (Calendar + Knowledge Hub + Job Tracker)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M21_phase3_schema.sql` from the repo (already written by Claude). Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return 3 rows (calendar_events, articles, jobs) all with `rls_enabled=true`.
+    4. Reload `https://accent-os.pages.dev`. The Calendar / Internal Docs / Job Tracker UIs already shipped (v6.10.6–6.10.8); they will start saving / loading once the tables exist.
+  - Then: paste to Claude → `M21 done — phase 3 schema is in. All three modules are now persistent.`
+  - Unlocks: persistence for Tracks 5.1 (Knowledge Hub), 5.2 (Job Tracker), 5.16 (Company Calendar). Until M21 runs, the UIs work but persistence silently no-ops (toast warns on save).
+
 - [ ] **M11** — Fix Supabase MCP permissions (Track 0.3)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
