@@ -100,7 +100,8 @@
   - BLOCKS ON MICHAEL: **M22** (run inventory schema), **M03** + **M10** (Windward live data, future Track 6.11)
 - [ ] **5.4** — Purchase Orders
 - [ ] **5.5** — Trade Partner Network (external designers/contractors)
-- [ ] **5.6** — Price Book (catalog with margin analysis)
+- [x] **5.6** — Price Book (catalog with margin analysis)
+  - Shipped v6.10.10: New "Price Book" sub-tab on Vendor Ranking. Pure-compute view over inventory_items + VD — no new schema. Computes margin = (list-cost)/list and markup = (list-cost)/cost per SKU; joins vendor tier + score from VD. 4 stat cards (SKUs in book / avg margin / high-margin count / vendor count). Filters: free-text, vendor, tier, in-stock-only. Sort by margin descending. Color-codes margin column (green ≥50%, blue ≥30%, accent <30%). Shows "empty until inventory loaded" placeholder when INVENTORY is empty.
 - [x] **5.7** — Vendor Deal Optimization (recommend negotiation moves from score deltas)
   - Shipped v6.10.5: "Deal Optimizer" sub-tab on Vendor Ranking page. Pure-compute layer over existing data — no new schema. 5 recommendation kinds: RENEGOTIATE (≥$25K spend + low pricing/freight/returns score), INVESTIGATE (any cat dropped ≥2 points in last 90d via CHANGELOG), REPLACE (inactive flag but >$1K in 2024–25 sales), UPGRADE (Tier B + avg ≥7.5 across ≥3 cats + ≥$5K), CUT (low spend + low score + near-zero recent activity). Stats header: count per kind + summed estimated annual impact. Click row → vendor detail.
 - [ ] **5.8** — Showroom Display Management (display program tracking)

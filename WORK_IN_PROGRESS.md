@@ -1,9 +1,16 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step. Shows exactly what was happening if Codespace dies.
 
-**Last updated:** 2026-05-04 — starting Track 5.6 Price Book
-**Current task:** 5.6 Price Book — catalog with margin analysis
-**Step:** Planning. Will build as a pure-compute view over inventory_items (already exists from 5.3) + vendor data. No new schema. Filters: vendor, margin tier, in-stock only. Stats: total SKUs / avg margin / margin distribution by tier. Sub-tab on Vendor Ranking.
-**Files touched so far this task:** none yet
-**Commit status:** clean working tree (last commit pushed: 3066a48)
-**Next step if interrupted:** Read the renderInventory() pattern at index.html (search "5.3 INVENTORY"), build a parallel renderPriceBook() that pivots margin = (list_price - unit_cost)/list_price. Add as sub-tab "Price Book" alongside the optimizer. No persistence needed — pure compute.
+**Last updated:** 2026-05-04 — Track 5.6 ready to ship as v6.10.10
+**Current task:** 5.6 Price Book — committing
+**Step:** All code + docs written. JS parses clean (774KB). About to commit + push.
+**Files touched so far this task:**
+- index.html (Price Book sub-tab + renderPriceBook function)
+- BUILD_PLAN_CLAUDE.md (5.6 marked [x])
+- WORK_IN_PROGRESS.md (this file)
+**Commit status:** uncommitted
+**Next step if interrupted:**
+1. `git add index.html BUILD_PLAN_CLAUDE.md WORK_IN_PROGRESS.md`
+2. `git commit -m "v6.10.10: Track 5.6 — Price Book"`
+3. `git push origin main`
+4. Continue to next pending [ ] in BUILD_PLAN_CLAUDE.md — likely 5.4 Purchase Orders or 5.5 Trade Partner Network
