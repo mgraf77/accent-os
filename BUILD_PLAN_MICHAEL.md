@@ -14,9 +14,9 @@
 - [ ] **M01** — Tighten RLS on existing vendor_* tables
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
-    1. Wait for Claude to deliver the Track 0.2 Chunk C SQL block (drops anon policies, creates authenticated policies on `vendor_categories`, `vendor_score_states`, `vendor_changelog`, `vendor_parent_assignments`, `parent_companies`).
-    2. Paste it into the SQL Editor.
-    3. Click **Run**.
+    1. Open `sql/M01_rls_tightening.sql` from the repo (already written by Claude). Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return `relrowsecurity=true` for all 7 tables.
     4. Reload `https://accent-os.pages.dev` and confirm reads + writes still work as Owner.
   - Then: paste to Claude → `M01 done — RLS tightened on vendor_* tables. Continue from BUILD_PLAN_CLAUDE.md`
   - Unlocks: production-grade RLS posture; ability to ship public-facing portals (Track 6.5/6.6) without leaking write access
@@ -24,10 +24,10 @@
 - [ ] **M02** — Run §0.4 Core Database Schema (consolidated CREATE TABLE block)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
-    1. Wait for Claude to deliver the Track 0.4 SQL block (~17 tables: vendor_scores, vendor_overrides, coop_tracker, customers, customer_interactions, quotes, quote_lines, pipeline_deals, pipeline_events, employees, employee_scores, goals, kpi_definitions, kpi_snapshots, alerts, telemetry_events, build_events, probability_model_log).
-    2. Paste it into the SQL Editor.
-    3. Click **Run**.
-    4. Verify with `\dt` or Table Editor — all tables visible.
+    1. Open `sql/M02_core_schema.sql` from the repo (already written by Claude). Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return 18 rows, all with `rls_enabled=true`.
+    4. Optional: open Table Editor and confirm tables exist.
   - Then: paste to Claude → `M02 done — core schema is in. Build out Track 1 in priority order.`
   - Unlocks: Tracks 1.1, 1.2, 1.4, 1.5, 2.2, 2.3, 4.2, 4.3 (everything that needs new tables)
 

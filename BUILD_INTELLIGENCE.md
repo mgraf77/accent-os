@@ -1,0 +1,10 @@
+# BUILD_INTELLIGENCE.md — Lessons from each shipped item
+
+> Append-only, one line per item. Format: `[item] | [gotcha or inefficiency] | [better approach]`
+> Read this before starting a new build session — every entry makes the next session smarter.
+
+0.2.B Settings Users panel | The legacy Settings card referenced removed `USERS{}` global → would have thrown ReferenceError in production if not caught. Lesson: when removing a global, grep ALL render functions, not just the auth block. | After deleting any top-level const/let, run `grep -n "<NAME>" *.html *.js` and fix every reference in the same patch.
+0.2.B Settings Users panel | Inline `onclick="${onChange}"` with arrow-function IIFE shadows `this`, so the radio's value isn't accessible. Same pattern was bitten earlier in the score-state radio fix. | Default to a named global function (`onScoreStateChange(this, key)`) for any inline handler that needs `this`. Never use arrow IIFE in inline onclick/onchange.
+2.1 Parent UI | When extending a `<label>` with sibling buttons inside a parent `<div>`, the surgical str_replace can leave a stray `</label>` orphan. Recovered by adding a hidden dummy `<label>` for balance — works but ugly. | Read 2 lines past the old_string when planning HTML edits to ensure tag balance. Or open the smallest possible block (the whole `<label>...</label>` pair) so the patch is self-balancing.
+0.2.C RLS SQL | Dropping then recreating policies in a single SQL transaction works fine in Supabase, but if you forget the `DROP POLICY IF EXISTS` first, re-runs fail with "policy already exists". | Always lead each policy block with `DROP POLICY IF EXISTS`. Makes the file safely re-runnable.
+0.4 Core schema | Naive 18-table file would have ~80 RLS policies if expressed inline. Used DO $$ … FOREACH … EXECUTE format() $$ to apply identical patterns in batches — collapsed to ~30 policies + 4 dynamic blocks. | For repetitive RLS patterns, use plpgsql DO blocks with arrays of table names. Halves the SQL size, makes patterns visible at a glance.

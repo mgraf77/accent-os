@@ -20,21 +20,14 @@
   - What: replace hardcoded auto-login with Supabase Auth (REST), 5-role system, JWT session, `data-roles` sidebar gating, audit_log writes for login/logout/session_resume/score_save
   - Blocks: 0.2.B, 0.2.C, all RLS-tightening work
 
-- [ ] **0.2.B** — Auth Chunk B: Settings → Users panel
-  - What: owner-only Users section in Settings — list user_profiles, role dropdown, save → updates user_profiles + audit_log; "Invite user" button drafts an email scaffold (Owner sends invite from Supabase dashboard manually; UI just stages the request)
-  - Blocks: ability to add Sales / Warehouse staff without Claude rewriting SQL each time
+- [x] **0.2.B** — Auth Chunk B: Settings → Users panel
+  - Shipped v6.9.7: owner-only Users panel reads user_profiles, role dropdown + Save per row writes via PATCH; "My Account" card with Change Password (PUT /auth/v1/user) and Sign Out; audit_log writes on role_change + password_change.
 
-- [ ] **0.2.C** — Auth Chunk C: tighten RLS on vendor_* tables
-  - What: replace `TO anon` policies on `vendor_categories`, `vendor_score_states`, `vendor_changelog`, `vendor_parent_assignments`, `parent_companies` with `TO authenticated` (read for all authed; write requires non-Sales/Warehouse for vendor data)
-  - What Claude does: write the SQL block; hand to BUILD_PLAN_MICHAEL.md
-  - Blocks: production hardening of existing data
-  - BLOCKS ON MICHAEL: **M01** (paste SQL)
+- [x] **0.2.C** — Auth Chunk C: RLS SQL block written
+  - Shipped: `sql/M01_rls_tightening.sql` — drops anon policies, creates authenticated read for all + role-gated writes on vendor_categories / vendor_score_states / vendor_changelog / parent_companies / vendor_parent_assignments. Idempotent. Pending Michael run via M01.
 
-- [ ] **0.4** — Core database schema
-  - What: produce a single consolidated SQL block creating every table needed by tracks 1–4 (`vendor_scores`, `vendor_overrides`, `coop_tracker`, `customers`, `customer_interactions`, `quotes`, `quote_lines`, `pipeline_deals`, `pipeline_events`, `employees`, `employee_scores`, `goals`, `kpi_definitions`, `kpi_snapshots`, `alerts`, `telemetry_events`, `build_events`, `probability_model_log`)
-  - What Claude does: write all CREATE TABLE / RLS / index SQL; hand to BUILD_PLAN_MICHAEL.md
-  - Blocks: Tracks 1, 2, 3, 4 persistence work
-  - BLOCKS ON MICHAEL: **M02** (paste SQL)
+- [x] **0.4** — Core database schema written
+  - Shipped: `sql/M02_core_schema.sql` — 18 tables (vendor_scores, vendor_overrides, coop_tracker, customers, customer_interactions, quotes, quote_lines, pipeline_deals, pipeline_events, probability_model_log, employees, employee_scores, goals, kpi_definitions, kpi_snapshots, alerts, telemetry_events, build_events). All RLS-enabled with three write tiers (Owner-only, Manager+, all-authed) and one Sales/Warehouse-readable tier. Pending Michael run via M02.
 
 ---
 
@@ -71,11 +64,8 @@
 
 ## TRACK 2 — Vendor Intelligence (Foundation Completion)
 
-- [ ] **2.1** — Parent Company / Brand Family Grouping UI
-  - What: filter + group-by-parent in Vendor Ranking tab; collapse/expand parent rows; rolled-up sales + avg weighted score; sister-brand badge on vendor detail
-  - Note: data already imported (130 vendors mapped); only UI missing
-  - Blocks: nothing immediate (cosmetic, but listed in priority queue)
-  - BLOCKS ON MICHAEL: nothing
+- [x] **2.1** — Parent Company / Brand Family Grouping UI
+  - Shipped v6.9.7: collapsible parent groups in Scores tab (▼/▶ chevron, click row to toggle, Expand all / Collapse all buttons); parent badge in vendor detail header; Sister Brands card with click-through to each sister's detail. Pre-existing rolled-up sales + avg score retained.
 
 - [ ] **2.2** — Vendor Metadata, Notes & Override Persistence
   - What: `vendor_overrides` table for editable fields (notes, custom rep group, tier override, inactive flag) — currently lives only in VD_RAW
