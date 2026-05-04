@@ -153,11 +153,11 @@ function renderInventory(container) {
 }
 
 function downloadInvCsvTemplate(){
-  const csv = 'sku,vendor_name,description,qty_on_hand,qty_committed,qty_on_order,location,bin,unit_cost,list_price,reorder_point,upc,category,notes\nSAMPLE-001,Hinkley Lighting,3-Light Pendant - Brushed Nickel,8,2,4,Main Warehouse,A12-B3,124.50,249.00,5,012345678901,Pendants,Initial seed';
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `inventory_template_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
+  const rows = [
+    ['sku','vendor_name','description','qty_on_hand','qty_committed','qty_on_order','location','bin','unit_cost','list_price','reorder_point','upc','category','notes'],
+    ['SAMPLE-001','Hinkley Lighting','3-Light Pendant - Brushed Nickel','8','2','4','Main Warehouse','A12-B3','124.50','249.00','5','012345678901','Pendants','Initial seed']
+  ];
+  csvDownload(rows, `inventory_template_${new Date().toISOString().slice(0,10)}.csv`);
 }
 
 function openInvCsvPaste(){

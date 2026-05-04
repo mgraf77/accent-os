@@ -193,20 +193,13 @@ function exportDemandReorderCsv(){
   if(!recs.length){ toast('Nothing to reorder right now','ok'); return; }
   const rows = [['recommendation','sku','vendor','description','velocity_per_week','qty_available','qty_on_order','weeks_of_stock','suggested_qty','unit_cost','suggested_total']];
   recs.forEach(r => rows.push([
-    r.kind, r.sku, r.vendor_name, (r.description||'').replace(/"/g,'""'),
+    r.kind, r.sku, r.vendor_name, r.description||'',
     r.velocity_per_week.toFixed(2), r.qty_available, r.qty_on_order,
     r.weeks_of_stock != null ? r.weeks_of_stock.toFixed(1) : '',
     r.suggested_qty, r.unit_cost != null ? r.unit_cost.toFixed(2) : '',
     r.suggested_qty && r.unit_cost ? (r.suggested_qty * r.unit_cost).toFixed(2) : ''
   ]));
-  const csv = rows.map(r => r.map(c => {
-    const s = String(c==null?'':c);
-    return /[",\n]/.test(s) ? `"${s}"` : s;
-  }).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `reorder_list_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  if(typeof sbAuditLog==='function') sbAuditLog('demand_export_reorder', 'inventory', {row_count: recs.length});
-  toast(`Exported ${recs.length} SKUs`,'ok');
+  const n = csvDownload(rows, `reorder_list_${new Date().toISOString().slice(0,10)}.csv`);
+  if(typeof sbAuditLog==='function') sbAuditLog('demand_export_reorder', 'inventory', {row_count: n});
+  toast(`Exported ${n} SKUs`,'ok');
 }

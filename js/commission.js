@@ -187,14 +187,7 @@ function _commExportCsv(){
     const t = d.closed_at || d.updated_at || '';
     rows.push([window.label, name, u?.role||'', d.id||'', d.company||d.name||'', d.value||0, t, rate, (Number(d.value)||0)*rate]);
   });
-  const csv = rows.map(r => r.map(c => {
-    const s = String(c==null?'':c);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
-  }).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `commission_${commFilter.period}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  if(typeof sbAuditLog === 'function') sbAuditLog('commission_export', 'mgmt', {period: commFilter.period, row_count: rows.length-1});
-  toast(`Exported ${rows.length-1} rows`,'ok');
+  const n = csvDownload(rows, `commission_${commFilter.period}_${new Date().toISOString().slice(0,10)}.csv`);
+  if(typeof sbAuditLog === 'function') sbAuditLog('commission_export', 'mgmt', {period: commFilter.period, row_count: n});
+  toast(`Exported ${n} rows`,'ok');
 }

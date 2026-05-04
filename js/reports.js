@@ -69,16 +69,9 @@ function collectReportDefs(){
 function downloadReport(key){
   const rows = buildReportRows(key);
   if(!rows || rows.length < 2){ toast('Nothing to export','err'); return; }
-  const csv = rows.map(r => r.map(c => {
-    const s = c==null ? '' : String(c);
-    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
-  }).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `${key}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  if(typeof sbAuditLog === 'function') sbAuditLog('report_export', 'reports', {key, row_count: rows.length - 1});
-  toast(`Exported ${rows.length - 1} rows`,'ok');
+  const n = csvDownload(rows, `${key}_${new Date().toISOString().slice(0,10)}.csv`);
+  if(typeof sbAuditLog === 'function') sbAuditLog('report_export', 'reports', {key, row_count: n});
+  toast(`Exported ${n} rows`,'ok');
 }
 
 function buildReportRows(key){

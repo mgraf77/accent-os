@@ -651,6 +651,22 @@ const $=id=>document.getElementById(id);
 const qsa=s=>document.querySelectorAll(s);
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function v(id,prop='value'){return $(id)?.[prop]?.trim()??'';}
+// CSV utilities — RFC 4180 quoting (only quote when value contains comma, quote, or newline; double embedded quotes).
+function csvStringify(rows){
+  return rows.map(r => r.map(c => {
+    const s = c==null ? '' : String(c);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(',')).join('\n');
+}
+function csvDownload(rows, filename){
+  if(!rows || !rows.length){ toast('Nothing to export','err'); return 0; }
+  const csv = csvStringify(rows);
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = filename;
+  a.click();
+  return rows.length - 1;   // data row count (excludes header)
+}
 function toast(msg,type=''){
   const el=document.createElement('div');
   el.className='toast'+(type?' '+type:'');
@@ -4673,9 +4689,7 @@ function exportCSV(){
     const ws=weightedScore(v);const t=tier(ws);
     return[v.name,v.status,v.rep,t||'',ws||'',scoredCount(v.scores),v.sales?.t||'',...CAT_DEFS.map(c=>{const s=v.scores[c.key];return s===null?'':s==='na'?'N/A':s;})];
   });
-  const csv=[hdrs,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`VendorRanking_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  csvDownload([hdrs,...rows], `VendorRanking_${new Date().toISOString().slice(0,10)}.csv`);
 }
 
 // ── CSV IMPORT ────────────────────────────────────────────
@@ -4768,9 +4782,7 @@ function changelog(el){
 function exportChangeLog(){
   const hdrs=['Timestamp','Vendor','Category','Old Value','New Value','Changed By'];
   const rows=CHANGELOG.map(c=>[new Date(c.ts).toLocaleString(),c.vendor,c.cat,c.oldVal??'',c.newVal??'',c.user]);
-  const csv=[hdrs,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`ChangeLog_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  csvDownload([hdrs,...rows], `ChangeLog_${new Date().toISOString().slice(0,10)}.csv`);
 }
 
 // ══════════════════════════════════════════════════════════
