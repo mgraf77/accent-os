@@ -16,3 +16,7 @@
 ### 2026-05-04 — Pause build · auto-start config + prompt queue
 **Prompt:** "pause on the building right now i have some prompts i need to send. Create .claude/settings.json in /workspaces/accent-os/ with autoStart=true + startupPrompt + dangerouslySkipPermissions=true. Also create .claude/CLAUDE.md in repo root with AUTO-EXECUTE ON START + OPERATING RULES + RESUME RULES sections. Commit both. Create PROMPT_QUEUE.md in repo root with QUEUED + COMPLETED sections, two queued items (file split + 5.5/5.11; M07/M08 locked customer+employee scoping). Commit. Then read PROMPT_QUEUE.md and execute all QUEUED items top to bottom, moving each to COMPLETED when done."
 **Context:** User pausing autonomous build to install device-agnostic auto-start config so future sessions in any environment (Codespace, desktop, mobile) pick up automatically without re-prompting. Also adding PROMPT_QUEUE.md as a backlog mechanism for prompts queued while Claude Code is busy. The two QUEUED items in this seed batch are likely already complete in current session; need to verify against BUILD_PLAN_CLAUDE state and mark accordingly.
+
+### 2026-05-04 — Resume building
+**Prompt:** "resume building"
+**Context:** User unpausing after auto-start config + prompt queue setup. Per CLAUDE.md auto-execute, resume by reading WIP → BUILD_PLAN → BUILD_INTELLIGENCE, then continue from first incomplete `[ ]`. WIP is at clean session-end state from last commit. PROMPT_QUEUE.md is empty (both seeded items closed). Next pending: **5.8 Showroom Display Management**.

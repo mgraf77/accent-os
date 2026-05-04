@@ -1,9 +1,9 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step. Shows exactly what was happening if Codespace dies.
 
-**Last updated:** 2026-05-04 — session ending cleanly
-**Current task:** none — session done
-**Step:** Final doc batch (SESSION_LOG + BUILD_INTELLIGENCE) committed. Session shipped: M21/M22/M23 confirmed run, v6.10.12 file split (9 modules → js/), v6.10.13 Trade Partners (5.5), v6.10.14 Warranty Tracker (5.11). Pushed to origin.
-**Files touched so far this task:** SESSION_LOG.md, BUILD_INTELLIGENCE.md, WORK_IN_PROGRESS.md (this file)
-**Commit status:** clean working tree (after final doc commit)
-**Next step if interrupted:** N/A — session is over. Next session reads this file first, sees clean state, and proceeds to next pending `[ ]` in BUILD_PLAN_CLAUDE.md (likely 5.8 Showroom Display, 5.9 QR/Barcode, 5.10 Delivery Scheduling, 5.12 Marketing Hub, 5.14 Competitive Pricing, or 5.15 Sales Decision Engine).
+**Last updated:** 2026-05-04 — starting Track 5.8 Showroom Display Management
+**Current task:** 5.8 Showroom Display Management
+**Step:** Planning. Need to: (1) write `sql/M25_showroom_displays_schema.sql` for `showroom_displays` table, (2) build `js/showroom_displays.js` with list + edit + status workflow (planned/installed/active/expiring/removed), (3) wire into index.html (sidebar in CORE Sales+/Manager+, PAGE_META, dispatcher, hydrate, script tag), (4) add M25 to BUILD_PLAN_MICHAEL, (5) mark 5.8 [x] in BUILD_PLAN_CLAUDE.
+**Files touched so far this task:** PROMPT_LOG.md (logged + committed below), WORK_IN_PROGRESS.md (this file)
+**Commit status:** PROMPT_LOG + WIP about to commit as session-start log
+**Next step if interrupted:** Write the SQL file (M25), then the JS module. Resume from there. Pattern matches 5.5/5.11 — single new table + external JS file.
