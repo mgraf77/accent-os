@@ -771,6 +771,75 @@ async function sbSaveCategories(vendorId, categoriesSet, userName){
   }
 }
 
+// ── VENDOR SCORE STATES (v6.9.5) ──
+// Per-(vendor,category) verification state. Schema:
+//   vendor_score_states(vendor_id text, category_key text, data_state text,
+//                       verified_at timestamptz, verified_by text, updated_at timestamptz)
+// Loaded on startup; merged into VD[i]._meta[catKey].
+
+async function sbLoadScoreStates(){
+  if(!sbConfigured()) return false;
+  if(typeof VD === 'undefined' || !Array.isArray(VD)) return false;
+  try{
+    // Paginate to handle Supabase default 1000-row cap.
+    const PAGE = 1000;
+    let offset = 0, all = [];
+    while(true){
+      const batch = await sbFetch(`/vendor_score_states?select=vendor_id,category_key,data_state,verified_at,verified_by&offset=${offset}&limit=${PAGE}`);
+      if(!Array.isArray(batch) || !batch.length) break;
+      all = all.concat(batch);
+      if(batch.length < PAGE) break;
+      offset += PAGE;
+    }
+    // Index VD by id (string + numeric tolerance) for fast merge.
+    const byId = {};
+    VD.forEach(v => { byId[String(v.id)] = v; });
+    let touchedVendors = new Set();
+    all.forEach(r => {
+      const v = byId[String(r.vendor_id)];
+      if(!v) return;
+      v._meta = v._meta || {};
+      v._meta[r.category_key] = Object.assign({}, v._meta[r.category_key] || {}, {
+        data_state: r.data_state,
+        verified_at: r.verified_at,
+        verified_by: r.verified_by
+      });
+      touchedVendors.add(v.id);
+    });
+    console.log(`[vendor_score_states] Loaded ${all.length} rows for ${touchedVendors.size} vendors`);
+    return all.length;
+  }catch(e){
+    console.warn('[sb] Load score states failed:', e.message);
+    return false;
+  }
+}
+
+// Upsert one score-state row. Caller responsible for in-memory _meta update.
+async function sbSaveScoreState(vendorId, categoryKey, dataState, verifiedBy){
+  if(!sbConfigured()) return false;
+  if(vendorId===null || vendorId===undefined || !categoryKey) return false;
+  try{
+    const nowIso = new Date().toISOString();
+    const isVerified = (dataState === 'verified');
+    await sbFetch('/vendor_score_states?on_conflict=vendor_id,category_key', {
+      method: 'POST',
+      headers: {'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify({
+        vendor_id: String(vendorId),
+        category_key: categoryKey,
+        data_state: dataState,
+        verified_at: isVerified ? nowIso : null,
+        verified_by: isVerified ? (verifiedBy || 'Unknown') : null,
+        updated_at: nowIso
+      })
+    });
+    return true;
+  }catch(e){
+    console.warn('[sb] Save score state failed:', e.message);
+    return false;
+  }
+}
+
 // Load full changelog from Supabase (newest first).
 async function sbLoadChangelog(limit=500){
   if(!sbConfigured()) return false;
@@ -2573,6 +2642,13 @@ function saveVendorScoreEntry(vendorId, propagateToSisters){
     }
   });
 
+  // v6.9.5 — persist data_state to vendor_score_states (fire-and-forget, parallel).
+  if(typeof sbSaveScoreState === 'function'){
+    Object.keys(newDataStates).forEach(catKey => {
+      sbSaveScoreState(vendorId, catKey, newDataStates[catKey], verifiedBy);
+    });
+  }
+
   // v6.9 — propagate the same score set to sister brands under the same parent
   let sisterCount = 0, sisterChanged = 0;
   if(propagateToSisters && typeof getSisterVendors==='function'){
@@ -2601,6 +2677,12 @@ function saveVendorScoreEntry(vendorId, propagateToSisters){
         const j = newJustifications[c.key];
         if(j){ sv._meta[c.key] = Object.assign({}, sv._meta[c.key]||{}, {j}); }
       });
+      // v6.9.5 — persist sister states to Supabase too
+      if(typeof sbSaveScoreState === 'function'){
+        Object.keys(newDataStates).forEach(catKey => {
+          sbSaveScoreState(sv.id, catKey, newDataStates[catKey], verifiedBy);
+        });
+      }
     });
   }
 
@@ -4480,6 +4562,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     try { sbCatRows = await sbLoadCategories(); } catch(e){ console.warn(e); }
     try { await sbLoadChangelog(); } catch(e){ console.warn(e); }
     try { await sbLoadParents(); } catch(e){ console.warn(e); }
+    try { await sbLoadScoreStates(); } catch(e){ console.warn(e); }
   }
   // If Supabase has no category rows yet (fresh DB), seed in-memory from prefill
   // so the UI isn't empty. The next category save will start populating Supabase.
