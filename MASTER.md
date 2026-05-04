@@ -82,8 +82,8 @@ Founded: 1979 | Brick-and-mortar lighting showroom + ecommerce
 ## 3. ACCENTOS — CURRENT STATE
 
 ### Version
-**v6.9.4 / v6.9.5** (as of 2026-05-04)  
-File size: ~293KB | Split trigger: 900KB hard limit
+**v6.9.6a** (as of 2026-05-04)  
+File size: ~568KB JS / 601KB total HTML | Split trigger: 900KB hard limit
 
 ### What's Live
 | Module | Status | Notes |
@@ -101,7 +101,7 @@ File size: ~293KB | Split trigger: 900KB hard limit
 | Outreach Email Generator | ✅ Live | Scaffold per vendor |
 | Score States Persistence | ✅ Live | Verified/Unverified/N/A per category per vendor |
 | File Split (Track 0.1) | ✅ Live | index.html (shell) + module-vendor.js + module-pipeline.js + module-knowledge.js + module-marketing.js |
-| Auth / Login | 🔲 Planned | Track 0.2 |
+| Auth / Login | ✅ Live | Track 0.2 Chunk A — Supabase Auth (email/password), 5-role system, JWT-backed session. 3 users seeded: Michael=Owner, Paul=Admin, Patrick=Admin. Tables: `user_profiles`, `audit_log`. Sidebar gated by `data-roles` whitelist. Anon JWT embedded (v6.9.6a) so login works on fresh browsers. Settings → Users panel still pending (Chunk B). |
 | Customers Module | 🔲 Scoped | Two open questions before building |
 | Employees Module | 🔲 Scoped | Two open questions before building |
 | CRM / Sales Pipeline | 🔲 Planned | Track 1 |
