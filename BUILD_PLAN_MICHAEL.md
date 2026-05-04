@@ -11,7 +11,7 @@
 
 ## CATEGORY: SUPABASE / DATABASE
 
-- [ ] **M01** — Tighten RLS on existing vendor_* tables
+- [x] **M01** — Tighten RLS on existing vendor_* tables
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
     1. Open `sql/M01_rls_tightening.sql` from the repo (already written by Claude). Copy its contents.
@@ -21,7 +21,7 @@
   - Then: paste to Claude → `M01 done — RLS tightened on vendor_* tables. Continue from BUILD_PLAN_CLAUDE.md`
   - Unlocks: production-grade RLS posture; ability to ship public-facing portals (Track 6.5/6.6) without leaking write access
 
-- [ ] **M02** — Run §0.4 Core Database Schema (consolidated CREATE TABLE block)
+- [x] **M02** — Run §0.4 Core Database Schema (consolidated CREATE TABLE block)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
     1. Open `sql/M02_core_schema.sql` from the repo (already written by Claude). Copy its contents.

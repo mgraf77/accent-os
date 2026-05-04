@@ -576,6 +576,8 @@ async function hydrateFromSupabase(){
     try { await sbLoadChangelog(); } catch(e){ console.warn(e); }
     try { await sbLoadParents(); } catch(e){ console.warn(e); }
     try { await sbLoadScoreStates(); } catch(e){ console.warn(e); }
+    try { await sbLoadVendorScores(); } catch(e){ console.warn(e); }
+    try { await sbLoadVendorOverrides(); } catch(e){ console.warn(e); }
   }
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
@@ -962,6 +964,122 @@ async function sbLoadScoreStates(){
   }
 }
 
+// ── VENDOR OVERRIDES (Track 2.2, vendor_overrides table) ──
+// Editable vendor metadata: notes, custom_rep, tier_override, inactive flag.
+// Loaded on startup; merged into VD[i] (override fields take precedence over VD_RAW).
+
+async function sbLoadVendorOverrides(){
+  if(!sbConfigured()) return false;
+  if(typeof VD === 'undefined' || !Array.isArray(VD)) return false;
+  try{
+    const rows = await sbFetch('/vendor_overrides?select=vendor_id,notes,custom_rep,tier_override,inactive,inactive_reason');
+    if(!Array.isArray(rows)) return 0;
+    const byId = {};
+    VD.forEach(v => { byId[String(v.id)] = v; });
+    rows.forEach(r => {
+      const v = byId[String(r.vendor_id)];
+      if(!v) return;
+      if(r.notes != null) v.notes = r.notes;
+      if(r.custom_rep) v.rep = r.custom_rep;
+      if(r.tier_override) v.tier_override = r.tier_override;
+      if(typeof r.inactive === 'boolean') v.inactive = r.inactive;
+      if(r.inactive_reason) v.inactive_reason = r.inactive_reason;
+    });
+    console.log(`[vendor_overrides] Loaded ${rows.length} rows`);
+    return rows.length;
+  }catch(e){ console.warn('[sb] Load vendor_overrides failed:', e.message); return false; }
+}
+
+async function sbSaveVendorOverride(vendorId, patch, updatedBy){
+  if(!sbConfigured()) return false;
+  if(vendorId===null || vendorId===undefined) return false;
+  try{
+    const body = Object.assign({
+      vendor_id: String(vendorId),
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy || 'Unknown'
+    }, patch);
+    await sbFetch('/vendor_overrides?on_conflict=vendor_id', {
+      method: 'POST',
+      headers: {'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify(body)
+    });
+    return true;
+  }catch(e){ console.warn('[sb] Save vendor_override failed:', e.message); return false; }
+}
+
+// ── VENDOR SCORE VALUES (Track 1.1, vendor_scores table) ──
+// Numeric score values per (vendor, category). Loaded on startup; merges
+// into VD[i].scores[catKey] + VD[i]._meta[catKey].j (justification).
+
+async function sbLoadVendorScores(){
+  if(!sbConfigured()) return false;
+  if(typeof VD === 'undefined' || !Array.isArray(VD)) return false;
+  try{
+    const PAGE = 1000;
+    let offset = 0, all = [];
+    while(true){
+      const batch = await sbFetch(`/vendor_scores?select=vendor_id,category_key,score,justification,components,updated_at&offset=${offset}&limit=${PAGE}`);
+      if(!Array.isArray(batch) || !batch.length) break;
+      all = all.concat(batch);
+      if(batch.length < PAGE) break;
+      offset += PAGE;
+    }
+    const byId = {};
+    VD.forEach(v => { byId[String(v.id)] = v; });
+    let touched = new Set();
+    all.forEach(r => {
+      const v = byId[String(r.vendor_id)];
+      if(!v) return;
+      v._meta = v._meta || {};
+      // Supabase value wins over VD_RAW for any category that has a row.
+      if(r.score === null || r.score === undefined){
+        // null score row = explicit "no value" — leave VD as-is
+      } else {
+        v.scores[r.category_key] = Number(r.score);
+      }
+      const prev = v._meta[r.category_key] || {};
+      v._meta[r.category_key] = Object.assign({}, prev, {
+        j: r.justification || prev.j,
+        components: r.components || prev.components
+      });
+      touched.add(v.id);
+    });
+    console.log(`[vendor_scores] Loaded ${all.length} rows for ${touched.size} vendors`);
+    return all.length;
+  }catch(e){
+    console.warn('[sb] Load vendor_scores failed:', e.message);
+    return false;
+  }
+}
+
+// Upsert one (vendor, category) score row. Score may be null (clears the value).
+// Justification + components optional.
+async function sbSaveVendorScore(vendorId, categoryKey, score, justification, components, updatedBy){
+  if(!sbConfigured()) return false;
+  if(vendorId===null || vendorId===undefined || !categoryKey) return false;
+  try{
+    const body = {
+      vendor_id: String(vendorId),
+      category_key: categoryKey,
+      score: (score===null || score===undefined || score==='na') ? null : Number(score),
+      justification: justification || null,
+      components: components || null,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy || 'Unknown'
+    };
+    await sbFetch('/vendor_scores?on_conflict=vendor_id,category_key', {
+      method: 'POST',
+      headers: {'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify(body)
+    });
+    return true;
+  }catch(e){
+    console.warn('[sb] Save vendor_score failed:', e.message);
+    return false;
+  }
+}
+
 // Upsert one score-state row. Caller responsible for in-memory _meta update.
 async function sbSaveScoreState(vendorId, categoryKey, dataState, verifiedBy){
   if(!sbConfigured()) return false;
@@ -1330,6 +1448,8 @@ const TIER_B_KEYS = ['discounts','freight','returns','leadTime'];
 // Current values are static ($10K lifetime, 24mo recency). Deferred per Michael 2026-05-04.
 function computeVendorTier(v){
   if(!v) return 'C';
+  // Override priority: in-vendor field (from vendor_overrides) → eligibility cache → computed
+  if(v.tier_override) return v.tier_override;
   const elig = VENDOR_ELIGIBILITY[v.id] || VENDOR_ELIGIBILITY[String(v.id)];
   if(elig && elig.override_tier) return elig.override_tier;
   const lifetime = (v.sales && v.sales.t) || 0;
@@ -2819,6 +2939,14 @@ function saveVendorScoreEntry(vendorId, propagateToSisters){
       sbSaveScoreState(vendorId, catKey, newDataStates[catKey], verifiedBy);
     });
   }
+  // v6.9.9 (Track 1.1) — persist numeric score values to vendor_scores
+  if(typeof sbSaveVendorScore === 'function'){
+    CAT_DEFS.forEach(c => {
+      const newVal = newValues[c.key];
+      const meta = v._meta[c.key] || {};
+      sbSaveVendorScore(vendorId, c.key, newVal, newJustifications[c.key] || meta.j || null, meta.components || null, verifiedBy);
+    });
+  }
 
   // v6.9 — propagate the same score set to sister brands under the same parent
   let sisterCount = 0, sisterChanged = 0;
@@ -2852,6 +2980,14 @@ function saveVendorScoreEntry(vendorId, propagateToSisters){
       if(typeof sbSaveScoreState === 'function'){
         Object.keys(newDataStates).forEach(catKey => {
           sbSaveScoreState(sv.id, catKey, newDataStates[catKey], verifiedBy);
+        });
+      }
+      // v6.9.9 (Track 1.1) — persist sister score values to vendor_scores
+      if(typeof sbSaveVendorScore === 'function'){
+        CAT_DEFS.forEach(c => {
+          const newVal = newValues[c.key];
+          const meta = sv._meta[c.key] || {};
+          sbSaveVendorScore(sv.id, c.key, newVal, newJustifications[c.key] || meta.j || null, meta.components || null, verifiedBy);
         });
       }
     });
@@ -2892,6 +3028,21 @@ function openVendorEdit(vendorId) {
         </select>
       </div>`;
     })()}
+    <div class="fg"><label>Tier Override <span style="font-weight:400;color:var(--text-3);font-size:11px;">(blank = computed from sales)</span></label>
+      <select id="ve-tier">
+        <option value="" ${!v.tier_override?'selected':''}>(auto)</option>
+        <option value="A" ${v.tier_override==='A'?'selected':''}>A — Full score</option>
+        <option value="B" ${v.tier_override==='B'?'selected':''}>B — Light score</option>
+        <option value="C" ${v.tier_override==='C'?'selected':''}>C — Not scored</option>
+      </select>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="ve-notes" rows="3" placeholder="Internal notes — visible to all signed-in users" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:13px;resize:vertical;">${esc(v.notes||'')}</textarea></div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px;">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="ve-inactive" ${v.inactive?'checked':''}> <span>Inactive</span>
+      </label>
+      <input id="ve-inactive-reason" placeholder="Reason (optional)" value="${esc(v.inactive_reason||'')}" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;">
+    </div>
     <button class="btn btn-accent" onclick="saveVendorEdit(${vendorId})">Save Changes</button>
   `);
 }
@@ -2903,17 +3054,39 @@ function saveVendorEdit(vendorId) {
   const newName = $('ve-name').value;
   const newRep = $('ve-rep').value;
   const newStatus = $('ve-status').value;
+  const newTier = $('ve-tier') ? $('ve-tier').value : '';
+  const newNotes = $('ve-notes') ? $('ve-notes').value : '';
+  const newInactive = $('ve-inactive') ? $('ve-inactive').checked : !!v.inactive;
+  const newInactiveReason = $('ve-inactive-reason') ? $('ve-inactive-reason').value : '';
 
   if (v.name !== newName) logChange(v.name, 'Name', v.name, newName);
   if (v.rep !== newRep) logChange(newName, 'Rep Group', v.rep, newRep);
   if (v.status !== newStatus) logChange(newName, 'Status', v.status, newStatus);
+  if ((v.tier_override||'') !== newTier) logChange(newName, 'Tier Override', v.tier_override||'(auto)', newTier||'(auto)');
+  if ((v.notes||'') !== newNotes && newNotes.length < 200) logChange(newName, 'Notes', (v.notes||'').slice(0,40), newNotes.slice(0,40));
+  if (!!v.inactive !== newInactive) logChange(newName, 'Inactive', v.inactive?'true':'false', newInactive?'true':'false');
 
   v.name = newName;
   v.rep = newRep;
   v.status = newStatus;
+  v.tier_override = newTier || null;
+  v.notes = newNotes;
+  v.inactive = newInactive;
+  v.inactive_reason = newInactiveReason;
+
+  // Persist override fields to vendor_overrides (notes, tier, inactive — not name/rep/status which live in VD_RAW)
+  if(typeof sbSaveVendorOverride === 'function'){
+    sbSaveVendorOverride(vendorId, {
+      notes: newNotes || null,
+      tier_override: newTier || null,
+      inactive: newInactive,
+      inactive_reason: newInactive ? (newInactiveReason || null) : null,
+      custom_rep: newRep || null
+    }, (CU?.name)||'Unknown');
+  }
 
   if(typeof sbAuditLog === 'function'){
-    sbAuditLog('vendor_edit', 'vendors', {vendor_id: vendorId, vendor_name: newName});
+    sbAuditLog('vendor_edit', 'vendors', {vendor_id: vendorId, vendor_name: newName, fields_changed: {tier:newTier!==(v.tier_override||''), notes:newNotes!==(v.notes||''), inactive:newInactive!==!!v.inactive}});
   }
 
   closeModal();
