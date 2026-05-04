@@ -31,6 +31,16 @@
   - Then: paste to Claude → `M02 done — core schema is in. Build out Track 1 in priority order.`
   - Unlocks: Tracks 1.1, 1.2, 1.4, 1.5, 2.2, 2.3, 4.2, 4.3 (everything that needs new tables)
 
+- [ ] **M23** — Run Purchase Orders schema (Track 5.4)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M23_purchase_orders_schema.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return 2 rows (`purchase_orders`, `po_lines`) with `rls_enabled=true`.
+    4. Reload `https://accent-os.pages.dev`. Purchase Orders sidebar entry already ships (v6.10.11).
+  - Then: paste to Claude → `M23 done — purchase_orders + po_lines tables in. Test PO create + receipt flow.`
+  - Unlocks: persistence for Track 5.4. Receipt flow auto-increments inventory_items.qty_on_hand once M22 also lands.
+
 - [ ] **M22** — Run Inventory schema (Track 5.3 phase 1)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
