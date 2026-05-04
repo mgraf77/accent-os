@@ -7,11 +7,24 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read SESSION_LOG.md and BUILD_PLAN_CLAUDE.md fresh. Read BUILD_INTELLIGENCE.md and apply all lessons before touching any code. Continue autonomous build from the first incomplete `[ ]` item in BUILD_PLAN_CLAUDE.md that has no unresolved BLOCKS ON MICHAEL dependency. Run `bash /workspaces/accent-os/scripts/status.sh` first so I can see current state. Then build without stopping. Likely starting points after this session: **5.6 Price Book** (depends on Windward product data — probably ship a CSV-import phase 1), or move into Track 6 integration prep (most are blocked on Michael API keys, see BUILD_PLAN_MICHAEL). M21 SQL is awaiting Michael — calendar_events / articles / jobs UIs already shipped (v6.10.6–6.10.8) but persistence silently no-ops until M21 runs. Token rules from prior session apply: doc-only updates batched into single commit at end; no narration between steps. Append BUILD_INTELLIGENCE entries flagging tasks where a lighter approach would have saved tokens.
+> Read WORK_IN_PROGRESS.md FIRST (per BUILD_INTELLIGENCE rule — completes any half-finished task before moving on). Then PROMPT_LOG.md, SESSION_LOG.md, BUILD_PLAN_CLAUDE.md, BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md and commit before any build work. Continue autonomous build from the first incomplete `[ ]` item in BUILD_PLAN_CLAUDE.md without unresolved BLOCKS ON MICHAEL. Run `bash /workspaces/accent-os/scripts/status.sh` first. Likely next items: **5.11 Warranty Tracker** (compact CRUD pattern, similar shape to 5.4), **5.5 Trade Partner Network** (compact CRUD), or **5.10 Delivery Scheduling** (could ship as a tab on Job Tracker rather than its own page). File is at 794KB — getting close to 900KB split trigger; one more substantial module is fine, then plan the split. M21 (Phase 3 schema), M22 (Inventory), M23 (Purchase Orders) all pending Michael; UIs shipped and silently no-op until tables exist. Update WIP file after every discrete step. Token rules unchanged.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Resume + crash-recovery + 5.3 + 5.6 + 5.4 — SHIPPED
+**Version:** v6.10.9 → v6.10.11 (3 code commits, plus build commit for crash-recovery scaffolding)
+**Built/Changed:**
+- **Crash-recovery scaffolding**: PROMPT_LOG.md + WORK_IN_PROGRESS.md created in repo root. Three new operating rules in BUILD_INTELLIGENCE: prompt-logging on session start, WIP checkpoint after every discrete build step, session-resume order (read WIP first → PROMPT_LOG → BUILD_PLAN). Pushed to origin so a Codespace crash leaves a clean resume point.
+- **5.3 Inventory Module CSV phase 1** (v6.10.9) — replaced placeholder Inventory sub-tab with full CSV-import + filterable list. M22 SQL (inventory_items table) written. RFC-4180 CSV parser, header alias mapping, vendor name → vendor_id resolution, preview-then-commit, bulk upsert on (vendor_id, sku). 4 stat cards + low-stock filter highlighting. Per-row delete; CSV template download.
+- **5.6 Price Book** (v6.10.10) — pure-compute Price Book sub-tab on Vendor Ranking. Joins inventory_items + VD. Computes margin, markup per SKU. 4 stat cards (SKUs / avg margin / high-margin count / vendors). Filters: vendor / tier / in-stock-only. Sorted by margin desc.
+- **5.4 Purchase Orders** (v6.10.11) — new Purchase Orders page (Owner/Admin/Manager). M23 SQL (purchase_orders + po_lines). Auto PO-#### numbering. Edit modal with vendor dropdown, line-item editor (in-modal table with live ext_cost recalc), tax + freight, linked quote/job, in-modal subtotal/total preview. Receipt flow that auto-bumps inventory_items.qty_on_hand for matching (SKU + vendor).
+- **M22 + M23** added to BUILD_PLAN_MICHAEL. M21 still pending (Phase-3 schema for calendar/articles/jobs).
+**Decisions:** Purchase Orders kept Owner/Admin/Manager-only (not Sales) since pricing/cost data is sensitive. Receipt flow tightly couples PO → inventory rather than asking Michael to manually update qty_on_hand twice. CSV template provided for inventory imports — first time we've shipped a download-template button; pattern worth reusing for future bulk-import features. Crash-recovery scaffolding adopted because Codespace stopped mid-session earlier in the day — added cost is small, value of a clean resume point is high.
+**Verified:** JS parses clean across all 3 code commits. File size 794KB / 900KB split trigger — one more substantial module is fine before splitting.
+**Open loops:** M21 / M22 / M23 SQL all pending Michael. Inventory CSV importer works in-memory but persistence requires M22 first. Receipt-flow inventory bump requires M22 + M23 both. Track 5.5 Trade Partner Network and 5.11 Warranty Tracker are next-up small CRUD modules.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Autonomous session: 1.4 + 3.1 + 5.7 + 5.16 + 5.1 + 5.2 — SHIPPED
 **Version:** v6.10.3 → v6.10.8 (6 code commits)
