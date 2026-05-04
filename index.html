@@ -381,6 +381,9 @@ tbody tr:hover td{background:var(--bg);}
     <div class="topbar">
       <div><span class="topbar-title" id="pg-title">Dashboard</span><span class="topbar-sub" id="pg-sub"></span></div>
       <div style="display:flex;align-items:center;gap:14px;">
+        <button onclick="openGlobalSearch()" title="Search (Ctrl+K)" style="display:flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-3);font-size:12px;cursor:pointer;min-width:200px;">
+          <span style="font-size:13px;">🔍</span><span>Search…</span><span style="margin-left:auto;font-size:10px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;">⌘K</span>
+        </button>
         <div id="bell-host" style="position:relative;"></div>
         <div class="topbar-actions" id="pg-actions"></div>
       </div>
@@ -6447,5 +6450,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/marketing.js?v=6.10.20"></script>
 <script src="js/alerts.js?v=6.10.21"></script>
 <script src="js/demand_forecast.js?v=6.10.25"></script>
+<script src="js/global_search.js?v=6.10.26"></script>
 </body>
 </html>
