@@ -2146,6 +2146,7 @@ function renderVendors(container){
     {id:'coop',label:'Co-op Funds'},
     {id:'optimizer',label:'Deal Optimizer'},
     {id:'pricebook',label:'Price Book'},
+    {id:'invanalytics',label:'Inventory Analytics'},
     {id:'bulkops',label:'Bulk Ops'}
   ];
 
@@ -2195,6 +2196,8 @@ function renderVendors(container){
     renderDealOptimizer(sectionContent);
   } else if (vSection === 'pricebook') {
     renderPriceBook(sectionContent);
+  } else if (vSection === 'invanalytics') {
+    renderInventoryAnalytics(sectionContent);
   } else if (vSection === 'bulkops') {
     renderBulkVendorOps(sectionContent);
   }
@@ -6472,5 +6475,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/quick_actions.js?v=6.10.32"></script>
 <script src="js/portal_preview.js?v=6.10.33"></script>
 <script src="js/health.js?v=6.10.34"></script>
+<script src="js/inventory_analytics.js?v=6.10.35"></script>
 </body>
 </html>
