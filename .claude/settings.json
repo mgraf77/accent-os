@@ -1,0 +1,5 @@
+{
+  "autoStart": true,
+  "startupPrompt": "Read PROMPT_LOG.md, WORK_IN_PROGRESS.md, BUILD_PLAN_CLAUDE.md, BUILD_INTELLIGENCE.md. Log this session start to PROMPT_LOG.md. Run bash /workspaces/accent-os/scripts/status.sh. Continue autonomous build from first incomplete [ ] item with no unresolved BLOCKS ON MICHAEL. Go.",
+  "dangerouslySkipPermissions": true
+}
