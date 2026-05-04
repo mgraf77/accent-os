@@ -44,10 +44,8 @@
   - Blocks: 1.4 CRM (quotes are evidence of customer activity)
   - BLOCKS ON MICHAEL: **M02**
 
-- [ ] **1.3** — Daily Command Center
-  - What: top-of-app daily brief per role — what needs attention today (open quotes >7d, unverified vendor scores, pending outreach, deal followups). Auto-generates from existing data
-  - Blocks: daily adoption / habit formation; Agentic Level 3 (proactive alerts)
-  - BLOCKS ON MICHAEL: nothing immediate (uses existing tables)
+- [x] **1.3** — Daily Command Center (partial — phase 1 with existing data)
+  - Shipped v6.9.8: top-of-dashboard "📌 Today" card with role-aware brief items: Unverified Scores (count + top vendors, click → Scores tab), Tier C Vendors (senior roles only), Activity (24h) (count + latest entry, click → Changelog), Unassigned Reps (senior roles, links Rep Audit), Mixed-Rep Parents (senior roles, links Rep Audit), Avg Vendor Score gauge. Each tile clickable where action exists. **Phase 2 deferred:** open-quotes-stale and pipeline-followup-due — both need M02 tables.
 
 - [ ] **1.4** — CRM & Customer Intelligence
   - What: `customers` + `customer_interactions` tables, customer profile UI, RFM scoring, lifecycle tagging, basic timeline view

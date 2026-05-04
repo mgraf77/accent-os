@@ -5,8 +5,28 @@
 ## CURRENT PRIORITY QUEUE
 > Updated each session. This is what we work on next, in order.
 
-1. **Claude:** begin autonomous build from BUILD_PLAN_CLAUDE.md — start at first incomplete `[ ]` item
-2. **Michael:** work through BUILD_PLAN_MICHAEL.md on his own timeline; each completed M## unlocks downstream Claude work
+### Next Claude session — paste this prompt to resume:
+
+> Read BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, and BUILD_INTELLIGENCE.md fresh. Continue autonomous build from BUILD_PLAN_CLAUDE.md starting at the first incomplete `[ ]` item. Most remaining Track 1/2/3/4 items are blocked on **M02** (paste sql/M02_core_schema.sql). If M02 is `[x]` in BUILD_PLAN_MICHAEL.md, build Track 1.1 (vendor_scores wiring) → 1.2 (Quote Generator persistence) → 2.2 (vendor_overrides) → 2.3 (coop_tracker) → 1.5 (Pipeline) in order. If M02 is still `[ ]`, the only fully unblocked autonomous item is Track 3.2 (Role-Based Dashboards — partial, can extend the Daily Brief with role-specific landing pages). Before each item, update TaskCreate. After each commit, append to BUILD_INTELLIGENCE.md.
+
+### Standing instructions:
+1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
+2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-04 — Autonomous session: 0.2.B + 2.1 + 0.2.C SQL + 0.4 SQL + 1.3 phase 1 — SHIPPED
+**Version:** v6.9.7 → v6.9.8
+**Built/Changed:**
+- **0.2.B** Settings → Users panel: owner-only role assignments, "My Account" with Change Password (PUT /auth/v1/user) + Sign Out, audit_log writes for role_change + password_change
+- **2.1** Parent company UI polish: collapsible parent groups in Scores tab (Expand all / Collapse all), parent badge in vendor detail, Sister Brands card with click-through navigation
+- **0.2.C** RLS SQL block written → `sql/M01_rls_tightening.sql` (drops anon, adds authenticated read + role-gated writes)
+- **0.4** Core schema SQL written → `sql/M02_core_schema.sql` (18 tables across Tracks 1–4, plpgsql DO-block batched RLS)
+- **1.3** Daily Command Center phase 1: role-aware "Today" card on dashboard with 6 brief tiles (unverified scores, tier C, 24h activity, unassigned reps, mixed-rep parents, avg score gauge). Phase 2 (quote/pipeline tiles) deferred to post-M02
+- audit_log now also fires on vendor_edit (was previously only score_save)
+- BUILD_INTELLIGENCE.md created — append-only lessons file
+**Decisions:** Track 1.3 split into phase 1 (current-data) + phase 2 (post-M02) so phase 1 ships now. Settings API Keys + Supabase config sections moved Owner-only.
+**Verified:** JS parses clean across all 4 commits. Cloudflare auto-deploy in flight.
+**Open loops:** Tracks 1.1 / 1.2 / 1.4 / 1.5 / 2.2 / 2.3 / 4.2 / 4.3 all blocked on M02. M01 (RLS tightening) blocks production hardening but doesn't gate further dev work.
+**Next prompt:** see top of file.
 
 ### 2026-05-04 — Track 0.2 Chunk A: Supabase Auth + role-based sidebar — LIVE
 **Version:** v6.9.6a (auth code v6.9.6, anon-JWT bootstrap hotfix v6.9.6a)

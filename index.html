@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AccentOS v6.9.6a — Accent Lighting Inc.</title>
+<title>AccentOS v6.9.8 — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2912,6 +2912,10 @@ function saveVendorEdit(vendorId) {
   v.rep = newRep;
   v.status = newStatus;
 
+  if(typeof sbAuditLog === 'function'){
+    sbAuditLog('vendor_edit', 'vendors', {vendor_id: vendorId, vendor_name: newName});
+  }
+
   closeModal();
   renderVendors($('pg-content'));
   toast('Vendor updated', 'ok');
@@ -4614,7 +4618,31 @@ function dashboard(el){
   const scoredV=VD.filter(v=>weightedScore(v)!==null);
   const avgScore=scoredV.length?(scoredV.reduce((s,v)=>s+weightedScore(v),0)/scoredV.length).toFixed(1):null;
 
+  // ── Daily Command Center brief (Track 1.3 partial — uses existing tables only) ──
+  const role = CU?.role || '';
+  const briefItems = computeDailyBrief(role);
+
   el.innerHTML=`
+  <div class="card mb16" style="border-left:3px solid var(--accent);">
+    <div class="card-hd">
+      <span class="card-title">📌 Today · ${esc(role||'Welcome')}, ${esc(CU?.name?.split(' ')[0]||'')}</span>
+      <span class="sm muted">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</span>
+    </div>
+    <div class="card-body">
+      ${briefItems.length===0 ? `<div style="color:var(--text-3);font-size:13.5px;">All clear. No outstanding items today.</div>` : `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+          ${briefItems.map(b => `
+            <div style="background:${b.color||'var(--surface2)'};border:1px solid ${b.border||'var(--border)'};border-radius:8px;padding:11px 13px;cursor:${b.action?'pointer':'default'};" ${b.action?`onclick="${b.action}"`:''}>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${b.labelColor||'var(--text-3)'};margin-bottom:4px;">${esc(b.label)}</div>
+              <div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;line-height:1.1;">${esc(b.value)}</div>
+              <div style="font-size:11.5px;color:var(--text-2);margin-top:3px;">${esc(b.detail||'')}</div>
+            </div>
+          `).join('')}
+        </div>
+      `}
+    </div>
+  </div>
+
   <div class="g4 mb16">
     <div class="card stat-card"><div class="stat-label">Active Pipeline</div><div class="stat-value">$${tv.toLocaleString()}</div><div class="stat-sub">${allDeals.length} deals</div></div>
     <div class="card stat-card"><div class="stat-label">Quotes Saved</div><div class="stat-value">${QUOTES.length}</div><div class="stat-sub">This session</div></div>
@@ -4655,6 +4683,106 @@ function dashboard(el){
     </div></div>
   </div>`;
 }
+// Track 1.3 Daily Command Center — computes the brief items shown at top of dashboard.
+// Role-aware: Sales/Warehouse see fewer items than Owner/Admin/Manager.
+function computeDailyBrief(role){
+  const items = [];
+  const isSeniorRole = ['Owner','Admin','Manager'].includes(role);
+
+  // Vendors with unverified score categories (anyone can see)
+  const unverifiedVendors = VD.filter(v => {
+    const info = vendorScore(v);
+    return info.unverifiedCount > 0;
+  });
+  if(unverifiedVendors.length > 0){
+    const topByCount = [...unverifiedVendors].sort((a,b) => vendorScore(b).unverifiedCount - vendorScore(a).unverifiedCount).slice(0,3);
+    items.push({
+      label: 'Unverified Scores',
+      value: `${unverifiedVendors.length} vendors`,
+      detail: 'Top: ' + topByCount.map(v => v.name).join(', ').slice(0,60),
+      color: '#fef2f2', border: '#fecaca', labelColor: '#991b1b',
+      action: `goTo('vendors');setTimeout(()=>{vSection='scores';renderVendors($('pg-content'));},50);`
+    });
+  }
+
+  // Tier C (not scored) — context, not action
+  const tierCounts = {A:0, B:0, C:0};
+  VD.forEach(v => { const t = computeVendorTier(v); if(tierCounts[t]!==undefined) tierCounts[t]++; });
+  if(tierCounts.C > 0 && isSeniorRole){
+    items.push({
+      label: 'Tier C Vendors',
+      value: `${tierCounts.C}`,
+      detail: 'Inactive 24mo+ · review for archival',
+      color: '#f9fafb', border: '#e5e7eb', labelColor: '#4b5563'
+    });
+  }
+
+  // Recent changelog activity (last 24h)
+  if(typeof CHANGELOG !== 'undefined' && CHANGELOG.length){
+    const dayAgo = Date.now() - 86400000;
+    const recent = CHANGELOG.filter(e => new Date(e.ts).getTime() > dayAgo);
+    if(recent.length > 0){
+      items.push({
+        label: 'Activity (24h)',
+        value: `${recent.length} edits`,
+        detail: recent[0] ? `Latest: ${recent[0].vendor} · ${recent[0].cat}` : '',
+        color: '#eff6ff', border: '#bfdbfe', labelColor: '#1e40af',
+        action: `goTo('changelog')`
+      });
+    }
+  }
+
+  // Vendors with no rep group (Owner/Admin/Manager)
+  if(isSeniorRole){
+    const unassigned = VD.filter(v => !v.rep && (v.sales?.t || 0) > 0 && computeVendorTier(v) !== 'C');
+    if(unassigned.length > 0){
+      items.push({
+        label: 'Unassigned Reps',
+        value: `${unassigned.length}`,
+        detail: `Active vendors with no rep group · M19 in plan`,
+        color: '#fffbeb', border: '#fde68a', labelColor: '#92400e',
+        action: `goTo('vendors');setTimeout(()=>{vSection='replist';renderVendors($('pg-content'));},50);`
+      });
+    }
+  }
+
+  // Mixed-rep parent groups (Owner/Admin/Manager)
+  if(isSeniorRole && typeof PARENT_COMPANIES !== 'undefined' && PARENT_COMPANIES.length){
+    let mixedCount = 0;
+    PARENT_COMPANIES.forEach(parent => {
+      const children = VD.filter(v => VENDOR_PARENTS[v.id] === parent.id);
+      if(!children.length) return;
+      const reps = [...new Set(children.map(v => v.rep||'').filter(Boolean))];
+      if(reps.length > 1) mixedCount++;
+    });
+    if(mixedCount > 0){
+      items.push({
+        label: 'Mixed-Rep Parents',
+        value: `${mixedCount}`,
+        detail: 'Parent groups with conflicting rep assignments',
+        color: '#fef3c7', border: '#fcd34d', labelColor: '#92400e',
+        action: `goTo('vendors');setTimeout(()=>{vSection='repaudit';renderVendors($('pg-content'));},50);`
+      });
+    }
+  }
+
+  // Avg score health gauge (everyone)
+  const avg = (() => {
+    const s = VD.map(v=>weightedScore(v)).filter(x=>x!==null);
+    return s.length ? (s.reduce((a,b)=>a+b,0)/s.length) : null;
+  })();
+  if(avg !== null){
+    items.push({
+      label: 'Avg Vendor Score',
+      value: avg.toFixed(1),
+      detail: avg >= 7 ? 'Healthy' : avg >= 5 ? 'Mid-tier' : 'Below target',
+      color: '#f0fdf4', border: '#bbf7d0', labelColor: '#166534'
+    });
+  }
+
+  return items;
+}
+
 function sRow(label,status,note){
   const map={live:['dot-g','Live'],pending:['dot-y','Pending'],planned:['dot-gr','Planned']};
   const[cls,txt]=map[status]||['dot-gr',status];
