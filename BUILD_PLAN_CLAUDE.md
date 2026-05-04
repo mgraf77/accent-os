@@ -13,8 +13,7 @@
 ## TRACK 0 — Infrastructure
 
 - [x] **0.1** — File architecture split
-  - What: split monolithic index.html into shell + 4 module files (vendor / pipeline / knowledge / marketing)
-  - Blocks: nothing immediate (already done)
+  - Originally marked done as a design intent, but the actual extraction shipped v6.10.12 (2026-05-04). Extracted 9 module files into `js/`: customers, employees, knowledge_hub, jobs, purchase_orders, calendar, inventory, price_book, deal_optimizer. index.html dropped from 829KB → 680KB (-149KB, -18%). Each module file 8–26KB. JS parses clean across inline + 9 external script tags. Loading: `<script src="js/<name>.js?v=…">` after the closing inline `</script>` so all helpers ($, esc, sbFetch, openModal) are defined first. Cross-module reads (Daily Brief reading CUSTOMERS, Pipeline matching by customer name, Price Book reading INVENTORY) continue working because globals attach to window same as before.
 
 - [x] **0.2.A** — Auth Chunk A: Supabase Auth + role-based sidebar
   - What: replace hardcoded auto-login with Supabase Auth (REST), 5-role system, JWT session, `data-roles` sidebar gating, audit_log writes for login/logout/session_resume/score_save
