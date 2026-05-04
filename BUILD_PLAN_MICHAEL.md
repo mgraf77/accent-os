@@ -61,6 +61,16 @@
   - Then: paste to Claude → `M21 done — phase 3 schema is in. All three modules are now persistent.`
   - Unlocks: persistence for Tracks 5.1 (Knowledge Hub), 5.2 (Job Tracker), 5.16 (Company Calendar). Until M21 runs, the UIs work but persistence silently no-ops (toast warns on save).
 
+- [ ] **M25** — Run Showroom Display schema (Track 5.8)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M25_showroom_displays_schema.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return one row (`showroom_displays` with `rls_enabled=true`).
+    4. Reload `https://accent-os.pages.dev`. Showroom Displays sidebar entry already ships (v6.10.15).
+  - Then: paste to Claude → `M25 done — showroom_displays table is in.`
+  - Unlocks: persistence for Track 5.8.
+
 - [ ] **M24** — Run Trade Partner + Warranty schema (Tracks 5.5 + 5.11)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:

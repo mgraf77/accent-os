@@ -1,9 +1,19 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step. Shows exactly what was happening if Codespace dies.
 
-**Last updated:** 2026-05-04 — starting Track 5.8 Showroom Display Management
-**Current task:** 5.8 Showroom Display Management
-**Step:** Planning. Need to: (1) write `sql/M25_showroom_displays_schema.sql` for `showroom_displays` table, (2) build `js/showroom_displays.js` with list + edit + status workflow (planned/installed/active/expiring/removed), (3) wire into index.html (sidebar in CORE Sales+/Manager+, PAGE_META, dispatcher, hydrate, script tag), (4) add M25 to BUILD_PLAN_MICHAEL, (5) mark 5.8 [x] in BUILD_PLAN_CLAUDE.
-**Files touched so far this task:** PROMPT_LOG.md (logged + committed below), WORK_IN_PROGRESS.md (this file)
-**Commit status:** PROMPT_LOG + WIP about to commit as session-start log
-**Next step if interrupted:** Write the SQL file (M25), then the JS module. Resume from there. Pattern matches 5.5/5.11 — single new table + external JS file.
+**Last updated:** 2026-05-04 — 5.8 ready to ship as v6.10.15
+**Current task:** 5.8 Showroom Display Management — committing
+**Step:** All code + schema + docs written. JS parses clean (12 external files, 842KB total payload). About to commit + push, then continue to 5.9 QR/Barcode or 5.10 Delivery Scheduling.
+**Files touched so far this task:**
+- sql/M25_showroom_displays_schema.sql (created)
+- js/showroom_displays.js (created)
+- index.html (sidebar + PAGE_META + dispatcher + hydrate + 1 script tag)
+- BUILD_PLAN_CLAUDE.md (5.8 marked [x])
+- BUILD_PLAN_MICHAEL.md (M25 entry added)
+- WORK_IN_PROGRESS.md (this file)
+**Commit status:** uncommitted (about to commit as one bundle)
+**Next step if interrupted:**
+1. `git add sql/M25_showroom_displays_schema.sql js/showroom_displays.js index.html BUILD_PLAN_CLAUDE.md BUILD_PLAN_MICHAEL.md WORK_IN_PROGRESS.md`
+2. Commit with message starting `v6.10.15: Track 5.8 — Showroom Display Management`
+3. `git push origin main`
+4. Continue to 5.9 QR/Barcode (compact module — barcode generation + label printing) or 5.10 Delivery Scheduling.
