@@ -2139,7 +2139,8 @@ function renderVendors(container){
     {id:'repaudit',label:'Rep Audit'},
     {id:'coop',label:'Co-op Funds'},
     {id:'optimizer',label:'Deal Optimizer'},
-    {id:'pricebook',label:'Price Book'}
+    {id:'pricebook',label:'Price Book'},
+    {id:'bulkops',label:'Bulk Ops'}
   ];
 
   container.innerHTML = `
@@ -2188,6 +2189,8 @@ function renderVendors(container){
     renderDealOptimizer(sectionContent);
   } else if (vSection === 'pricebook') {
     renderPriceBook(sectionContent);
+  } else if (vSection === 'bulkops') {
+    renderBulkVendorOps(sectionContent);
   }
 }
 
@@ -6454,5 +6457,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/demand_forecast.js?v=6.10.25"></script>
 <script src="js/global_search.js?v=6.10.26"></script>
 <script src="js/reports.js?v=6.10.27"></script>
+<script src="js/bulk_vendor_ops.js?v=6.10.28"></script>
 </body>
 </html>
