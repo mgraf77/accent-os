@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AccentOS v6.9.6 — Accent Lighting Inc.</title>
+<title>AccentOS v6.9.6a — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -444,7 +444,7 @@ function deriveInitials(fullName, email){
 
 // Fetch helper for Supabase Auth endpoints (no Authorization bearer needed for /token).
 async function sbAuthFetch(path, opts={}){
-  const anon = sessionStorage.getItem('aos-sb-key') || '';
+  const anon = (typeof sbKey==='function' ? sbKey() : (sessionStorage.getItem('aos-sb-key')||''));
   if(!anon) throw new Error('Supabase anon key not set — open Settings first');
   const url = SUPABASE_URL + '/auth/v1' + path;
   const headers = Object.assign({
@@ -836,9 +836,13 @@ const PREFILL_VENDOR_CATS = {
 // Anon key is intentionally public — row-level security protects writes.
 const SUPABASE_URL = 'https://hsyjcrrazrzqngwkqsqa.supabase.co';
 
-// Anon key is read from sessionStorage 'aos-sb-key' (set in Settings on first run).
-// Helper: returns null if key not configured yet.
-function sbKey(){ return sessionStorage.getItem('aos-sb-key') || ''; }
+// v6.9.6a — Public anon JWT embedded so login works on fresh browsers
+// without requiring Settings config first. RLS guards all writes; this
+// key only grants what the 'anon' role is permitted to do.
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzeWpjcnJhenJ6cW5nd2txc3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDE5NzAsImV4cCI6MjA4ODM3Nzk3MH0.KRsvN3BoNBd7JU4oKn-Cul8aX8bmFv6lyu3cLx1Us3E';
+
+// sessionStorage takes precedence so Settings can rotate the key without a redeploy.
+function sbKey(){ return sessionStorage.getItem('aos-sb-key') || SUPABASE_ANON_KEY || ''; }
 function sbConfigured(){ return !!sbKey(); }
 
 async function sbFetch(path, opts={}){
