@@ -353,6 +353,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('showrooms')"><span class="ni-icon">▣</span><span class="ni-label">Showroom Displays</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('labels')"><span class="ni-icon">▥</span><span class="ni-label">Labels</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('deliveries')"><span class="ni-icon">▶</span><span class="ni-label">Deliveries</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('decisionengine')"><span class="ni-icon">★</span><span class="ni-label">Decision Engine</span></div>
       <div class="sb-sect">INTELLIGENCE</div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
@@ -666,6 +667,7 @@ const PAGE_META={
   showrooms: {t:'Showroom Displays',s:'Display program tracking'},
   labels:    {t:'Labels',s:'QR + Barcode label printing'},
   deliveries: {t:'Deliveries',s:'Schedule + driver routing'},
+  decisionengine: {t:'Decision Engine',s:'Sales · Pure-compute recommendations'},
   knowledge: {t:'Knowledge Engine',s:'AI-Powered Lighting Intelligence'},
   vendors:   {t:'Vendor Ranking',s:'Vendor Ranking 2026'},
   changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
@@ -686,7 +688,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,knowledge,vendors,changelog,calendar,marketing,roadmap,mgmt,settings,repoutreach};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,knowledge,vendors,changelog,calendar,marketing,roadmap,mgmt,settings,repoutreach};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6281,5 +6283,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/showroom_displays.js?v=6.10.15"></script>
 <script src="js/labels.js?v=6.10.16"></script>
 <script src="js/deliveries.js?v=6.10.17"></script>
+<script src="js/decision_engine.js?v=6.10.18"></script>
 </body>
 </html>

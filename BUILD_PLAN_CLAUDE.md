@@ -117,7 +117,8 @@
 - [ ] **5.13** — E-Commerce Command Center
   - BLOCKS ON MICHAEL: **M04** (BigCommerce API key) AND **M05** (GMC API access)
 - [ ] **5.14** — Competitive Pricing Intelligence
-- [ ] **5.15** — Sales Decision Engine
+- [x] **5.15** — Sales Decision Engine
+  - Shipped v6.10.18: New "Decision Engine" page (CORE, Sales+ access). External JS module `js/decision_engine.js`. Pure-compute layer over DEALS + QUOTES + CUSTOMERS + CUSTOMER_INTERACTIONS + INVENTORY + CHANGELOG — no new schema. 5 recommendation kinds: CHASE (high prob × high value, not won), FOLLOW-UP (open quotes 7-60d old), AT-RISK (deals 14d+ stale ≥$2K), RETAIN (VIP/Active customers 60+ days quiet), UPSELL (recently won deals ≥$3K, 7-90d post-win). Each row click-throughs to the relevant page (deal detail, customer detail, etc.) via existing `goTo` + `setTimeout` pattern. 4 stat cards: chase / follow-up / at-risk / total estimated 30d impact. Filters by kind + min-impact threshold.
 - [x] **5.16** — Company Calendar
   - Shipped v6.10.6: Calendar page (sidebar INTELLIGENCE, all roles). Two views: month grid + agenda list. Prev / Next / Today nav. 7 categories color-coded (trade_show / training / deadline / holiday / meeting / launch / other) with legend. Click empty day → New Event prefilled to that date. Detail modal: starts/ends, location, URL, description. Persistence on `calendar_events` table from M21 schema.
 
