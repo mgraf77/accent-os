@@ -93,6 +93,35 @@ async function sbDeleteCustomerInteraction(id){
   }catch(e){ console.warn('[sb] Delete interaction failed:', e.message); return false; }
 }
 
+async function sbBulkSaveCustomers(rows){
+  if(!sbConfigured()) return false;
+  if(!Array.isArray(rows) || !rows.length) return 0;
+  try{
+    const now = new Date().toISOString();
+    const payload = rows.map(r => ({
+      external_id: r.external_id || null,
+      name: r.name,
+      type: r.type || null,
+      email: r.email || null,
+      phone: r.phone || null,
+      address: r.address || null,
+      notes: r.notes || null,
+      lifecycle_stage: r.lifecycle_stage || null,
+      first_seen: r.first_seen || null,
+      last_seen: r.last_seen || null,
+      updated_at: now,
+      updated_by: (CU?.name) || 'Bulk Import'
+    }));
+    const headers = {'Prefer':'return=representation'};
+    const res = await sbFetch('/customers', {method:'POST', headers, body: JSON.stringify(payload)});
+    if(Array.isArray(res)) return res.length;
+    return payload.length;
+  }catch(e){
+    console.warn('[sb] Bulk save customers failed:', e.message);
+    return false;
+  }
+}
+
 // Compute RFM scores + segment from interactions + linked quotes/deals.
 // Recency: days since last activity (lower = better).
 // Frequency: number of revenue events in last 365d.
@@ -189,6 +218,7 @@ function renderCustomers(el){
     return (a.name||'').localeCompare(b.name||'');
   });
 
+  const canImport = CU && (CU.role === 'Owner' || CU.role === 'Admin' || CU.role === 'Manager' || CU.role === 'Sales');
   el.innerHTML = `
     <div class="g4 mb16">
       <div class="card stat-card"><div class="stat-label">Total Customers</div><div class="stat-value">${totalCount}</div><div class="stat-sub">In CRM</div></div>
@@ -196,6 +226,15 @@ function renderCustomers(el){
       <div class="card stat-card" style="border-left:3px solid var(--yellow);"><div class="stat-label">Lapsed (180–365d)</div><div class="stat-value" style="color:var(--yellow);">${segCounts.Lapsed||0}</div><div class="stat-sub">Re-engagement candidates</div></div>
       <div class="card stat-card"><div class="stat-label">12-mo Revenue</div><div class="stat-value">$${(totalMonetary/1000).toFixed(1)}K</div><div class="stat-sub">Across all customers</div></div>
     </div>
+    ${canImport ? `<div class="card mb16">
+      <div class="card-hd"><span class="card-title">Import CSV</span></div>
+      <div style="padding:14px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;">
+        <input type="file" id="cust-file" accept=".csv,text/csv" style="font-size:12px;" onchange="onCustFilePick(this)">
+        <button class="btn btn-outline btn-sm" onclick="openCustCsvPaste()">Or paste CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="downloadCustCsvTemplate()">Download template</button>
+        <span style="margin-left:auto;color:var(--text-3);">Headers: name (req), email, phone, type, address, notes, external_id</span>
+      </div>
+    </div>` : ''}
     <div class="card">
       <div class="card-hd">
         <span class="card-title">Customers · ${filtered.length}${filtered.length!==totalCount?` of ${totalCount}`:''}</span>
@@ -487,4 +526,148 @@ async function deleteCustomerInteraction(customerId, intId){
   await sbLoadCustomerInteractions(customerId);
   await openCustomerDetail(customerId);
   toast('Interaction deleted', 'ok');
+}
+
+// ── BULK CSV IMPORT (v6.10.39) ────────────────────────────
+const _CUST_TYPES = ['residential','trade','designer','contractor','commercial','other'];
+
+function downloadCustCsvTemplate(){
+  const rows = [
+    ['name','email','phone','type','address','notes','external_id'],
+    ['Acme Lighting Co.','procurement@acme.com','512-555-0100','commercial','123 Main St, Austin TX','Net-30 terms, prefers AM delivery','ACME-001'],
+    ['Jane Designer','jane@example.com','512-555-0142','designer','','Trade discount 15%','']
+  ];
+  if(typeof csvDownload === 'function'){
+    csvDownload(rows, `customers_template_${new Date().toISOString().slice(0,10)}.csv`);
+  } else {
+    // Fallback if shared util not loaded
+    const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `customers_template_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+}
+
+function openCustCsvPaste(){
+  openModal(`
+    <div class="modal-hd"><div class="modal-title">Paste CSV</div><button class="modal-x" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Paste CSV content (first row is headers)</label><textarea id="cust-csv-paste" rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;" placeholder="name,email,phone,type,address,notes
+Acme Lighting,buyer@acme.com,512-555-0100,commercial,123 Main St,..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="processCustCsvText($('cust-csv-paste').value)">Parse &amp; Preview</button>
+    </div>
+  `);
+}
+
+function onCustFilePick(input){
+  const f = input.files && input.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = e => processCustCsvText(e.target.result || '');
+  reader.onerror = () => toast('File read failed','err');
+  reader.readAsText(f);
+}
+
+function processCustCsvText(text){
+  if(!text || !text.trim()){ toast('CSV is empty','err'); return; }
+  if(typeof parseCsv !== 'function'){ toast('parseCsv helper missing — load inventory.js first','err'); return; }
+  const rows = parseCsv(text);
+  if(rows.length < 2){ toast('CSV has no data rows','err'); return; }
+  const headers = rows[0].map(h => h.trim().toLowerCase().replace(/\s+/g,'_'));
+  const aliasMap = {
+    'name':'name', 'customer_name':'name', 'full_name':'name', 'company':'name', 'company_name':'name', 'client':'name', 'account_name':'name',
+    'email':'email', 'email_address':'email', 'mail':'email', 'e-mail':'email', 'e_mail':'email',
+    'phone':'phone', 'tel':'phone', 'telephone':'phone', 'mobile':'phone', 'cell':'phone', 'phone_number':'phone',
+    'type':'type', 'customer_type':'type', 'category':'type', 'class':'type',
+    'address':'address', 'mailing_address':'address', 'street':'address', 'street_address':'address', 'addr':'address',
+    'notes':'notes', 'note':'notes', 'comment':'notes', 'comments':'notes', 'description':'notes',
+    'external_id':'external_id', 'customer_id':'external_id', 'windward_id':'external_id', 'account_number':'external_id', 'account':'external_id', 'id':'external_id',
+    'lifecycle_stage':'lifecycle_stage', 'stage':'lifecycle_stage',
+    'first_seen':'first_seen', 'last_seen':'last_seen'
+  };
+  const colMap = headers.map(h => aliasMap[h] || h);
+  if(!colMap.includes('name')){ toast('CSV must include a "name" column','err'); return; }
+
+  // Existing-name set for duplicate warning
+  const existingByName = new Set();
+  CUSTOMERS.forEach(c => { if(c?.name) existingByName.add(String(c.name).toLowerCase().trim()); });
+  const existingByExt = new Set();
+  CUSTOMERS.forEach(c => { if(c?.external_id) existingByExt.add(String(c.external_id).trim()); });
+
+  const parsed = [];
+  let dupes = 0;
+  let unknownTypes = new Set();
+  for(let i=1; i<rows.length; i++){
+    const r = rows[i];
+    if(r.every(x => !x || !String(x).trim())) continue;
+    const obj = {};
+    colMap.forEach((c, idx) => { if(c) obj[c] = (r[idx]||'').trim(); });
+    if(!obj.name){ continue; }
+    // Normalize type to enum
+    if(obj.type){
+      const t = obj.type.toLowerCase();
+      if(_CUST_TYPES.includes(t)) obj.type = t;
+      else { unknownTypes.add(obj.type); obj.type = 'other'; }
+    }
+    // Mark duplicates so the preview can flag them
+    obj._dup = existingByName.has(obj.name.toLowerCase()) || (obj.external_id && existingByExt.has(obj.external_id));
+    if(obj._dup) dupes++;
+    parsed.push(obj);
+  }
+
+  if(!parsed.length){ toast('No valid rows after parsing','err'); return; }
+
+  const preview = parsed.slice(0, 10);
+  const summary = `<div style="font-size:12px;margin-bottom:10px;line-height:1.6;">
+    <strong>${parsed.length}</strong> row${parsed.length===1?'':'s'} parsed
+    ${dupes ? ` · <span style="color:var(--accent);">${dupes} likely duplicate${dupes===1?'':'s'}</span> (matched by name or external_id)` : ''}
+    ${unknownTypes.size ? `<br><span style="color:var(--text-3);">${unknownTypes.size} unknown type${unknownTypes.size===1?'':'s'} → "other": ${[...unknownTypes].slice(0,3).map(esc).join(', ')}${unknownTypes.size>3?'…':''}</span>` : ''}
+  </div>`;
+  const tbl = `<div style="border:1px solid var(--border);border-radius:6px;max-height:300px;overflow:auto;">
+    <table style="margin:0;font-size:11px;width:100%;">
+      <thead><tr><th></th><th>Name</th><th>Type</th><th>Email</th><th>Phone</th><th>External ID</th></tr></thead>
+      <tbody>${preview.map(p=>`<tr style="${p._dup?'background:#fff7ed;':''}">
+        <td style="text-align:center;">${p._dup?'⚠':''}</td>
+        <td style="font-weight:500;">${esc(p.name||'')}</td>
+        <td>${esc(p.type||'')}</td>
+        <td class="sm">${esc(p.email||'')}</td>
+        <td class="sm">${esc(p.phone||'')}</td>
+        <td class="mono sm">${esc(p.external_id||'')}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+  const more = parsed.length > 10 ? `<div class="muted sm" style="margin-top:6px;">…and ${parsed.length-10} more.</div>` : '';
+  const dupNote = dupes ? `<div style="margin-top:10px;font-size:12px;color:var(--text-3);">⚠ Rows flagged as duplicates will still be imported — Supabase keeps all rows since names aren't unique. After import, you can dedupe manually from each customer's detail page.</div>` : '';
+
+  window._custStaged = parsed;
+  openModal(`
+    <div class="modal-hd"><div class="modal-title">Customer Import Preview</div><button class="modal-x" onclick="closeModal()">×</button></div>
+    <div class="modal-body">${summary}${tbl}${more}${dupNote}</div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="commitCustCsv()">Import ${parsed.length} customer${parsed.length===1?'':'s'}</button>
+    </div>
+  `);
+}
+
+async function commitCustCsv(){
+  const staged = window._custStaged || [];
+  if(!staged.length){ toast('Nothing to import','err'); return; }
+  // Strip the _dup flag before save
+  const clean = staged.map(r => { const { _dup, ...rest } = r; return rest; });
+  toast(`Importing ${clean.length} customers…`);
+  const n = await sbBulkSaveCustomers(clean);
+  if(n === false){ toast('Import failed — check Supabase connection','err'); return; }
+  if(typeof sbAuditLog==='function') sbAuditLog('customers_import', 'customers', {row_count: clean.length, source: 'csv'});
+  await sbLoadCustomers();
+  delete window._custStaged;
+  closeModal();
+  renderCustomers($('pg-content'));
+  toast(`Imported ${typeof n==='number'?n:clean.length} customer${(typeof n==='number'?n:clean.length)===1?'':'s'}`,'ok');
 }
