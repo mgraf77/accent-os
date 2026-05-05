@@ -4,11 +4,11 @@ description: >
   Deep-research a target tool, repo, methodology, or skill across multiple sources
   (GitHub, official site, social, docs, reviews), run a gap analysis against AccentOS +
   Accent Lighting needs, and ship a custom AccentOS-scoped SKILL.md that captures only
-  the relevant concepts. Use this skill when Michael says: "extract concepts from [X]",
-  "build me a skill based on [X]", "deep-dive [X] and make it mine", "I want a [X]-style
-  skill for AccentOS", "adapt [X] for me", "forge a skill from [X]", "research [X] and
-  give me a custom version", "rip the good parts out of [X]", or any phrasing that asks
-  to ingest an external tool and produce a tailored local skill. Distinct from repo-scout:
+  the relevant concepts. Use this skill when Michael says: "look into [X]", "extract
+  concepts from [X]", "build me a skill based on [X]", "deep-dive [X] and make it mine",
+  "I want a [X]-style skill for AccentOS", "adapt [X] for me", "forge a skill from [X]",
+  "research [X] and give me a custom version", "rip the good parts out of [X]", or any
+  phrasing that asks to ingest an external tool and produce a tailored local skill. Distinct from repo-scout:
   repo-scout decides whether to install something as-is; skill-forge assumes the as-is
   version is the wrong fit and builds the right-fit version. End deliverable is a working
   skill committed to skills/, not a recommendation. Always produces the file — never stops
@@ -27,6 +27,7 @@ Five things in order: **preflight → extract → gap → forge → log**. No st
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
+- "look into [X]"  ← when paired with a tool/URL/repo, this is the standard entry point
 - "extract concepts from [X]"
 - "build me a skill based on [X]"
 - "deep-dive [X] and make it mine"
@@ -38,6 +39,8 @@ Run this skill when Michael says anything like:
 - "I like what [X] does, build me one"
 
 Also trigger when repo-scout returns an EVALUATE verdict and Michael says "build it custom" or similar.
+
+**"Look into" disambiguation:** "Look into" is overloaded — Michael also uses it for repo-scout-style "is this worth installing." Default reading: when the target is a specific tool/URL/repo/concept and Michael's intent looks like build-or-adapt, run skill-forge. When the target is a category ("look into MCPs for ecommerce") or the question is install-or-skip, run repo-scout instead. If genuinely ambiguous, run repo-scout first (cheaper) and chain into skill-forge if the verdict is EVALUATE-with-customization.
 
 ---
 
@@ -103,6 +106,8 @@ Run parallel searches across **all five source classes**. See `references/extrac
 
 **Pricing/access layer (paid tools only)**
 - What's gated behind which tier — gates reveal core value props
+
+**WebFetch failure fallback** — When `WebFetch` returns 403, 404, or any non-200 on a planned source, do not log the source as empty. Fall back in this order: (1) `WebSearch` with the quoted SKILL.md filename or canonical doc filename plus the most distinctive concept terms; (2) `WebSearch` with a `site:` operator restricted to the blocked host; (3) cached search-engine snippets that already surface the page content. Only mark a source empty after all three fall back to nothing.
 
 For each source, harvest into a flat list:
 - Use cases
@@ -177,7 +182,7 @@ Use the Write tool. Never use bash heredocs for skill files.
 
 Before staging any file:
 
-1. **YAML frontmatter parses** — name + description present, description is multi-line `>` block, description is ≥250 characters, contains "AccentOS" or "Accent Lighting" by name, no unfilled `[bracketed]` placeholders anywhere in the file.
+1. **YAML frontmatter parses** — name + description present, description is multi-line `>` block, description is ≥250 characters, contains "AccentOS" or "Accent Lighting" by name, no unfilled `[bracketed]` placeholders **outside fenced code blocks**. Bracketed strings inside ``` fenced blocks are template/runtime markers (e.g. `[metric name]`, `[full Step 3 table]`) and are intentional — do not flag them.
 2. **Name uniqueness** — directory does not collide with an existing skill.
 3. **Substitution count** — at least 3 AccentOS-stack-specific substitutions present, drawn from this allowlist: AccentOS, Accent Lighting, store-cwqiwcjxes, hsyjcrrazrzqngwkqsqa, vendor scoring, vendor_scores, vendor_overrides, GMC, Google Merchant Center, Feedenomics, Klaviyo, BigCommerce, Supabase, Cloudflare Pages, Anthropic API, /home/user/accent-os, /workspaces/accent-os. The 3 must be substantive references, not throwaway mentions.
 4. **Anti-pattern section** — present, ≥3 entries.

@@ -177,7 +177,7 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - root_cause: Validator regex matched `[bracketed]` strings everywhere; didn't distinguish text outside fenced blocks (real placeholders) from template markers inside them (intentional).
 - fix_this_run: Manually verified all 5 hits were inside ``` fences and accepted the SKILL.md as valid. No file change.
 - prevention_rule: Bracket-placeholder check in Step 6.5 must scope only to text outside fenced code blocks.
-- applied_to_skill_md: no
+- applied_to_skill_md: yes
 - outcome: success
 
 ### gotcha-017 — 2026-05-05 — Cascade (live shakedown)
@@ -186,5 +186,5 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - root_cause: Some hosts block direct fetch but their content surfaces in search engine snippets.
 - fix_this_run: Pivoted to WebSearch with quoted SKILL.md filename + concept terms; aggregated content recovered the same concept set.
 - prevention_rule: When WebFetch returns 403/404 on a planned source, fall back to WebSearch with quoted filename and extracted-content keywords before logging the source as empty.
-- applied_to_skill_md: no
+- applied_to_skill_md: yes
 - outcome: success
