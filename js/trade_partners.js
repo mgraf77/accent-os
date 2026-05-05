@@ -209,11 +209,12 @@ function renderTradePartners(el){
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'tradepartners',currentFilter:tpFilter,applyFn:()=>renderTradePartners($('pg-content')),fields:['q','type','status'],resetState:{q:'',type:'',status:''}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('tradepartners'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th>Name</th><th>Type</th><th>Company</th><th>Contact</th><th>Rating</th><th>Status</th><th>Last Engaged</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('tradepartners',filtered.map(x=>x.id)):''}</th><th>Name</th><th>Type</th><th>Company</th><th>Contact</th><th>Rating</th><th>Status</th><th>Last Engaged</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${TRADE_PARTNERS.length===0?'No trade partners yet. Click "+ New Partner" to add one (run M24 SQL first if save fails).':'No partners match the current filter.'}</td></tr>` : filtered.map(p => {
+            ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${TRADE_PARTNERS.length===0?'No trade partners yet. Click "+ New Partner" to add one (run M24 SQL first if save fails).':'No partners match the current filter.'}</td></tr>` : filtered.map(p => {
               const sb = {active:'bg-green', prospect:'bg-blue', inactive:'bg-gray'}[p.status] || 'bg-gray';
               const ratingCell = p.rating != null ? `<span class="mono fw6" style="color:${p.rating>=8?'var(--green)':p.rating>=6?'var(--blue)':'var(--yellow)'};">${Number(p.rating).toFixed(1)}</span>` : '<span class="muted">—</span>';
               const canEditTp = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
@@ -225,6 +226,7 @@ function renderTradePartners(el){
                 ? `<td onclick="event.stopPropagation();" style="padding:2px 6px;"><input type="number" min="0" max="10" step="0.1" value="${p.rating!=null?Number(p.rating).toFixed(1):''}" data-id="${p.id}" data-field="rating" data-orig="${p.rating!=null?Number(p.rating).toFixed(1):''}" data-kind="number" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitTradePartnerCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:60px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;text-align:right;border-radius:4px;" placeholder="—" title="Click to edit rating (0-10)"></td>`
                 : `<td>${ratingCell}</td>`;
               return `<tr style="cursor:pointer;${p.status==='inactive'?'opacity:0.6;':''}" onclick="openTradePartnerEdit('${p.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('tradepartners',p.id):''}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(p.name)}</td>
                 <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc(p.type||'—')}</span></td>
                 <td class="sm">${esc(p.company||'—')}</td>
@@ -240,6 +242,26 @@ function renderTradePartners(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const isSenior = CU && ['Owner','Admin','Manager'].includes(CU.role);
+    bulkSelRegister('tradepartners', isSenior ? [
+      {id:'delete', label:'🗑 Delete selected', color:'outline', confirm:'Delete {n} trade partners?', fn: doBulkTradePartnerDelete}
+    ] : []);
+  }
+}
+
+async function doBulkTradePartnerDelete(ids){
+  if(!ids?.length) return;
+  let ok=0, fail=0;
+  for(const id of ids){
+    const r = await sbDeleteTradePartner(id);
+    if(r) ok++; else fail++;
+  }
+  TRADE_PARTNERS = TRADE_PARTNERS.filter(p => !ids.includes(p.id));
+  if(typeof sbAuditLog==='function') sbAuditLog('trade_partners_bulk_delete', 'trade_partners', {count: ok, failed: fail});
+  bulkSelClear('tradepartners');
+  renderTradePartners($('pg-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 function openTradePartnerEdit(partnerId){

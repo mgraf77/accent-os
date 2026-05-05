@@ -183,13 +183,15 @@ function renderDeliveries(el){
             <option value="">All statuses</option>
             ${['scheduled','out_for_delivery','delivered','failed','rescheduled','cancelled'].map(s=>`<option value="${s}" ${dlvFilter.status===s?'selected':''}>${s.replace(/_/g,' ')}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'deliveries',currentFilter:dlvFilter,applyFn:()=>renderDeliveries($('pg-content')),fields:['q','status','when'],resetState:{q:'',status:'',when:'upcoming'}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('deliveries'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th>#</th><th>When</th><th>Customer</th><th>Driver</th><th>Items</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('deliveries',filtered.map(x=>x.id)):''}</th><th>#</th><th>When</th><th>Customer</th><th>Driver</th><th>Items</th><th>Status</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--text-3);">${DELIVERIES.length===0?'No deliveries scheduled. Click "+ Schedule Delivery" to add one (run M27 SQL first if save fails).':'No deliveries match the current filter.'}</td></tr>` : filtered.map(d => {
+            ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${DELIVERIES.length===0?'No deliveries scheduled. Click "+ Schedule Delivery" to add one (run M27 SQL first if save fails).':'No deliveries match the current filter.'}</td></tr>` : filtered.map(d => {
               const sb = {scheduled:'bg-blue', out_for_delivery:'bg-yellow', delivered:'bg-green', failed:'bg-red', rescheduled:'bg-yellow', cancelled:'bg-gray'}[d.status] || 'bg-gray';
               const isOverdue = d.scheduled_date && d.scheduled_date < todayStr && !['delivered','cancelled'].includes(d.status);
               const dateCell = d.scheduled_date ? `<span class="mono sm" style="color:${isOverdue?'var(--accent)':d.scheduled_date===todayStr?'var(--blue)':'var(--text-2)'};">${d.scheduled_date}${d.time_window?' '+esc(d.time_window):''}${isOverdue?' <span style="font-size:10px;">(overdue)</span>':''}</span>` : '<span class="muted">—</span>';
@@ -199,6 +201,7 @@ function renderDeliveries(el){
                 ? `<td onclick="event.stopPropagation();"><select data-id="${d.id}" data-field="status" data-orig="${esc(d.status)}" onchange="commitDeliveryCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${dStatusOpts.map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s.replace(/_/g,' ')}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(d.status.replace(/_/g,' '))}</span></td>`;
               return `<tr style="cursor:pointer;${['delivered','cancelled'].includes(d.status)?'opacity:0.6;':''}" onclick="openDeliveryEdit('${d.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('deliveries',d.id):''}</td>
                 <td class="mono fw6 sm">${esc(d.delivery_number||'—')}</td>
                 <td>${dateCell}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(d.customer_name||'—')}</td>
@@ -213,6 +216,48 @@ function renderDeliveries(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const canEdit = CU && ['Owner','Admin','Manager','Sales','Warehouse'].includes(CU.role);
+    bulkSelRegister('deliveries', canEdit ? [
+      {id:'delivered', label:'✓ Mark delivered', color:'outline', confirm:'Mark {n} deliveries as delivered?', fn: ids => doBulkDeliveryStatus(ids, 'delivered')},
+      {id:'cancelled', label:'✕ Cancel', color:'outline', confirm:'Cancel {n} deliveries?', fn: ids => doBulkDeliveryStatus(ids, 'cancelled')},
+      {id:'delete', label:'🗑 Delete', color:'outline', confirm:'Delete {n} deliveries?', fn: doBulkDeliveryDelete}
+    ] : []);
+  }
+}
+
+async function doBulkDeliveryStatus(ids, status){
+  if(!ids?.length) return;
+  let ok=0, fail=0;
+  for(const id of ids){
+    const r = await sbUpdateDeliveryField(id, 'status', status);
+    if(r){
+      ok++;
+      const idx = DELIVERIES.findIndex(d => d.id === id);
+      if(idx >= 0){
+        DELIVERIES[idx].status = status;
+        if(status === 'delivered') DELIVERIES[idx].delivered_at = new Date().toISOString();
+      }
+    } else fail++;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('deliveries_bulk_status', 'deliveries', {count: ok, status, failed: fail});
+  bulkSelClear('deliveries');
+  renderDeliveries($('pg-content'));
+  toast(`Updated ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
+}
+
+async function doBulkDeliveryDelete(ids){
+  if(!ids?.length) return;
+  let ok=0, fail=0;
+  for(const id of ids){
+    const r = await sbDeleteDelivery(id);
+    if(r) ok++; else fail++;
+  }
+  DELIVERIES = DELIVERIES.filter(d => !ids.includes(d.id));
+  if(typeof sbAuditLog==='function') sbAuditLog('deliveries_bulk_delete', 'deliveries', {count: ok, failed: fail});
+  bulkSelClear('deliveries');
+  renderDeliveries($('pg-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 function openDeliveryEdit(deliveryId){

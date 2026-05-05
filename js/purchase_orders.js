@@ -187,6 +187,7 @@ function renderPOs(el){
             <option value="">All vendors</option>
             ${vendors.map(v=>`<option value="${esc(v)}" ${poFilter.vendor===v?'selected':''}>${esc(v)}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'purchaseorders',currentFilter:poFilter,applyFn:()=>renderPOs($('pg-content')),fields:['q','status','vendor'],resetState:{q:'',status:'',vendor:''}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">

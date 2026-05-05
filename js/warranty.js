@@ -140,11 +140,12 @@ function renderWarranty(el){
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'warranty',currentFilter:warrFilter,applyFn:()=>renderWarranty($('pg-content')),fields:['q','status','vendor'],resetState:{q:'',status:'',vendor:''}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('warranty'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th>#</th><th>Reported</th><th>Vendor</th><th>SKU</th><th>Customer</th><th>Description</th><th>Severity</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('warranty',filtered.map(x=>x.id)):''}</th><th>#</th><th>Reported</th><th>Vendor</th><th>SKU</th><th>Customer</th><th>Description</th><th>Severity</th><th>Status</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${WARRANTY_CLAIMS.length===0?'No warranty claims yet. Click "+ New Claim" to log one (run M24 SQL first if save fails).':'No claims match the current filter.'}</td></tr>` : filtered.map(c => {
+            ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--text-3);">${WARRANTY_CLAIMS.length===0?'No warranty claims yet. Click "+ New Claim" to log one (run M24 SQL first if save fails).':'No claims match the current filter.'}</td></tr>` : filtered.map(c => {
               const sb = {open:'bg-yellow', sent_to_vendor:'bg-blue', approved:'bg-blue', denied:'bg-red', replaced:'bg-green', refunded:'bg-green', closed:'bg-gray'}[c.status] || 'bg-gray';
               const sevColor = {safety:'var(--accent)', functional:'var(--yellow)', cosmetic:'var(--text-3)'}[c.severity] || 'var(--text-3)';
               const canEditW = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
@@ -157,6 +158,7 @@ function renderWarranty(el){
                 ? `<td onclick="event.stopPropagation();"><select data-id="${c.id}" data-field="status" data-orig="${esc(c.status)}" onchange="commitWarrantyCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${wStatusOpts.map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(c.status.replace('_',' '))}</span></td>`;
               return `<tr style="cursor:pointer;${['closed','denied','refunded','replaced'].includes(c.status)?'opacity:0.65;':''}" onclick="openWarrantyEdit('${c.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('warranty',c.id):''}</td>
                 <td class="mono fw6 sm">${esc(c.claim_number||'—')}</td>
                 <td class="mono sm">${esc(c.reported_date||'')}</td>
                 <td class="sm">${esc(c.vendor_name||'—')}</td>
@@ -173,6 +175,47 @@ function renderWarranty(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const isSenior = CU && ['Owner','Admin','Manager'].includes(CU.role);
+    bulkSelRegister('warranty', isSenior ? [
+      {id:'close', label:'✓ Mark closed', color:'outline', confirm:'Mark {n} claims as closed?', fn: ids => doBulkWarrantyStatus(ids, 'closed')},
+      {id:'delete', label:'🗑 Delete selected', color:'outline', confirm:'Delete {n} warranty claims?', fn: doBulkWarrantyDelete}
+    ] : []);
+  }
+}
+
+async function doBulkWarrantyStatus(ids, status){
+  if(!ids?.length) return;
+  let ok=0, fail=0;
+  for(const id of ids){
+    const r = await sbUpdateWarrantyField(id, 'status', status);
+    if(r){
+      ok++;
+      const idx = WARRANTY_CLAIMS.findIndex(c => c.id === id);
+      if(idx >= 0){
+        WARRANTY_CLAIMS[idx].status = status;
+        if(['closed','denied','refunded','replaced'].includes(status)) WARRANTY_CLAIMS[idx].resolution_date = new Date().toISOString().slice(0,10);
+      }
+    } else fail++;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('warranty_bulk_status', 'warranty_claims', {count: ok, status, failed: fail});
+  bulkSelClear('warranty');
+  renderWarranty($('pg-content'));
+  toast(`Updated ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
+}
+
+async function doBulkWarrantyDelete(ids){
+  if(!ids?.length) return;
+  let ok=0, fail=0;
+  for(const id of ids){
+    const r = await sbDeleteWarrantyClaim(id);
+    if(r) ok++; else fail++;
+  }
+  WARRANTY_CLAIMS = WARRANTY_CLAIMS.filter(c => !ids.includes(c.id));
+  if(typeof sbAuditLog==='function') sbAuditLog('warranty_bulk_delete', 'warranty_claims', {count: ok, failed: fail});
+  bulkSelClear('warranty');
+  renderWarranty($('pg-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 function openWarrantyEdit(claimId){

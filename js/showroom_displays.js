@@ -179,13 +179,15 @@ function renderShowroomDisplays(el){
             <option value="">All vendors</option>
             ${vendors.map(v=>`<option value="${esc(v)}" ${sdFilter.vendor===v?'selected':''}>${esc(v)}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'showrooms',currentFilter:sdFilter,applyFn:()=>renderShowroomDisplays($('pg-content')),fields:['q','status','vendor'],resetState:{q:'',status:'',vendor:''}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('showrooms'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th>Display</th><th>Vendor</th><th>Location</th><th>Status</th><th>Installed</th><th>Expires</th><th>SKUs</th><th>Net Cost</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('showrooms',filtered.map(x=>x.id)):''}</th><th>Display</th><th>Vendor</th><th>Location</th><th>Status</th><th>Installed</th><th>Expires</th><th>SKUs</th><th>Net Cost</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${SHOWROOM_DISPLAYS.length===0?'No displays tracked yet. Click "+ New Display" to log one (run M25 SQL first if save fails).':'No displays match the current filter.'}</td></tr>` : filtered.map(d => {
+            ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--text-3);">${SHOWROOM_DISPLAYS.length===0?'No displays tracked yet. Click "+ New Display" to log one (run M25 SQL first if save fails).':'No displays match the current filter.'}</td></tr>` : filtered.map(d => {
               const sb = {planned:'bg-gray', installed:'bg-blue', active:'bg-green', expiring:'bg-yellow', expired:'bg-red', removed:'bg-gray'}[d.status] || 'bg-gray';
               const expDays = d.expires_date && ['planned','installed','active','expiring'].includes(d.status) ? Math.round((new Date(d.expires_date) - today)/86400000) : null;
               const expCell = d.expires_date ? `<span class="mono sm" style="color:${expDays!==null && expDays<0?'var(--accent)':expDays!==null && expDays<=60?'var(--yellow)':'var(--text-2)'};">${d.expires_date}${expDays!==null?` <span style="font-size:10px;color:var(--text-3);">(${expDays<0?'overdue':expDays+'d'})</span>`:''}</span>` : '<span class="muted">—</span>';
@@ -197,6 +199,7 @@ function renderShowroomDisplays(el){
                 ? `<td onclick="event.stopPropagation();"><select data-id="${d.id}" data-field="status" data-orig="${esc(d.status)}" onchange="commitShowroomCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${shStatusOpts.map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(d.status)}</span></td>`;
               return `<tr style="cursor:pointer;${['expired','removed'].includes(d.status)?'opacity:0.6;':''}" onclick="openShowroomEdit('${d.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('showrooms',d.id):''}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(d.display_name)}</td>
                 <td class="sm">${esc(d.vendor_name||'—')}</td>
                 <td class="sm">${esc(d.location||'—')}</td>
@@ -213,6 +216,26 @@ function renderShowroomDisplays(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const isSenior = CU && ['Owner','Admin','Manager'].includes(CU.role);
+    bulkSelRegister('showrooms', isSenior ? [
+      {id:'delete', label:'🗑 Delete selected', color:'outline', confirm:'Delete {n} showroom displays?', fn: doBulkShowroomDelete}
+    ] : []);
+  }
+}
+
+async function doBulkShowroomDelete(ids){
+  if(!ids?.length) return;
+  let ok=0, fail=0;
+  for(const id of ids){
+    const r = await sbDeleteShowroomDisplay(id);
+    if(r) ok++; else fail++;
+  }
+  SHOWROOM_DISPLAYS = SHOWROOM_DISPLAYS.filter(d => !ids.includes(d.id));
+  if(typeof sbAuditLog==='function') sbAuditLog('showrooms_bulk_delete', 'showroom_displays', {count: ok, failed: fail});
+  bulkSelClear('showrooms');
+  renderShowroomDisplays($('pg-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 function openShowroomEdit(displayId){
