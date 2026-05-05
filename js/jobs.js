@@ -51,6 +51,35 @@ async function sbSaveJob(rec){
   }catch(e){ console.warn('[sb] Save job failed:', e.message); return false; }
 }
 
+async function sbBulkSaveJobs(rows){
+  if(!sbConfigured()) return false;
+  if(!Array.isArray(rows) || !rows.length) return 0;
+  try{
+    const now = new Date().toISOString();
+    const payload = rows.map(r => {
+      const job_number = r.job_number || ('J-' + String(JOB_NUM++).padStart(4,'0'));
+      return {
+        job_number,
+        customer_id: r.customer_id || null,
+        customer_name: r.customer_name || null,
+        project_name: r.project_name,
+        status: r.status || 'open',
+        priority: r.priority || 'normal',
+        assigned_to: r.assigned_to || null,
+        due_date: r.due_date || null,
+        estimated_hours: r.estimated_hours == null || r.estimated_hours === '' ? null : Number(r.estimated_hours),
+        actual_hours: r.actual_hours == null || r.actual_hours === '' ? null : Number(r.actual_hours),
+        notes: r.notes || null,
+        updated_at: now,
+        completed_at: r.status === 'complete' ? (r.completed_at || now) : null
+      };
+    });
+    const res = await sbFetch('/jobs', {method:'POST', headers:{'Prefer':'return=representation'}, body: JSON.stringify(payload)});
+    if(Array.isArray(res)) return res.length;
+    return payload.length;
+  }catch(e){ console.warn('[sb] Bulk save jobs failed:', e.message); return false; }
+}
+
 async function sbDeleteJob(id){
   if(!sbConfigured()) return false;
   try{
@@ -104,6 +133,7 @@ function renderJobs(el){
     return new Date(b.updated_at||0) - new Date(a.updated_at||0);
   });
 
+  const canImport = CU && (CU.role === 'Owner' || CU.role === 'Admin' || CU.role === 'Manager' || CU.role === 'Sales');
   el.innerHTML = `
     <div class="g4 mb16">
       <div class="card stat-card"><div class="stat-label">Active Jobs</div><div class="stat-value">${(counts.open||0)+(counts.in_progress||0)+(counts.blocked||0)}</div><div class="stat-sub">${counts.open||0} open · ${counts.in_progress||0} in-progress · ${counts.blocked||0} blocked</div></div>
@@ -111,6 +141,15 @@ function renderJobs(el){
       <div class="card stat-card"${dueSoon?` style="border-left:3px solid var(--yellow);"`:''}><div class="stat-label">Due ≤7d</div><div class="stat-value" style="color:${dueSoon?'var(--yellow)':'var(--text)'};">${dueSoon}</div><div class="stat-sub">Action needed</div></div>
       <div class="card stat-card"><div class="stat-label">Completed</div><div class="stat-value">${counts.complete||0}</div><div class="stat-sub">Total to date</div></div>
     </div>
+    ${canImport ? `<div class="card mb16">
+      <div class="card-hd"><span class="card-title">Import CSV</span></div>
+      <div style="padding:14px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;">
+        <input type="file" id="job-file" accept=".csv,text/csv" style="font-size:12px;" onchange="onJobFilePick(this)">
+        <button class="btn btn-outline btn-sm" onclick="openJobCsvPaste()">Or paste CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="downloadJobCsvTemplate()">Download template</button>
+        <span style="margin-left:auto;color:var(--text-3);">Headers: project_name (req), customer_name, status, priority, assigned_to, due_date, estimated_hours, notes</span>
+      </div>
+    </div>` : ''}
     <div class="card">
       <div class="card-hd">
         <span class="card-title">Jobs · ${filtered.length}${filtered.length!==JOBS.length?` of ${JOBS.length}`:''}</span>
@@ -247,5 +286,167 @@ async function deleteJobConfirm(jobId){
   closeModal();
   renderJobs($('pg-content'));
   toast('Job deleted','ok');
+}
+
+// ── BULK CSV IMPORT (v6.10.41) ────────────────────────────
+const _JOB_STATUSES = ['open','in_progress','blocked','complete','cancelled'];
+const _JOB_PRIORITIES = ['urgent','high','normal','low'];
+
+function downloadJobCsvTemplate(){
+  const rows = [
+    ['project_name','customer_name','status','priority','assigned_to','due_date','estimated_hours','notes'],
+    ['Smith Residence — Master Bedroom Reno','John Smith','in_progress','high','Alice','2026-06-15','24','Lighting + ceiling fan install'],
+    ['Acme Lobby Refresh','Acme Lighting Co.','open','normal','','2026-07-01','40','Pendant + recessed downlight package']
+  ];
+  if(typeof csvDownload === 'function'){
+    csvDownload(rows, `jobs_template_${new Date().toISOString().slice(0,10)}.csv`);
+  } else {
+    const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `jobs_template_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+}
+
+function openJobCsvPaste(){
+  openModal(`
+    <div class="modal-hd"><div class="modal-title">Paste CSV</div><button class="modal-x" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Paste CSV content (first row is headers)</label><textarea id="job-csv-paste" rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;" placeholder="project_name,customer_name,status,priority,assigned_to,due_date,...
+Smith Residence — Master Bedroom,John Smith,in_progress,high,Alice,..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="processJobCsvText($('job-csv-paste').value)">Parse &amp; Preview</button>
+    </div>
+  `);
+}
+
+function onJobFilePick(input){
+  const f = input.files && input.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = e => processJobCsvText(e.target.result || '');
+  reader.onerror = () => toast('File read failed','err');
+  reader.readAsText(f);
+}
+
+function processJobCsvText(text){
+  if(!text || !text.trim()){ toast('CSV is empty','err'); return; }
+  if(typeof parseCsv !== 'function'){ toast('parseCsv helper missing','err'); return; }
+  const rows = parseCsv(text);
+  if(rows.length < 2){ toast('CSV has no data rows','err'); return; }
+  const headers = rows[0].map(h => h.trim().toLowerCase().replace(/\s+/g,'_'));
+  const aliasMap = {
+    'project_name':'project_name', 'project':'project_name', 'name':'project_name', 'title':'project_name', 'job_name':'project_name',
+    'customer_name':'customer_name', 'customer':'customer_name', 'client':'customer_name', 'client_name':'customer_name', 'company':'customer_name',
+    'status':'status', 'state':'status',
+    'priority':'priority', 'pri':'priority',
+    'assigned_to':'assigned_to', 'assignee':'assigned_to', 'owner':'assigned_to', 'rep':'assigned_to',
+    'due_date':'due_date', 'due':'due_date', 'deadline':'due_date', 'target_date':'due_date',
+    'estimated_hours':'estimated_hours', 'est_hours':'estimated_hours', 'estimate':'estimated_hours', 'hours':'estimated_hours',
+    'actual_hours':'actual_hours', 'logged_hours':'actual_hours',
+    'notes':'notes', 'note':'notes', 'comment':'notes', 'comments':'notes', 'description':'notes',
+    'job_number':'job_number', 'number':'job_number'
+  };
+  const colMap = headers.map(h => aliasMap[h] || h);
+  if(!colMap.includes('project_name')){ toast('CSV must include a "project_name" column','err'); return; }
+
+  // Customer name lookup so customer_id auto-resolves
+  const custByName = {};
+  if(typeof CUSTOMERS !== 'undefined') CUSTOMERS.forEach(c => { if(c?.name) custByName[c.name.toLowerCase().trim()] = c.id; });
+
+  const parsed = [];
+  let unknownStatuses = new Set();
+  let unknownPriorities = new Set();
+  let unmatchedCustomers = new Set();
+  for(let i=1; i<rows.length; i++){
+    const r = rows[i];
+    if(r.every(x => !x || !String(x).trim())) continue;
+    const obj = {};
+    colMap.forEach((c, idx) => { if(c) obj[c] = (r[idx]||'').trim(); });
+    if(!obj.project_name){ continue; }
+    if(obj.status){
+      const s = obj.status.toLowerCase().replace(/\s+/g,'_');
+      if(_JOB_STATUSES.includes(s)) obj.status = s;
+      else { unknownStatuses.add(obj.status); obj.status = 'open'; }
+    } else {
+      obj.status = 'open';
+    }
+    if(obj.priority){
+      const p = obj.priority.toLowerCase();
+      if(_JOB_PRIORITIES.includes(p)) obj.priority = p;
+      else { unknownPriorities.add(obj.priority); obj.priority = 'normal'; }
+    } else {
+      obj.priority = 'normal';
+    }
+    if(obj.customer_name){
+      const id = custByName[obj.customer_name.toLowerCase().trim()];
+      if(id) obj.customer_id = id;
+      else unmatchedCustomers.add(obj.customer_name);
+    }
+    if(obj.estimated_hours){
+      const n = Number(obj.estimated_hours);
+      if(!isNaN(n) && n >= 0) obj.estimated_hours = n;
+      else delete obj.estimated_hours;
+    }
+    if(obj.actual_hours){
+      const n = Number(obj.actual_hours);
+      if(!isNaN(n) && n >= 0) obj.actual_hours = n;
+      else delete obj.actual_hours;
+    }
+    parsed.push(obj);
+  }
+
+  if(!parsed.length){ toast('No valid rows after parsing','err'); return; }
+
+  const preview = parsed.slice(0, 10);
+  const summary = `<div style="font-size:12px;margin-bottom:10px;line-height:1.6;">
+    <strong>${parsed.length}</strong> job${parsed.length===1?'':'s'} parsed
+    ${unmatchedCustomers.size ? `<br><span style="color:var(--accent);">${unmatchedCustomers.size} customer name${unmatchedCustomers.size===1?'':'s'} not found in CRM</span> (will save as free-text customer_name): ${[...unmatchedCustomers].slice(0,3).map(esc).join(', ')}${unmatchedCustomers.size>3?'…':''}` : ''}
+    ${unknownStatuses.size ? `<br><span style="color:var(--text-3);">${unknownStatuses.size} unknown status → "open": ${[...unknownStatuses].slice(0,3).map(esc).join(', ')}${unknownStatuses.size>3?'…':''}</span>` : ''}
+    ${unknownPriorities.size ? `<br><span style="color:var(--text-3);">${unknownPriorities.size} unknown priority → "normal": ${[...unknownPriorities].slice(0,3).map(esc).join(', ')}${unknownPriorities.size>3?'…':''}</span>` : ''}
+  </div>`;
+  const tbl = `<div style="border:1px solid var(--border);border-radius:6px;max-height:300px;overflow:auto;">
+    <table style="margin:0;font-size:11px;width:100%;">
+      <thead><tr><th>Project</th><th>Customer</th><th>Status</th><th>Pri</th><th>Due</th><th>Est hrs</th></tr></thead>
+      <tbody>${preview.map(p=>`<tr>
+        <td style="font-weight:500;">${esc(p.project_name||'')}</td>
+        <td class="sm">${esc(p.customer_name||'')}${p.customer_id?' <span class="muted sm">·linked</span>':''}</td>
+        <td><span class="badge bg-gray">${esc(p.status||'')}</span></td>
+        <td><span class="badge bg-gray">${esc(p.priority||'')}</span></td>
+        <td class="sm">${esc(p.due_date||'')}</td>
+        <td class="mono sm">${p.estimated_hours!=null?p.estimated_hours:''}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+  const more = parsed.length > 10 ? `<div class="muted sm" style="margin-top:6px;">…and ${parsed.length-10} more.</div>` : '';
+
+  window._jobStaged = parsed;
+  openModal(`
+    <div class="modal-hd"><div class="modal-title">Job Import Preview</div><button class="modal-x" onclick="closeModal()">×</button></div>
+    <div class="modal-body">${summary}${tbl}${more}</div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="commitJobCsv()">Import ${parsed.length} job${parsed.length===1?'':'s'}</button>
+    </div>
+  `);
+}
+
+async function commitJobCsv(){
+  const staged = window._jobStaged || [];
+  if(!staged.length){ toast('Nothing to import','err'); return; }
+  toast(`Importing ${staged.length} jobs…`);
+  const n = await sbBulkSaveJobs(staged);
+  if(n === false){ toast('Import failed — table may not exist (run M21 SQL)','err'); return; }
+  if(typeof sbAuditLog==='function') sbAuditLog('jobs_import', 'jobs', {row_count: staged.length, source: 'csv'});
+  await sbLoadJobs();
+  delete window._jobStaged;
+  closeModal();
+  renderJobs($('pg-content'));
+  toast(`Imported ${typeof n==='number'?n:staged.length} job${(typeof n==='number'?n:staged.length)===1?'':'s'}`,'ok');
 }
 
