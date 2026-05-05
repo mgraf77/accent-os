@@ -438,9 +438,32 @@ async function openCustomerDetail(customerId){
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">
       <button class="btn btn-outline" style="margin-right:auto;color:var(--accent);" onclick="deleteCustomerConfirm('${c.id}')">Delete customer</button>
       <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      ${typeof createDealFromCustomer==='function' && CU && ['Owner','Admin','Manager','Sales'].includes(CU.role)?`<button class="btn btn-outline" onclick="createDealFromCustomer('${c.id}')">+ New Deal</button>`:''}
       <button class="btn btn-accent" onclick="openCustomerEdit('${c.id}')">Edit</button>
     </div>
   `);
+}
+
+// Customer → Deal conversion helper. Called from customer detail modal.
+function createDealFromCustomer(customerId){
+  if(typeof CUSTOMERS === 'undefined') return;
+  const c = CUSTOMERS.find(x => x.id === customerId);
+  if(!c){ toast('Customer not found','err'); return; }
+  // Map customer.type → deal segment when they overlap
+  const segMap = {residential:'residential', trade:'trade', designer:'designer', contractor:'contractor', commercial:'commercial'};
+  const segment = segMap[c.type] || '';
+  // Use the customer's RFM-12mo monetary as a value seed (rounded to 100s) — gives a sensible default for repeat customers
+  const valueSeed = c._rfm && c._rfm.monetary > 100 ? Math.round(c._rfm.monetary / 100) * 100 : 0;
+  const preset = {
+    name: `${c.name||'New'} project`,
+    company: c.name || '',
+    segment,
+    value: valueSeed,
+    related_customer_id: c.id
+  };
+  closeModal();
+  setTimeout(() => openAddDeal('lead', preset), 50);
+  if(typeof sbAuditLog==='function') sbAuditLog('deal_from_customer', 'customers', {customer_id: c.id, customer_name: c.name});
 }
 
 function openCustomerEdit(customerId){

@@ -217,7 +217,7 @@ function _renderModulesTable(host){
       <input id="mm-q" placeholder="Search by key or title…" value="${esc(_mmFilter)}" oninput="_mmFilter=this.value;clearTimeout(window._mmTimer);window._mmTimer=setTimeout(()=>renderModuleModesPanel($('mgmt-content')),200)" style="flex:1;min-width:200px;">
       ${_mmModeFilter ? `<button class="btn btn-outline btn-sm" onclick="_mmModeFilter='';renderModuleModesPanel($('mgmt-content'))">Clear filter</button>` : ''}
     </div>
-    <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${countChips}<button class="btn btn-outline btn-sm" style="font-size:11px;margin-left:auto;" onclick="_mmAddModulePrompt()">+ Add new module</button></div>
+    <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${countChips}${_mmModeFilter?`<button class="btn btn-outline btn-sm" style="font-size:11px;" onclick="_mmBulkRetagPrompt()">Retag all ${filtered.length} →</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;margin-left:auto;" onclick="_mmAddModulePrompt()">+ Add new module</button></div>
     <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Showing ${filtered.length} of ${entries.length}. Toggle a mode → UI updates immediately + a <span class="mono">/mode key state</span> command is logged for Claude to commit to <span class="mono">module_modes.json</span>.</div>
     <div style="overflow-x:auto;">
     <table style="width:100%;font-size:13px;">
@@ -247,6 +247,55 @@ function _renderModulesTable(host){
     </div>
     <div id="mm-cmd-log" style="margin-top:14px;"></div>
   `;
+}
+
+function _mmBulkRetagPrompt(){
+  if(!_mmModeFilter){ toast('Filter to a single mode first','err'); return; }
+  const states = MODULE_MODES.states || [];
+  const entries = Object.entries(MODULE_MODES.modules).filter(([,v]) => v.mode === _mmModeFilter);
+  if(!entries.length){ toast('No modules match','err'); return; }
+  const stateOpts = states.filter(s => s !== _mmModeFilter).map(s => `<option value="${s}">${s}</option>`).join('');
+  openModal(`Bulk retag — ${entries.length} module${entries.length===1?'':'s'} from "${_mmModeFilter}"`, `
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;">Move all <strong>${entries.length}</strong> modules currently in "${_mmModeFilter}" to a new mode at once. Useful when promoting a batch of features through the rollout pipeline.</div>
+    <div class="fg"><label>Move to mode</label><select id="mm-bulk-target">${stateOpts}</select></div>
+    <details style="margin-bottom:10px;font-size:12px;"><summary style="cursor:pointer;color:var(--text-2);">Modules that will move (${entries.length})</summary><div style="max-height:200px;overflow-y:auto;margin-top:6px;font-size:11px;">${entries.map(([k,v])=>`<div class="mono" style="padding:2px 0;">${esc(k)} · ${esc(v.title||k)}</div>`).join('')}</div></details>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="_mmBulkRetagCommit()">Apply</button>
+    </div>
+  `);
+}
+
+function _mmBulkRetagCommit(){
+  const target = $('mm-bulk-target')?.value;
+  if(!target){ toast('Pick a target mode','err'); return; }
+  const fromMode = _mmModeFilter;
+  const entries = Object.entries(MODULE_MODES.modules).filter(([,v]) => v.mode === fromMode);
+  const today = new Date().toISOString().slice(0,10);
+  const cmds = [];
+  entries.forEach(([k, v]) => {
+    v.mode = target;
+    v.updated_at = today;
+    cmds.push(`/mode ${k} ${target}`);
+  });
+  applyModuleModesToSidebar();
+  closeModal();
+  // Clear filter so they can see the result
+  _mmModeFilter = '';
+  // Surface command bundle for Claude
+  const logEl = $('mm-cmd-log');
+  if(logEl){
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:8px 11px;background:#dcfce7;border:1px solid #16a34a;border-radius:6px;margin-bottom:6px;font-size:12px;';
+    div.innerHTML = `<div style="font-weight:600;margin-bottom:4px;">Bulk retag · ${cmds.length} modules · ${fromMode} → ${target}</div>
+      <div class="mono" style="font-size:10px;max-height:120px;overflow-y:auto;background:#fff;padding:6px;border-radius:4px;">${cmds.map(esc).join('<br>')}</div>
+      <button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;margin-top:6px;" onclick="navigator.clipboard.writeText('${cmds.map(c=>c.replace(/'/g,'')).join('\\n')}').then(()=>toast('Copied','ok'))">Copy all</button>
+      <span style="font-size:10px;color:#15803d;margin-left:8px;">paste to Claude → applies all to module_modes.json</span>`;
+    logEl.prepend(div);
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('module_mode_bulk_retag', 'module_modes', {count: cmds.length, from: fromMode, to: target});
+  renderModuleModesPanel($('mgmt-content'));
+  toast(`Retagged ${cmds.length}: ${fromMode} → ${target}`, 'ok');
 }
 
 function _mmAddModulePrompt(){

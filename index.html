@@ -5111,13 +5111,15 @@ function dealHTML(d,k){
   </div>`;
 }
 
-function openAddDeal(def='lead'){
+function openAddDeal(def='lead', preset){
   if(!ALL_STAGES.includes(def)) def = 'lead';
+  const p = preset || {};
   openModal('New Deal',`
-  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c"></div></div>
-  <div class="frow"><div class="fcol field"><label>Value ($)</label><input id="nd-v" type="number"></div><div class="fcol field"><label>Expected Close</label><input id="nd-cl" type="date"></div></div>
-  <div class="frow"><div class="fcol field"><label>Lead Source</label><select id="nd-src">${['','referral','repeat','designer','web','walk-in','cold','other'].map(s=>`<option value="${s}">${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Segment</label><select id="nd-seg">${['','residential','trade','designer','contractor','commercial','hospitality','other'].map(s=>`<option value="${s}">${s||'—'}</option>`).join('')}</select></div></div>
-  <div class="frow"><div class="fcol field"><label>Project Type</label><select id="nd-pt">${['','new build','remodel','replacement','repair','unknown'].map(s=>`<option value="${s}">${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Stage</label><select id="nd-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===def?'selected':''}>${s.label}</option>`).join('')}</select></div></div>`,
+  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n" value="${esc(p.name||'')}"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c" value="${esc(p.company||'')}"></div></div>
+  <div class="frow"><div class="fcol field"><label>Value ($)</label><input id="nd-v" type="number" value="${esc(String(p.value||''))}"></div><div class="fcol field"><label>Expected Close</label><input id="nd-cl" type="date" value="${esc(p.close||'')}"></div></div>
+  <div class="frow"><div class="fcol field"><label>Lead Source</label><select id="nd-src">${['','referral','repeat','designer','web','walk-in','cold','other'].map(s=>`<option value="${s}" ${p.source===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Segment</label><select id="nd-seg">${['','residential','trade','designer','contractor','commercial','hospitality','other'].map(s=>`<option value="${s}" ${p.segment===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div></div>
+  <div class="frow"><div class="fcol field"><label>Project Type</label><select id="nd-pt">${['','new build','remodel','replacement','repair','unknown'].map(s=>`<option value="${s}" ${p.project_type===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Stage</label><select id="nd-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===def?'selected':''}>${s.label}</option>`).join('')}</select></div></div>
+  ${p.related_customer_id?`<input type="hidden" id="nd-cust" value="${esc(p.related_customer_id)}">`:''}`,
   `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="saveDeal()">Add</button>`);
 }
 
@@ -6584,7 +6586,7 @@ window.addEventListener('DOMContentLoaded', async () => {
      so all globals + helpers ($, esc, sbFetch, sbConfigured, openModal, etc.) are defined
      before module functions are referenced. Each module attaches its functions to the
      window scope same as if it were inline. -->
-<script src="js/customers.js?v=6.10.62"></script>
+<script src="js/customers.js?v=6.10.65"></script>
 <script src="js/employees.js?v=6.10.53"></script>
 <script src="js/knowledge_hub.js?v=6.10.55"></script>
 <script src="js/jobs.js?v=6.10.64"></script>
@@ -6619,6 +6621,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/my_tasks.js?v=6.10.38"></script>
 <script src="js/saved_filters.js?v=6.10.61"></script>
 <script src="js/bulk_select.js?v=6.10.62"></script>
-<script src="js/module_modes.js?v=6.10.64"></script>
+<script src="js/module_modes.js?v=6.10.65"></script>
 </body>
 </html>
