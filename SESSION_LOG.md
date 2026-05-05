@@ -13,6 +13,42 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9) — SHIPPED
+**Version:** vibe-speak v0 → v9 (23-dim matrix at 97.1% / 709 of 730)
+**Built/Changed:**
+- **v1** initial fork — `skills/vibe-speak/SKILL.md` + `.claude/output-styles/vibe-speak.md`. 5 intensity levels, jargon glossary, hard-keep list, AccentOS proper-noun preservation.
+- **v2** adaptive — added `profiles/michael.md` + `observation-log.md` + `feedback-log.md`. Register mirror, signal types (closure / autonomy / echo / correction / drift / filler-complaint / translation-pushback / custom-level / bump-up), self-optimize ≥3-observation threshold, 14 override commands.
+- **v3** Ralph-loop iters 1–4 — closure-collision detection (so "continue building" doesn't false-fire), direction terminology (tighten/loosen), Step 0 bootstrap, multi-signal collision rules, log rotation, compaction recovery. 33 issues caught / 31 fixed.
+- **v4** iter 5+6 clean pass — command parity, schema integrity, introspection disambiguation. 0 errors final pass.
+- **v5** mode framework + auto-trigger — 9 modes (vibe / caveman / gsd / vibesplain / pair / teach / executive / wenyan / raw) at `modes/[name].md`, auto-activation via `.claude/CLAUDE.md` AUTO-EXECUTE step 1, /mode list/current/[name] commands. Score: 94% on 16-dim matrix (517.5/550).
+- **v6** multi-user + benchmarks + KPI + pre-send gate — `profiles/_default.md` + `_index.md` + `_active.md` (auto-detect via git config), `benchmarks/{prompts,results}.md` (8-prompt × 9-mode measured), `kpi-log.md`, Step 12 pre-send accuracy gate (5 checks), Step 7 expanded to 12 disengage rules (pluggable), Step 21 mode auto-suggestion. 99.6% on 16-dim matrix.
+- **v7** matrix gap analysis + 3-iter optimization — meta-analysis surfaced 5 honest blind spots in original matrix (session-start cost, doc quality, real-session validation, mode coherence, reversibility). Iter 1: renumbered SKILL.md steps from messy 0/0.5/.../10.5/10.6/10.7/11–15 to clean 1–22 + `quickstart.md` + TOC. Iter 2: lazy-load contract (hot ~3.5K / warm ~5K / cold ~5K paths), `profiles/michael.md` compressed 191→158 lines, prompt-cache markers. Iter 3: `sessions/` directory + auto-KPI hook + `/vibe ab-test` + `/vibe replay`. 97.6% on 21-dim expanded matrix.
+- **v8** skill ecosystem integration — `skills/_index.md` registry of 26 skills + `skills/vibe-speak/skill-router.md` (6-factor match scoring) + Step 23 (skill discovery + routing) + brute_force signal type + skill-forge integration for new-skill proposals + 11 new commands (/vibe find skill, /vibe skills, /vibe propose skill, /vibe forge skill from pattern, /vibe brute-force, /vibe router off/on, /vibe regenerate skill index). 97.4% on 22-dim matrix.
+- **v9** corpus learning — `corpus/` directory with `_index.md` + `imports/_README.md` (claude.ai export workflow) + `vocabulary.md` (real-seeded 85+ terms from PROMPT_LOG analysis) + `trends.md` + `topics.md` (7 detected clusters) + Step 24 (backtest workflow + 6 trend-awareness thresholds + privacy redaction) + 13 corpus commands (/vibe import, /vibe backtest, /vibe vocab, /vibe trends, /vibe topics, /vibe propose calibration). 97.1% on 23-dim matrix.
+- **post-v9 calibration** — applied 6 corpus proposals to `profiles/michael.md` v2.1.0 → v2.2.0: `knock out` as autonomy verb, time-budgeted recognition (new signal class), +inline-edit / Module Modes / vibe-speak / extract / pivot to hard-keep. hard_keep_count 60 → 70.
+
+**Decisions:**
+- vibe-speak is auto-active via `.claude/CLAUDE.md` AUTO-EXECUTE step 1 (no trigger phrase needed) — Michael's default communication style going forward.
+- Modes are first-class concept (not nested under intensity); intensity dials compression within a mode's allowed range per MODES.md table.
+- All learning surfaces are PROPOSALS — never auto-applied. Michael's accept/edit/skip controls every profile mutation.
+- Honest matrix scoring: when adding a dimension that current version FAILS, it lowers the score — that's fair (reveals real work). When adding a dimension current version aces, it's goalpost-moving — refused.
+- Claude Code CANNOT read claude.ai chat history directly (web data not file-accessible). Path forward: Michael exports from claude.ai → drops conversations.json in `corpus/imports/` → runs `/vibe import`. Already-accessible PROMPT_LOG.md ingested as seed.
+- 9 modes (instead of original 7) after Michael requested `vibesplain` mid-build (v5).
+
+**Verified:** 16/16 → 21/21 → 22/22 → 23/23 verification checks pass per matrix. Real PROMPT_LOG backtest detected 9 new vocabulary terms in 2-day window with 35% style drift toward gsd-mode profile. All commits live on main (latest: 320c140).
+
+**Open loops:**
+- claude.ai full export not yet imported — dim 19 (real-session validation) and dim 23 (historical-corpus learning) sit at 9/10 until Michael completes the export workflow.
+- First brute-force-pattern → forged-skill flow hasn't fired organically yet — dim 22 (skill ecosystem) at 9/10 until that happens.
+- `/vibe uninstall` automation deferred (would risk corrupting CLAUDE.md edits) — dim 21 at 8/10.
+- ~99% is the natural ceiling once 1-2 weeks of usage accumulate + claude.ai export imported.
+
+**Files added (this session):** ~30 files under `skills/vibe-speak/` covering modes/, profiles/, corpus/, sessions/, benchmarks/, plus `skills/_index.md` registry, `.claude/output-styles/vibe-speak.md`, and `.claude/CLAUDE.md` AUTO-EXECUTE step 1.
+
+**Next prompt:** Awaiting Michael's claude.ai data export to expand corpus from 18 → 1000+ prompts. AccentOS module backlog is otherwise blocked on M03/M04/M05/M06/M09/M10/M18 + Michael scoping for 6.5/6.6.
+
+---
+
 ### 2026-05-05 — Module Modes · rollout-state registry + per-user overrides
 **Version:** v6.10.59
 **Built/Changed:**

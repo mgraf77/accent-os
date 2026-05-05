@@ -1,6 +1,25 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
+**Prompts (chronological, this session):**
+1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"
+2. "Look into how this can be built better and do a gap analysis for how I speak to you vs how this works and make it more customizable to the user. This should be adaptive to the user and learn from the users actions and self improve"
+3. "Do more passes on this like Ralph loop styled passes, to find how this can be improved and work better. Do some real testing and improvement loops."
+4. "Now do another test, if it passes with no errors, push it live. If not, repeat this cycle until it passes."
+5. "Build a test result matrix that scores based on usage reduction, accuracy, effectiveness, and whatever else you can think of. Then score each past and the current version based on this, then your goal is to get the highest score on the matrix as possible. Also I want this skill to essentially be a mode that Claude code can work as. Like get shit done, caveman, etc. I also want it to be auto triggered and my default communication style"
+6. "What if we add in a output style that 'mansplains' what it is doing and communicating to me, call it 'vibesplain'"
+7. "Find how you can get that score higher and then execute, get it as high as you possibly can."
+8. "do a gap analysis of the matrix itself and find ways that we can push this skill further. then optimize it to the highest score you can get to in 3 iterations. plan out the improvements and then execute"
+9. "add in the ability to let this vibe talk mode use other skills and find existing skills that could be useful to the task we are doing. instead of brute forcing through a task, this will be the 'let me find a better way' work around for that which actually finds and creates the better way"
+10. "is there a way that we can point this at my full prompt history from chat in all of my projects? the ideea of this is to get this skill up to speed and working from this point moving forward. i basically want it to backtest every prompt ive every sent to claude and learn from my communication style. also it needs to be aware of trends and when i learn and start using new topics or words so that it grows and adapts with me"
+11. "Continue from where you left off."
+12. "resume"
+13. "do we need to do anything else?"
+14. "yes"
+
+**Context:** Single multi-turn session built `skills/vibe-speak/` from scratch through 9 versions. Outcome: 23-dimension scoring matrix at 97.1%, 24-step skill spec, 9 named modes (vibe / caveman / gsd / vibesplain / pair / teach / executive / wenyan / raw), multi-user profile system, skill router with brute-force pattern detection, corpus learning with claude.ai import path, auto-activation via .claude/CLAUDE.md AUTO-EXECUTE step 1. All shipped to main. See SESSION_LOG entry for full breakdown.
+
 ### 2026-05-04 — Session resume after Codespace stop
 **Prompt:** "Read SESSION_LOG.md and BUILD_PLAN_CLAUDE.md fresh. Read BUILD_INTELLIGENCE.md and apply all lessons before touching any code. Continue autonomous build from the first incomplete [ ] item in BUILD_PLAN_CLAUDE.md that has no unresolved BLOCKS ON MICHAEL dependency. Run bash /workspaces/accent-os/scripts/status.sh first so I can see current state. Then build without stopping. Go."
 **Context:** Codespace stopped mid-session. Resuming from last clean checkpoint in BUILD_PLAN_CLAUDE.md.
