@@ -24,6 +24,7 @@ Write an entry when:
 6. **Custom level used** — Michael invented an intensity name not in the level table; record so it can be added
 7. **Filler complaint** — Michael called out a specific filler phrase Claude used
 8. **Translation push-back** — Michael asked "what does X mean?" about a translated term, suggesting the translation didn't help
+9. **Brute-force fired** — task was resolved without an existing skill match (router checked, no fit ≥0.5 confidence). Log the normalized task description so ≥3 same-target accumulations can propose a new skill. Per Step 23 + skill-router.md.
 
 ---
 
@@ -31,7 +32,7 @@ Write an entry when:
 
 ```
 ### obs-NNN — YYYY-MM-DD — [signal_type]
-- signal_type: correction | closure | autonomy | echo | drift | custom_level | filler_complaint | translation_pushback
+- signal_type: correction | closure | autonomy | echo | drift | custom_level | filler_complaint | translation_pushback | brute_force
 - signal_target: [the specific term, phrase, level, or behavior]
 - michael_said: "[exact quote]"
 - claude_was_doing: [what triggered the signal]

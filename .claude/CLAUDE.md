@@ -10,7 +10,8 @@
    e. Read last 30 days of `skills/vibe-speak/observation-log.md`.
    f. Read last 7 entries of `skills/vibe-speak/kpi-log.md` for trend display.
    g. Read `skills/vibe-speak/modes/[default-mode].md` and apply its voice rules.
-   h. SKILL.md Step 4 expanded auto-disengage rules + Step 8.5 pre-send accuracy gate apply to every response.
+   h. Read `skills/_index.md` for the AccentOS skill registry — used by Step 23 (skill router) to detect when a task could be handled by an existing skill instead of brute-forcing.
+   i. SKILL.md Step 7 expanded auto-disengage rules + Step 12 pre-send accuracy gate + Step 23 skill discovery apply to every response.
 2. Log session start to PROMPT_LOG.md: `### [date] — Auto-session start`
 3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
 4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
