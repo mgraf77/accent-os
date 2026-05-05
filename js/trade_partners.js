@@ -61,6 +61,33 @@ async function sbDeleteTradePartner(id){
   }catch(e){ console.warn('[sb] Delete trade_partner failed:', e.message); return false; }
 }
 
+async function sbBulkSaveTradePartners(rows){
+  if(!sbConfigured()) return false;
+  if(!Array.isArray(rows) || !rows.length) return 0;
+  try{
+    const now = new Date().toISOString();
+    const payload = rows.map(r => ({
+      name: r.name,
+      type: r.type || null,
+      company: r.company || null,
+      email: r.email || null,
+      phone: r.phone || null,
+      website: r.website || null,
+      address: r.address || null,
+      trade_license: r.trade_license || null,
+      preferred_terms: r.preferred_terms || null,
+      rating: r.rating == null || r.rating === '' ? null : Number(r.rating),
+      notes: r.notes || null,
+      status: r.status || 'active',
+      tags: r.tags || null,
+      updated_at: now
+    }));
+    const res = await sbFetch('/trade_partners', {method:'POST', headers:{'Prefer':'return=representation'}, body: JSON.stringify(payload)});
+    if(Array.isArray(res)) return res.length;
+    return payload.length;
+  }catch(e){ console.warn('[sb] Bulk save trade_partners failed:', e.message); return false; }
+}
+
 function tradepartners(el, act){
   act.innerHTML = `<button class="btn btn-accent btn-sm" onclick="openTradePartnerEdit(null)">+ New Partner</button>`;
   renderTradePartners(el);
@@ -96,6 +123,7 @@ function renderTradePartners(el){
     return (a.name||'').localeCompare(b.name||'');
   });
 
+  const canImport = CU && (CU.role === 'Owner' || CU.role === 'Admin' || CU.role === 'Manager' || CU.role === 'Sales');
   el.innerHTML = `
     <div class="g4 mb16">
       <div class="card stat-card"><div class="stat-label">Active Partners</div><div class="stat-value">${counts.active||0}</div><div class="stat-sub">${counts.prospect||0} prospect · ${counts.inactive||0} inactive</div></div>
@@ -103,6 +131,15 @@ function renderTradePartners(el){
       <div class="card stat-card"><div class="stat-label">Trades</div><div class="stat-value">${(byType.contractor||0)+(byType.installer||0)+(byType.electrician||0)}</div><div class="stat-sub">${byType.contractor||0} contractor · ${byType.installer||0} installer · ${byType.electrician||0} electrician</div></div>
       <div class="card stat-card"${avgRating!=null && avgRating>=8?` style="border-left:3px solid var(--green);"`:''}><div class="stat-label">Avg Rating</div><div class="stat-value">${avgRating!=null?avgRating.toFixed(1):'—'}</div><div class="stat-sub">Across ${ratedCount} rated</div></div>
     </div>
+    ${canImport ? `<div class="card mb16">
+      <div class="card-hd"><span class="card-title">Import CSV</span></div>
+      <div style="padding:14px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;">
+        <input type="file" id="tp-file" accept=".csv,text/csv" style="font-size:12px;" onchange="onTpFilePick(this)">
+        <button class="btn btn-outline btn-sm" onclick="openTpCsvPaste()">Or paste CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="downloadTpCsvTemplate()">Download template</button>
+        <span style="margin-left:auto;color:var(--text-3);">Headers: name (req), type, company, email, phone, website, address, rating, notes, status, tags</span>
+      </div>
+    </div>` : ''}
     <div class="card">
       <div class="card-hd">
         <span class="card-title">Trade Partners · ${filtered.length}${filtered.length!==TRADE_PARTNERS.length?` of ${TRADE_PARTNERS.length}`:''}</span>
@@ -246,4 +283,159 @@ async function deleteTradePartnerConfirm(partnerId){
   closeModal();
   renderTradePartners($('pg-content'));
   toast('Partner deleted','ok');
+}
+
+// ── BULK CSV IMPORT (v6.10.40) ────────────────────────────
+const _TP_TYPES = ['designer','contractor','architect','builder','installer','electrician','other'];
+const _TP_STATUSES = ['active','inactive','prospect'];
+
+function downloadTpCsvTemplate(){
+  const rows = [
+    ['name','type','company','email','phone','website','address','rating','notes','status','tags'],
+    ['Jane Designer','designer','Jane Designs LLC','jane@example.com','512-555-0142','https://janedesigns.com','Austin, TX','9','Trade discount 15% · prefers email','active','high-volume,residential'],
+    ['Bob Builder','builder','Bob Builds Inc','bob@example.com','512-555-0188','','','7','New construction focus','prospect','']
+  ];
+  if(typeof csvDownload === 'function'){
+    csvDownload(rows, `trade_partners_template_${new Date().toISOString().slice(0,10)}.csv`);
+  } else {
+    const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `trade_partners_template_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+}
+
+function openTpCsvPaste(){
+  openModal(`
+    <div class="modal-hd"><div class="modal-title">Paste CSV</div><button class="modal-x" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Paste CSV content (first row is headers)</label><textarea id="tp-csv-paste" rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;" placeholder="name,type,company,email,phone,...
+Jane Designer,designer,Jane Designs LLC,jane@example.com,..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="processTpCsvText($('tp-csv-paste').value)">Parse &amp; Preview</button>
+    </div>
+  `);
+}
+
+function onTpFilePick(input){
+  const f = input.files && input.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = e => processTpCsvText(e.target.result || '');
+  reader.onerror = () => toast('File read failed','err');
+  reader.readAsText(f);
+}
+
+function processTpCsvText(text){
+  if(!text || !text.trim()){ toast('CSV is empty','err'); return; }
+  if(typeof parseCsv !== 'function'){ toast('parseCsv helper missing','err'); return; }
+  const rows = parseCsv(text);
+  if(rows.length < 2){ toast('CSV has no data rows','err'); return; }
+  const headers = rows[0].map(h => h.trim().toLowerCase().replace(/\s+/g,'_'));
+  const aliasMap = {
+    'name':'name', 'partner_name':'name', 'contact_name':'name', 'full_name':'name',
+    'type':'type', 'partner_type':'type', 'role':'type', 'category':'type',
+    'company':'company', 'company_name':'company', 'firm':'company', 'business':'company',
+    'email':'email', 'email_address':'email', 'mail':'email', 'e-mail':'email', 'e_mail':'email',
+    'phone':'phone', 'tel':'phone', 'telephone':'phone', 'mobile':'phone', 'cell':'phone', 'phone_number':'phone',
+    'website':'website', 'url':'website', 'web':'website', 'site':'website',
+    'address':'address', 'mailing_address':'address', 'street':'address', 'addr':'address',
+    'trade_license':'trade_license', 'license':'trade_license', 'license_number':'trade_license',
+    'preferred_terms':'preferred_terms', 'terms':'preferred_terms', 'payment_terms':'preferred_terms',
+    'rating':'rating', 'score':'rating', 'rank':'rating',
+    'notes':'notes', 'note':'notes', 'comment':'notes', 'comments':'notes', 'description':'notes',
+    'status':'status', 'state':'status',
+    'tags':'tags', 'labels':'tags', 'keywords':'tags'
+  };
+  const colMap = headers.map(h => aliasMap[h] || h);
+  if(!colMap.includes('name')){ toast('CSV must include a "name" column','err'); return; }
+
+  const existingByName = new Set();
+  TRADE_PARTNERS.forEach(p => { if(p?.name) existingByName.add(String(p.name).toLowerCase().trim()); });
+
+  const parsed = [];
+  let dupes = 0;
+  let unknownTypes = new Set();
+  let unknownStatuses = new Set();
+  for(let i=1; i<rows.length; i++){
+    const r = rows[i];
+    if(r.every(x => !x || !String(x).trim())) continue;
+    const obj = {};
+    colMap.forEach((c, idx) => { if(c) obj[c] = (r[idx]||'').trim(); });
+    if(!obj.name){ continue; }
+    if(obj.type){
+      const t = obj.type.toLowerCase();
+      if(_TP_TYPES.includes(t)) obj.type = t;
+      else { unknownTypes.add(obj.type); obj.type = 'other'; }
+    }
+    if(obj.status){
+      const s = obj.status.toLowerCase();
+      if(_TP_STATUSES.includes(s)) obj.status = s;
+      else { unknownStatuses.add(obj.status); obj.status = 'active'; }
+    } else {
+      obj.status = 'active';
+    }
+    if(obj.rating){
+      const n = Number(obj.rating);
+      if(!isNaN(n) && n >= 0 && n <= 10) obj.rating = n;
+      else delete obj.rating;
+    }
+    obj._dup = existingByName.has(obj.name.toLowerCase());
+    if(obj._dup) dupes++;
+    parsed.push(obj);
+  }
+
+  if(!parsed.length){ toast('No valid rows after parsing','err'); return; }
+
+  const preview = parsed.slice(0, 10);
+  const summary = `<div style="font-size:12px;margin-bottom:10px;line-height:1.6;">
+    <strong>${parsed.length}</strong> row${parsed.length===1?'':'s'} parsed
+    ${dupes ? ` · <span style="color:var(--accent);">${dupes} likely duplicate${dupes===1?'':'s'}</span>` : ''}
+    ${unknownTypes.size ? `<br><span style="color:var(--text-3);">${unknownTypes.size} unknown type${unknownTypes.size===1?'':'s'} → "other": ${[...unknownTypes].slice(0,3).map(esc).join(', ')}${unknownTypes.size>3?'…':''}</span>` : ''}
+    ${unknownStatuses.size ? `<br><span style="color:var(--text-3);">${unknownStatuses.size} unknown status${unknownStatuses.size===1?'':'es'} → "active": ${[...unknownStatuses].slice(0,3).map(esc).join(', ')}${unknownStatuses.size>3?'…':''}</span>` : ''}
+  </div>`;
+  const tbl = `<div style="border:1px solid var(--border);border-radius:6px;max-height:300px;overflow:auto;">
+    <table style="margin:0;font-size:11px;width:100%;">
+      <thead><tr><th></th><th>Name</th><th>Type</th><th>Company</th><th>Email</th><th>Status</th></tr></thead>
+      <tbody>${preview.map(p=>`<tr style="${p._dup?'background:#fff7ed;':''}">
+        <td style="text-align:center;">${p._dup?'⚠':''}</td>
+        <td style="font-weight:500;">${esc(p.name||'')}</td>
+        <td>${esc(p.type||'')}</td>
+        <td class="sm">${esc(p.company||'')}</td>
+        <td class="sm">${esc(p.email||'')}</td>
+        <td><span class="badge bg-gray">${esc(p.status||'')}</span></td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+  const more = parsed.length > 10 ? `<div class="muted sm" style="margin-top:6px;">…and ${parsed.length-10} more.</div>` : '';
+
+  window._tpStaged = parsed;
+  openModal(`
+    <div class="modal-hd"><div class="modal-title">Trade Partner Import Preview</div><button class="modal-x" onclick="closeModal()">×</button></div>
+    <div class="modal-body">${summary}${tbl}${more}</div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="commitTpCsv()">Import ${parsed.length} partner${parsed.length===1?'':'s'}</button>
+    </div>
+  `);
+}
+
+async function commitTpCsv(){
+  const staged = window._tpStaged || [];
+  if(!staged.length){ toast('Nothing to import','err'); return; }
+  const clean = staged.map(r => { const { _dup, ...rest } = r; return rest; });
+  toast(`Importing ${clean.length} partners…`);
+  const n = await sbBulkSaveTradePartners(clean);
+  if(n === false){ toast('Import failed — table may not exist (run M24 SQL)','err'); return; }
+  if(typeof sbAuditLog==='function') sbAuditLog('trade_partners_import', 'trade_partners', {row_count: clean.length, source: 'csv'});
+  await sbLoadTradePartners();
+  delete window._tpStaged;
+  closeModal();
+  renderTradePartners($('pg-content'));
+  toast(`Imported ${typeof n==='number'?n:clean.length} partner${(typeof n==='number'?n:clean.length)===1?'':'s'}`,'ok');
 }
