@@ -305,6 +305,92 @@
 
 ---
 
+## CATEGORY: KPI DASHBOARDS — schema gaps surfaced by kpi-data-audit (2026-05-05)
+
+> Each unblocks a count of catalog KPIs. The audit identified these as the
+> highest-leverage moves to take dashboard coverage from ~19% to ~85%.
+> See `KPI_CATALOG.md` for the full catalog and `kpi-data-audit` skill
+> for re-running the audit after each completion.
+
+- [ ] **M30** — Add `customers.segment` enum (HIGHEST LEVERAGE: 22 KPIs)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M30_customers_segment.sql` from the repo. Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. Backfill: classify top 100 customers by revenue manually; rest default to 'other'.
+  - Then: paste to Claude → `M30 done — customers.segment enum added. Re-audit KPIs.`
+  - Unlocks: all 8 segment dashboards (walk-in, electrician, national, designer, new-home, hospitality, multifamily, commercial, DIY); 22 catalog KPIs
+
+- [ ] **M31** — Decide products source-of-truth + add cost column (8 KPIs after M04)
+  - Where: BC admin + `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Decision: BigCommerce-native (simpler) vs Supabase mirror (more flexible). See file comments in `sql/M31_products_cost.sql`.
+  - Action: depends on decision. If Path B: uncomment + run the products mirror block.
+  - Then: paste to Claude → `M31 done — products via [BC|Supabase mirror]. Margins computable.`
+  - Unlocks: F3, F4, F5, P4, P5, P10, H2, S-OS12 (gross margin / EBITDA / margin-by-product)
+  - Blocked on: M04 (BC API credentials)
+
+- [ ] **M32** — Run `pipeline_deals_stage_history` schema (5 KPIs)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action: copy `sql/M32_deals_stage_history.sql` → paste → run. The trigger writes history on every stage update going forward (no backfill possible).
+  - Then: paste to Claude → `M32 done — stage history live. Pipeline analytics unblocked.`
+  - Unlocks: L3 (lead→opportunity), L4 (stage-to-stage), L5 (pipeline aging), L6 (win rate by stage), partial L7
+
+- [ ] **M33** — Run `pipeline_deals.lost_reason` enum (1 KPI, very cheap)
+  - Where: SQL Editor
+  - Action: copy `sql/M33_deals_lost_reason.sql` → run.
+  - Then: paste to Claude → `M33 done — lost_reason ready. Train sales to fill it on lost deals.`
+  - Unlocks: L7 (loss-reason distribution); coaching insights for sales manager
+
+- [ ] **M34** — Decide invoices/payments source + run mirror schema (4 KPIs)
+  - Where: SQL Editor (after deciding source)
+  - Decision: Windward (M03 + M11) as source-of-truth + Supabase mirror, OR Supabase-native billing.
+  - Action: copy `sql/M34_invoices_payments.sql` → run as-is for the schema. Sync logic comes later.
+  - Then: paste to Claude → `M34 done — AR tables live. AR aging dashboard unblocked.`
+  - Unlocks: F8 (DSO), F12 (AR aging), C-EL3 (Net 30/60 compliance), V9 (vendor invoice accuracy)
+  - Blocked on: M03 + M10 + M11 if Windward path
+
+- [ ] **M35** — Run `employees.quota + hire_date + terminated_at` (7 KPIs)
+  - Where: SQL Editor
+  - Action: copy `sql/M35_employees_quota_dates.sql` → run. Backfill quota from latest comp plan; hire_date from HR records.
+  - Then: paste to Claude → `M35 done — employee tenure + quota tracked. Sales Manager dashboard unblocked.`
+  - Unlocks: S-OS2 (quota attainment), MGR1 (team quota), MGR2 (pipeline coverage), H3 (turnover), H6 (tenure), H7 (ramp time)
+
+- [ ] **M36** — Run `service_tickets` schema (5 KPIs)
+  - Where: SQL Editor
+  - Action: copy `sql/M36_service_tickets.sql` → run.
+  - Then: paste to Claude → `M36 done — service ticket lifecycle live.`
+  - Unlocks: X1 (FCR), X2 (FRT), X3 (AHT), X11 (complaint rate), X12 (escalation rate)
+
+- [ ] **M37** — Pick survey tool + run `survey_responses` schema (3 KPIs)
+  - Where: pick tool → SQL Editor → wire webhook
+  - Decision: Delighted, Typeform, Google Forms, or BC native reviews.
+  - Action: copy `sql/M37_survey_responses.sql` → run. Configure webhook from chosen tool to Supabase.
+  - Then: paste to Claude → `M37 done — survey tool [name] wired. CSAT/NPS pipeline live.`
+  - Unlocks: X4 (CSAT), X5 (NPS), H8 (eNPS)
+
+- [ ] **M38** — Run `recurring_contracts` schema (6 KPIs)
+  - Where: SQL Editor
+  - Action: copy `sql/M38_recurring_contracts.sql` → run. Backfill from existing national-account contracts.
+  - Then: paste to Claude → `M38 done — recurring contracts live. National-account NRR dashboard unblocked.`
+  - Unlocks: S-NA1 (NRR), S-NA2 (GRR), S-NA3 (expansion attach), C-NA1, C-NA2 (account health), C-NA3 (multi-location coverage)
+
+- [ ] **M39** — Verify/extend `vendors` table (~14 KPIs transitively)
+  - Where: SQL Editor + Supabase Table Editor
+  - Action:
+    1. Open Table Editor → check if `vendors` exists. (Audit found vendor_scores references it but no CREATE TABLE in M*.sql.)
+    2. Either way, run `sql/M39_vendors_verify.sql` — it's idempotent and ADD COLUMN IF NOT EXISTS for the full schema.
+    3. Backfill brand_category, region, payment_terms for top 50 vendors.
+  - Then: paste to Claude → `M39 done — vendors fully specced. vendor-cascade enriched.`
+  - Unlocks: V2 (concentration risk), V5 (revenue contribution), V10 (supplier diversity); enriches vendor-cascade and vendor-risk-register
+
+---
+
+## CATEGORY: KPI DASHBOARDS — also-easy already-written files (just run them)
+
+These M-tasks already exist above (M24/M27/M29). The audit confirms running them unblocks 14 KPIs combined with zero new design work. Promote in priority.
+
+---
+
 ## How to use this file
 
 When Michael has time:

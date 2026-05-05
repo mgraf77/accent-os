@@ -7,6 +7,26 @@ This catalog is the source-of-truth for every KPI tracked across AccentOS dashbo
 
 ⚠ = requires schema addition or external integration before computable.
 
+## Schema naming notes (added 2026-05-05 post-audit)
+
+The catalog uses these short names in formulas; they map to actual tables:
+
+| Catalog short name | Actual Supabase table | Notes |
+|---|---|---|
+| `deals` | `pipeline_deals` | the M02 deals table |
+| `inventory` | `inventory_items` | the M22 inventory table |
+| `vendors` | `vendors` | exists pre-M01; verify in production |
+| `products` | (decision pending) | likely BigCommerce-native via M04, OR Supabase mirror |
+| `activity_feed` | `customer_interactions` | M02 |
+| `bills` | (not built) | accounting integration pending |
+| `expenses` | (not built) | accounting integration pending |
+
+Schema infrastructure already deployed (via M02) that's catalog-relevant:
+- `kpi_definitions`, `kpi_snapshots` — KPI tracking is ready; the
+  `kpi-snapshot` skill (in future-builds.md) is unblocked.
+- `goals` — quota/target tracking infrastructure exists.
+- `alerts`, `telemetry_events`, `build_events` — observability exists.
+
 ---
 
 ## Group F — Financial / executive (15)
