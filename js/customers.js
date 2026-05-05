@@ -292,6 +292,7 @@ function renderCustomers(el){
             ${['residential','trade','designer','contractor','commercial','other'].map(t=>`<option value="${t}" ${custFilter.type===t?'selected':''}>${t}</option>`).join('')}
           </select>
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'customers',currentFilter:custFilter,applyFn:()=>renderCustomers($('pg-content')),fields:['q','segment','type'],resetState:{q:'',segment:'',type:''}}):''}
+          ${typeof colMenuButton==='function'?colMenuButton('customers',[{key:'type',label:'Type'},{key:'segment',label:'Segment'},{key:'recency',label:'Last activity'},{key:'monetary',label:'12-mo $'},{key:'frequency',label:'Visits'},{key:'email',label:'Email'},{key:'phone',label:'Phone'}],'_custReRender'):''}
         </div>
       </div>
       ${typeof bulkSelBar==='function'?bulkSelBar('customers'):''}
@@ -299,7 +300,7 @@ function renderCustomers(el){
         <table>
           <thead>
             <tr>
-              <th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('customers',filtered.map(x=>x.id)):''}</th><th>Name</th><th>Type</th><th>Segment</th><th>Last activity</th><th>12-mo $</th><th>Visits</th><th>Email</th><th>Phone</th>
+              <th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('customers',filtered.map(x=>x.id)):''}</th><th>Name</th><th class="${typeof colCls==='function'?colCls('customers','type'):''}">Type</th><th class="${typeof colCls==='function'?colCls('customers','segment'):''}">Segment</th><th class="${typeof colCls==='function'?colCls('customers','recency'):''}">Last activity</th><th class="${typeof colCls==='function'?colCls('customers','monetary'):''}">12-mo $</th><th class="${typeof colCls==='function'?colCls('customers','frequency'):''}">Visits</th><th class="${typeof colCls==='function'?colCls('customers','email'):''}">Email</th><th class="${typeof colCls==='function'?colCls('customers','phone'):''}">Phone</th>
             </tr>
           </thead>
           <tbody>
@@ -307,20 +308,22 @@ function renderCustomers(el){
               const r = c._rfm;
               const recDisp = r.recency==null ? '<span class="muted">—</span>' : (r.recency<=30?`<span style="color:var(--green);">${r.recency}d</span>`:r.recency<=180?`<span style="color:var(--text-2);">${r.recency}d</span>`:`<span style="color:var(--accent);">${r.recency}d</span>`);
               const canEdit = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
-              const editCell = (val, field, width) => {
-                if(!canEdit) return `<td class="sm">${esc(val||'')}</td>`;
-                return `<td class="sm" style="padding:2px 6px;" onclick="event.stopPropagation();"><input type="text" value="${esc(val||'')}" data-id="${c.id}" data-field="${field}" data-orig="${esc(val||'')}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitCustomerCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;border-radius:4px;" placeholder="—" title="Click to edit ${field}"></td>`;
+              const cCl = (k) => typeof colCls==='function' ? colCls('customers',k) : '';
+              const editCell = (val, field, width, colKey) => {
+                const cls = cCl(colKey);
+                if(!canEdit) return `<td class="sm ${cls}">${esc(val||'')}</td>`;
+                return `<td class="sm ${cls}" style="padding:2px 6px;" onclick="event.stopPropagation();"><input type="text" value="${esc(val||'')}" data-id="${c.id}" data-field="${field}" data-orig="${esc(val||'')}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitCustomerCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;border-radius:4px;" placeholder="—" title="Click to edit ${field}"></td>`;
               };
               return `<tr style="cursor:pointer;" onclick="openCustomerDetail('${c.id}')">
                 <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('customers',c.id):''}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(c.name||'(unnamed)')}</td>
-                <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc(c.type||'—')}</span></td>
-                <td>${segmentBadge(r.segment)}</td>
-                <td class="sm">${recDisp}</td>
-                <td class="mono fw6">${r.monetary>0?'$'+Math.round(r.monetary).toLocaleString():'<span class="muted">—</span>'}</td>
-                <td class="sm">${r.frequency||'<span class="muted">0</span>'}</td>
-                ${editCell(c.email, 'email', 180)}
-                ${editCell(c.phone, 'phone', 120)}
+                <td class="${cCl('type')}"><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc(c.type||'—')}</span></td>
+                <td class="${cCl('segment')}">${segmentBadge(r.segment)}</td>
+                <td class="sm ${cCl('recency')}">${recDisp}</td>
+                <td class="mono fw6 ${cCl('monetary')}">${r.monetary>0?'$'+Math.round(r.monetary).toLocaleString():'<span class="muted">—</span>'}</td>
+                <td class="sm ${cCl('frequency')}">${r.frequency||'<span class="muted">0</span>'}</td>
+                ${editCell(c.email, 'email', 180, 'email')}
+                ${editCell(c.phone, 'phone', 120, 'phone')}
               </tr>`;
             }).join('')}
           </tbody>
@@ -335,6 +338,8 @@ function renderCustomers(el){
     ] : []);
   }
 }
+
+function _custReRender(){ renderCustomers($('pg-content')); }
 
 async function doBulkCustomerDelete(ids){
   if(!ids?.length) return;

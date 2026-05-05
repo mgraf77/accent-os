@@ -272,11 +272,12 @@ function renderMktCampaigns(c){
           <button class="btn btn-accent btn-sm" onclick="openCampaignEdit(null)">+ New</button>
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('mktcampaigns'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Dates</th><th>Budget</th><th>Spent</th><th>Revenue</th><th>ROI</th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('mktcampaigns',filtered.map(x=>x.id)):''}</th><th>Name</th><th>Type</th><th>Status</th><th>Dates</th><th>Budget</th><th>Spent</th><th>Revenue</th><th>ROI</th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${MARKETING_CAMPAIGNS.length===0?'No campaigns yet. Click "+ New" to log one (run M29 SQL first if save fails).':'No campaigns match the current filter.'}</td></tr>` : filtered.map(r => {
+            ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${MARKETING_CAMPAIGNS.length===0?'No campaigns yet. Click "+ New" to log one (run M29 SQL first if save fails).':'No campaigns match the current filter.'}</td></tr>` : filtered.map(r => {
               const sb = {planned:'bg-gray', active:'bg-green', complete:'bg-blue', cancelled:'bg-gray', paused:'bg-yellow'}[r.status]||'bg-gray';
               const spent = Number(r.spent)||0;
               const rev = Number(r.revenue_attributed)||0;
@@ -288,6 +289,7 @@ function renderMktCampaigns(c){
                 ? `<td onclick="event.stopPropagation();"><select data-id="${r.id}" data-field="status" data-orig="${esc(r.status)}" onchange="commitCampaignCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${campStatusOpts.map(s=>`<option value="${s}" ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(r.status)}</span></td>`;
               return `<tr style="cursor:pointer;${['cancelled','complete'].includes(r.status)?'opacity:0.7;':''}" onclick="openCampaignEdit('${r.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('mktcampaigns',r.id):''}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(r.name)}</td>
                 <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc((r.type||'').replace('_',' '))}</span></td>
                 ${campStatusCell}
@@ -303,6 +305,44 @@ function renderMktCampaigns(c){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const isSenior = CU && ['Owner','Admin','Manager'].includes(CU.role);
+    bulkSelRegister('mktcampaigns', isSenior ? [
+      {id:'cancel', label:'Mark cancelled', color:'outline', confirm:'Cancel {n} campaigns?', fn: ids => doBulkCampaignStatus(ids,'cancelled')},
+      {id:'complete', label:'Mark complete', color:'outline', fn: ids => doBulkCampaignStatus(ids,'complete')},
+      {id:'delete', label:'🗑 Delete', color:'outline', confirm:'Delete {n} campaigns? This cannot be undone.', fn: doBulkCampaignDelete}
+    ] : []);
+  }
+}
+
+async function doBulkCampaignStatus(ids, newStatus){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const r = MARKETING_CAMPAIGNS.find(x => x.id === id);
+    if(!r){ fail++; continue; }
+    r.status = newStatus;
+    const saved = await sbSaveMarketingCampaign(r);
+    if(saved) ok++; else fail++;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('campaigns_bulk_status', 'marketing', {count: ok, failed: fail, new_status: newStatus});
+  bulkSelClear('mktcampaigns');
+  marketing($('pg-content'));
+  toast(`${ok} updated${fail?', '+fail+' failed':''}`, fail?'err':'ok');
+}
+
+async function doBulkCampaignDelete(ids){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const r = await sbDeleteMarketingCampaign(id);
+    if(r) ok++; else fail++;
+  }
+  MARKETING_CAMPAIGNS = MARKETING_CAMPAIGNS.filter(x => !ids.includes(x.id));
+  if(typeof sbAuditLog==='function') sbAuditLog('campaigns_bulk_delete', 'marketing', {count: ok, failed: fail});
+  bulkSelClear('mktcampaigns');
+  marketing($('pg-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 function openCampaignEdit(campaignId){

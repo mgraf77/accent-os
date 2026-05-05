@@ -141,12 +141,13 @@ function renderInventory(container) {
           </select>` : ''}
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;"><input type="checkbox" ${invFilter.lowOnly?'checked':''} onchange="invFilter.lowOnly=this.checked;renderInventory($('vendor-section-content'))"> Low stock only</label>
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'inventory',currentFilter:invFilter,applyFn:()=>renderInventory($('vendor-section-content')),fields:['q','vendor','lowOnly','location'],resetState:{q:'',vendor:'',lowOnly:false,location:''}}):''}
+          ${typeof colMenuButton==='function'?colMenuButton('inventory',[{key:'vendor',label:'Vendor'},{key:'description',label:'Description'},{key:'reorder',label:'Reorder'},{key:'location',label:'Location'},{key:'bin',label:'Bin'},{key:'cost',label:'Cost'},{key:'list',label:'List'}],'_invReRender'):''}
         </div>
       </div>
       ${typeof bulkSelBar==='function'?bulkSelBar('inventory'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 460px);overflow-y:auto;">
         <table>
-          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('inventory',filtered.map(x=>x.id)):''}</th><th>SKU</th><th>Vendor</th><th>Description</th><th>On Hand</th><th>Avail</th><th>Reorder</th><th>Location</th><th>Bin</th><th>Cost</th><th>List</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('inventory',filtered.map(x=>x.id)):''}</th><th>SKU</th><th class="${typeof colCls==='function'?colCls('inventory','vendor'):''}">Vendor</th><th class="${typeof colCls==='function'?colCls('inventory','description'):''}">Description</th><th>On Hand</th><th>Avail</th><th class="${typeof colCls==='function'?colCls('inventory','reorder'):''}">Reorder</th><th class="${typeof colCls==='function'?colCls('inventory','location'):''}">Location</th><th class="${typeof colCls==='function'?colCls('inventory','bin'):''}">Bin</th><th class="${typeof colCls==='function'?colCls('inventory','cost'):''}">Cost</th><th class="${typeof colCls==='function'?colCls('inventory','list'):''}">List</th><th></th></tr></thead>
           <tbody>
             ${filtered.length === 0 ? `<tr><td colspan="12" style="text-align:center;padding:36px;color:var(--text-3);">${totalItems===0?'No inventory yet. Import a CSV above (template button shows the header schema).':'No SKUs match the current filter.'}</td></tr>` : filtered.map(r => _invRow(r)).join('')}
           </tbody>
@@ -193,6 +194,7 @@ function _invRow(r){
   const canEditCost = isSenior;            // cost is sensitive — senior only
   const canEditList = isSenior || role === 'Sales';
   const canEditPlace = isSenior || role === 'Warehouse';
+  const colCl = (k) => typeof colCls==='function' ? colCls('inventory',k) : '';
   const cell = (val, field, opts={}) => {
     const editable = opts.editable !== false;
     const display = opts.display ?? (val == null ? '—' : String(val));
@@ -201,29 +203,33 @@ function _invRow(r){
     const width = opts.width || '64';
     const isText = !!opts.text;
     const isCurrency = !!opts.currency;
+    const colKey = opts.colKey || '';
+    const extraCls = colKey ? colCl(colKey) : '';
     const editVal = val == null ? '' : (isCurrency ? Number(val).toFixed(2) : String(val));
-    if(!editable) return `<td class="${isText?'sm':'mono sm'}">${display}</td>`;
+    if(!editable) return `<td class="${(isText?'sm':'mono sm')+(extraCls?' '+extraCls:'')}">${display}</td>`;
     const inputType = isText ? 'text' : 'number';
     const stepAttr = isText ? '' : ` step="${step}"`;
     const align = isText ? 'left' : 'right';
-    const cls = isText ? 'sm' : 'mono sm';
+    const cls = (isText ? 'sm' : 'mono sm')+(extraCls?' '+extraCls:'');
     return `<td class="${cls}" style="padding:2px 6px;"><input type="${inputType}"${stepAttr} value="${esc(editVal)}" placeholder="${esc(placeholder)}" data-id="${r.id}" data-field="${field}" data-orig="${esc(editVal)}" data-currency="${isCurrency?'1':''}" data-text="${isText?'1':''}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitInventoryCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;text-align:${align};border-radius:4px;" title="Click to edit ${field.replace(/_/g,' ')}"></td>`;
   };
   return `<tr style="${isLow?'background:rgba(239,68,68,0.06);':''}" data-row-id="${r.id}">
     <td>${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('inventory',r.id):''}</td>
     <td class="mono fw6 sm">${esc(r.sku||'')}</td>
-    <td class="sm">${esc(r.vendor_name||'—')}</td>
-    <td class="sm" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.description||'')}">${esc(r.description||'')}</td>
+    <td class="sm ${colCl('vendor')}">${esc(r.vendor_name||'—')}</td>
+    <td class="sm ${colCl('description')}" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.description||'')}">${esc(r.description||'')}</td>
     ${cell(qoh, 'qty_on_hand', {editable: canEditQty, display: String(qoh)})}
     <td class="mono sm" data-avail-for="${r.id}" style="${isLow?'color:var(--accent);font-weight:700;':''}">${avail}</td>
-    ${cell(reorder, 'reorder_point', {editable: canEditReorder, display: reorder!=null?String(reorder):'—', placeholder:'—'})}
-    ${cell(r.location, 'location', {editable: canEditPlace, text:true, width:'90', placeholder:'—', display: r.location?esc(r.location):'—'})}
-    ${cell(r.bin, 'bin', {editable: canEditPlace, text:true, width:'70', placeholder:'—', display: r.bin?esc(r.bin):'—'})}
-    ${cell(r.unit_cost, 'unit_cost', {editable: canEditCost, display: r.unit_cost!=null?'$'+Number(r.unit_cost).toFixed(2):'—', currency:true, step:'0.01', width:'74'})}
-    ${cell(r.list_price, 'list_price', {editable: canEditList, display: r.list_price!=null?'$'+Number(r.list_price).toFixed(2):'—', currency:true, step:'0.01', width:'74'})}
+    ${cell(reorder, 'reorder_point', {editable: canEditReorder, display: reorder!=null?String(reorder):'—', placeholder:'—', colKey:'reorder'})}
+    ${cell(r.location, 'location', {editable: canEditPlace, text:true, width:'90', placeholder:'—', display: r.location?esc(r.location):'—', colKey:'location'})}
+    ${cell(r.bin, 'bin', {editable: canEditPlace, text:true, width:'70', placeholder:'—', display: r.bin?esc(r.bin):'—', colKey:'bin'})}
+    ${cell(r.unit_cost, 'unit_cost', {editable: canEditCost, display: r.unit_cost!=null?'$'+Number(r.unit_cost).toFixed(2):'—', currency:true, step:'0.01', width:'74', colKey:'cost'})}
+    ${cell(r.list_price, 'list_price', {editable: canEditList, display: r.list_price!=null?'$'+Number(r.list_price).toFixed(2):'—', currency:true, step:'0.01', width:'74', colKey:'list'})}
     <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="deleteInventoryItem('${r.id}')">×</button></td>
   </tr>`;
 }
+
+function _invReRender(){ renderInventory($('vendor-section-content')); }
 
 function downloadInvCsvTemplate(){
   const rows = [

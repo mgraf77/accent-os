@@ -360,12 +360,14 @@ function renderAlerts(el){
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'alerts',currentFilter:alertFilter,applyFn:()=>renderAlerts($('pg-content')),fields:['q','severity','status'],resetState:{q:'',severity:'',status:'unread'}}):''}
         </div>
       </div>
+      <div style="padding:0 18px;">${typeof bulkSelBar==='function'?bulkSelBar('alerts'):''}</div>
       <div style="max-height:calc(100vh - 360px);overflow-y:auto;">
         ${filtered.length === 0 ? `<div style="padding:40px;text-align:center;color:var(--text-3);">${total===0?'No alerts yet. Click ↻ Refresh to run the heuristics over your current data.':'No alerts match the current filter.'}</div>` : filtered.map(a => {
           const sevColor = {urgent:'var(--accent)', warn:'var(--yellow)', info:'var(--blue)'}[a.severity] || 'var(--text-3)';
           const sevIcon = {urgent:'!', warn:'⚠', info:'ⓘ'}[a.severity] || '•';
           const isUnread = a.status === 'unread';
           return `<div style="padding:14px 18px;border-bottom:1px solid var(--border);${isUnread?'background:rgba(59,130,246,0.04);':''}display:flex;align-items:flex-start;gap:14px;">
+            <span onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;flex-shrink:0;">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('alerts',a.id):''}</span>
             <span style="width:30px;height:30px;border-radius:50%;background:${sevColor};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">${sevIcon}</span>
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -387,6 +389,31 @@ function renderAlerts(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    bulkSelRegister('alerts', [
+      {id:'mark_read', label:'Mark read', color:'outline', fn: ids => doBulkAlertStatus(ids,'read')},
+      {id:'mark_actioned', label:'✓ Done', color:'outline', fn: ids => doBulkAlertStatus(ids,'actioned')},
+      {id:'dismiss', label:'Dismiss', color:'outline', fn: ids => doBulkAlertStatus(ids,'dismissed')}
+    ]);
+  }
+}
+
+async function doBulkAlertStatus(ids, newStatus){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const r = await sbUpdateAlertStatus(id, newStatus);
+    if(r){
+      ok++;
+      const a = ALERTS.find(x => x.id === id);
+      if(a){ a.status = newStatus; if(newStatus==='read'||newStatus==='actioned') a.read_at = new Date().toISOString(); }
+    } else fail++;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('alerts_bulk_status', 'alerts', {count: ok, failed: fail, new_status: newStatus});
+  bulkSelClear('alerts');
+  renderAlerts($('pg-content'));
+  if(typeof refreshAlertsBell === 'function') refreshAlertsBell();
+  toast(`${ok} updated${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 async function alertSetStatus(alertId, newStatus){

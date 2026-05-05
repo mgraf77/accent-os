@@ -190,11 +190,12 @@ function renderPOs(el){
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'purchaseorders',currentFilter:poFilter,applyFn:()=>renderPOs($('pg-content')),fields:['q','status','vendor'],resetState:{q:'',status:'',vendor:''}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('purchaseorders'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th>PO #</th><th>Vendor</th><th>Status</th><th>Order date</th><th>Expected</th><th>Lines</th><th>Total</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('purchaseorders',filtered.map(x=>x.id)):''}</th><th>PO #</th><th>Vendor</th><th>Status</th><th>Order date</th><th>Expected</th><th>Lines</th><th>Total</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${POS.length===0?'No purchase orders yet. Click "+ New PO" to create one (run M23 SQL first if save fails).':'No POs match the current filter.'}</td></tr>` : filtered.map(p => {
+            ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${POS.length===0?'No purchase orders yet. Click "+ New PO" to create one (run M23 SQL first if save fails).':'No POs match the current filter.'}</td></tr>` : filtered.map(p => {
               const sb = {draft:'bg-gray', sent:'bg-blue', confirmed:'bg-blue', partial:'bg-yellow', received:'bg-green', cancelled:'bg-gray'}[p.status] || 'bg-gray';
               const lineCount = (PO_LINES[p.id]||[]).length;
               const expCell = p.expected_date ? (() => {
@@ -208,6 +209,7 @@ function renderPOs(el){
                 ? `<td onclick="event.stopPropagation();"><select data-id="${p.id}" data-field="status" data-orig="${esc(p.status)}" onchange="commitPOCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${poStatusOpts.map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(p.status)}</span></td>`;
               return `<tr style="cursor:pointer;${['received','cancelled'].includes(p.status)?'opacity:0.6;':''}" onclick="openPOEdit('${p.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('purchaseorders',p.id):''}</td>
                 <td class="mono fw6 sm">${esc(p.po_number||'—')}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(p.vendor_name||'—')}</td>
                 ${poStatusCell}
@@ -223,6 +225,45 @@ function renderPOs(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const isSenior = CU && ['Owner','Admin','Manager'].includes(CU.role);
+    bulkSelRegister('purchaseorders', isSenior ? [
+      {id:'cancel', label:'Mark cancelled', color:'outline', confirm:'Cancel {n} POs?', fn: ids => doBulkPOStatus(ids,'cancelled')},
+      {id:'sent', label:'Mark sent', color:'outline', fn: ids => doBulkPOStatus(ids,'sent')},
+      {id:'delete', label:'🗑 Delete', color:'outline', confirm:'Delete {n} POs (and their line items)? This cannot be undone.', fn: doBulkPODelete}
+    ] : []);
+  }
+}
+
+async function doBulkPOStatus(ids, newStatus){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const po = POS.find(x => x.id === id);
+    if(!po){ fail++; continue; }
+    po.status = newStatus;
+    const r = await sbSavePurchaseOrder(po, PO_LINES[id] || []);
+    if(r) ok++; else fail++;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('po_bulk_status', 'purchase_orders', {count: ok, failed: fail, new_status: newStatus});
+  bulkSelClear('purchaseorders');
+  renderPOs($('pg-content'));
+  toast(`${ok} updated${fail?', '+fail+' failed':''}`, fail?'err':'ok');
+}
+
+async function doBulkPODelete(ids){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const r = await sbDeletePurchaseOrder(id);
+    if(r) ok++; else fail++;
+  }
+  POS = POS.filter(p => !ids.includes(p.id));
+  ids.forEach(id => { delete PO_LINES[id]; });
+  if(typeof sbAuditLog==='function') sbAuditLog('po_bulk_delete', 'purchase_orders', {count: ok, failed: fail});
+  bulkSelClear('purchaseorders');
+  renderPOs($('pg-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 let _poEditLines = [];
