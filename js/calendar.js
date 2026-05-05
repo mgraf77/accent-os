@@ -60,6 +60,7 @@ function calendar(el, act){
   }
   act.innerHTML = `
     <button class="btn btn-outline btn-sm" onclick="calView='${calView==='month'?'list':'month'}';renderCalendar($('pg-content'))">${calView==='month'?'☰ List':'▦ Month'}</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCalendarIcs()" title="Export upcoming events as .ics for Google Cal / Outlook">⬇ .ics</button>
     <button class="btn btn-accent btn-sm" onclick="openCalendarEdit(null)">+ New Event</button>
   `;
   renderCalendar(el);
@@ -305,4 +306,94 @@ async function deleteCalendarEventConfirm(eventId){
   closeModal();
   renderCalendar($('pg-content'));
   toast('Event deleted','ok');
+}
+
+function _icsEscape(s){
+  return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+}
+function _icsDt(iso, allDay){
+  if(!iso) return null;
+  const d = new Date(iso);
+  if(isNaN(d)) return null;
+  if(allDay){
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const dd = String(d.getUTCDate()).padStart(2,'0');
+    return `${y}${m}${dd}`;
+  }
+  return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+}
+function _icsFold(line){
+  // RFC 5545: lines >75 octets must be folded with CRLF + space.
+  if(line.length <= 75) return line;
+  const out = [];
+  let i = 0;
+  while(i < line.length){
+    out.push((i===0?'':' ') + line.slice(i, i + (i===0?75:74)));
+    i += (i===0?75:74);
+  }
+  return out.join('\r\n');
+}
+
+function exportCalendarIcs(){
+  if(!CAL_EVENTS || !CAL_EVENTS.length){ toast('No events to export','warn'); return; }
+  const now = new Date();
+  const horizon = new Date(now.getTime() - 30*24*60*60*1000); // include events from past 30d
+  const upcoming = CAL_EVENTS.filter(e => {
+    const s = new Date(e.starts_at);
+    return !isNaN(s) && s >= horizon;
+  }).sort((a,b) => new Date(a.starts_at) - new Date(b.starts_at));
+  if(!upcoming.length){ toast('No upcoming events to export','warn'); return; }
+
+  const dtstamp = _icsDt(now.toISOString(), false);
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//AccentOS//Calendar Export//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:AccentOS Calendar',
+    'X-WR-TIMEZONE:UTC'
+  ];
+  for(const e of upcoming){
+    const dtStart = _icsDt(e.starts_at, e.all_day);
+    if(!dtStart) continue;
+    let dtEnd = _icsDt(e.ends_at, e.all_day);
+    if(!dtEnd){
+      const s = new Date(e.starts_at);
+      if(e.all_day){
+        s.setUTCDate(s.getUTCDate()+1);
+        dtEnd = _icsDt(s.toISOString(), true);
+      } else {
+        s.setHours(s.getHours()+1);
+        dtEnd = _icsDt(s.toISOString(), false);
+      }
+    }
+    const uid = `${e.id || ('ev-'+Math.random().toString(36).slice(2,10))}@accentos`;
+    const startTag = e.all_day ? `DTSTART;VALUE=DATE:${dtStart}` : `DTSTART:${dtStart}`;
+    const endTag = e.all_day ? `DTEND;VALUE=DATE:${dtEnd}` : `DTEND:${dtEnd}`;
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${uid}`);
+    lines.push(`DTSTAMP:${dtstamp}`);
+    lines.push(startTag);
+    lines.push(endTag);
+    lines.push(_icsFold('SUMMARY:' + _icsEscape(e.title || '(untitled)')));
+    if(e.description) lines.push(_icsFold('DESCRIPTION:' + _icsEscape(e.description)));
+    if(e.location) lines.push(_icsFold('LOCATION:' + _icsEscape(e.location)));
+    if(e.url) lines.push(_icsFold('URL:' + _icsEscape(e.url)));
+    if(e.category) lines.push('CATEGORIES:' + _icsEscape(String(e.category).toUpperCase()));
+    lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+
+  const ics = lines.join('\r\n') + '\r\n';
+  const stamp = now.toISOString().slice(0,10);
+  const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `accentos-calendar-${stamp}.ics`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+  if(typeof sbAuditLog==='function') sbAuditLog('cal_export_ics', 'calendar', {count: upcoming.length});
+  toast(`Exported ${upcoming.length} event${upcoming.length===1?'':'s'} to .ics`, 'ok');
 }
