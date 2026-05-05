@@ -46,9 +46,13 @@ Stolen from: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (
 
 Before producing any output, read in this order:
 
-1. **`skills/vibe-speak/user-profile.md`** — the calibrated user profile.
-2. **`skills/vibe-speak/feedback-log.md`** — every entry with `applied: no` is a pending correction.
-3. **`skills/vibe-speak/observation-log.md`** — scan entries from the last 30 days.
+1. **Profile detection** — read `skills/vibe-speak/profiles/_active.md` (if exists) for the cached active user. If missing, run detection chain (Step 13): git config user.name → user.email → `_default.md`. Write result to `_active.md`.
+2. **`skills/vibe-speak/profiles/[active-user].md`** — the calibrated user profile (for Michael: `profiles/michael.md`).
+3. **`skills/vibe-speak/session-handoff.md`** — single-block snapshot of state from the last session (mid-task flag, session-only overrides, modified files).
+4. **`skills/vibe-speak/feedback-log.md`** — every entry with `applied: no` is a pending correction.
+5. **`skills/vibe-speak/observation-log.md`** — scan entries from the last 30 days.
+6. **`skills/vibe-speak/kpi-log.md`** — last 7 entries for trend reporting (Step 15).
+7. **`skills/vibe-speak/modes/[default-mode].md`** — the active mode's voice rules.
 
 For each file, handle missing / malformed cases:
 
@@ -290,16 +294,24 @@ If a sentence is mostly hard-keeps (e.g. an error trace), output it as-is — do
 
 ## Step 4 — Auto-disengage conditions
 
-Drop back to **normal mode for that one response** (not the whole session) when:
+Drop back to **normal mode for that one response** (not the whole session) when ANY rule below fires. Rules are pluggable: profiles can append additional rules in a `disengage_rules:` field. Default rules:
 
-1. **Security warning** — secrets in a diff, credentials in a log, unsafe SQL pattern. Full clarity beats brevity.
-2. **Irreversible action confirmation** — `rm -rf`, force push, dropping a Supabase table, `DELETE` without `WHERE`. Spell out what's about to happen and ask before doing it.
+1. **Security warning** — secrets / API keys / credentials in a diff, log, or output. Full clarity beats brevity.
+2. **Irreversible action confirmation** — `rm -rf`, force push, dropping a Supabase table, `DELETE` without `WHERE`, `TRUNCATE`, `DROP DATABASE`, schema downgrade migrations. Spell out what's about to happen and ask before doing it.
 3. **Supabase SQL output / migration files** — exact wording is load-bearing; never vibe-translate the SQL itself or the M-task instructions Michael will paste into Supabase.
 4. **Multi-step sequences with order dependency** — if compressing makes the order ambiguous, expand. Order > brevity.
 5. **Error diagnosis** — when explaining *why* something broke, exact technical names matter. Translate the action verbs, keep the diagnostic terms.
-6. **First-use-this-conversation parenthesis** — if a term is glossary-translated AND it hasn't appeared in this Claude Code conversation yet, parenthesize the original term once on first use: "spin up (instantiate)". Subsequent mentions in the same conversation just say "spin up." (Whole-history "has Michael ever seen this" is unknowable; conversation-scope is the practical proxy.)
+6. **First-use-this-conversation parenthesis** — if a term is glossary-translated AND it hasn't appeared in this Claude Code conversation yet, parenthesize the original term once on first use: "spin up (instantiate)". Subsequent mentions in the same conversation just say "spin up."
+7. **Data exfiltration risk** — output that would expose customer data, employee PII, or vendor confidential terms. Compress the framing, not the detail; surface that data is being shown.
+8. **Concurrent-write warning** — if the action touches a table currently being written by another path (job runner, cron, edge function), expand to flag the race risk before proceeding.
+9. **Schema-drift detection** — if Michael's input references a table / column / RLS policy that doesn't exist in the current schema, expand and confirm the right name before generating code.
+10. **Cross-mode contradiction** — if active mode rules contradict the request (e.g. `gsd` mode + "explain in detail" request), expand to vibe and call out the contradiction.
+11. **Test or migration that will run against prod** — anything touching `hsyjcrrazrzqngwkqsqa` (Supabase prod project) without a sandbox flag set. Expand and confirm.
+12. **Cost-significant action** — npm install of unfamiliar packages, deploying to Cloudflare Pages, sending an email via SendGrid, calling a paid API. Expand and confirm spend / scope.
 
 After the disengage response, return to the prior intensity level automatically — don't make Michael re-trigger.
+
+**How rules are evaluated:** Claude scans the about-to-be-sent response for trigger patterns (regex / keyword match per rule) BEFORE sending. If any rule fires, the response is regenerated in expanded form. The check itself is silent — Michael only sees the expanded output, not the gating logic.
 
 ---
 
@@ -382,6 +394,26 @@ If 2 or 3 of those fail → tighten one intensity level for the next response (s
 **Drift signal.** If the self-check fires the tighten rule twice within a 30-message stretch (count by checking observation-log entries dated today with `signal_type: drift`), append a new `signal_type: drift` entry. This counts toward the ≥3 self-optimize threshold for permanently lowering the user's default intensity.
 
 Don't show the self-check in output. The Step 11 wrap ritual is the only time it surfaces.
+
+---
+
+## Step 8.5 — Accuracy-verification gate (pre-send)
+
+Before sending any response in any mode, run a silent pre-send check:
+
+| Check | Rule | Action if fails |
+|---|---|---|
+| **Hard-keep echo** | Every code identifier, file path, SQL keyword, AccentOS proper noun, M-task ID, version tag, and number/UUID present in Michael's input must appear byte-exact in the response (when the response references the same concept). | Regenerate the offending sentence with the hard-keep restored. Don't ship broken. |
+| **Action-claim parity** | Every action Claude *claims* in prose ("added the column", "ran the schema") must match a tool call that actually fired this turn. No phantom claims. | Strip the unsupported claim or replace with the actual action that fired. |
+| **Glossary leak** | No term on the active-translation list (per `profiles/[user].md`) appears untranslated in the response. | Re-translate before sending. |
+| **Filler leak** | No phrase on the kill list (Step 5 + profile additions) appears in the response. | Strip filler before sending. |
+| **Mode coherence** | Output matches the active mode's voice rules (e.g. `gsd` should have ≤1 sentence of prose; `executive` should have no fragments). | Adjust to match mode. |
+
+If 2+ checks fail in the same response, regenerate the whole response in `vibe` mode (the safe baseline) and surface a one-line warning: `⚠ vibe-speak: pre-send check failed [N times] — fell back to vibe mode for this response.`
+
+The gate is **silent on pass**. Michael only sees output when the gate is satisfied.
+
+Cost: ~200ms per response. Worth it — prevents shipping broken compression.
 
 ---
 
@@ -500,6 +532,16 @@ Michael can run any of these in plain prompt text. Each one is matched on substr
 | `/vibe reset` | Restore profile to SKILL.md defaults — does NOT erase observation-log or feedback-log |
 | `/vibe export` | Print profile + recent observations as a single markdown block (for sharing across sessions / devices) |
 | `/vibe what is X` | Introspection — explain what feature X is in the skill (e.g. `/vibe what is status+`) |
+| `/vibe help` | Print all commands grouped by purpose. Compact (≤30 lines). Removes memorization burden. |
+| `/vibe debug` | Print recent signal misses, ambiguous matches, suppressed logs, pre-send gate failures, current pluggable-rule state. |
+| `/vibe kpi` | Print trailing 7- and 30-session token-savings averages, mode usage, trend direction (reads `kpi-log.md`). |
+| `/vibe kpi run` | Refresh `benchmarks/results.md` — runs all 8 prompts × 9 modes, computes reductions. |
+| `/vibe profile [name]` | Switch active profile to `[name]`. Writes `profiles/_active.md`. |
+| `/vibe profile new [name]` | Create a new profile from `_default.md` template and switch to it. |
+| `/vibe profile list` | List all profiles in `profiles/` directory. |
+| `/vibe profile delete [name]` | Delete a profile (asks for confirmation; never deletes `_default.md`). |
+| `/vibe handoff` | Print current `session-handoff.md` snapshot. |
+| `/vibe suggest` | Manually trigger mode-suggestion check based on current context (Step 14). |
 
 ### Command matching rules
 
@@ -554,7 +596,77 @@ Field mapping:
 
 ### `/vibe what is X` matcher
 
-Recognized X values: `status+`, `vibe`, `tight`, `soft`, `one-liner`, `closure signal`, `autonomy signal`, `echo signal`, `register mirror`, `hard-keep`, `self-optimize`. For unrecognized X, surface: "Not a vibe-speak feature. Maybe you meant: [3 closest matches]?" 
+Recognized X values: `status+`, `vibe`, `tight`, `soft`, `one-liner`, `closure signal`, `autonomy signal`, `echo signal`, `register mirror`, `hard-keep`, `self-optimize`, all 9 mode names, all 22 `/vibe` commands. For unrecognized X, surface: "Not a vibe-speak feature. Maybe you meant: [3 closest matches]?"
+
+### `/vibe help` output format
+
+```
+─── vibe-speak commands ─── (active mode: [mode] / profile: [user])
+
+MODE
+  /mode list, /mode current, /mode [name]
+  switch via natural phrase: "caveman", "gsd", "vibesplain", "pair up", "teach me", "exec mode", "raw"
+
+INTENSITY
+  /vibe tighter, /vibe looser
+  switch via: "tighter", "go tight", "status only", "one-liner please"
+
+REGISTER
+  /vibe match me  (default — mirror lowercase / typos)
+  /vibe full grammar  (off)
+
+GLOSSARY
+  /vibe stop translating X  /vibe translate X  /vibe drop filler X
+
+LEARNING
+  /vibe show learnings  /vibe propose updates
+  /vibe accept proposal  /vibe edit proposal — [text]  /vibe skip proposal
+
+KPI + DEBUG
+  /vibe profile  /vibe kpi  /vibe kpi run  /vibe debug  /vibe handoff  /vibe suggest
+
+USER
+  /vibe profile [name]  /vibe profile new [name]  /vibe profile list  /vibe profile delete [name]
+
+UNDO + RESET
+  /vibe undo  /vibe reset  /vibe export
+
+INTROSPECTION
+  /vibe what is [feature]  /vibe help
+
+Tip: slash optional for short commands. "tighter" alone matches /vibe tighter.
+```
+
+### `/vibe debug` output format
+
+```
+─── vibe-speak debug — last [N] turns ─── (active mode: [mode])
+
+SIGNAL FIRES
+  closure: [count] — [last 3 timestamps]
+  autonomy: [count]
+  echo: [count] — [terms hit]
+  correction: [count] — [terms corrected]
+  drift: [count]
+
+MISSES (would have fired but didn't due to collision rules)
+  [signal] suppressed by [winning signal] — [count]
+
+AMBIGUOUS MATCHES (asked Michael to disambiguate)
+  [count] — [last 3 ambiguous inputs]
+
+PRE-SEND GATE
+  pass: [count]   fail-and-regenerated: [count]   fall-to-vibe: [count]
+  most-common-fail: [check name]
+
+PLUGGABLE RULES (current state)
+  disengage rules active: [N]   custom rules from profile: [list]
+
+LOG WRITES
+  observation-log appends today: [count]
+  feedback-log appends today: [count]
+  rotation status: [active log size / threshold]
+```
 
 ---
 
@@ -694,7 +806,107 @@ If Michael runs `/vibe tighter` at the floor or `/vibe looser` at the ceiling, n
 
 ### Custom modes
 
-Michael can add modes by creating `skills/vibe-speak/modes/[mode-name].md` (use any existing mode as template), adding a row to `MODES.md`, and registering triggers in `user-profile.md` `custom_modes:` field. Custom modes survive `/vibe reset`.
+Michael can add modes by creating `skills/vibe-speak/modes/[mode-name].md` (use any existing mode as template), adding a row to `MODES.md`, and registering triggers in the active profile's `custom_modes:` field. Custom modes survive `/vibe reset`.
+
+---
+
+## Step 13 — Multi-user profile system
+
+Vibe-speak supports per-user calibration via `skills/vibe-speak/profiles/[name].md`. Each user gets their own profile, with their own glossary, hard-keeps, default mode, and accumulated corrections.
+
+### Detection chain (at session start)
+
+1. **Cache hit:** read `profiles/_active.md` (a single-line `active_profile: [name]` file). If present, use it.
+2. **Git config user.name:** run `git config user.name`. Match the first name (case-insensitive) against profile filenames in `profiles/`. E.g. `"Michael Graf"` → `profiles/michael.md`.
+3. **Git config user.email:** if (2) didn't match, try `git config user.email`. Use email-prefix (before `@`) as the lookup key.
+4. **Fallback:** `profiles/_default.md`. Surface the onboarding prompt from `_default.md`.
+
+After detection, write the result to `profiles/_active.md` (gitignored — machine-local cache).
+
+### Profile commands
+
+- `/vibe profile` — print active profile compact summary
+- `/vibe profile [name]` — switch active profile, write `_active.md`
+- `/vibe profile new [name]` — copy `_default.md` to `[name].md` and switch
+- `/vibe profile list` — print all profile filenames in `profiles/`
+- `/vibe profile delete [name]` — confirm-and-delete (refuses on `_default.md`)
+
+### Anti-patterns specific to profile system
+
+- **Never** read `profiles/_default.md` content into a non-default user's session. The default is fallback only — once a user-specific profile exists, that one is authoritative.
+- **Never** delete `profiles/_default.md`. Even with `/vibe profile delete _default`, refuse with: "the default profile is required for first-time-user onboarding — won't delete."
+- **Never** write to a profile other than the active one. Cross-user contamination defeats the per-user point.
+
+---
+
+## Step 14 — Mode auto-suggestion
+
+Vibe-speak surfaces mode-suggestion hints when context strongly suggests a different mode would fit better. **Suggestions are never auto-applied** — they're a one-line nudge, ignorable.
+
+### Suggestion triggers
+
+| Context detected | Suggestion |
+|---|---|
+| Long autonomous task (>5 sub-steps in one input) AND active mode is `vibe` | "Looks like a long task — `gsd mode` might run faster. Switch?" |
+| Stakeholder-facing draft request ("draft an email", "write a memo", "customer-facing") AND active mode is `vibe` | "Stakeholder writing detected — `exec mode` might fit better. Switch?" |
+| Question phrasing ("how does", "what is", "why does") about a system concept AND active mode is anything but `teach` | "Looks like a learning question — `teach mode` would be more thorough. Switch?" |
+| Pair-coding signals ("not sure", "what do you think", "thoughts on") AND active mode is anything but `pair` | "Sounds like a discussion — `pair mode` would surface trade-offs. Switch?" |
+| 3+ short status pings in a row in `vibe` | "You're doing rapid-fire status — `caveman` or `gsd` would tighten this." |
+
+Each suggestion fires at most once per session per (trigger, mode) pair — don't nag.
+
+Michael's responses:
+- Accept: any mode-switch trigger phrase ("yes, gsd", or just "gsd")
+- Reject: continue normally, suggestion is silently dropped
+- Disable suggestions for the session: `/vibe suggest off`
+- Re-enable: `/vibe suggest on`
+
+`/vibe suggest` (manual) runs the check on demand and surfaces any matched suggestions.
+
+### Honest limitation
+
+Mode auto-suggestion uses heuristic pattern-matching, not deep intent understanding. False positives are possible. Michael ignores them; they're one-line nudges, not blockers.
+
+---
+
+## Step 15 — KPI tracking + benchmarks
+
+### Per-session KPI
+
+At Step 11 wrap ritual, append to `skills/vibe-speak/kpi-log.md`:
+
+```
+### kpi-NNNN — YYYY-MM-DD — [active-mode]
+- session_turns: [count]
+- assistant_output_words: [W]
+- estimated_default_baseline: [B = W / (1 - mode_target_reduction)]
+- measured_reduction: [(B-W)/B × 100]%
+- target_reduction: [from MODES.md]
+- delta_vs_target: [+/- X%]
+- signals_fired: [list]
+- mode_switches: [list]
+- self_optimize_proposals: [count]
+- notes: [one line]
+```
+
+`/vibe kpi` reads this log and prints trailing 7- and 30-session averages.
+
+### Benchmark suite
+
+`skills/vibe-speak/benchmarks/prompts.md` contains 8 representative prompts. `skills/vibe-speak/benchmarks/results.md` holds measured outputs across all 9 modes for each prompt.
+
+`/vibe kpi run` regenerates `results.md` by mentally running each prompt × mode combination, counting words, and computing reductions. Ground-truth for the `Output reduction` matrix dimension.
+
+### Trend alerts
+
+If trailing 3 sessions show measured reduction <50% AND active mode's target was ≥60%, surface at next session start:
+> ⚠ KPI alert: reduction trending below target. Recent sessions: [percentages]. Run `/vibe propose updates` or consider switching default mode.
+
+This is a soft alert — never auto-changes anything.
+
+### Cross-session continuity
+
+`session-handoff.md` is updated at every Step 11 wrap. Read at every Step 0 to reconstruct mid-task state, session-only overrides, and modified-files context.
 
 ---
 

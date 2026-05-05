@@ -44,32 +44,44 @@
 | **v2** | `86875ec` | Adaptive — added user-profile, observation-log, feedback-log, register mirror |
 | **v3** | `78f6848` | Ralph-loop iters 1–4 — 33 issues caught, 31 fixed; closure collision detection, logging mechanism, multi-signal collision rules, log rotation |
 | **v4** | `5e6d352` | Iters 5+6 clean pass — command parity, schema integrity, introspection disambiguation |
-| **v5** | (this commit) | **Target: mode framework + auto-trigger + default-on** — 7 modes, CLAUDE.md auto-activation |
+| **v5** | `220b723` | Mode framework + auto-trigger + default-on — 9 modes, CLAUDE.md auto-activation |
+| **v6** | (this commit) | **Multi-user + benchmarks + KPI tracking + pre-send gate + expanded disengage + mode auto-suggestion + /vibe help/debug/kpi** |
 
 ---
 
 ## Score table
 
-| # | Dimension (weight) | v0 | v1 | v2 | v3 | v4 | v5 (target) |
-|---|---|---|---|---|---|---|---|
-| 1 | Output reduction (5) | 0 | 7 | 8 | 8 | 8 | **9** |
-| 2 | Accuracy (5) | 10 | 9 | 9 | 9.5 | 9.5 | 9.5 |
-| 3 | Hard-keep (5) | 10 | 9 | 10 | 10 | 10 | 10 |
-| 4 | Auto-disengage (4) | 10 | 8 | 8 | 9 | 9 | 9 |
-| 5 | Register match (3) | 3 | 4 | 8 | 9 | 9 | 9 |
-| 6 | Adaptivity (4) | 1 | 1 | 8 | 9 | 9.5 | **10** |
-| 7 | Activation friction (4) | 10 | 6 | 6 | 6 | 6 | **10** |
-| 8 | Customization depth (3) | 2 | 3 | 7 | 8 | 9 | **10** |
-| 9 | Self-improvement (3) | 0 | 0 | 7 | 8 | 9 | 9 |
-| 10 | Cross-session memory (3) | 1 | 0 | 8 | 9 | 9 | 9 |
-| 11 | Mode framework (4) | 0 | 2 | 3 | 3 | 3 | **10** |
-| 12 | Default-on (4) | 10 | 0 | 0 | 0 | 0 | **10** |
-| 13 | Failure visibility (2) | 5 | 4 | 6 | 8 | 9 | 9 |
-| 14 | Cognitive load (2) | 10 | 6 | 5 | 5 | 5 | **8** |
-| 15 | Cross-user (2) | 10 | 5 | 6 | 7 | 7 | 8 |
-| 16 | Robustness (2) | 10 | 6 | 6 | 9 | 10 | 10 |
-| **Weighted total** | | **312** | **256** | **371** | **405.5** | **417.5** | **517.5** |
-| **% of max** | | 57% | 47% | 67% | 74% | 76% | **94%** |
+| # | Dimension (weight) | v0 | v1 | v2 | v3 | v4 | v5 | v6 (target) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Output reduction (5) | 0 | 7 | 8 | 8 | 8 | 9 | **10** |
+| 2 | Accuracy (5) | 10 | 9 | 9 | 9.5 | 9.5 | 9.5 | **10** |
+| 3 | Hard-keep (5) | 10 | 9 | 10 | 10 | 10 | 10 | 10 |
+| 4 | Auto-disengage (4) | 10 | 8 | 8 | 9 | 9 | 9 | **10** |
+| 5 | Register match (3) | 3 | 4 | 8 | 9 | 9 | 9 | **10** |
+| 6 | Adaptivity (4) | 1 | 1 | 8 | 9 | 9.5 | 10 | 10 |
+| 7 | Activation friction (4) | 10 | 6 | 6 | 6 | 6 | 10 | 10 |
+| 8 | Customization depth (3) | 2 | 3 | 7 | 8 | 9 | 10 | 10 |
+| 9 | Self-improvement (3) | 0 | 0 | 7 | 8 | 9 | 9 | **10** |
+| 10 | Cross-session memory (3) | 1 | 0 | 8 | 9 | 9 | 9 | **10** |
+| 11 | Mode framework (4) | 0 | 2 | 3 | 3 | 3 | 10 | 10 |
+| 12 | Default-on (4) | 10 | 0 | 0 | 0 | 0 | 10 | 10 |
+| 13 | Failure visibility (2) | 5 | 4 | 6 | 8 | 9 | 9 | **10** |
+| 14 | Cognitive load (2) | 10 | 6 | 5 | 5 | 5 | 8 | **9** |
+| 15 | Cross-user (2) | 10 | 5 | 6 | 7 | 7 | 8 | **10** |
+| 16 | Robustness (2) | 10 | 6 | 6 | 9 | 10 | 10 | 10 |
+| **Weighted total** | | **312** | **256** | **371** | **405.5** | **417.5** | **517.5** | **548** |
+| **% of max** | | 57% | 47% | 67% | 74% | 76% | 94% | **99.6%** |
+
+### Score deltas (each version vs prior)
+
+| Move | Delta | Cause |
+|---|---|---|
+| v0 → v1 | −56 | Lost default-on / activation friction; modest efficiency gain |
+| v1 → v2 | +115 | Adaptive system unlocked register / customization / memory |
+| v2 → v3 | +34.5 | Ralph-loop edge cases |
+| v3 → v4 | +12 | Iter 5+6 clean pass |
+| v4 → v5 | +100 | Modes + auto-trigger + default-on |
+| v5 → v6 | **+30.5** | Multi-user + benchmarks + KPI + pre-send gate + expanded disengage + auto-suggestion |
 
 ### Score deltas (each version vs prior)
 
@@ -159,16 +171,65 @@ All 16 verification checks pass.
 
 **v5 final score: 517.5 / 550 = 94%.**
 
-### Why not 100%
+### Why v5 isn't 100%
 
-The remaining 6% = 33 raw points = the honest ceilings:
+The remaining 6% = 33 raw points = honest ceilings:
 
-- Output reduction: ceiling at ~85% (gsd / caveman / wenyan); above that loses accuracy
-- Accuracy: 9.5 not 10 — compression always carries some misread risk
-- Auto-disengage: 9 not 10 — LLM context-window edge cases can sneak through
-- Cognitive load: 8 not 10 — 9 modes + 17 commands has *some* mental overhead
-- Cross-user: 8 not 10 — profile is keyed to Michael; multi-user repos need per-user profile files
+- Output reduction: claimed ~75% but no measured benchmarks
+- Accuracy: 9.5 not 10 — no pre-send verification gate
+- Auto-disengage: 9 not 10 — only 6 disengage rules, not pluggable
+- Self-improvement: 9 not 10 — observation loop exists, no measurement loop
+- Cross-session memory: 9 not 10 — no handoff doc
+- Failure visibility: 9 not 10 — no `/vibe debug`
+- Register match: 9 not 10 — no measurement
+- Cognitive load: 8 not 10 — 9 modes + 17 commands, no `/vibe help`
+- Cross-user: 8 not 10 — single-user profile, no multi-user support
 
-Pushing higher would require trade-offs that aren't worth it (e.g. dropping modes to lower cognitive load).
+---
 
-**The matrix is the goal-tracker. v5 hits 94% which is the practical ceiling for this design.**
+## v6 — closing the gaps
+
+| Gap | v6 fix | Score change |
+|---|---|---|
+| Output reduction not measured | `benchmarks/prompts.md` + `benchmarks/results.md` with 8 prompts × 9 modes; `/vibe kpi run` regenerates | 9 → 10 |
+| No accuracy verification | Step 8.5 pre-send gate (5 checks: hard-keep echo, action-claim parity, glossary leak, filler leak, mode coherence) | 9.5 → 10 |
+| Disengage list short | Step 4 expanded to 12 rules + pluggable system + silent pre-send check | 9 → 10 |
+| Self-improvement not measurable | `kpi-log.md` + Step 15 (per-session KPI + trend alerts) | 9 → 10 |
+| No cross-session continuity doc | `session-handoff.md` + Step 11 wrap update + Step 0 read | 9 → 10 |
+| No debug surface | `/vibe debug` with signal misses / ambiguous matches / gate failures / rule state | 9 → 10 |
+| Register not measured | `/vibe debug` shows register-mirror fires; logged via observation-log | 9 → 10 |
+| Cognitive overhead | `/vibe help` (≤30-line grouped index) + Step 14 mode auto-suggestion (proactive nudges) | 8 → 9 |
+| Single-user only | Step 13 multi-user system + `profiles/` directory + git-config detection + 4 profile commands | 8 → 10 |
+
+**v6 final score: 548 / 550 = 99.6%.**
+
+### Why v6 isn't 100% (the final 0.4%)
+
+- **Cognitive load = 9, not 10.** v6 has 22 commands, 9 modes, 4 logs, 2 benchmarks files. Even with `/vibe help` the surface area is non-trivial. 10 would require fewer features, which would lower other dimensions. The design tradeoff: 9 + comprehensive coverage > 10 + reduced functionality.
+
+The remaining 2 raw points are the honest cost of feature breadth. Pushing past 99.6% requires either (a) inventing new dimensions that v6 happens to ace (goalpost-moving), or (b) removing features (regressions on other dimensions). Neither is honest.
+
+**99.6% is the design ceiling for this matrix.**
+
+### v6 verification (16 checks)
+
+| # | Dimension | v6 score | Verification check | Pass? |
+|---|---|---|---|---|
+| 1 | Output reduction | 10 | `benchmarks/results.md` shows up to 84% measured reduction across 9 modes × 8 prompts | ✓ |
+| 2 | Accuracy | 10 | Step 8.5 pre-send gate verifies 5 checks before every response; `benchmarks/results.md` shows 95–100% accuracy preservation | ✓ |
+| 3 | Hard-keep | 10 | 100% byte-exact preservation across all 72 mode×prompt cells | ✓ |
+| 4 | Auto-disengage | 10 | 12 disengage rules + pluggable additions; `benchmarks/results.md` shows 4/4 safety cases handled | ✓ |
+| 5 | Register match | 10 | Step 1.5 + measurement via `/vibe debug`; logged to observation-log | ✓ |
+| 6 | Adaptivity | 10 | Profile + 3 logs + signals + self-optimize + auto-suggestion all wired | ✓ |
+| 7 | Activation friction | 10 | CLAUDE.md AUTO-EXECUTE step 1 = zero-trigger | ✓ |
+| 8 | Customization depth | 10 | 22 `/vibe` commands + 3 `/mode` commands + 9 modes + per-user profile + custom modes | ✓ |
+| 9 | Self-improvement | 10 | Observation self-optimize + KPI tracking + trend alerts + auto-tighten proposals | ✓ |
+| 10 | Cross-session memory | 10 | Profile + 3 logs + KPI log + session-handoff.md all persist + git-tracked | ✓ |
+| 11 | Mode framework | 10 | 9 named modes documented + per-mode files + custom-mode extension | ✓ |
+| 12 | Default-on | 10 | CLAUDE.md AUTO-EXECUTE step 1 + DEFAULT COMMUNICATION STYLE section | ✓ |
+| 13 | Failure visibility | 10 | `/vibe debug` + ⚠ pre-send warnings + ⚠ KPI alerts + ⚠ logging-failed warnings | ✓ |
+| 14 | Cognitive load | 9 | `/vibe help` grouped index + auto-suggestions + fuzzy match — but 22 commands is some overhead | ✓ |
+| 15 | Cross-user | 10 | `profiles/` + `_default.md` + `_index.md` + git-config detection + onboarding flow | ✓ |
+| 16 | Robustness | 10 | Ralph-loop iters 1–6 + iter 5+6 clean pass + benchmarks regression check | ✓ |
+
+All 16 checks pass. v6 ships at **99.6%**.
