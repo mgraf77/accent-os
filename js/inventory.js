@@ -144,9 +144,9 @@ function renderInventory(container) {
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 460px);overflow-y:auto;">
         <table>
-          <thead><tr><th>SKU</th><th>Vendor</th><th>Description</th><th>On Hand</th><th>Avail</th><th>Reorder</th><th>Location</th><th>Cost</th><th>List</th><th></th></tr></thead>
+          <thead><tr><th>SKU</th><th>Vendor</th><th>Description</th><th>On Hand</th><th>Avail</th><th>Reorder</th><th>Location</th><th>Bin</th><th>Cost</th><th>List</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--text-3);">${totalItems===0?'No inventory yet. Import a CSV above (template button shows the header schema).':'No SKUs match the current filter.'}</td></tr>` : filtered.map(r => _invRow(r)).join('')}
+            ${filtered.length === 0 ? `<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--text-3);">${totalItems===0?'No inventory yet. Import a CSV above (template button shows the header schema).':'No SKUs match the current filter.'}</td></tr>` : filtered.map(r => _invRow(r)).join('')}
           </tbody>
         </table>
       </div>
@@ -169,25 +169,32 @@ function _invRow(r){
   const canEditReorder = canEditQty;
   const canEditCost = isSenior;            // cost is sensitive — senior only
   const canEditList = isSenior || role === 'Sales';
+  const canEditPlace = isSenior || role === 'Warehouse';
   const cell = (val, field, opts={}) => {
     const editable = opts.editable !== false;
     const display = opts.display ?? (val == null ? '—' : String(val));
     const placeholder = opts.placeholder || '';
     const step = opts.step || '1';
     const width = opts.width || '64';
+    const isText = !!opts.text;
     const isCurrency = !!opts.currency;
     const editVal = val == null ? '' : (isCurrency ? Number(val).toFixed(2) : String(val));
-    if(!editable) return `<td class="mono sm">${display}</td>`;
-    return `<td class="mono sm" style="padding:2px 6px;"><input type="number" step="${step}" value="${editVal}" placeholder="${placeholder}" data-id="${r.id}" data-field="${field}" data-orig="${editVal}" data-currency="${isCurrency?'1':''}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitInventoryCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;text-align:right;border-radius:4px;" title="Click to edit ${field.replace(/_/g,' ')}"></td>`;
+    if(!editable) return `<td class="${isText?'sm':'mono sm'}">${display}</td>`;
+    const inputType = isText ? 'text' : 'number';
+    const stepAttr = isText ? '' : ` step="${step}"`;
+    const align = isText ? 'left' : 'right';
+    const cls = isText ? 'sm' : 'mono sm';
+    return `<td class="${cls}" style="padding:2px 6px;"><input type="${inputType}"${stepAttr} value="${esc(editVal)}" placeholder="${esc(placeholder)}" data-id="${r.id}" data-field="${field}" data-orig="${esc(editVal)}" data-currency="${isCurrency?'1':''}" data-text="${isText?'1':''}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitInventoryCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;text-align:${align};border-radius:4px;" title="Click to edit ${field.replace(/_/g,' ')}"></td>`;
   };
   return `<tr style="${isLow?'background:rgba(239,68,68,0.06);':''}" data-row-id="${r.id}">
     <td class="mono fw6 sm">${esc(r.sku||'')}</td>
     <td class="sm">${esc(r.vendor_name||'—')}</td>
-    <td class="sm" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.description||'')}">${esc(r.description||'')}</td>
+    <td class="sm" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.description||'')}">${esc(r.description||'')}</td>
     ${cell(qoh, 'qty_on_hand', {editable: canEditQty, display: String(qoh)})}
     <td class="mono sm" data-avail-for="${r.id}" style="${isLow?'color:var(--accent);font-weight:700;':''}">${avail}</td>
     ${cell(reorder, 'reorder_point', {editable: canEditReorder, display: reorder!=null?String(reorder):'—', placeholder:'—'})}
-    <td class="sm">${esc(r.location||'')}${r.bin?' · '+esc(r.bin):''}</td>
+    ${cell(r.location, 'location', {editable: canEditPlace, text:true, width:'90', placeholder:'—', display: r.location?esc(r.location):'—'})}
+    ${cell(r.bin, 'bin', {editable: canEditPlace, text:true, width:'70', placeholder:'—', display: r.bin?esc(r.bin):'—'})}
     ${cell(r.unit_cost, 'unit_cost', {editable: canEditCost, display: r.unit_cost!=null?'$'+Number(r.unit_cost).toFixed(2):'—', currency:true, step:'0.01', width:'74'})}
     ${cell(r.list_price, 'list_price', {editable: canEditList, display: r.list_price!=null?'$'+Number(r.list_price).toFixed(2):'—', currency:true, step:'0.01', width:'74'})}
     <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="deleteInventoryItem('${r.id}')">×</button></td>
@@ -344,27 +351,35 @@ async function commitInventoryCell(input){
   const id = input.dataset.id;
   const field = input.dataset.field;
   const isCurrency = input.dataset.currency === '1';
+  const isText = input.dataset.text === '1';
   const origStr = input.dataset.orig || '';
   const valStr = input.value.trim();
   // Restore visual styling regardless of save outcome
   input.style.background = 'transparent';
   input.style.borderColor = 'transparent';
-  // Empty value: treat as null (only allowed for nullable fields)
+  // Empty value: treat as null
   let next = null;
   if(valStr !== ''){
-    next = Number(valStr);
-    if(isNaN(next) || next < 0){
-      input.value = origStr;
-      toast(`Invalid ${field.replace(/_/g,' ')} — reverted`,'warn');
-      return;
+    if(isText){
+      next = valStr;
+    } else {
+      next = Number(valStr);
+      if(isNaN(next) || next < 0){
+        input.value = origStr;
+        toast(`Invalid ${field.replace(/_/g,' ')} — reverted`,'warn');
+        return;
+      }
     }
   }
-  // No-op when value didn't change (compare as numbers when both side have one)
-  const origNum = origStr === '' ? null : Number(origStr);
-  if(next === origNum || (next != null && origNum != null && Math.abs(next - origNum) < 1e-9)){
-    // Re-format display if currency (e.g. "12" → "12.00")
-    if(isCurrency && next != null) input.value = next.toFixed(2);
-    return;
+  // No-op when value didn't change
+  if(isText){
+    if((next || '') === origStr) return;
+  } else {
+    const origNum = origStr === '' ? null : Number(origStr);
+    if(next === origNum || (next != null && origNum != null && Math.abs(next - origNum) < 1e-9)){
+      if(isCurrency && next != null) input.value = next.toFixed(2);
+      return;
+    }
   }
   const item = INVENTORY.find(r => r.id === id);
   if(!item){ input.value = origStr; toast('Row not found','err'); return; }

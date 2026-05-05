@@ -2140,8 +2140,10 @@ function toggleFilter(group, val, on){
 
 // ── VENDORS PAGE ──────────────────────────────────────────
 function vendors(el,act){
+  const canImportScores = CU && ['Owner','Admin','Manager'].includes(CU.role);
   act.innerHTML=`
     <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+    ${canImportScores ? '<button class="btn btn-outline btn-sm" onclick="openVendorScoreCsvPaste()" title="Bulk import scores via CSV (one row per vendor, score columns)">⬆ Import Scores</button>' : ''}
     <button class="btn btn-accent btn-sm" onclick="openAddVendor()">+ Add Vendor</button>`;
   renderVendors(el);
 }
@@ -6514,8 +6516,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/jobs.js?v=6.10.42"></script>
 <script src="js/purchase_orders.js?v=6.10.12"></script>
 <script src="js/calendar.js?v=6.10.37"></script>
-<script src="js/inventory.js?v=6.10.44"></script>
+<script src="js/inventory.js?v=6.10.47"></script>
 <script src="js/csv_import.js?v=6.10.45"></script>
+<script src="js/vendor_score_import.js?v=6.10.47"></script>
 <script src="js/price_book.js?v=6.10.12"></script>
 <script src="js/deal_optimizer.js?v=6.10.12"></script>
 <script src="js/trade_partners.js?v=6.10.40"></script>
