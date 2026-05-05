@@ -224,3 +224,21 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - prevention_rule: Step 4 produces candidates, not skills. Step 5 halts the run for Michael's per-skill approval. Step 8 Ralph-loops every approved skill before commit. No exceptions.
 - applied_to_skill_md: yes
 - outcome: success
+
+### gotcha-022 — 2026-05-05 — Cascade + Hex batch (5-skill forge run under new workflow)
+- target: alirezarezvani/strategic-alignment + hex.tech (concept theft, second pass)
+- what_happened: First end-to-end run of skill-forge under the approval-gate + Ralph-loop workflow. Forged 5 skills (doc-drift, vendor-clarity-test, decision-log, vendor-risk-register, table-eda); deferred 3 to future-builds.md (vendor-rebalance, multi-step-analysis, chart-from-query). Michael ambiguity on count (5 vs 6 BUILD recs); first attempt asked for clarification, second turn auto-resolved by dropping chart-from-query as lowest-urgency. Ralph loop surfaced 15 real fixes across the 5 skills (mostly SQL-correctness and prereq-redirect patterns).
+- root_cause: New workflow's first run; no prior run to validate against. Approval-gate ambiguity surfaced because my own gate header miscounted (5) before the corrected list (6).
+- fix_this_run: Resolved ambiguity by Claude-pick of lowest-urgency BUILD candidate after Michael repeated his "5" instruction. Logged the dropped skill to future-builds.md. Ralph loop ran 4 iterations per skill (table-eda hit the cap; others hit 2-consecutive-clean). All 5 shipped.
+- prevention_rule: When the approval-gate header miscounts vs. the corrected list, the corrected list is authoritative; if Michael responds to the miscount, prefer Claude-pick of the lowest-urgency item over a clarification round-trip when intent is otherwise unambiguous.
+- applied_to_skill_md: no
+- outcome: success
+
+### gotcha-023 — 2026-05-05 — Ralph-loop pattern: prereq redirects
+- target: skill-forge Step 8 (Ralph loop) — class-level finding
+- what_happened: Two of the 5 forged skills (vendor-clarity-test, vendor-risk-register) needed pre-checks that abort+redirect when a prerequisite skill hasn't been run yet. vendor-clarity-test redirects to priority-articulation when no priorities are articulated and to vendor-cascade when no scores exist. vendor-risk-register redirects when no completed deals exist in the window. The pattern was discovered in Ralph iter 1+2 — but it should be a default consideration for any forged skill that depends on output of another skill.
+- root_cause: Step 6 (skill design) doesn't prompt the forger to consider "what if the prereq data isn't there yet." Each Ralph loop has to rediscover this pattern per skill.
+- fix_this_run: Pattern documented here. Not yet baked into Step 6.
+- prevention_rule: Skill design (Step 6) must explicitly consider "what depends on this being run first" and "what does this skill depend on" — and add a pre-check + redirect block whenever a prerequisite skill exists.
+- applied_to_skill_md: no
+- outcome: success

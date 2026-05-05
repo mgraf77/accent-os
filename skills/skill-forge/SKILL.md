@@ -212,6 +212,19 @@ I am stopping here. Nothing is built until you reply.
 
 When Michael replies, parse the approval into a build list. Only the approved skills proceed to Step 6+.
 
+**Auto-log DEFERs.** After Michael's approval lands, every candidate Michael deferred (whether via "build all except [name]" or by accepting the recommendation) gets appended to `/home/user/accent-os/skills/skill-forge/future-builds.md`. Schema:
+
+```
+### future-NNN — YYYY-MM-DD — [skill-name]
+- proposed_from: [target name + URL]
+- what_it_does: [one sentence]
+- why_deferred: [one sentence — blocked by, premature for, etc.]
+- revisit_when: [explicit trigger condition — "3+ quarters of data", "next module refactor"]
+- pairs_with: [related skills if any]
+```
+
+NNN is sequential. The future-builds.md log is what Michael consults when picking the next thing to build. Do not skip this step — DEFERs that aren't logged get lost.
+
 ---
 
 ## Step 6 — Skill design (per approved concept)
