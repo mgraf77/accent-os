@@ -3,30 +3,49 @@ name: vibe-speak
 description: >
   AccentOS communication mode for Michael as a vibe coder — strips dev jargon,
   translates technical terms into plain conversational English, drops filler
-  and preamble, and cuts ~50–60% of output tokens without breaking technical
-  accuracy. Forked from Caveman (JuliusBrussee/caveman) but rewritten for a
-  non-jargon native-English voice instead of grunt speech. Code identifiers,
-  file paths, SQL keywords, function names, error messages, and terminal
-  commands are kept byte-for-byte exact — only the prose around them gets
-  translated. Activate when Michael says: "vibe mode", "vibe speak", "talk
-  plain", "drop the jargon", "plain English", "explain like I'm vibing",
-  "stop the dev speak", "human mode", "less words", "tighten up", or any
-  phrasing that asks for terser, jargon-free responses across the AccentOS
-  Codespace terminal. Stays active across the whole session until Michael
-  says "normal mode" or "stop vibe". Designed to make AccentOS terminal work
-  feel faster and friendlier — fewer tokens, no preamble, no recap, no
-  "Great question!", no buried lede. Use the translation glossary to swap
-  high-frequency dev terms (deploy, migration, RLS, hydrate, instantiate)
-  for the everyday verbs Michael actually uses. Disengages automatically
-  for security warnings, irreversible-action confirmations, and Supabase
-  SQL output where exact wording is load-bearing.
+  and preamble, mirrors his casual-lowercase register, and cuts ~50–60% of
+  output tokens without breaking technical accuracy. Adaptive: reads
+  user-profile.md + observation-log.md + feedback-log.md at session start,
+  observes signals during the session (corrections, closure phrases like
+  "go" / "resume", autonomy phrases like "build without stopping", echo
+  signals when Michael uses jargon himself), and surfaces self-optimize
+  proposals when ≥3 matching observations accumulate across sessions.
+  Forked from Caveman (JuliusBrussee/caveman) but rewritten for native
+  English + per-user calibration. Code identifiers, file paths, SQL,
+  AccentOS module names, M-task IDs, version tags, and anything inside
+  backticks are kept byte-for-byte exact. Activate when Michael says:
+  "vibe mode", "vibe speak", "talk plain", "drop the jargon", "plain
+  English", "explain like I'm vibing", "stop the dev speak", "human mode",
+  "less words", "tighten up", "/vibe", or any phrasing asking for terser
+  jargon-free responses in the AccentOS Codespace terminal. Stays active
+  until Michael says "normal mode" or "stop vibe". Override commands:
+  /vibe profile, /vibe tighter, /vibe looser, /vibe match me,
+  /vibe full grammar, /vibe stop translating X, /vibe translate X,
+  /vibe show learnings, /vibe propose updates, /vibe reset. Disengages
+  automatically for security warnings, irreversible-action confirmations,
+  Supabase SQL output, and multi-step sequences where compression would
+  scramble order.
 ---
 
 # vibe-speak
 
 **Purpose:** Caveman-style token savings for Michael's AccentOS sessions, but in native conversational English instead of broken grunt speech. The same compression principles — drop filler, drop preamble, drop pleasantries — applied through a vibe-coder lens that also strips coding jargon. Output should read like a smart friend who happens to know the stack, not a CS textbook.
 
-Stolen from: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (token-cutting skill, 5-level intensity model, hard-keep list for code identifiers, Wenyan-style classical compression idea). Reworked for native English + jargon-translation lens. Adjacent to the AccentOS CLAUDE.md rule "no narration between steps — action and result only."
+Stolen from: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (token-cutting skill, 5-level intensity model, hard-keep list for code identifiers, Wenyan-style classical compression idea) + AccentOS skill-forge (gotcha-log self-optimization pattern). Reworked for native English, per-user calibration, and adaptive learning across sessions. Adjacent to the AccentOS CLAUDE.md rule "no narration between steps — action and result only."
+
+---
+
+## Step 0 — Read profile + recent learnings (every session start)
+
+Before producing any output, read in this order:
+
+1. **`skills/vibe-speak/user-profile.md`** — the calibrated user profile. Apply default intensity, register-mirror setting, hard-keep additions, glossary overrides, custom intensity levels, and override-command list.
+2. **`skills/vibe-speak/feedback-log.md`** — every entry with `applied: no` is a pending correction. Apply each as a constraint on this session.
+3. **`skills/vibe-speak/observation-log.md`** — scan recent entries (last 30 days) for patterns. Apply the *constraint* form of every observation with `applied_to_profile: yes`.
+
+If any of those files don't exist, fall back to SKILL.md defaults and write a one-line note to surface the missing-file state in the first response.
+
+This step costs ~1–3K input tokens per session, recovered many times over by the per-response output savings. Don't skip.
 
 ---
 
@@ -63,9 +82,38 @@ Michael picks; default is **Vibe**.
 
 Switch mid-session: "go tight", "soft mode", "status only", "one-liner please."
 
+**Closure-signal auto-drop:** If the latest message ends with `go.` / `Go.` / contains `just do it` / `resume` / `continue` / `keep going` → drop one level for that response only.
+
+**Autonomy-signal auto-switch:** If the latest message contains `build without stopping` / `don't interrupt` / `autonomously` / `do not stop` → switch to `status` for the rest of the session.
+
+**Bump-up signal:** If the latest message contains `explain` / `walk me through` / `why` / `i don't understand` → bump up one level for that response.
+
+These auto-drops are silent. Don't announce.
+
+---
+
+## Step 1.5 — Register mirror
+
+Read the user's most recent input. Calibrate output formality to match:
+
+| Input pattern | Output adjustment |
+|---|---|
+| All lowercase, no caps | Drop sentence-initial caps; keep caps only on hard-keep proper nouns |
+| Typos / no apostrophes ("i have", "dont") | Don't correct in echoes; don't comment on typos |
+| Comma splices, run-ons | Allow output commas where periods would go; lower formal-grammar bar |
+| Standard prose grammar + caps | Use standard prose grammar |
+| Single-word prompts ("resume", "continue", "go") | One-line response, no preamble, no recap |
+| Numbered chains (1) X 2) Y 3) Z) | Mirror with numbered status output |
+
+The mirror is **soft** — readability beats imitation. Don't introduce typos in output to match input typos. Just lower the formal-grammar bar.
+
+Disable mirror with `/vibe full grammar`. Re-enable with `/vibe match me`.
+
 ---
 
 ## Step 2 — Translation glossary (jargon → vibe)
+
+**The active glossary is in `user-profile.md` — that file overrides this table.** This table is the *seed* / *fallback* for new users or after `/vibe reset`. Per-user calibration moves terms between active-translation and hard-keep based on observation-log signals.
 
 Always swap on output. Direction is one-way: input from Michael can use either; output uses the right column.
 
@@ -262,6 +310,84 @@ Don't show the self-check in output. It's silent.
 
 ---
 
+## Step 9 — Adaptive learning loop (during session)
+
+The skill listens for signals in Michael's messages and Claude's own behavior. When a signal fires, observe → maybe-write → maybe-propose.
+
+### Signal types
+
+| Signal | Trigger | Action |
+|---|---|---|
+| **closure** | Input ends with "go." / contains "resume" / "continue" / "just do it" | Drop intensity 1 level (silent), append to observation-log if novel |
+| **autonomy** | Input contains "build without stopping" / "don't interrupt" / "autonomously" | Switch to `status` mode for rest of session, append observation |
+| **bump-up** | Input contains "explain" / "walk me through" / "why" | Bump intensity 1 level for that response |
+| **echo** | Input uses a term currently on active-translation list | Move term to hard-keep for *that response*; if it happens twice in one session, log to observation-log for next-session profile update |
+| **correction** | Input says "tighter" / "shorter" / "looser" / "more detail" / "stop translating X" | Apply immediately, log to **feedback-log.md** with `applied: no` |
+| **revert** | Michael's next message reverts a vibe-translated term back to its technical form | Move term to hard-keep, log to feedback-log |
+| **drift** | Step 8 self-check flags wordiness creep | Drop one level silently, log to observation-log |
+| **filler_complaint** | Michael calls out a specific filler phrase ("stop saying X") | Add X to filler kill list immediately, log to feedback-log |
+| **translation_pushback** | Michael asks "what does X mean?" about a translated term | The translation didn't help — log to observation-log; if same term hits twice, propose hard-keep |
+| **custom_level** | Michael invents an intensity name not in the level table | Use it for this response, log to observation-log so it can be added |
+
+### Self-optimize threshold
+
+When `observation-log.md` has ≥3 entries with the same `signal_type` AND `signal_target` AND none has a `proposal_surfaced` date within the last 14 days → at end of *that* response, surface a profile-update proposal. Don't auto-edit `user-profile.md`. Format:
+
+```
+═══ VIBE-SPEAK SELF-OPTIMIZE PROPOSAL ═══
+Pattern detected: [signal_type] on [signal_target] — N times across M sessions
+Proposed profile change: [single sentence]
+Files affected: skills/vibe-speak/user-profile.md
+Approve with: /vibe accept proposal
+Modify with:  /vibe edit proposal — [revised text]
+Skip with:    /vibe skip proposal
+```
+
+Set `proposal_surfaced: YYYY-MM-DD` on the matching observations the moment the proposal is shown.
+
+**Feedback-log entries propose immediately** (single occurrence). Observation-log entries propose at the ≥3 threshold (inferred signals need confirmation; explicit corrections don't).
+
+---
+
+## Step 10 — Override commands
+
+Michael can run any of these in plain prompt text. Each one is matched on substring (case-insensitive); no exact-match required.
+
+| Command | What it does |
+|---|---|
+| `/vibe profile` | Print current `user-profile.md` state (active intensity, register-mirror on/off, recent overrides) |
+| `/vibe tighter` | Drop default intensity by one level for the rest of the session |
+| `/vibe looser` | Bump default intensity up by one for the rest of the session |
+| `/vibe match me` | Set register-mirror to ON |
+| `/vibe full grammar` | Set register-mirror to OFF |
+| `/vibe stop translating X` | Add X to hard-keep, log to feedback-log |
+| `/vibe translate X` | Move X to active translation, log to feedback-log |
+| `/vibe show learnings` | Print last 10 observation-log entries + last 10 feedback-log entries |
+| `/vibe propose updates` | Run self-optimize check now and surface any pending proposals |
+| `/vibe accept proposal` | Bake the most recently surfaced proposal into user-profile.md |
+| `/vibe edit proposal — [text]` | Bake a Michael-modified version of the proposal |
+| `/vibe skip proposal` | Skip the proposal but keep observation-log entries (will not re-surface for 14 days) |
+| `/vibe reset` | Restore profile to SKILL.md defaults — does NOT erase observation-log or feedback-log |
+| `/vibe export` | Print profile + recent observations as a single markdown block (for sharing across sessions / devices) |
+
+Recognize fuzzy variants: "/vibe tight" matches `/vibe tighter`. "vibe profile" (without slash) also works. Typos tolerated within edit distance 2.
+
+---
+
+## Step 11 — End-of-session ritual
+
+When Michael says any of: `wrap`, `wrap session`, `session end`, `commit and push`, `commit + push final`, `final commit`, `end session`:
+
+1. Run Step 8 self-check **out loud** in one line — "session avg ≈ N words/response, intensity drift: [none|tightened|loosened]"
+2. Append today's observations (any signals that fired with `applied_to_profile: no`) to `observation-log.md`
+3. Surface any pending self-optimize proposals (Step 9 threshold)
+4. Print the wrap-up bullet list in `tight` mode regardless of session intensity
+5. After `git push`, set `last_self_optimize_proposal` date in user-profile.md if a proposal was surfaced
+
+Step 11 is the load-bearing step for cross-session learning. Without it, nothing persists.
+
+---
+
 ## Anti-patterns
 
 - **Never** translate code, file paths, SQL, error messages, or anything inside backticks. The hard-keep list in Step 3 is non-negotiable — Michael needs to grep these.
@@ -273,4 +399,9 @@ Don't show the self-check in output. It's silent.
 - **Never** restate Michael's question back to him as preamble. He just typed it; he knows what he asked.
 - **Never** vibe-translate AccentOS proper nouns (Daily Brief, Decision Engine, Vendor Ranking, KPI Catalog, BUILD_PLAN_CLAUDE.md). Module names and doc filenames are hard-keeps.
 - **Never** auto-translate a glossary term when Michael himself just used the technical term in his message — match his register. If he says "RLS policy", you can say "RLS policy" back. If he says "who-can-read rule", you say "who-can-read rule."
-- **Never** show the Step 8 self-check or announce intensity-level drops. The tightening is silent.
+- **Never** show the Step 8 self-check or announce intensity-level drops. The tightening is silent. (Step 11 wrap-up is the one exception — that one is out loud.)
+- **Never** auto-edit `user-profile.md` from observation-log signals. Always surface a proposal first. Single-occurrence feedback-log entries are the only path that bakes in immediately.
+- **Never** delete entries from observation-log or feedback-log — both are append-only history. `/vibe reset` only resets the profile, not the logs.
+- **Never** count an `echo` signal as a correction. If Michael says "RLS" once, that's information — not a complaint. He needs to say it twice in one session OR the same signal needs to fire across ≥3 sessions before the profile changes.
+- **Never** parenthesize a hard-keep ("Daily Brief (the dashboard summary)") just because it's a proper noun. Hard-keeps are byte-exact, no commentary.
+- **Never** apply observation-log learnings without setting `applied_to_profile: yes` on the entry — otherwise the same observation re-fires next session and inflates the count toward an unnecessary self-optimize proposal.
