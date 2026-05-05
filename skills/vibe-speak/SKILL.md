@@ -37,15 +37,64 @@ Stolen from: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (
 
 ## Step 0 — Read profile + recent learnings (every session start)
 
+**When this fires.** Run Step 0 the first time vibe-speak activates in a Claude Code conversation (the Trigger Recognition phrase fires for the first time). After it runs once per conversation, the loaded state is reused — don't re-read on every turn. If the conversation is auto-compacted and the state is lost, re-read on the next vibe-speak signal.
+
 Before producing any output, read in this order:
 
-1. **`skills/vibe-speak/user-profile.md`** — the calibrated user profile. Apply default intensity, register-mirror setting, hard-keep additions, glossary overrides, custom intensity levels, and override-command list.
-2. **`skills/vibe-speak/feedback-log.md`** — every entry with `applied: no` is a pending correction. Apply each as a constraint on this session.
-3. **`skills/vibe-speak/observation-log.md`** — scan recent entries (last 30 days) for patterns. Apply the *constraint* form of every observation with `applied_to_profile: yes`.
+1. **`skills/vibe-speak/user-profile.md`** — the calibrated user profile.
+2. **`skills/vibe-speak/feedback-log.md`** — every entry with `applied: no` is a pending correction.
+3. **`skills/vibe-speak/observation-log.md`** — scan entries from the last 30 days.
 
-If any of those files don't exist, fall back to SKILL.md defaults and write a one-line note to surface the missing-file state in the first response.
+For each file, handle missing / malformed cases:
 
-This step costs ~1–3K input tokens per session, recovered many times over by the per-response output savings. Don't skip.
+| State | Action |
+|---|---|
+| File exists, parses cleanly | Apply per Step 0 normal rules |
+| File missing entirely | **Bootstrap it** — write a fresh skeleton from the embedded templates in Step 0.5 (below). After bootstrap, reload and apply. |
+| File exists but is empty (0 bytes) | Same as missing — bootstrap |
+| File exists but YAML/markdown is malformed | Surface the parse error in the first response, fall back to SKILL.md defaults. **Don't auto-rewrite** — the corruption may be Michael's in-progress edit. |
+| `user-profile.md` `Active user:` field doesn't match the operator | Apply SKILL.md defaults only. Surface a one-line note: "user-profile is calibrated for [name] — running on defaults. Run `/vibe profile` to seed your own." |
+
+**Apply order:**
+- `user-profile.md` defaults set the baseline
+- `feedback-log.md` `applied:no` entries override the baseline
+- `observation-log.md` `applied_to_profile:yes` entries are already in the profile (so reading them is informational, not active overlay) — but `applied_to_profile:no` entries with proposal_surfaced unset are pending the next self-optimize trigger and should be counted toward the threshold
+
+This step costs ~1–3K input tokens per first-activation, recovered many times over by per-response output savings. Don't skip.
+
+---
+
+## Step 0.5 — Bootstrap templates (used when files are missing)
+
+**user-profile.md skeleton** — write the following with the active user filled in (default: Michael Graf if not specified):
+
+```
+# vibe-speak — user profile
+
+Active user: [name]
+
+## Default intensity level
+vibe
+
+## Register mirror
+on
+
+## Hard-keep additions
+(none yet — populated as the user uses the skill)
+
+## Glossary overrides
+(none yet — falls back to SKILL.md Step 2)
+
+## Profile version
+version: 1.0.0
+seeded: [YYYY-MM-DD] (auto-bootstrap)
+```
+
+**observation-log.md skeleton** — empty body, just the schema heading and instructions block (copy the "How to use this file" + "Trigger conditions" + "Entry schema" sections from the canonical observation-log.md).
+
+**feedback-log.md skeleton** — same pattern, schema only, empty entries section.
+
+After bootstrap, the first response says: "Bootstrapped vibe-speak files at `skills/vibe-speak/`. Calibration starts fresh. Run `/vibe profile` any time to inspect."
 
 ---
 
@@ -59,6 +108,15 @@ Activate when Michael says any of:
 - "explain like I'm vibing" / "vibe coder mode"
 - "less words" / "tighten up" / "shorter"
 - "/vibe" (slash-style)
+
+**Fuzzy matching.** Match on **whole-word edit-distance ≤ 2** for any single trigger word, OR exact substring match for multi-word triggers. Examples that match:
+
+- `vibe`, `vibey`, `vibez`, `viba`, `vbe`, `vibemode`, `vibemde`, `vide mode`, `vibe mod` — all activate
+- `vibe tighter`, `vibetighter`, `vibe tight` → matches `/vibe tighter` command
+- Typos within edit distance 2 of any of the trigger phrase keywords ("vibe", "plain", "jargon") activate
+- `remue` (edit distance 3 from "vibe") does **not** match — too far. Remains a typo for "resume."
+
+This is a fuzzy *substring word match*, not whole-prompt match. "let's go vibe mode now" activates fine.
 
 Stays active across all subsequent responses in the session. Disengage on:
 
@@ -82,13 +140,38 @@ Michael picks; default is **Vibe**.
 
 Switch mid-session: "go tight", "soft mode", "status only", "one-liner please."
 
-**Closure-signal auto-drop:** If the latest message ends with `go.` / `Go.` / contains `just do it` / `resume` / `continue` / `keep going` → drop one level for that response only.
+**Direction terminology — read carefully.** The level table runs from least-compressed (Soft) to most-compressed (One-liner). Throughout this skill:
 
-**Autonomy-signal auto-switch:** If the latest message contains `build without stopping` / `don't interrupt` / `autonomously` / `do not stop` → switch to `status` for the rest of the session.
+- "**Tighten** by N" / "**drop intensity** by N" = move *down* the table = MORE compressed (Vibe → Tight → Status).
+- "**Loosen** by N" / "**bump intensity up** by N" = move *up* the table = LESS compressed (Vibe → Soft).
 
-**Bump-up signal:** If the latest message contains `explain` / `walk me through` / `why` / `i don't understand` → bump up one level for that response.
+Example: Vibe + tighten 1 = Tight. Vibe + loosen 1 = Soft. The compression direction is "tighten." Anywhere the SKILL.md or companion files say "drop one level," it means tighten / more compressed.
 
-These auto-drops are silent. Don't announce.
+**Closure-signal auto-tighten** (collision-aware): Tighten one level for *that response only* when the latest message contains a closure word AND the closure word is *not* in an action-verb context. Detection rules:
+
+- **Fires:** message ends with `.` immediately after the word ("go.", "resume."); the word is the entire message ("resume"); the word is followed by another closure word ("just do it, resume").
+- **Does not fire:** the word is followed by a complement that turns it into an action verb ("continue building", "resume from M21", "keep going on the refactor"). These are commands to *do*, not closure pings.
+
+Closure words: `go.` · `go` (alone) · `just do it` · `resume` (alone or trailing-period) · `continue` (alone or trailing-period) · `keep going` (alone or trailing-period) · `do it`.
+
+**Autonomy-signal auto-switch:** If the latest message contains `build without stopping` / `don't interrupt` / `autonomously` / `do not stop` / `just the bullets` / `bullets only` / `no prose` → switch to `status` mode for the rest of the session.
+
+**Bump-up signal:** If the latest message contains `explain` / `walk me through` / `i don't understand` → loosen one level for that response.
+
+**"Why" disambiguation.** `why` appears in two distinct contexts; pick by parser priority:
+
+1. *About Claude's own past output* ("why did you say X?", "why did you write Y?", "why translate Z?") → fires **translation_pushback**, NOT bump-up. Even if it loosens for that one answer, the structural action is logging the term to feedback-log.
+2. *About the world / code / system* ("why does X break?", "why is the schema set up like this?") → fires **bump-up**.
+
+If both apply, translation-pushback wins.
+
+These auto-tightens / loosens are silent. Don't announce. Multiple signals can compose:
+- Tighten + tighten = tighten 2.
+- Tighten + loosen = no-op (cancel).
+- Tighten + autonomy-switch = autonomy wins (more specific).
+- Override command + signal in same message: override applies first, then signals adjust the override result.
+
+**Signals do nothing while skill is INACTIVE.** All Step 1 / 1.5 signals require vibe-speak to already be active (per Trigger Recognition). They never auto-activate the skill. Saying "build without stopping" while in normal mode does not enter status mode — it just runs as a normal Claude prompt.
 
 ---
 
@@ -103,7 +186,8 @@ Read the user's most recent input. Calibrate output formality to match:
 | Comma splices, run-ons | Allow output commas where periods would go; lower formal-grammar bar |
 | Standard prose grammar + caps | Use standard prose grammar |
 | Single-word prompts ("resume", "continue", "go") | One-line response, no preamble, no recap |
-| Numbered chains (1) X 2) Y 3) Z) | Mirror with numbered status output |
+| Numbered chains: input format `1) X 2) Y 3) Z` | Output uses **same numbering punctuation Michael used** (e.g. `1) ✓ ...`). Don't switch from `)` to `.` or vice versa. |
+| Numbered chains: input format `1. X 2. Y` | Output uses `1. ✓ ...`. Preserve the user's chosen format byte-for-byte. |
 
 The mirror is **soft** — readability beats imitation. Don't introduce typos in output to match input typos. Just lower the formal-grammar bar.
 
@@ -199,7 +283,7 @@ Drop back to **normal mode for that one response** (not the whole session) when:
 3. **Supabase SQL output / migration files** — exact wording is load-bearing; never vibe-translate the SQL itself or the M-task instructions Michael will paste into Supabase.
 4. **Multi-step sequences with order dependency** — if compressing makes the order ambiguous, expand. Order > brevity.
 5. **Error diagnosis** — when explaining *why* something broke, exact technical names matter. Translate the action verbs, keep the diagnostic terms.
-6. **First-time-Michael-sees-it concept** — if a term is glossary-translated AND he's never seen it before in AccentOS, parenthesize the original term once: "spin up (instantiate)". Future mentions just say "spin up."
+6. **First-use-this-conversation parenthesis** — if a term is glossary-translated AND it hasn't appeared in this Claude Code conversation yet, parenthesize the original term once on first use: "spin up (instantiate)". Subsequent mentions in the same conversation just say "spin up." (Whole-history "has Michael ever seen this" is unknowable; conversation-scope is the practical proxy.)
 
 After the disengage response, return to the prior intensity level automatically — don't make Michael re-trigger.
 
@@ -262,17 +346,28 @@ PR / SESSION_LOG entries: vibe-speak prose, but keep the AccentOS section marker
 
 ---
 
-## Step 8 — Token-awareness loop
+## Step 8 — Token-awareness self-check
 
-After every 5th response, do a silent self-check:
+Claude has no reliable cross-turn counter, so the self-check fires on triggers, not on a count:
 
-1. Was the last response ≥30% shorter than what Soft mode would have produced?
+**Run the self-check before each response when ANY of these are true:**
+
+1. The previous response was >300 words (rough heuristic: word-count check on the last assistant turn).
+2. A signal fired this turn (closure / autonomy / bump-up / correction / echo / drift).
+3. Michael ran any `/vibe` override command this turn.
+4. The Step 11 wrap ritual is about to run.
+
+**The self-check itself (silent unless wrap ritual):**
+
+1. Was the previous response ≥30% shorter than what Soft mode would have produced for the same content?
 2. Did any filler from Step 5 sneak through?
-3. Did any glossary term from Step 2 leak in untranslated?
+3. Did any active-translation glossary term leak in untranslated?
 
-If 2 or 3 of those fail → drop one intensity level deeper for the next response without announcing it. Self-tightening over the session.
+If 2 or 3 of those fail → tighten one intensity level for the next response (silent). If 1 fails → no action; ratio is hard to estimate without ground truth, treat single misses as noise.
 
-Don't show the self-check in output. It's silent.
+**Drift signal.** If the self-check fires the tighten rule twice within a 30-message stretch (count by checking observation-log entries dated today with `signal_type: drift`), append a new `signal_type: drift` entry. This counts toward the ≥3 self-optimize threshold for permanently lowering the user's default intensity.
+
+Don't show the self-check in output. The Step 11 wrap ritual is the only time it surfaces.
 
 ---
 
@@ -316,36 +411,55 @@ The skill listens for signals in Michael's messages and Claude's own behavior. W
 
 ### Signal types
 
-| Signal | Trigger | Action |
-|---|---|---|
-| **closure** | Input ends with "go." / contains "resume" / "continue" / "just do it" | Drop intensity 1 level (silent), append to observation-log if novel |
-| **autonomy** | Input contains "build without stopping" / "don't interrupt" / "autonomously" | Switch to `status` mode for rest of session, append observation |
-| **bump-up** | Input contains "explain" / "walk me through" / "why" | Bump intensity 1 level for that response |
-| **echo** | Input uses a term currently on active-translation list | Move term to hard-keep for *that response*; if it happens twice in one session, log to observation-log for next-session profile update |
-| **correction** | Input says "tighter" / "shorter" / "looser" / "more detail" / "stop translating X" | Apply immediately, log to **feedback-log.md** with `applied: no` |
-| **revert** | Michael's next message reverts a vibe-translated term back to its technical form | Move term to hard-keep, log to feedback-log |
-| **drift** | Step 8 self-check flags wordiness creep | Drop one level silently, log to observation-log |
-| **filler_complaint** | Michael calls out a specific filler phrase ("stop saying X") | Add X to filler kill list immediately, log to feedback-log |
-| **translation_pushback** | Michael asks "what does X mean?" about a translated term | The translation didn't help — log to observation-log; if same term hits twice, propose hard-keep |
-| **custom_level** | Michael invents an intensity name not in the level table | Use it for this response, log to observation-log so it can be added |
+| Signal | Trigger | Apply | Log timing |
+|---|---|---|---|
+| **closure** | Per Step 1 collision-aware rules | Tighten 1 (silent) | Observation-log: write at end of response **only if novel** (no entry today with same signal_target). Update intensity in working memory only. |
+| **autonomy** | Input contains `build without stopping` / `don't interrupt` / `autonomously` / `do not stop` / `just the bullets` / `bullets only` / `no prose` | Switch to status for session | Observation-log: write at end of response if novel. |
+| **bump-up** | Input contains `explain` / `walk me through` / `i don't understand` (NOT in translation-pushback context per Step 1) | Loosen 1 for this response | No log — too common to be informative. |
+| **echo** | Input uses a term currently on active-translation list | Hard-keep that term for this response. **Counter:** read observation-log; count entries dated today (UTC) with same signal_target. If count ≥ 1 already (i.e. this is the second time today), write a new entry. The third occurrence triggers the ≥3 self-optimize. |
+| **correction** | Override command OR input matches "tighter" / "shorter" / "looser" / "more detail" / "stop translating X" / "use X instead" | Apply now | Feedback-log: write **immediately in this turn** via the Edit tool, before the response goes out. |
+| **revert** | Michael's previous turn was vibe-translated; his next message uses the technical term | Move term to hard-keep for rest of session | Feedback-log: write immediately. |
+| **drift** | Step 8 self-check flags wordiness 2× in 30 messages | Tighten 1 (silent) | Observation-log: write at end of response. |
+| **filler_complaint** | Michael calls out specific filler ("stop saying X" / "drop the [phrase]") | Add X to kill list now | Feedback-log: write immediately. |
+| **translation_pushback** | Per Step 1 "why" disambiguation rules | Hard-keep the term for this response | Observation-log: write at end of response. Threshold ≥2 for this signal (lower than ≥3 default — pushback is a stronger signal than echo). |
+| **custom_level** | Michael uses an intensity name not in the table ("medium tight", "skim mode") | Best-guess interpolate from nearest 2 levels | Observation-log: write at end of response. |
+
+### Logging mechanism (concrete)
+
+- **Feedback-log writes happen in the same turn** as the trigger. Claude uses the Edit tool to append a new `### fb-NNN — ...` block to `skills/vibe-speak/feedback-log.md` *before* sending the response. NNN is the next sequential number — read the file, find max NNN, increment.
+- **Observation-log writes happen at end-of-response.** If multiple signals fired in one turn, append all of them in a single Edit tool call.
+- **No batch deferral.** If a signal fires and Claude can't write the file (read-only filesystem, missing file after corruption), surface a one-line warning in the response: `⚠ vibe-speak: couldn't log [signal_type] — [reason]`. Don't fail silently.
+- **Counter via file reads, not memory.** "Twice in one session" = read the file, count entries with today's date and matching signal_target. Don't try to maintain a counter across turns — Claude has no reliable cross-turn state.
 
 ### Self-optimize threshold
 
-When `observation-log.md` has ≥3 entries with the same `signal_type` AND `signal_target` AND none has a `proposal_surfaced` date within the last 14 days → at end of *that* response, surface a profile-update proposal. Don't auto-edit `user-profile.md`. Format:
+When `observation-log.md` has ≥3 entries (≥2 for `translation_pushback`) with the same `signal_type` AND `signal_target` AND none has `proposal_surfaced` within the last 14 days → at end of *that* response, surface a profile-update proposal. Don't auto-edit `user-profile.md`. Format:
 
 ```
 ═══ VIBE-SPEAK SELF-OPTIMIZE PROPOSAL ═══
 Pattern detected: [signal_type] on [signal_target] — N times across M sessions
 Proposed profile change: [single sentence]
 Files affected: skills/vibe-speak/user-profile.md
-Approve with: /vibe accept proposal
-Modify with:  /vibe edit proposal — [revised text]
-Skip with:    /vibe skip proposal
+Approve:  /vibe accept proposal
+Modify:   /vibe edit proposal — [revised text]
+Skip:     /vibe skip proposal  (suppresses re-surface for 14 days)
 ```
 
 Set `proposal_surfaced: YYYY-MM-DD` on the matching observations the moment the proposal is shown.
 
-**Feedback-log entries propose immediately** (single occurrence). Observation-log entries propose at the ≥3 threshold (inferred signals need confirmation; explicit corrections don't).
+**Feedback-log entries propose immediately** (single occurrence). Observation-log entries use the threshold. The reason: explicit corrections from Michael don't need confirmation; inferred signals do.
+
+### Multi-signal collision rules
+
+When more than one signal fires in the same turn:
+
+| Combo | Resolution |
+|---|---|
+| Override command + signal | Override applies first, then signals adjust the override result. |
+| Translation-pushback + bump-up (the "why" case) | Translation-pushback wins per Step 1. Skip bump-up logging. |
+| Closure + autonomy | Autonomy wins (more specific intent). Closure tighten is absorbed. |
+| Tighten + loosen (composite) | Net = no change for the response. Both still log. |
+| Multiple corrections in one turn | All apply. Each gets its own feedback-log entry. |
 
 ---
 
@@ -355,22 +469,116 @@ Michael can run any of these in plain prompt text. Each one is matched on substr
 
 | Command | What it does |
 |---|---|
-| `/vibe profile` | Print current `user-profile.md` state (active intensity, register-mirror on/off, recent overrides) |
-| `/vibe tighter` | Drop default intensity by one level for the rest of the session |
-| `/vibe looser` | Bump default intensity up by one for the rest of the session |
+| `/vibe profile` | Print compact profile summary (≤12 lines) — see format below |
+| `/vibe tighter` | Tighten default intensity by one for the rest of the session |
+| `/vibe looser` | Loosen default intensity by one for the rest of the session |
 | `/vibe match me` | Set register-mirror to ON |
 | `/vibe full grammar` | Set register-mirror to OFF |
 | `/vibe stop translating X` | Add X to hard-keep, log to feedback-log |
 | `/vibe translate X` | Move X to active translation, log to feedback-log |
+| `/vibe drop filler X` | Add the phrase X to filler kill list, log to feedback-log |
 | `/vibe show learnings` | Print last 10 observation-log entries + last 10 feedback-log entries |
 | `/vibe propose updates` | Run self-optimize check now and surface any pending proposals |
 | `/vibe accept proposal` | Bake the most recently surfaced proposal into user-profile.md |
 | `/vibe edit proposal — [text]` | Bake a Michael-modified version of the proposal |
 | `/vibe skip proposal` | Skip the proposal but keep observation-log entries (will not re-surface for 14 days) |
+| `/vibe undo` | Revert the most recent profile or feedback-log change made this session |
 | `/vibe reset` | Restore profile to SKILL.md defaults — does NOT erase observation-log or feedback-log |
 | `/vibe export` | Print profile + recent observations as a single markdown block (for sharing across sessions / devices) |
+| `/vibe what is X` | Introspection — explain what feature X is in the skill (e.g. `/vibe what is status+`) |
 
-Recognize fuzzy variants: "/vibe tight" matches `/vibe tighter`. "vibe profile" (without slash) also works. Typos tolerated within edit distance 2.
+### Command matching rules
+
+- **Slash optional.** `tighter` (alone, ≤5-word message) matches `/vibe tighter`. The slash is helpful but not required for short commands.
+- **Substring + edit distance.** Any command keyword within edit distance 2 matches.
+- **Inline corrections without slash.** Phrases like "stop translating component" / "drop 'great question'" / "translate that" recognize as the corresponding `/vibe ...` command.
+- **Colloquial correction patterns.** Recognize as filler_complaint:
+  - `stop saying X` / `stop with the X` / `cut the X` / `enough with X` / `drop the X` / `quit using X` / `X is annoying` / `X is grating` → all map to `/vibe drop filler X`
+  - `use X instead of Y` / `say X not Y` → maps to a translation override
+  - `mode-style requests`: `use status mode` / `give me bullets` / `bullet me` / `terse mode` / `one-liner please` → maps to the corresponding intensity switch
+- **Ambiguous match → ask.** If the input could match 2+ commands, surface a one-line clarify: "Match either `/vibe tighter` or `/vibe drop filler tighter`. Which?" Don't guess.
+- **Composed triggers.** `vibe mode but full grammar` / `vibe mode in tight` activates the skill AND immediately applies the composed override. Parse the trigger, then apply each composable element left-to-right.
+- **Repeated commands stack.** `tighter tighter` = tighten 2. Cap at the floor (one-liner).
+- **No-op safety.**
+  - `/vibe accept proposal` with no recent proposal → "no pending proposal to accept. Last surfaced: [date or never]."
+  - `/vibe stop translating X` where X isn't currently active-translated → "X isn't on active translation. Already a hard-keep — no change needed."
+  - `/vibe undo` with no recent change → "nothing to undo this session."
+- **`/vibe undo` scope.** Reverts the **single most recent profile or feedback-log change made in this Claude Code conversation**, regardless of how many turns ago. Does not reach back into earlier sessions. Stack depth = 1 (no chain undo). To revert further, edit the files directly.
+
+### `/vibe profile` output format (compact)
+
+```
+─── vibe-speak profile ───
+user:           [Active user from user-profile.md]
+default level:  [intensity]   register mirror: [on|off]
+hard-keeps (top 5): [comma-separated]
+active glossary: [N terms]   filler kill list: [N phrases]
+custom levels:  [comma-separated names]
+last self-optimize: [date or "never"]
+pending proposals: [N]   feedback-log unappied: [N]
+session activations: [count today]
+```
+
+≤12 lines. Don't dump the full profile — that's `/vibe export`.
+
+### `/vibe show learnings` output format
+
+```
+─── recent feedback (last 10) ───
+[date]  [feedback_type]  [signal_target]  →  [new_behavior]
+...
+
+─── recent observations (last 10) ───
+[date]  [signal_type]  [signal_target]  ×N  [applied? y/n]
+...
+```
+
+### `/vibe what is X` matcher
+
+Recognized X values: `status+`, `vibe`, `tight`, `soft`, `one-liner`, `closure signal`, `autonomy signal`, `echo signal`, `register mirror`, `hard-keep`, `self-optimize`. For unrecognized X, surface: "Not a vibe-speak feature. Maybe you meant: [3 closest matches]?" 
+
+---
+
+## Step 10.5 — Disengage paths
+
+**Explicit disengage:** Michael says "normal mode" / "stop vibe" / "vibe off".
+- If a tool-loop is mid-flight (e.g. Claude is in the middle of a multi-edit task), finish the current task in vibe-speak (don't abandon mid-task). The first response *after* the task completes runs in normal mode.
+- If no task is mid-flight, the disengage applies to the next response.
+- Does NOT clear observation-log / feedback-log / user-profile.md. Those persist.
+
+**Auto-disengage (Step 4):** Single-response only. Returns to active mode automatically.
+
+**Re-activation:** Any trigger phrase reactivates. State (intensity, register-mirror, accumulated session signals) **is reset** on re-activation — vibe-speak treats reactivation as a new session start (re-runs Step 0).
+
+---
+
+## Step 10.6 — Recovery from auto-compaction
+
+If Claude Code's conversation auto-compaction fires mid-session, working-memory state (current intensity level, register-mirror toggle, count of signals fired this session, last-shown proposal) is lost.
+
+**Recovery rules:**
+
+1. The next vibe-speak signal after compaction triggers a Step 0 re-read. This is normal Step 0 behavior — works automatically.
+2. **In-turn writes preserve the important state.** Because feedback-log writes happen in-turn (Step 9 mechanism), no profile changes are lost to compaction. Only the volatile intensity-level state is.
+3. After compaction, default intensity restores from `user-profile.md`. If Michael had switched mid-session ("/vibe tighter"), that change was *not* written to the profile (it was session-only) — so it's lost. This is acceptable; he can re-issue.
+4. **Session-only changes that should survive compaction** (rare): explicitly tell Michael, "the `/vibe tighter` you set earlier was session-only — re-run if you want it back."
+
+---
+
+## Step 10.7 — Log rotation
+
+`observation-log.md` is append-only. To prevent unbounded growth:
+
+- **Rotation threshold:** when the file exceeds 500 entries OR 100 KB.
+- **Rotation action:** at the next Step 11 wrap ritual after the threshold is crossed:
+  1. Move the current file to `skills/vibe-speak/archive/observation-log-YYYY-MM.md`.
+  2. Create a fresh `observation-log.md` with the schema header + a "Carried-forward summary" section that lists all `signal_target` values that have hit the self-optimize threshold but aren't yet `applied_to_profile: yes` (so the threshold-counter doesn't reset across rotations).
+  3. Surface a one-line note: "rotated observation-log: [N] entries archived to [archive path]."
+- **Step 0 reading after rotation:** read both the active log and the most recent archive file (last-30-day window may span both). Never read more than the 2 most recent files; older history is reference-only.
+
+`feedback-log.md` rotates the same way, threshold 200 entries / 50 KB.
+
+`user-profile.md` does not rotate — it's a snapshot, not a log.
 
 ---
 
@@ -378,13 +586,15 @@ Recognize fuzzy variants: "/vibe tight" matches `/vibe tighter`. "vibe profile" 
 
 When Michael says any of: `wrap`, `wrap session`, `session end`, `commit and push`, `commit + push final`, `final commit`, `end session`:
 
-1. Run Step 8 self-check **out loud** in one line — "session avg ≈ N words/response, intensity drift: [none|tightened|loosened]"
-2. Append today's observations (any signals that fired with `applied_to_profile: no`) to `observation-log.md`
-3. Surface any pending self-optimize proposals (Step 9 threshold)
-4. Print the wrap-up bullet list in `tight` mode regardless of session intensity
-5. After `git push`, set `last_self_optimize_proposal` date in user-profile.md if a proposal was surfaced
+1. Run Step 8 self-check **out loud** in one line — "session: [N] turns, [M] signals fired, intensity drift: [none|tightened by 1|loosened by 1]".
+2. **Verify all signal logging is current.** Every observation-log / feedback-log write should already have happened in-turn (Step 9 logging mechanism). Step 11 is verification, not bulk-write. If any entries are still pending in working memory, write them now.
+3. Surface any pending self-optimize proposals (Step 9 threshold). If none, print "no proposals — session was clean."
+4. Print the wrap-up bullet list in `tight` mode regardless of session intensity.
+5. After `git push`, update `last_self_optimize_proposal: YYYY-MM-DD` in `user-profile.md` if a proposal was surfaced this session.
 
-Step 11 is the load-bearing step for cross-session learning. Without it, nothing persists.
+Step 11 is the consistency check for cross-session learning. The actual persistence happens in Step 9 (in-turn). Step 11 catches anything that fell through.
+
+**If Michael says wrap mid-task** (e.g. while a tool call is pending), defer Step 11 until the task completes, then run it. Don't drop work to wrap.
 
 ---
 

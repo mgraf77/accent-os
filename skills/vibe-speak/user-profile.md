@@ -135,11 +135,24 @@ When Michael says "wrap" / "wrap session" / "session end" / "commit + push final
 
 ---
 
-## Profile version
+## Profile state (read by `/vibe profile`)
 
 ```
-version: 1.0.0
+version: 1.1.0
+active_user: Michael Graf
+default_intensity: vibe
+register_mirror: on
 seeded_from: PROMPT_LOG.md analysis 2026-05-05 (10 prompts sampled)
 last_self_optimize_proposal: never
 last_michael_edit: 2026-05-05 (initial seed)
+last_undo_target: none
+session_activations_today: 0
+hard_keep_count: 60
+active_glossary_count: 14
+filler_kill_count: 18
+custom_levels: status+
+pending_proposals: 0
+feedback_log_unapplied: 0
 ```
+
+Update these fields as state changes. Bump `version` minor on schema-additive changes, major on breaking changes. The skill reads this block at Step 0 and writes back to it at Step 11.
