@@ -550,6 +550,9 @@ async function doLogin(){
     activateApp();
     sbAuditLog('login', 'auth', {email: CU.email});
     await hydrateFromSupabase();
+    if(typeof applyModuleModesAfterHydrate === 'function'){
+      try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[login] module modes init failed:', e.message); }
+    }
     goTo('dashboard');
   }catch(e){
     setJwt('');
@@ -738,6 +741,7 @@ const PAGE_META={
   roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
   mgmt:      {t:'Management Dashboard',s:'Owner View'},
   settings:  {t:'Settings',s:''},
+  modulemodes: {t:'Module Modes',s:'Rollout state · per-user overrides'},
 };
 let curPage='';
 function goTo(page){
@@ -5951,6 +5955,7 @@ function mgmt(el){
     {id:'employees', label:'Employees'},
     {id:'commission', label:'Commission'},
     {id:'activity', label:'Team Activity'},
+    {id:'modes', label:'Modes'},
     {id:'system', label:'System'}
   ];
   el.innerHTML = `
@@ -5968,6 +5973,7 @@ function mgmt(el){
   else if(mgmtSection === 'employees') renderEmployees(c);
   else if(mgmtSection === 'commission') renderCommissionTracker(c);
   else if(mgmtSection === 'activity') renderTeamActivity(c);
+  else if(mgmtSection === 'modes' && typeof renderModuleModesPanel === 'function') renderModuleModesPanel(c);
   else if(mgmtSection === 'system') renderSystemPanel(c);
 }
 
@@ -6567,6 +6573,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   activateApp();
   await hydrateFromSupabase();
+  if(typeof applyModuleModesAfterHydrate === 'function'){
+    try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[boot] module modes init failed:', e.message); }
+  }
   sbAuditLog('session_resume', 'auth');
   goTo('dashboard');
 });
@@ -6608,5 +6617,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/inventory_analytics.js?v=6.10.35"></script>
 <script src="js/digest.js?v=6.10.36"></script>
 <script src="js/my_tasks.js?v=6.10.38"></script>
+<script src="js/module_modes.js?v=6.10.59"></script>
 </body>
 </html>

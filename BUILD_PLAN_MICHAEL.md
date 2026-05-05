@@ -383,6 +383,15 @@
   - Then: paste to Claude → `M39 done — vendors fully specced. vendor-cascade enriched.`
   - Unlocks: V2 (concentration risk), V5 (revenue contribution), V10 (supplier diversity); enriches vendor-cascade and vendor-risk-register
 
+- [ ] **M30** — Run `user_module_overrides` schema (cross-device per-user gating)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Ask Claude to write `sql/M30_user_module_overrides.sql` — table with PK (user_id, module_key), access enum (allow / deny / read_only), RLS so Owner reads/writes all + each user can read their own row only.
+    2. Paste into SQL Editor → Run.
+    3. Reload AccentOS → Mgmt → Modes → User Overrides — overrides set in the UI now persist server-side and gate access for each user on their own browser/device too (not just Owner's local view).
+  - Then: paste to Claude → `M30 done — user_module_overrides table live. Wire UI to read+write the table.`
+  - Unlocks: real cross-device per-user module access. Today (v1) overrides only affect Owner's own browser; this M-task makes them effective for the actual user being granted/denied access.
+
 ---
 
 ## CATEGORY: KPI DASHBOARDS — also-easy already-written files (just run them)
