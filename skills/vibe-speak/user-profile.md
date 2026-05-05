@@ -6,9 +6,19 @@ Active user: **Michael Graf** (AccentOS solo build, vibe-coder register).
 
 ---
 
-## Default intensity level
+## Default mode (auto-activated on session start)
 
-`vibe`  *(set by SKILL.md — Step 1)*
+`vibe`  *(read by `.claude/CLAUDE.md` AUTO-EXECUTE step 1; see `skills/vibe-speak/MODES.md` for the catalog)*
+
+Change with: `/vibe set default mode [name]` (caveman / gsd / vibesplain / pair / teach / executive / wenyan / vibe / raw, or any custom mode in `custom_modes` below).
+
+## Custom modes
+
+(none — built-in catalog covers needs. Add custom modes by creating `skills/vibe-speak/modes/[name].md` and registering triggers here.)
+
+## Default intensity level (within the active mode)
+
+`vibe`  *(set by SKILL.md — Step 1; range is per-mode, see MODES.md table)*
 
 **Drop one level instantly when input contains:** `go.` · `go` · `just do it` · `stop asking` · `resume` · `continue` · `keep going`
 
@@ -118,6 +128,16 @@ When Michael says "wrap" / "wrap session" / "session end" / "commit + push final
 
 ---
 
+## Mode commands (Michael can run any time)
+
+| Command | What it does |
+|---|---|
+| `/mode list` | Print mode catalog from MODES.md |
+| `/mode current` | Print active mode + intensity |
+| `/mode [name]` | Switch to named mode (vibe / caveman / gsd / vibesplain / pair / teach / executive / wenyan / raw) |
+| Natural-language triggers | "caveman mode", "gsd", "vibesplain", "pair up", "teach me", "exec mode", "back to vibe", "raw mode" — see MODES.md |
+| `/vibe set default mode [name]` | Permanently change the auto-activation default. Writes to this file. |
+
 ## Override commands (Michael can run any time)
 
 | Command | What it does |
@@ -147,13 +167,16 @@ Slash optional for short commands (`tighter` alone matches `/vibe tighter`). Edi
 ## Profile state (read by `/vibe profile`)
 
 ```
-version: 1.1.0
+version: 2.0.0
 active_user: Michael Graf
+default_mode: vibe
 default_intensity: vibe
 register_mirror: on
+modes_available: vibe, caveman, gsd, executive, pair, teach, vibesplain, wenyan, raw
+custom_modes: (none)
 seeded_from: PROMPT_LOG.md analysis 2026-05-05 (10 prompts sampled)
 last_self_optimize_proposal: never
-last_michael_edit: 2026-05-05 (initial seed)
+last_michael_edit: 2026-05-05 (mode framework + auto-activation)
 last_undo_target: none
 session_activations_today: 0
 hard_keep_count: 60
