@@ -243,6 +243,15 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - applied_to_skill_md: no
 - outcome: success
 
+### gotcha-026 — 2026-05-05 — kpi-data-audit (KPI ↔ schema cross-reference)
+- target: kpi-data-audit skill itself + KPI_CATALOG.md doc artifact
+- what_happened: New skill that audits the 152-KPI catalog against live Supabase schema and integration state. Forged in same branch as the catalog (catalog is prerequisite). Ralph loop ran 4 iterations, 12 fixes — most around output ergonomics (informal-formula handling, schema-parser uncertainty, M-task marker variations, scoped-vs-full modes) and cross-referencing the catalog's own gap section to avoid double-reporting.
+- root_cause: Cross-source data audit is a complex problem; first-of-kind in this library. Naive design under-handles edge cases (informal SQL formulas, schema-parser limits, multiple ways to mark M-tasks done).
+- fix_this_run: Added Step 0 invocation parser (single-KPI vs full vs snapshot modes); Step 2 AMBIGUOUS_FORMULA flag; Step 3 SCHEMA_PARSE_UNCERTAIN flag; Step 4 expanded M-task marker recognition; Step 5 capture-table promotion logic; Step 6 catalog-section flexible heading detection; Step 7 5-status summary + STALE/NEW/CONFIRMED gap classification + top-10/--full modes; Step 8 snapshot --full hint. 8 anti-patterns total.
+- prevention_rule: Audit-style skills must distinguish CONFIRMED / NEW / STALE state when cross-referencing existing documentation, or they double-report on subsequent runs.
+- applied_to_skill_md: yes (built into kpi-data-audit Step 6)
+- outcome: success
+
 ### gotcha-025 — 2026-05-05 — codex-review (cross-agent peer-review skill)
 - target: codex-review skill itself (forged this turn)
 - what_happened: Michael proposed a cross-agent review skill: have Codex audit Claude's recent work and auto-apply LOW-risk fixes while surfacing HIGH-risk ones. Forged as standalone skill (not as a step inside skill-forge) since cross-review applies to any AccentOS work product. Ralph loop surfaced 7 real issues across 4 iterations: file-assembly logic for diff vs full-file targets, JSON-array unwrap for OpenAI's response_format object constraint, model-name env-var override, post-apply validation mechanism, exit-vs-halt semantics, apply-mode honesty (manual not automated in v1), empty-target fail-fast.
