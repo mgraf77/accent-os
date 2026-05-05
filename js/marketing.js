@@ -79,6 +79,46 @@ async function sbSaveMarketingCampaign(rec){
   }catch(e){ console.warn('[sb] Save marketing_campaign failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.54)
+async function sbUpdateCampaignField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['status','type','start_date','end_date','budget','spent','revenue_attributed','notes'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    const res = await sbFetch(`/marketing_campaigns?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update campaign field failed:', e.message); return false; }
+}
+
+async function commitCampaignCellSelect(select){
+  if(!select) return;
+  const id = select.dataset.id;
+  const field = select.dataset.field;
+  const orig = select.dataset.orig || '';
+  const next = select.value;
+  if(next === orig) return;
+  const item = MARKETING_CAMPAIGNS.find(r => r.id === id);
+  if(!item){ select.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  select.dataset.orig = next;
+  const res = await sbUpdateCampaignField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    select.value = orig;
+    select.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`campaign_${field}_edit`, 'marketing_campaigns', {campaign_id: id, field, from: prev, to: next});
+  toast(`${item.name||'Campaign'} · ${field}: ${prev} → ${next}`, 'ok');
+  renderMktCampaigns($('mkt-content'));
+}
+
 async function sbDeleteMarketingCampaign(id){
   if(!sbConfigured()) return false;
   try{
@@ -241,10 +281,15 @@ function renderMktCampaigns(c){
               const rev = Number(r.revenue_attributed)||0;
               const roi = spent > 0 ? ((rev - spent)/spent) : null;
               const roiColor = roi==null?'var(--text-3)':roi>=1?'var(--green)':roi>=0?'var(--blue)':'var(--accent)';
+              const canEditCamp = CU && ['Owner','Admin','Manager'].includes(CU.role);
+              const campStatusOpts = ['planned','active','complete','paused','cancelled'];
+              const campStatusCell = canEditCamp
+                ? `<td onclick="event.stopPropagation();"><select data-id="${r.id}" data-field="status" data-orig="${esc(r.status)}" onchange="commitCampaignCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${campStatusOpts.map(s=>`<option value="${s}" ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(r.status)}</span></td>`;
               return `<tr style="cursor:pointer;${['cancelled','complete'].includes(r.status)?'opacity:0.7;':''}" onclick="openCampaignEdit('${r.id}')">
                 <td style="font-weight:600;color:var(--accent);">${esc(r.name)}</td>
                 <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc((r.type||'').replace('_',' '))}</span></td>
-                <td><span class="badge ${sb}" style="font-size:10px;">${esc(r.status)}</span></td>
+                ${campStatusCell}
                 <td class="sm mono">${r.start_date?esc(r.start_date):'—'}${r.end_date?' → '+esc(r.end_date):''}</td>
                 <td class="mono sm">${r.budget!=null?'$'+Number(r.budget).toLocaleString():'<span class="muted">—</span>'}</td>
                 <td class="mono sm">${spent?'$'+spent.toLocaleString():'<span class="muted">—</span>'}</td>
