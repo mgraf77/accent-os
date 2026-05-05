@@ -188,3 +188,12 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - prevention_rule: When WebFetch returns 403/404 on a planned source, fall back to WebSearch with quoted filename and extracted-content keywords before logging the source as empty.
 - applied_to_skill_md: yes
 - outcome: success
+
+### gotcha-018 — 2026-05-05 — Hex (hex.tech)
+- target: hex.tech — collaborative AI data analytics SaaS
+- what_happened: Step 1.5 re-frame raised KEEP from 1 to 3, but every re-framed KEEP was already covered by an existing skill (skill-forge + vendor-cascade) or by Claude Code's native conversational SQL. Forge correctly aborted to WATCH.
+- root_cause: Targets in adjacent SaaS categories often overlap heavily with what Claude Code itself already provides; concepts that "look like gaps" actually aren't.
+- fix_this_run: Aborted to WATCH per Step 4 decision gate. No skill written. Logged here for future targets.
+- prevention_rule: When re-framed KEEPs duplicate capabilities already provided by Claude Code or by existing skills in skills/, treat them as covered (not gaps) and abort to WATCH rather than forge a redundant skill.
+- applied_to_skill_md: no
+- outcome: aborted_to_watch
