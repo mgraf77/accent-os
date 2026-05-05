@@ -20,7 +20,7 @@ description: >
 
 **Purpose:** Take an external tool or methodology, extract its real concepts from primary sources, drop the parts that don't fit AccentOS, add the parts that are missing, and ship a usable local skill in one pass.
 
-Five things in order: **preflight → extract → gap → forge → log**. No step is optional, no step is skippable.
+Six phases in order: **preflight → extract → assess → propose-and-approve → forge-and-ralph → log**. No phase is optional. The approve gate (Step 5) and Ralph loop (Step 8) are non-negotiable — they exist to prevent over-shipping and under-testing respectively.
 
 ---
 
@@ -109,13 +109,17 @@ Run parallel searches across **all five source classes**. See `references/extrac
 
 **WebFetch failure fallback** — When `WebFetch` returns 403, 404, or any non-200 on a planned source, do not log the source as empty. Fall back in this order: (1) `WebSearch` with the quoted SKILL.md filename or canonical doc filename plus the most distinctive concept terms; (2) `WebSearch` with a `site:` operator restricted to the blocked host; (3) cached search-engine snippets that already surface the page content. Only mark a source empty after all three fall back to nothing.
 
-For each source, harvest into a flat list:
-- Use cases
-- Core concepts/primitives (named things — "cascade map", "orphan goal", "board package")
-- Workflows / step sequences
-- Concrete outputs / deliverables
-- Anti-patterns or "don't use this for"
-- Killer-feature claims (vs. fluff)
+For each source, harvest **concept by concept and feature by feature**. Exhaustive, not summarized:
+- Every named primitive (data shape, workflow, validation, output type) — list each individually
+- Every UI feature shown on the homepage and pricing page — list each individually
+- Every workflow step demoed in tutorials — list each individually
+- Every integration / connector — list each individually
+- Every "AI" or "automation" feature — list each individually
+- Every paid-tier-only feature — list each individually with the tier
+- Every anti-pattern or "don't use this for" — list each individually
+- Every killer-feature claim (vs. fluff)
+
+The goal is the longest possible list, not the shortest. Aim for ≥15 concepts/features for any non-trivial target. Step 4 (concept-theft) does the filtering — Step 2's job is exhaustive surfacing.
 
 Stop adding sources once 3 consecutive new sources produce 0 new concepts. That's saturation.
 
@@ -123,13 +127,13 @@ Stop adding sources once 3 consecutive new sources produce 0 new concepts. That'
 
 ## Step 3 — Concept inventory
 
-Consolidate into one structured table. Group near-duplicates. Score each:
+Consolidate the Step 2 harvest into one structured table. Group near-duplicates only when they're literally the same thing (e.g. "Magic AI" and "AI assistant" → one row). Do not aggressively dedupe — keep concepts separate when they have distinct inputs/outputs.
 
-| Concept | Best source | Mention frequency | AccentOS relevance |
+| # | Concept / feature | Best source | Mention frequency | AccentOS relevance |
 
 Relevance values: **HIGH** (direct fit), **MEDIUM** (needs translation), **LOW** (interesting only), **NONE** (drop).
 
-Identify the 80/20: the 5–10 concepts that carry the actual value. Everything else is decoration.
+Aim for ≥15 rows for any non-trivial target. Step 4 will filter — Step 3's job is to make every feature visible so nothing slips through.
 
 ---
 
@@ -162,16 +166,59 @@ For each STOLEN concept, classify:
 - **SUB-FEATURE** — folds into one of the standalone skills as a workflow step
 
 **Decision gate:**
-- STEAL ≥ 1 standalone → proceed to Step 5, design and forge each standalone skill in this run.
+- STEAL ≥ 1 standalone → proceed to Step 5 (proposals + approval gate). **Do not start designing or building yet.**
 - STEAL = 0 after re-frame → output WATCH and stop. Log gotcha with `outcome: aborted_to_watch`. WATCH should be **rare** — most non-trivial targets have at least one stealable concept.
 
-**Default deliverable: 1–5 customized skills per target.** Producing multiple skills from one target is expected, not exceptional. A target that yields only one skill is the lower bound, not the upper.
+**Step 4's output is a candidate list, not a build manifest.** The candidates go through Michael's approval gate in Step 5 before any file is written.
 
 ---
 
-## Step 5 — Skill design (per stolen concept)
+## Step 5 — Skill proposals & approval gate
 
-For **each STANDALONE concept** from Step 4, run this design pass independently. Multiple skills from one target run through Steps 5–6.5 in a loop, then commit together at Step 7.
+For **each STANDALONE candidate** from Step 4, output a brief proposal block. Format every proposal identically so Michael can scan a column of them:
+
+```
+PROPOSAL: [skill-name]
+  Stolen from: [target concept/feature]
+  What it does: [one sentence]
+  Gap it closes: [specific AccentOS gap or named-pattern improvement]
+  Effort: LOW | MEDIUM | HIGH
+  Pairs with: [other approved/existing skills it composes with, if any]
+  Recommendation: BUILD | DEFER | SKIP
+    Reason: [one sentence]
+```
+
+Recommendation values:
+- **BUILD** — high signal, AccentOS-shaped, low-friction. The skill should ship now.
+- **DEFER** — promising but blocked: missing data, premature, dependent on a future AccentOS state.
+- **SKIP** — better as a one-off than a skill (e.g. a single SQL query) OR fully redundant.
+
+After all proposal blocks, output the approval gate exactly:
+
+```
+═══ APPROVAL GATE ═══
+To approve, reply with one of:
+  - "build all"               → builds every BUILD-recommended candidate
+  - "build [name1] [name2]"   → builds only the named candidates
+  - "build all except [name]" → builds every recommendation except the named
+  - "build with changes: [name] - [change]"  → tweaks a proposal before build
+  - "skip all"                → no builds; close the run
+
+I am stopping here. Nothing is built until you reply.
+═══════════════════
+```
+
+**Halt the run.** Do not proceed to Step 6 until Michael's reply specifies which proposals to build. If Michael's reply is ambiguous, ask one targeted clarifying question rather than guessing.
+
+When Michael replies, parse the approval into a build list. Only the approved skills proceed to Step 6+.
+
+---
+
+## Step 6 — Skill design (per approved concept)
+
+---
+
+For **each APPROVED concept** from Step 5, run this design pass independently. Skills run through Steps 6–8 in a per-skill loop, then commit together at Step 9.
 
 Decide before writing:
 
@@ -183,7 +230,7 @@ Decide before writing:
 
 ---
 
-## Step 6 — Forge the skill files
+## Step 7 — Forge the skill files
 
 Write to `/home/user/accent-os/skills/[skill-name]/`:
 - `SKILL.md` — frontmatter + workflow, following `references/skill-template.md`
@@ -199,7 +246,7 @@ AccentOS-mandatory substitutions everywhere:
 
 Use the Write tool. Never use bash heredocs for skill files.
 
-### Step 6.5 — Pre-commit validation
+### Step 7.5 — Pre-commit validation
 
 Before staging any file:
 
@@ -214,9 +261,27 @@ Any failure → fix in place, do not commit. Log the failure as a gotcha.
 
 ---
 
-## Step 7 — Commit and report
+## Step 8 — Ralph loop (per-skill stress test + refinement)
 
-After every skill in this run has passed Step 6.5:
+For **each forged skill** that passed Step 7.5, run a Ralph loop before committing. The Ralph loop is the iterative stress-test pattern: simulate using the skill, find what breaks, fix the SKILL.md, repeat until 2 consecutive passes surface no new issues.
+
+**Per skill:**
+
+1. **Mental dry-run** — pick 2 plausible Michael phrasings that should trigger this skill. For each, walk through every workflow step and ask: what's missing, what's ambiguous, what could fail silently?
+2. **Edge cases** — list the 3 most likely failure modes (no input, malformed input, missing dependency file, ambiguous result, conflict with another skill).
+3. **Apply fixes** in the skill's SKILL.md via Edit. Re-run Step 7.5 validation after fixes.
+4. **Repeat** until a pass surfaces 0 new issues OR 4 iterations have run (cap to prevent over-iteration).
+5. **Log Ralph notes** as a comment in the commit message: "Ralph: N iterations, M issues fixed, [one-line summary of biggest fix]".
+
+If a Ralph iteration surfaces a class-of-issue that affects skill-forge itself (not just the forged skill), append a gotcha entry per Step 10 rules — that's how skill-forge improves over time.
+
+**Stopping rule:** the loop ends when two consecutive iterations find nothing new. Do not iterate "for completeness" — Ralph is for finding actual issues, not gold-plating.
+
+---
+
+## Step 9 — Commit and report
+
+After every skill in this run has passed Step 7.5 and Step 8:
 
 1. Confirm branch (Step 0 output). If on main, create `claude/forge-[target-slug]-[8-char-rand]` first — one branch per forge run, regardless of how many skills were forged.
 2. `git add skills/[skill-1]/ skills/[skill-2]/ ...`
@@ -249,7 +314,7 @@ Gotchas hit this run: [count, see gotcha-log.md]
 
 ---
 
-## Step 8 — Write the gotcha log
+## Step 10 — Write the gotcha log
 
 After the report, update `/home/user/accent-os/skills/skill-forge/gotcha-log.md`:
 
@@ -277,7 +342,9 @@ NNN is sequential. Same `prevention_rule` wording across entries is what lets th
 
 ## Anti-patterns
 
-- **Never** stop at the gap analysis. Always produce the SKILL.md file or an explicit WATCH abort.
+- **Never** skip the Step 5 approval gate. Building before Michael approves means producing skills he didn't sign off on.
+- **Never** skip the Step 8 Ralph loop. A skill that hasn't been stress-tested ships hidden gotchas.
+- **Never** stop at the gap analysis. Either produce proposals (Step 5) or an explicit WATCH abort with reasoning.
 - **Never** include concepts in KEEP that don't tie to a named AccentOS gap.
 - **Never** generate a skill with <3 concrete AccentOS substitutions.
 - **Never** ship a skill where the description is generic enough to also fit a non-AccentOS user.

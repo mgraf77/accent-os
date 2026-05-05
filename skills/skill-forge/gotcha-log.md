@@ -215,3 +215,12 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - prevention_rule: Bracket-placeholder check must also exempt brackets inside double-quoted strings (e.g. trigger-phrase examples) and inline backtick code, in addition to fenced code blocks.
 - applied_to_skill_md: no
 - outcome: success
+
+### gotcha-021 — 2026-05-05 — (workflow recalibration: approval gate + Ralph loop)
+- target: skill-forge itself
+- what_happened: Even after gotcha-019's concept-theft recalibration, skill-forge was still over-shipping — producing 3 skills in one shot without Michael approving each one individually, and with no per-skill stress test before commit. Michael flagged that the proper flow is: exhaustive concept extraction → gap analysis → brief proposal per candidate → Michael approves each → build only approved → Ralph loop until happy → ship.
+- root_cause: Step 4 produced a STEAL list that flowed directly into Step 5 (build), with no human-in-the-loop gate and no iterative stress test. The skill assumed AI judgment is sufficient — but Michael's intent is "I approve each, you recommend, then you build, then you Ralph-loop."
+- fix_this_run: Restructured workflow to 10 steps. Step 2 now mandates exhaustive feature-by-feature extraction (≥15 concepts target). Step 4 produces a candidate list, NOT a build manifest. NEW Step 5 is a proposal block per candidate with my recommendation (BUILD/DEFER/SKIP) and an explicit halt-and-await-approval gate. Steps 6/7/7.5 (was 5/6/6.5) only run on approved candidates. NEW Step 8 is the Ralph loop — per-skill stress test with iteration cap of 4. Steps 9/10 (was 7/8) renumbered.
+- prevention_rule: Step 4 produces candidates, not skills. Step 5 halts the run for Michael's per-skill approval. Step 8 Ralph-loops every approved skill before commit. No exceptions.
+- applied_to_skill_md: yes
+- outcome: success
