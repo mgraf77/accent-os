@@ -166,11 +166,12 @@ function renderJobs(el){
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'jobs',currentFilter:jobFilter,applyFn:()=>renderJobs($('pg-content')),fields:['q','status','priority'],resetState:{q:'',status:'',priority:''}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('jobs'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th>#</th><th>Project</th><th>Customer</th><th>Status</th><th>Priority</th><th>Due</th><th>Hrs (est/act)</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('jobs',filtered.map(x=>x.id)):''}</th><th>#</th><th>Project</th><th>Customer</th><th>Status</th><th>Priority</th><th>Due</th><th>Hrs (est/act)</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${JOBS.length===0?'No jobs yet. Click "+ New Job" to create one (run M21 SQL first if save fails).':'No jobs match the current filter.'}</td></tr>` : filtered.map(j => {
+            ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${JOBS.length===0?'No jobs yet. Click "+ New Job" to create one (run M21 SQL first if save fails).':'No jobs match the current filter.'}</td></tr>` : filtered.map(j => {
               const sb = {open:'bg-blue', in_progress:'bg-yellow', blocked:'bg-red', complete:'bg-green', cancelled:'bg-gray'}[j.status] || 'bg-gray';
               const pb = {urgent:'bg-red', high:'bg-yellow', normal:'bg-gray', low:'bg-gray'}[j.priority] || 'bg-gray';
               const days = j.due_date && !['complete','cancelled'].includes(j.status) ? Math.round((new Date(j.due_date) - today)/86400000) : null;
@@ -186,6 +187,7 @@ function renderJobs(el){
                 ? `<td onclick="event.stopPropagation();"><select data-id="${j.id}" data-field="priority" data-orig="${esc(j.priority||'normal')}" onchange="commitJobCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${priorityOpts.map(p=>`<option value="${p}" ${(j.priority||'normal')===p?'selected':''}>${p}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${pb}" style="font-size:10px;">${esc(j.priority||'normal')}</span></td>`;
               return `<tr style="cursor:pointer;${['complete','cancelled'].includes(j.status)?'opacity:0.6;':''}" onclick="openJobEdit('${j.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('jobs',j.id):''}</td>
                 <td class="mono sm">${esc(j.job_number||'—')}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(j.project_name)}</td>
                 <td class="sm">${esc(j.customer_name||'—')}</td>
@@ -201,6 +203,34 @@ function renderJobs(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const canEdit = CU && ['Owner','Admin','Manager','Sales','Warehouse'].includes(CU.role);
+    bulkSelRegister('jobs', canEdit ? [
+      {id:'complete', label:'✓ Mark complete', color:'outline', confirm:'Mark {n} jobs as complete?', fn: ids => doBulkJobStatus(ids, 'complete')},
+      {id:'cancel', label:'✕ Mark cancelled', color:'outline', confirm:'Mark {n} jobs as cancelled?', fn: ids => doBulkJobStatus(ids, 'cancelled')}
+    ] : []);
+  }
+}
+
+async function doBulkJobStatus(ids, status){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const r = await sbUpdateJobField(id, 'status', status);
+    if(r){
+      ok++;
+      const idx = JOBS.findIndex(j => j.id === id);
+      if(idx >= 0){
+        JOBS[idx].status = status;
+        if(status === 'complete') JOBS[idx].completed_at = new Date().toISOString();
+        else if(status === 'cancelled') JOBS[idx].completed_at = null;
+      }
+    } else fail++;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('jobs_bulk_status', 'jobs', {count: ok, status, failed: fail});
+  bulkSelClear('jobs');
+  renderJobs($('pg-content'));
+  toast(`Updated ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 function openJobEdit(jobId, preset){

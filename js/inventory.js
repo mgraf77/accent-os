@@ -143,16 +143,38 @@ function renderInventory(container) {
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'inventory',currentFilter:invFilter,applyFn:()=>renderInventory($('vendor-section-content')),fields:['q','vendor','lowOnly','location'],resetState:{q:'',vendor:'',lowOnly:false,location:''}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('inventory'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 460px);overflow-y:auto;">
         <table>
-          <thead><tr><th>SKU</th><th>Vendor</th><th>Description</th><th>On Hand</th><th>Avail</th><th>Reorder</th><th>Location</th><th>Bin</th><th>Cost</th><th>List</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('inventory',filtered.map(x=>x.id)):''}</th><th>SKU</th><th>Vendor</th><th>Description</th><th>On Hand</th><th>Avail</th><th>Reorder</th><th>Location</th><th>Bin</th><th>Cost</th><th>List</th><th></th></tr></thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="11" style="text-align:center;padding:36px;color:var(--text-3);">${totalItems===0?'No inventory yet. Import a CSV above (template button shows the header schema).':'No SKUs match the current filter.'}</td></tr>` : filtered.map(r => _invRow(r)).join('')}
+            ${filtered.length === 0 ? `<tr><td colspan="12" style="text-align:center;padding:36px;color:var(--text-3);">${totalItems===0?'No inventory yet. Import a CSV above (template button shows the header schema).':'No SKUs match the current filter.'}</td></tr>` : filtered.map(r => _invRow(r)).join('')}
           </tbody>
         </table>
       </div>
     </div>
   `;
+  // Register bulk actions for this list
+  if(typeof bulkSelRegister === 'function'){
+    const isSenior = CU && ['Owner','Admin','Manager'].includes(CU.role);
+    bulkSelRegister('inventory', isSenior ? [
+      {id:'delete', label:'🗑 Delete selected', color:'outline', confirm:'Delete {n} inventory items? This cannot be undone.', fn: doBulkInventoryDelete}
+    ] : []);
+  }
+}
+
+async function doBulkInventoryDelete(ids){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const r = await sbDeleteInventoryItem(id);
+    if(r) ok++; else fail++;
+  }
+  INVENTORY = INVENTORY.filter(r => !ids.includes(r.id));
+  if(typeof sbAuditLog==='function') sbAuditLog('inventory_bulk_delete', 'inventory_items', {count: ok, failed: fail});
+  bulkSelClear('inventory');
+  renderInventory($('vendor-section-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 // ── Inline-edit row renderer (v6.10.44) ──
@@ -188,6 +210,7 @@ function _invRow(r){
     return `<td class="${cls}" style="padding:2px 6px;"><input type="${inputType}"${stepAttr} value="${esc(editVal)}" placeholder="${esc(placeholder)}" data-id="${r.id}" data-field="${field}" data-orig="${esc(editVal)}" data-currency="${isCurrency?'1':''}" data-text="${isText?'1':''}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitInventoryCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;text-align:${align};border-radius:4px;" title="Click to edit ${field.replace(/_/g,' ')}"></td>`;
   };
   return `<tr style="${isLow?'background:rgba(239,68,68,0.06);':''}" data-row-id="${r.id}">
+    <td>${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('inventory',r.id):''}</td>
     <td class="mono fw6 sm">${esc(r.sku||'')}</td>
     <td class="sm">${esc(r.vendor_name||'—')}</td>
     <td class="sm" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.description||'')}">${esc(r.description||'')}</td>

@@ -294,15 +294,16 @@ function renderCustomers(el){
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'customers',currentFilter:custFilter,applyFn:()=>renderCustomers($('pg-content')),fields:['q','segment','type'],resetState:{q:'',segment:'',type:''}}):''}
         </div>
       </div>
+      ${typeof bulkSelBar==='function'?bulkSelBar('customers'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
           <thead>
             <tr>
-              <th>Name</th><th>Type</th><th>Segment</th><th>Last activity</th><th>12-mo $</th><th>Visits</th><th>Email</th><th>Phone</th>
+              <th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('customers',filtered.map(x=>x.id)):''}</th><th>Name</th><th>Type</th><th>Segment</th><th>Last activity</th><th>12-mo $</th><th>Visits</th><th>Email</th><th>Phone</th>
             </tr>
           </thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${totalCount===0?'No customers yet. Click "+ New Customer" to add one, or wait for the Windward CSV import.':'No customers match the current filter.'}</td></tr>` : filtered.map(c => {
+            ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${totalCount===0?'No customers yet. Click "+ New Customer" to add one, or wait for the Windward CSV import.':'No customers match the current filter.'}</td></tr>` : filtered.map(c => {
               const r = c._rfm;
               const recDisp = r.recency==null ? '<span class="muted">—</span>' : (r.recency<=30?`<span style="color:var(--green);">${r.recency}d</span>`:r.recency<=180?`<span style="color:var(--text-2);">${r.recency}d</span>`:`<span style="color:var(--accent);">${r.recency}d</span>`);
               const canEdit = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
@@ -311,6 +312,7 @@ function renderCustomers(el){
                 return `<td class="sm" style="padding:2px 6px;" onclick="event.stopPropagation();"><input type="text" value="${esc(val||'')}" data-id="${c.id}" data-field="${field}" data-orig="${esc(val||'')}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitCustomerCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;border-radius:4px;" placeholder="—" title="Click to edit ${field}"></td>`;
               };
               return `<tr style="cursor:pointer;" onclick="openCustomerDetail('${c.id}')">
+                <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('customers',c.id):''}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(c.name||'(unnamed)')}</td>
                 <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc(c.type||'—')}</span></td>
                 <td>${segmentBadge(r.segment)}</td>
@@ -326,6 +328,26 @@ function renderCustomers(el){
       </div>
     </div>
   `;
+  if(typeof bulkSelRegister === 'function'){
+    const isSenior = CU && ['Owner','Admin','Manager'].includes(CU.role);
+    bulkSelRegister('customers', isSenior ? [
+      {id:'delete', label:'🗑 Delete selected', color:'outline', confirm:'Delete {n} customers? This cannot be undone.', fn: doBulkCustomerDelete}
+    ] : []);
+  }
+}
+
+async function doBulkCustomerDelete(ids){
+  if(!ids?.length) return;
+  let ok = 0, fail = 0;
+  for(const id of ids){
+    const r = await sbDeleteCustomer(id);
+    if(r) ok++; else fail++;
+  }
+  CUSTOMERS = CUSTOMERS.filter(c => !ids.includes(c.id));
+  if(typeof sbAuditLog==='function') sbAuditLog('customers_bulk_delete', 'customers', {count: ok, failed: fail});
+  bulkSelClear('customers');
+  renderCustomers($('pg-content'));
+  toast(`Deleted ${ok}${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
 
 async function openCustomerDetail(customerId){
