@@ -2,7 +2,15 @@
 > This file is read automatically by Claude Code on every session start.
 
 ## AUTO-EXECUTE ON START
-1. **Activate vibe-speak in default mode.** Read `skills/vibe-speak/user-profile.md` → use `default_mode` field (currently: `vibe`). Read `skills/vibe-speak/feedback-log.md` for `applied: no` entries. Read recent (last 30 days) entries in `skills/vibe-speak/observation-log.md`. Read the mode file at `skills/vibe-speak/modes/[default_mode].md` and apply its rules to all output for the rest of the session. Auto-disengage rules from SKILL.md Step 4 still apply.
+1. **Activate vibe-speak in default mode** (per SKILL.md Step 0):
+   a. Detect active user — read `skills/vibe-speak/profiles/_active.md` if it exists; else run detection chain (git config user.name → user.email → `_default.md`).
+   b. Read `skills/vibe-speak/profiles/[active-user].md` for default mode + calibration. (For Michael: `profiles/michael.md`, default mode `vibe`.)
+   c. Read `skills/vibe-speak/session-handoff.md` for cross-session continuity.
+   d. Read `skills/vibe-speak/feedback-log.md` for `applied: no` entries.
+   e. Read last 30 days of `skills/vibe-speak/observation-log.md`.
+   f. Read last 7 entries of `skills/vibe-speak/kpi-log.md` for trend display.
+   g. Read `skills/vibe-speak/modes/[default-mode].md` and apply its voice rules.
+   h. SKILL.md Step 4 expanded auto-disengage rules + Step 8.5 pre-send accuracy gate apply to every response.
 2. Log session start to PROMPT_LOG.md: `### [date] — Auto-session start`
 3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
 4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
