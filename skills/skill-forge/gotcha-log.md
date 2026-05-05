@@ -195,5 +195,23 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - root_cause: Targets in adjacent SaaS categories often overlap heavily with what Claude Code itself already provides; concepts that "look like gaps" actually aren't.
 - fix_this_run: Aborted to WATCH per Step 4 decision gate. No skill written. Logged here for future targets.
 - prevention_rule: When re-framed KEEPs duplicate capabilities already provided by Claude Code or by existing skills in skills/, treat them as covered (not gaps) and abort to WATCH rather than forge a redundant skill.
-- applied_to_skill_md: no
+- applied_to_skill_md: no — SUPERSEDED by gotcha-019
 - outcome: aborted_to_watch
+
+### gotcha-019 — 2026-05-05 — (recalibration; supersedes gotcha-018)
+- target: skill-forge itself
+- what_happened: Michael flagged that the gap-analysis framing was wrong. Step 4 was filtering OUT concepts that overlapped existing capabilities, when the correct framing is "steal the concept, rebuild it in AccentOS-native voice." This caused both Cascade and Hex runs to under-deliver — Cascade produced 1 skill when it could have produced 2-3, Hex aborted to WATCH when it had 3 stealable concepts.
+- root_cause: Step 4 was scoped as a gap analysis (does AccentOS have a hole this fills?) when it should be a concept-theft assessment (is this concept worth rebuilding in my voice?). Default outcome was "abort to WATCH" when it should be "produce 1-5 skills."
+- fix_this_run: Rewrote Step 4 as "Concept theft assessment." STEAL/DROP/ADD replaces KEEP/DROP/ADD. Default deliverable changed to 1-5 skills per target. WATCH abort now requires STEAL=0 (rare). Step 5 marked explicitly as per-skill iteration. Step 7 commits all skills under one branch per forge run.
+- prevention_rule: Step 4 default outcome is "produce N skills from the concept inventory." WATCH is only for genuinely empty targets. Overlap with existing capability is not disqualifying — rebuilding a tighter, AccentOS-native version is the point of the skill.
+- applied_to_skill_md: yes
+- outcome: success
+
+### gotcha-020 — 2026-05-05 — Cascade + Hex re-run under recalibrated framing
+- target: alirezarezvani/strategic-alignment + hex.tech
+- what_happened: Step 6.5 #1 bracket-check (post-gotcha-016) flagged 9/11/8 bracket strings across the 3 forged skills. All hits were inside double-quoted trigger phrase examples (e.g. "articulate [priority]") in the trigger list — intentional template markers, not forgotten placeholders. Validator was over-broad even after the first refinement.
+- root_cause: gotcha-016 fix exempted bracket strings inside fenced code blocks but did not exempt them inside double-quoted strings or markdown list items used as trigger-phrase examples.
+- fix_this_run: Manual inspection confirmed all 28 hits were intentional. Skills shipped. No file change to skill-forge SKILL.md this run.
+- prevention_rule: Bracket-placeholder check must also exempt brackets inside double-quoted strings (e.g. trigger-phrase examples) and inline backtick code, in addition to fenced code blocks.
+- applied_to_skill_md: no
+- outcome: success

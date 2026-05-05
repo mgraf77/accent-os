@@ -133,24 +133,45 @@ Identify the 80/20: the 5–10 concepts that carry the actual value. Everything 
 
 ---
 
-## Step 4 — Gap analysis
+## Step 4 — Concept theft assessment
 
-Three explicit columns. No skipping. See `references/gap-analysis-template.md`.
+For each concept in the Step 3 inventory, decide: **steal** or **drop**.
 
-| KEEP (target does it, AccentOS needs it) | DROP (target does it, AccentOS doesn't) | ADD (AccentOS needs it, target doesn't) |
+The question is **not** "does AccentOS have a gap this fills." The question is: "is this concept a reusable pattern worth rebuilding in AccentOS-native form?" Even if a concept overlaps something AccentOS or Claude Code already does, a tighter, named, paste-ready AccentOS-native version is usually worth forging.
 
-Rules:
-- KEEP must include reasoning tied to a specific AccentOS gap from the profile loaded in Step 0.
-- DROP must explain why — usually "wrong project type" or "redundant with existing skill."
-- ADD captures what makes the forged skill better than the original — vendor scoring, BigCommerce store-cwqiwcjxes, Supabase hsyjcrrazrzqngwkqsqa, ecommerce ops, vendor_scores/vendor_overrides tables.
+**STEAL** (rebuild as a skill — default for any concept with reusable structure):
+- Reusable primitives — data shapes, validation patterns, named workflows
+- Patterns whose value transcends their original tool wrapper (cascade mapping, named-analysis-as-artifact, NL→SQL with schema context, parameterized queries)
+- Concepts that overlap existing skills if rebuilding gives a tighter, differently-scoped, or more invokable version
+- Anything Michael could plausibly invoke once a quarter or more
+
+**DROP**:
+- Marketing fluff with no underlying capability
+- Tool-specific UI conveniences that don't translate (multiplayer cursors, drag-and-drop, brand-colored buttons)
+- Pure infrastructure (their auth model, billing system, hosting)
+- Concepts whose AccentOS-native version is already implemented in an existing skill AND a rebuild would only add noise
+
+**ADD** (concepts the target doesn't have but the new skill should incorporate):
+- Supabase `hsyjcrrazrzqngwkqsqa` awareness, real schema references
+- BigCommerce store-cwqiwcjxes context
+- AccentOS module paths, vendor_scores / vendor_overrides table awareness
+- Anthropic API conventions
+
+For each STOLEN concept, classify:
+- **STANDALONE** — becomes its own SKILL.md (preferred when concept has clear named inputs and outputs)
+- **SUB-FEATURE** — folds into one of the standalone skills as a workflow step
 
 **Decision gate:**
-- KEEP ≥ 3 → proceed to Step 5.
-- KEEP < 3 → invoke Step 1.5 once. If still < 3 after re-frame, output "Insufficient signal. Recommendation: WATCH [target]" and stop. Log a gotcha entry with `outcome: aborted_to_watch`.
+- STEAL ≥ 1 standalone → proceed to Step 5, design and forge each standalone skill in this run.
+- STEAL = 0 after re-frame → output WATCH and stop. Log gotcha with `outcome: aborted_to_watch`. WATCH should be **rare** — most non-trivial targets have at least one stealable concept.
+
+**Default deliverable: 1–5 customized skills per target.** Producing multiple skills from one target is expected, not exceptional. A target that yields only one skill is the lower bound, not the upper.
 
 ---
 
-## Step 5 — Skill design
+## Step 5 — Skill design (per stolen concept)
+
+For **each STANDALONE concept** from Step 4, run this design pass independently. Multiple skills from one target run through Steps 5–6.5 in a loop, then commit together at Step 7.
 
 Decide before writing:
 
@@ -195,13 +216,13 @@ Any failure → fix in place, do not commit. Log the failure as a gotcha.
 
 ## Step 7 — Commit and report
 
-After Step 6.5 passes:
+After every skill in this run has passed Step 6.5:
 
-1. Confirm branch (Step 0 output). If on main, create `claude/forge-[skill-name]-[8-char-rand]` first.
-2. `git add skills/[skill-name]/`
-3. Commit message: `feat: forge [skill-name] skill (from [target])`
+1. Confirm branch (Step 0 output). If on main, create `claude/forge-[target-slug]-[8-char-rand]` first — one branch per forge run, regardless of how many skills were forged.
+2. `git add skills/[skill-1]/ skills/[skill-2]/ ...`
+3. Commit message: `feat: forge N skills from [target] — [skill-1], [skill-2], ...`
 4. Push to the active branch (NOT main without explicit permission).
-5. Output a single scan-block report:
+5. Output a single scan-block report listing all forged skills:
 
 ```
 SKILL FORGED — [skill-name]
