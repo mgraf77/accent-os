@@ -243,6 +243,15 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - applied_to_skill_md: no
 - outcome: success
 
+### gotcha-027 — 2026-05-05 — autonomous-mode + prompt-queue (workflow ergonomics pair)
+- target: walk-away workflow ("I'm going to lunch — keep working") + persistent prompt queue with priority reorder
+- what_happened: Two skills designed in tandem to compose. autonomous-mode handles long-running unattended work with explicit time/token bounds and clean exit semantics; prompt-queue manages the queue Michael builds throughout the day. They chain via "drain the queue while I'm at lunch" → autonomous-mode loops over prompt-queue's EXECUTE-next. Ralph found 6 real issues across both: mid-item time-cap checks, auto-approved vs needs-Michael taxonomy, WORK_IN_PROGRESS resume-hint integration, stale IN_PROGRESS recovery, natural-completion-point surfacing (vs unreliable session-end detection), last_heartbeat field schema. prompt-queue tripped Step 7.5 substitution count on first pass — fixed by mentioning Cloudflare Pages + Supabase mirror pattern naturally in Step 4.
+- root_cause: Composing two skills with overlapping but distinct concerns requires careful contract definition — what one passes to the other on handoff, what state is owned by which skill.
+- fix_this_run: 6 Ralph fixes applied across both. Composability section in autonomous-mode explicitly lists the prompt-queue handoff contract.
+- prevention_rule: Skills designed to compose require explicit handoff contracts (what state, what triggers, what halts) — both sides must reference the contract, not just one.
+- applied_to_skill_md: yes (built into both skills' composability sections)
+- outcome: success
+
 ### gotcha-026 — 2026-05-05 — kpi-data-audit (KPI ↔ schema cross-reference)
 - target: kpi-data-audit skill itself + KPI_CATALOG.md doc artifact
 - what_happened: New skill that audits the 152-KPI catalog against live Supabase schema and integration state. Forged in same branch as the catalog (catalog is prerequisite). Ralph loop ran 4 iterations, 12 fixes — most around output ergonomics (informal-formula handling, schema-parser uncertainty, M-task marker variations, scoped-vs-full modes) and cross-referencing the catalog's own gap section to avoid double-reporting.

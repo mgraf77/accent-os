@@ -312,6 +312,20 @@
 > See `KPI_CATALOG.md` for the full catalog and `kpi-data-audit` skill
 > for re-running the audit after each completion.
 
+**Recommended order (from kpi-data-audit --full coverage trajectory):**
+1. **Run M24 + M27 + M29** first — already-written files, zero new design, +14 KPIs in ~10 min
+2. **M30** (customers.segment) — single column, +22 KPIs, biggest single move
+3. **M32 + M33** (stage history + lost_reason) — pipeline analytics unlock
+4. **M35** (employees.quota + dates) — sales manager dashboard unlock
+5. **M38** (recurring_contracts) — national-account NRR unlock
+6. **M36 + M37** (tickets + surveys) — customer experience metrics
+7. **M39** (vendors verify) — vendor-cascade enrichment
+8. **M34** (invoices/payments) — AR aging, DSO
+9. **M31** (products.cost) — gates margin %; depends on M04 BC credentials
+10. **M06 + M09 + M05** (external integrations) — funnel + campaign + GMC
+
+After each landed M-task: re-invoke `"audit the KPI data"` to track coverage rise.
+
 - [ ] **M30** — Add `customers.segment` enum (HIGHEST LEVERAGE: 22 KPIs)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
@@ -397,6 +411,22 @@
 ## CATEGORY: KPI DASHBOARDS — also-easy already-written files (just run them)
 
 These M-tasks already exist above (M24/M27/M29). The audit confirms running them unblocks 14 KPIs combined with zero new design work. Promote in priority.
+
+---
+
+## CATEGORY: SETUP / ENVIRONMENT (one-time)
+
+- [ ] **M41** — Install OpenAI API key into Claude Code settings (unblocks codex-review)
+  - Where: `/home/user/accent-os/.claude/settings.local.json` (gitignored, perms 600)
+  - Action:
+    1. Get key: `https://platform.openai.com/api-keys` → "Create new secret key" → copy
+    2. Open `/home/user/accent-os/.claude/settings.local.json` in any editor (file editor on Claude Code Web works on desktop, not mobile)
+    3. Replace the placeholder string `REPLACE_WITH_NEW_KEY_FROM_PLATFORM_OPENAI_COM` with your `sk-proj-...` key
+    4. Save. Restart Claude Code session so env vars reload.
+    5. Verify: in any new Claude Code session, run a quick `codex review` against a small file — if it returns recommendations, key is working.
+  - Then: paste to Claude → `M41 done — OPENAI_API_KEY installed. codex-review unblocked.`
+  - Unlocks: codex-review skill (cross-agent peer review with auto-apply LOW-risk fixes); future cross-agent collaboration patterns
+  - Note: blocked by Claude Code Web mobile not having a file editor; works fine from desktop.
 
 ---
 
