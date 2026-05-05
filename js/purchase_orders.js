@@ -81,6 +81,47 @@ async function sbSavePurchaseOrder(po, lines){
   }catch(e){ console.warn('[sb] Save purchase_order failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.52)
+async function sbUpdatePOField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['status','expected_date','order_date','notes','tracking'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    const res = await sbFetch(`/purchase_orders?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update PO field failed:', e.message); return false; }
+}
+
+async function commitPOCellSelect(select){
+  if(!select) return;
+  const id = select.dataset.id;
+  const field = select.dataset.field;
+  const orig = select.dataset.orig || '';
+  const next = select.value;
+  if(next === orig) return;
+  // PO uses POS array (purchase_orders)
+  const item = (typeof POS !== 'undefined' ? POS : []).find(p => p.id === id);
+  if(!item){ select.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  select.dataset.orig = next;
+  const res = await sbUpdatePOField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    select.value = orig;
+    select.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`po_${field}_edit`, 'purchase_orders', {po_id: id, field, from: prev, to: next});
+  toast(`${item.po_number||'PO'} · ${field}: ${prev} → ${next}`, 'ok');
+  renderPOs($('pg-content'));
+}
+
 async function sbDeletePurchaseOrder(id){
   if(!sbConfigured()) return false;
   try{
@@ -160,10 +201,15 @@ function renderPOs(el){
                 const isLate = d < today && !['received','cancelled'].includes(p.status);
                 return `<span class="mono sm" style="color:${isLate?'var(--accent)':'var(--text-2)'};">${p.expected_date}</span>`;
               })() : '<span class="muted">—</span>';
+              const canEditPo = CU && ['Owner','Admin','Manager'].includes(CU.role);
+              const poStatusOpts = ['draft','sent','confirmed','partial','received','cancelled'];
+              const poStatusCell = canEditPo
+                ? `<td onclick="event.stopPropagation();"><select data-id="${p.id}" data-field="status" data-orig="${esc(p.status)}" onchange="commitPOCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${poStatusOpts.map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(p.status)}</span></td>`;
               return `<tr style="cursor:pointer;${['received','cancelled'].includes(p.status)?'opacity:0.6;':''}" onclick="openPOEdit('${p.id}')">
                 <td class="mono fw6 sm">${esc(p.po_number||'—')}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(p.vendor_name||'—')}</td>
-                <td><span class="badge ${sb}" style="font-size:10px;">${esc(p.status)}</span></td>
+                ${poStatusCell}
                 <td class="mono sm">${esc(p.order_date||'')}</td>
                 <td>${expCell}</td>
                 <td class="sm">${lineCount}</td>

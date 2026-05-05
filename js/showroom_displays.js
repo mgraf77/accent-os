@@ -53,6 +53,50 @@ async function sbSaveShowroomDisplay(rec){
   }catch(e){ console.warn('[sb] Save showroom_display failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.52)
+async function sbUpdateShowroomField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['status','location','contract_terms','notes','participation_cost','coop_value','retail_value'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    if(field === 'status' && value === 'removed') body.removed_date = new Date().toISOString().slice(0,10);
+    if(field === 'status' && value !== 'removed') body.removed_date = null;
+    const res = await sbFetch(`/showroom_displays?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update showroom field failed:', e.message); return false; }
+}
+
+async function commitShowroomCellSelect(select){
+  if(!select) return;
+  const id = select.dataset.id;
+  const field = select.dataset.field;
+  const orig = select.dataset.orig || '';
+  const next = select.value;
+  if(next === orig) return;
+  const item = SHOWROOM_DISPLAYS.find(d => d.id === id);
+  if(!item){ select.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  if(field === 'status' && next === 'removed') item.removed_date = new Date().toISOString().slice(0,10);
+  if(field === 'status' && next !== 'removed') item.removed_date = null;
+  select.dataset.orig = next;
+  const res = await sbUpdateShowroomField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    select.value = orig;
+    select.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`showroom_${field}_edit`, 'showroom_displays', {display_id: id, field, from: prev, to: next});
+  toast(`${item.display_name||'Display'} · ${field}: ${prev} → ${next}`, 'ok');
+  renderShowroomDisplays($('pg-content'));
+}
+
 async function sbDeleteShowroomDisplay(id){
   if(!sbConfigured()) return false;
   try{
@@ -147,11 +191,16 @@ function renderShowroomDisplays(el){
               const expCell = d.expires_date ? `<span class="mono sm" style="color:${expDays!==null && expDays<0?'var(--accent)':expDays!==null && expDays<=60?'var(--yellow)':'var(--text-2)'};">${d.expires_date}${expDays!==null?` <span style="font-size:10px;color:var(--text-3);">(${expDays<0?'overdue':expDays+'d'})</span>`:''}</span>` : '<span class="muted">—</span>';
               const skuCount = (d.sku_list||[]).length;
               const net = (Number(d.participation_cost)||0) - (Number(d.coop_value)||0);
+              const canEditSh = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
+              const shStatusOpts = ['planned','installed','active','expiring','expired','removed'];
+              const shStatusCell = canEditSh
+                ? `<td onclick="event.stopPropagation();"><select data-id="${d.id}" data-field="status" data-orig="${esc(d.status)}" onchange="commitShowroomCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${shStatusOpts.map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(d.status)}</span></td>`;
               return `<tr style="cursor:pointer;${['expired','removed'].includes(d.status)?'opacity:0.6;':''}" onclick="openShowroomEdit('${d.id}')">
                 <td style="font-weight:600;color:var(--accent);">${esc(d.display_name)}</td>
                 <td class="sm">${esc(d.vendor_name||'—')}</td>
                 <td class="sm">${esc(d.location||'—')}</td>
-                <td><span class="badge ${sb}" style="font-size:10px;">${esc(d.status)}</span></td>
+                ${shStatusCell}
                 <td class="mono sm">${esc(d.install_date||'')}</td>
                 <td>${expCell}</td>
                 <td class="sm">${skuCount?skuCount+' SKU'+(skuCount===1?'':'s'):'<span class="muted">—</span>'}</td>
