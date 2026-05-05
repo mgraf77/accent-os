@@ -647,6 +647,19 @@ Michael can run any of these in plain prompt text. Each one is matched on substr
 | `/vibe brute-force` | Override skill-router for the current task — proceed brute-force regardless of matches. Logs `brute_force` signal. |
 | `/vibe router off` / `/vibe router on` | Disable / enable skill-router for the session. |
 | `/vibe regenerate skill index` | Rebuild `skills/_index.md` from `skills/*/SKILL.md` frontmatter. |
+| `/vibe import [path]` | Parse a prompt-history file (claude.ai JSON / markdown PROMPT_LOG / plain text). Append to `corpus/imports/`, run backtest. (Step 24) |
+| `/vibe import claude.ai` | Print claude.ai export wizard; watches `corpus/imports/` for the dropped file. |
+| `/vibe import all` | Re-process every file in `corpus/imports/` — useful after parser changes. |
+| `/vibe backtest` | Re-run analysis on entire corpus, refresh `corpus/vocabulary.md` + `trends.md` + `topics.md`. |
+| `/vibe backtest [date-range]` | Backtest a specific window (e.g. `last month`, `2026 Q1`, `2026-05-01..2026-05-05`). |
+| `/vibe vocab` | Print top 20 vocabulary terms grouped by classification. |
+| `/vibe vocab new` | Print terms first-seen in last 7 days. |
+| `/vibe vocab [term]` | Drill into one term — frequency, contexts, classification, profile_action. |
+| `/vibe trends` | Print weekly emergence + velocity report. |
+| `/vibe trends [period]` | Specific period (e.g. `last month`, `2026-Q1`). |
+| `/vibe topics` | Print active topic clusters. |
+| `/vibe topics [name]` | Drill into one cluster. |
+| `/vibe propose calibration` | Surface profile-update proposals from latest backtest (new hard-keeps, new triggers, new filler-kill candidates). Routes through Step 13 accept/edit/skip workflow. |
 
 ### Command matching rules
 
@@ -1103,6 +1116,85 @@ When deciding what to do with a task:
 - `/vibe router off` — disable for current session
 - `/vibe router on` — re-enable
 - If disabled 3+ sessions in a row, surface "router seems unhelpful — adjust thresholds?"
+
+---
+
+## Step 24 — Corpus learning (backtest historical prompts + trend awareness)
+
+vibe-speak ingests Michael's prompt history across all projects, backtests every prompt against vibe-speak's detection logic, and surfaces vocabulary / trend / topic discoveries that update the calibrated profile. The "growing with you" mechanism.
+
+### Why this exists
+
+Step 13 (adaptive learning) calibrates from in-session signals — slow but accurate. Step 24 calibrates from the entire historical corpus — much faster ramp, much wider vocabulary. Combined, they make vibe-speak as smart about Michael as possible, day one.
+
+### What's accessible
+
+**Yes, accessible:**
+- `PROMPT_LOG.md` in this repo (~80 entries, auto-imported at session start)
+- Any file Michael drops in `skills/vibe-speak/corpus/imports/`
+
+**No, NOT accessible from Claude Code:**
+- claude.ai conversation history (web app data, not file-system accessible)
+
+**Path forward:** Michael exports from claude.ai (Settings → Privacy → Request data export), drops `conversations.json` in `corpus/imports/`, runs `/vibe import`. Parser pulls his `human` messages, runs through backtest, updates corpus.
+
+### Files in `corpus/`
+
+- `_index.md` — system overview
+- `imports/_README.md` — how to export from claude.ai + format specs
+- `imports/[exports]` — raw ingestion drop zone
+- `vocabulary.md` — every distinct term, frequency, first-seen, classification
+- `trends.md` — weekly emergence, velocity changes, style drift
+- `topics.md` — clustered domain topics + cluster→mode mapping
+- `backtest-runs.md` — log of backtest runs
+
+### Backtest workflow (per prompt in corpus)
+
+1. **Extract entities** — code identifiers, file paths, SQL keywords, AccentOS proper nouns, M-task IDs, version tags. Become hard-keep candidates.
+2. **Detect signals** — closure / autonomy / register / bump-up / brute-force markers per Step 13.
+3. **Classify vocabulary** — domain noun / action verb / state marker / trigger phrase / closure signal.
+4. **Track timeline** — first-seen + last-seen + frequency per term.
+5. **Detect topic clusters** — recurring noun-phrase co-occurrences.
+
+### Trend-awareness loop (the "growing with you" part)
+
+When a backtest detects any of these, surface a proposal:
+
+| Signal | Threshold | Surfacing |
+|---|---|---|
+| New term used 5+× / 7d | adoption | "`[term]` entering vocabulary — add to hard-keep?" |
+| Term frequency drops 80% / 14d | decline | "`[term]` declining — keep on hard-keep?" |
+| New topic cluster (3+ co-occurring nouns 3+ times) | topic emergence | "New domain `[cluster]` detected. Mark as project context?" |
+| Avg prompt length changes 30%+ over 14d | register shift | "Prompts have gotten [shorter/longer] — adjust default mode?" |
+| Closure-frequency changes 50%+ | autonomy shift | "You're [trusting more / asking more] — adjust default?" |
+| Cross-project pattern (term in 3+ separate import files) | universal vocab | "`[term]` appears across all your projects — promote to universal hard-keep" |
+
+Surfaces are **never auto-applied** — Michael approves each one via `/vibe accept proposal` (reuses Step 13 mechanism).
+
+### How Step 24 ties to other steps
+
+| Connects to | How |
+|---|---|
+| Step 1 (Read profile) | Reads `corpus/_index.md` if present (cold path) — only loaded on first `/vibe corpus...` command |
+| Step 13 (Adaptive learning) | Step 24 proposals flow through Step 13's accept/edit/skip workflow |
+| Step 18 (Wrap ritual) | After every wrap, run a lightweight backtest delta on the session's new prompts; full backtest only on `/vibe backtest` or weekly |
+| Step 23 (Skill router) | Topic clusters with no skill match become candidates for skill-forge proposals |
+| profiles/[user].md | Backtest discoveries become profile updates — vocabulary expands, hard-keeps grow, mode defaults shift |
+
+### Anti-patterns
+
+- **Never** auto-import a file from `corpus/imports/` without checking it for PII / secrets first. Run the redaction pass before vocabulary extraction.
+- **Never** auto-apply a corpus discovery to the profile. Always surface as a proposal, even if confidence is high.
+- **Never** silently process imports — print "imported [N] prompts from [file]" so Michael sees the corpus growth.
+- **Never** discard the original import file after parsing. Raw imports stay for audit + re-parse if logic changes.
+- **Never** include assistant responses in the vocabulary — only Michael's `human` messages. Mixing the two contaminates the calibration.
+- **Never** match on partial words for cluster formation. "vendor" alone is weak; "vendor cascade" / "vendor-clarity" are strong cluster nouns.
+
+### Cost
+
+Backtest cost: ~5K tokens per 100 prompts processed. claude.ai full export (1,000+ prompts) costs ~50K tokens for the initial backtest, but it runs ONCE — subsequent backtests are deltas only.
+
+Token cost amortized across the system's lifetime: negligible compared to the calibration improvement.
 
 ---
 
