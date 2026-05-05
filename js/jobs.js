@@ -175,12 +175,21 @@ function renderJobs(el){
               const days = j.due_date && !['complete','cancelled'].includes(j.status) ? Math.round((new Date(j.due_date) - today)/86400000) : null;
               const dueCell = j.due_date ? `<span class="mono sm" style="color:${days!==null && days<0?'var(--accent)':days!==null && days<=7?'var(--yellow)':'var(--text-2)'};">${j.due_date}${days!==null?` <span style="font-size:10px;color:var(--text-3);">(${days<0?'overdue':days+'d'})</span>`:''}</span>` : '<span class="muted">—</span>';
               const hrsCell = (j.estimated_hours!=null || j.actual_hours!=null) ? `<span class="mono sm">${j.estimated_hours!=null?j.estimated_hours:'—'} / ${j.actual_hours!=null?j.actual_hours:'—'}</span>` : '<span class="muted">—</span>';
+              const canEdit = CU && ['Owner','Admin','Manager','Sales','Warehouse'].includes(CU.role);
+              const statusOpts = ['open','in_progress','blocked','complete','cancelled'];
+              const priorityOpts = ['urgent','high','normal','low'];
+              const statusCell = canEdit
+                ? `<td onclick="event.stopPropagation();"><select data-id="${j.id}" data-field="status" data-orig="${esc(j.status)}" onchange="commitJobCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${statusOpts.map(s=>`<option value="${s}" ${j.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(j.status.replace('_',' '))}</span></td>`;
+              const priorityCell = canEdit
+                ? `<td onclick="event.stopPropagation();"><select data-id="${j.id}" data-field="priority" data-orig="${esc(j.priority||'normal')}" onchange="commitJobCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${priorityOpts.map(p=>`<option value="${p}" ${(j.priority||'normal')===p?'selected':''}>${p}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${pb}" style="font-size:10px;">${esc(j.priority||'normal')}</span></td>`;
               return `<tr style="cursor:pointer;${['complete','cancelled'].includes(j.status)?'opacity:0.6;':''}" onclick="openJobEdit('${j.id}')">
                 <td class="mono sm">${esc(j.job_number||'—')}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(j.project_name)}</td>
                 <td class="sm">${esc(j.customer_name||'—')}</td>
-                <td><span class="badge ${sb}" style="font-size:10px;">${esc(j.status.replace('_',' '))}</span></td>
-                <td><span class="badge ${pb}" style="font-size:10px;">${esc(j.priority||'normal')}</span></td>
+                ${statusCell}
+                ${priorityCell}
                 <td>${dueCell}</td>
                 <td>${hrsCell}</td>
                 <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();openJobEdit('${j.id}')">Edit</button></td>
@@ -480,6 +489,52 @@ function createJobFromDeal(dealId){
   // Tiny defer so the closeModal animation completes before the new modal opens.
   setTimeout(() => openJobEdit(null, preset), 50);
   if(typeof sbAuditLog==='function') sbAuditLog('job_from_deal', 'pipeline', {deal_id: d.id, deal_value: d.value});
+}
+
+// Single-row PATCH for inline edits (v6.10.49)
+async function sbUpdateJobField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['status','priority','assigned_to','due_date','estimated_hours','actual_hours','notes'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    if(field === 'status' && value === 'complete') body.completed_at = new Date().toISOString();
+    if(field === 'status' && value !== 'complete') body.completed_at = null;
+    const res = await sbFetch(`/jobs?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update job field failed:', e.message); return false; }
+}
+
+async function commitJobCellSelect(select){
+  if(!select) return;
+  const id = select.dataset.id;
+  const field = select.dataset.field;
+  const orig = select.dataset.orig || '';
+  const next = select.value;
+  if(next === orig) return;
+  const item = JOBS.find(j => j.id === id);
+  if(!item){ select.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  if(field === 'status' && next === 'complete') item.completed_at = new Date().toISOString();
+  if(field === 'status' && next !== 'complete') item.completed_at = null;
+  select.dataset.orig = next;
+  const res = await sbUpdateJobField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    select.value = orig;
+    select.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  // Re-render the badge styling — quick re-render of just this row would be cleaner,
+  // but renderJobs is fast enough for the row counts we expect.
+  if(typeof sbAuditLog==='function') sbAuditLog(`job_${field}_edit`, 'jobs', {job_id: id, field, from: prev, to: next});
+  toast(`${item.job_number||'Job'} · ${field}: ${prev||'—'} → ${next}`, 'ok');
+  renderJobs($('pg-content'));
 }
 
 async function commitJobCsv(){
