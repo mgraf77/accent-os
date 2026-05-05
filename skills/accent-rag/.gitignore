@@ -1,0 +1,7 @@
+# Generated build index — re-built per session
+.rag/
+
+# Wrangler local config — secrets in here
+worker/wrangler.toml
+worker/.dev.vars
+worker/.wrangler/

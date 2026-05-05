@@ -151,6 +151,16 @@
 - [ ] **6.12** — Google Ads / Meta Ads
   - Status: **No API access** per MASTER §10. Manual admin only — not automatable until Google Ads API auth granted by account holder.
 
+- [x] **6.13** — accent-rag skill (dual-mode RAG: BUILD-RAG + OS-RAG)
+  - Shipped v6.11.0: Forged the `accent-rag` skill at `skills/accent-rag/`. Two retrieval surfaces under one skill.
+  - **BUILD-RAG** — local BM25 over the AccentOS repo. Indexer (`scripts/rag_build_index.py`) walks 123 files (MASTER, BUILD_PLAN_*, BUILD_INTELLIGENCE, SESSION_LOG, PROMPT_LOG, all js/, sql/, skills/, index.html), chunks by structural boundary (## headings / function/SQL block), generates a deterministic context prefix, computes BM25 stats, writes `~1.5MB` JSON to `.rag/build-index.json` (gitignored). Searcher (`scripts/rag_search.py`) ranks by BM25 with optional `--path-prefix` filter and `--format md` output. Wired into `.claude/CLAUDE.md` AUTO-EXECUTE step 6 — refreshes index every session start (~1s) and lets Claude Code retrieve sibling-module patterns + prior gotchas before touching code. Zero infra, zero API calls.
+  - **OS-RAG** — Supabase pgvector + tsvector hybrid search via Reciprocal Rank Fusion. Schema in `sql/M42_rag_pgvector.sql` (pending Michael run M42): `rag_chunks` table with generated `tsv` (BM25-ish) + `embedding vector(768)` (HNSW indexed) + Anthropic-style `context` prefix. RPC `rag_hybrid_search` runs both retrievals, fuses with RRF (k=50), returns top 20. Free 768-dim embeddings via Cloudflare Worker (`skills/accent-rag/worker/embed-worker.js`) calling Workers AI bge-base-en-v1.5. Browser client `js/rag.js` adds `ragSearch / ragAnswer / ragIngestText / ragIngestArticle / ragSeed / ragHealth`. Reranker uses Claude Haiku 4.5; generator uses existing Claude Sonnet 4.
+  - **Wired into Ask the Engine**: `sendChat()` now calls `ragSearch()` first in Internal mode (Customer mode intentionally bypassed for privacy), prepends `<retrieved>` block to system prompt, renders "⚡ Grounded · N sources" pill above the answer with click-through to source list. Falls back to model-only if RAG isn't configured.
+  - **Auto-ingest**: `js/rag.js` wraps `sbSaveArticle` so saving an Internal Doc article triggers background re-ingest into RAG.
+  - **Settings UI**: Knowledge Engine → Config now has RAG card with Worker URL + Worker Secret inputs, Health Check button, Seed Corpus button, Re-ingest Articles button.
+  - **Seed corpus**: `skills/accent-rag/ingest-corpus/seed.json` ships 15 entries (4 scoring rubrics, 5 lighting reference docs, 3 SOPs, 1 vendor playbook template, 1 RAG implementation note pinned, 1 vendor data state snapshot).
+  - BLOCKS ON MICHAEL: **M42** (run pgvector schema), **M43** (deploy worker + seed corpus). Both documented in BUILD_PLAN_MICHAEL.md with click-by-click instructions.
+
 ---
 
 ## How to use this file

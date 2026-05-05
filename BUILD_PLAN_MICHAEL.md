@@ -428,6 +428,32 @@ These M-tasks already exist above (M24/M27/M29). The audit confirms running them
   - Unlocks: codex-review skill (cross-agent peer review with auto-apply LOW-risk fixes); future cross-agent collaboration patterns
   - Note: blocked by Claude Code Web mobile not having a file editor; works fine from desktop.
 
+- [ ] **M42** — Run RAG schema (pgvector + hybrid search RPC) — Track: accent-rag skill
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M42_rag_pgvector.sql` from the repo (already written by Claude). Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. Should complete with no errors. Verifies by inserting a single canary row at the end. To confirm: `SELECT count(*) FROM rag_chunks;` returns ≥ 1.
+    4. Pgvector + pg_trgm extensions get installed. HNSW index built. RPCs `rag_hybrid_search` and `rag_vector_search` are created.
+  - Then: paste to Claude → `M42 done — rag_chunks + RPCs live. Deploy the worker next.`
+  - Unlocks: OS-RAG (in-app retrieval). After this lands, Michael deploys the Cloudflare Worker (see `skills/accent-rag/worker/README.md`) and pastes Worker URL + secret into AccentOS Settings → Knowledge Engine → Config → RAG.
+
+- [ ] **M43** — Deploy `accent-rag` Cloudflare Worker (free embeddings)
+  - Where: any terminal (Codespace works) — `cd skills/accent-rag/worker`
+  - Action:
+    1. `cp wrangler.toml.example wrangler.toml`
+    2. `npx wrangler login` (one-time per machine)
+    3. `openssl rand -hex 32` → copy that hex string (this is the worker shared secret)
+    4. `npx wrangler secret put RAG_WORKER_SECRET` → paste the hex string
+    5. `npx wrangler deploy` → returns `https://accent-rag.<your-account>.workers.dev`
+    6. Open AccentOS → Knowledge Engine → Config tab → RAG section → paste worker URL + paste same hex string into Worker Secret → click Save.
+    7. Click Health Check → should show ✅ Ready · Worker ✓ · Supabase ✓ · rag_chunks ✓.
+    8. Click "Seed RAG Corpus" → ingests `skills/accent-rag/ingest-corpus/seed.json` (lighting reference, scoring rubrics, SOPs). Should show "Ingested 15/15 corpus items".
+    9. Open Ask the Engine → Internal mode → ask "What's our IMAP enforcement rubric?" — answer should show "⚡ Grounded · 6 sources" pill.
+  - Then: paste to Claude → `M43 done — RAG worker live + corpus seeded. Test Ask the Engine on Internal mode.`
+  - Unlocks: live RAG-grounded answers in Ask the Engine; auto-ingest on every Internal Doc save; future RAG queries from any module.
+  - Cost: $0 (Workers AI free tier covers ~250K embeddings/day).
+
 ---
 
 ## How to use this file

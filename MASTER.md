@@ -1,5 +1,5 @@
 # ACCENT LIGHTING — MASTER PROJECT REFERENCE
-> **Version:** 2.0 | **Last updated:** 2026-05-04  
+> **Version:** 2.1 | **Last updated:** 2026-05-05  
 > **Maintainer:** Michael Graf | **Scope:** AccentOS + Ecommerce + Website + All Ops  
 > **Location:** `github.com/mgraf77/accent-os/MASTER.md` (source of truth)  
 > **Rule:** This file is updated at the end of every working session. It replaces Notion, stale PDFs, and scattered docs.
@@ -82,7 +82,7 @@ Founded: 1979 | Brick-and-mortar lighting showroom + ecommerce
 ## 3. ACCENTOS — CURRENT STATE
 
 ### Version
-**v6.10.2** (as of 2026-05-04)  
+**v6.11.0** (as of 2026-05-05)  
 File size: ~651KB JS / ~680KB total HTML | Split trigger: 900KB hard limit (76% used)
 
 ### What's Live
@@ -112,6 +112,7 @@ File size: ~651KB JS / ~680KB total HTML | Split trigger: 900KB hard limit (76% 
 | Quote Generator (Persistent) | ✅ Live | quotes + quote_lines · save/list/reopen/delete (Track 1.2) |
 | Daily Command Center | ✅ Live | Role-aware Today card · 10 brief tiles across roles (Track 1.3) |
 | Role-Based Dashboards | ✅ Live | Per-role landing — Warehouse / Sales / Owner+Admin+Manager variants (Track 3.2) |
+| accent-rag skill (BUILD-RAG + OS-RAG) | ✅ Live (BUILD) · ⏳ Pending M42+M43 (OS) | Dual-mode RAG. BUILD-RAG indexes the repo for Claude Code (1995 chunks, BM25, .8s reindex). OS-RAG = Supabase pgvector + tsvector hybrid via RRF, free Workers AI embeddings (bge-base-en-v1.5), Claude Haiku rerank, wired into Ask the Engine Internal mode with "⚡ Grounded · N sources" pill. Skill: `skills/accent-rag/`. SQL: `sql/M42_rag_pgvector.sql`. Worker: `skills/accent-rag/worker/`. |
 | CRM / Sales Pipeline | 🔲 Planned | Track 1 |
 | Daily Command Center | 🔲 Planned | Track 1 |
 
@@ -731,6 +732,13 @@ If built as off-the-shelf tools, AccentOS would cost **$8,300+/month** in softwa
 ## 15. SESSION LOG
 
 > **Format:** Most recent at top. One entry per session. Auto-appended at session end.
+
+---
+
+### 2026-05-05 — accent-rag skill shipped (dual-mode RAG)
+**Shipped:** v6.11.0. New `accent-rag` skill at `skills/accent-rag/`. Two surfaces: **BUILD-RAG** = local BM25 over the repo (1995 chunks, .8s reindex, wired into `.claude/CLAUDE.md` AUTO-EXECUTE so every session starts with searchable repo context); **OS-RAG** = Supabase pgvector + tsvector hybrid search via reciprocal rank fusion, Anthropic-style contextual chunking, free 768-dim embeddings via Cloudflare Workers AI bge-base-en-v1.5, Claude Haiku 4.5 reranker, wired into Ask the Engine Internal mode with "⚡ Grounded · N sources" pill. Schema in `sql/M42_rag_pgvector.sql` (idempotent, RLS-enforced). Worker at `skills/accent-rag/worker/`. Browser client `js/rag.js`. Knowledge Engine → Config tab gets RAG settings card + Health Check + Seed Corpus + Re-ingest Articles buttons. Seed corpus = 15 entries (4 scoring rubrics, 5 lighting refs, 3 SOPs, 1 playbook template, 1 RAG note pinned, 1 data state snapshot).
+**Open loops:** Two new Michael tasks: **M42** (run sql/M42_rag_pgvector.sql), **M43** (deploy worker + seed corpus). Until both land, OS-RAG silently no-ops in Ask the Engine. BUILD-RAG works immediately.
+**Next:** When Michael says "M42 done" + "M43 done", verify Health Check returns ✅ and run the smoke query "What's our IMAP enforcement rubric?" in Ask the Engine — should show grounded pill with rubric chunk cited.
 
 ---
 

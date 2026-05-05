@@ -1,0 +1,96 @@
+[
+  {
+    "source_type": "scoring_rubric",
+    "source_id": "rubric-discount",
+    "title": "Vendor Scoring · Discount",
+    "body": "Discount rubric — weight: HIGH. The Discount category measures the vendor's standard discount off MSRP available to Accent Lighting on a typical order.\n\nScale (0–10): 10 = ≥50% off MSRP, consistent across all SKUs and order sizes. 8 = 40–49% off, consistent. 6 = 30–39% off OR 40%+ but inconsistent (depends on order size or product line). 4 = 20–29% off. 2 = 10–19% off OR significant tier-gating where Accent rarely qualifies. 0 = no discount, full list, or absent program.\n\nMissing data rule: if Discount terms are unverified or never asked, score = 0 and chunk is flagged 'Unverified' in UI.\nConfirmed-absent: 0 (penalize the gap; don't paper over).\nCase-by-case discount: N/A in this category, score this case-by-case in vendor notes instead.\n\nRelated categories: Freight (compounds discount value), Rebates (often gates higher discount tier), Spiff (separate dimension)."
+  },
+  {
+    "source_type": "scoring_rubric",
+    "source_id": "rubric-imap-enforcement",
+    "title": "Vendor Scoring · IMAP Enforcement",
+    "body": "IMAP Enforcement rubric — weight: HIGH. Measures vendor's willingness AND demonstrated action enforcing minimum advertised price.\n\nScale (0–10): 10 = active enforcement, takes verifiable action against violators (warning letters, account holds, channel terminations). 8 = explicit enforcement policy, occasionally applied. 6 = published policy but rarely enforced; no Accent-noted action in last 12 months. 4 = informal enforcement only when escalated. 2 = policy exists but openly ignored. 0 = no IMAP policy or vendor sells below MAP themselves.\n\nWhy HIGH weight: MAP violations directly erode Accent's margin and showroom relevance. Minka Group response work in 2026-Q1 documented 4 SKUs forced into manual GMC adds after channel partners undercut MAP — verifiable in MASTER §8.\n\nRelated: DTC/Consumer Direct (vendors who sell direct often have weak IMAP because they ARE the violator)."
+  },
+  {
+    "source_type": "scoring_rubric",
+    "source_id": "rubric-freight",
+    "title": "Vendor Scoring · Freight",
+    "body": "Freight rubric — weight: HIGH. Measures freight cost burden on a typical Accent order.\n\nScale (0–10): 10 = free freight always, no minimum. 8 = free freight at order minimums Accent regularly hits ($500-$1K). 6 = FFA at $1K-$2.5K. 4 = freight charged on most orders, ~5-8% of order value. 2 = freight charged on every order, 10%+ of order value. 0 = freight charged plus $250+ minimum order.\n\nBenchmarks logged in Knowledge Engine reference: 'No min = best (Nicor) · FFA $250+ = good · $1K+ = average'.\n\nFreight burden compounds with discount — a 50% discount with 10% freight is effectively 45% net. Capture both before negotiating."
+  },
+  {
+    "source_type": "scoring_rubric",
+    "source_id": "rubric-rep-score",
+    "title": "Vendor Scoring · Rep Score (admin-only)",
+    "body": "Rep Score rubric — weight: ADMIN ONLY · NEVER VISIBLE ON REP VIEW TAB.\n\nMeasures the rep group's value to Accent: responsiveness, knowledge, proactive opportunity-flagging, willingness to advocate for Accent on policy disputes.\n\nScale (0–10): 10 = proactive (calls Accent first when MAP issues / new SKUs / closeouts), responds <24h, knowledgeable on every product line. 6 = responsive when called but reactive, average product knowledge. 0 = unresponsive, no value-add, often the bottleneck on dispute resolution.\n\nHARD RULE (MASTER §12 #6): Rep Score must NEVER appear on the Rep View tab. Vendors must not know they are being scored on rep performance — disclosure would damage rep relationships and incentivize gaming. Audit-log any UI change touching Rep View visibility.",
+    "visible_to_roles": ["Owner","Admin","Manager"],
+    "metadata": {"sensitive": true, "audit_required": true}
+  },
+  {
+    "source_type": "lighting_ref",
+    "source_id": "ref-lumen-output",
+    "title": "Lumen Output · Commercial Reference",
+    "body": "Commercial lumen output benchmarks (40-60 fc general, 75+ fc task in office settings).\n\nRecommended foot-candle (fc) levels by space:\n- General office: 40-60 fc ambient\n- Task / desk: 75-100 fc\n- Open-plan office: 30-50 fc ambient + task lighting at desk\n- Conference: 30-50 fc with dimming\n- Retail (general): 50-100 fc, brand-dependent\n- Retail (display / merchandise): 200-500 fc accent\n- Showroom: 100-200 fc with high-CRI fixtures\n- Warehouse: 20-30 fc aisle, 30-50 fc work area\n- Healthcare exam: 100-150 fc\n- Restaurant dining: 5-15 fc ambient with accent\n\nLumens-to-fc conversion: fc = lumens / area_in_sqft × CU (coefficient of utilization, typically 0.6-0.8). Use IES handbook for project-grade calcs."
+  },
+  {
+    "source_type": "lighting_ref",
+    "source_id": "ref-color-temp",
+    "title": "Color Temperature · Selection Guide",
+    "body": "Color temperature (Kelvin) selection guide:\n\n- 2200K-2400K: warmest, candle-like, restaurants, hospitality, romantic ambiance\n- 2700K: warm white, residential standard, dining/bedroom/foyer, warm retail\n- 3000K: warm/neutral, kitchen, retail (Accent showroom default), brand showcases\n- 3500K: neutral, transitional, lobbies, hospitality public spaces\n- 4000K: cool white, office/industrial, healthcare general, classroom\n- 5000K-6500K: daylight, healthcare exam, garage/workshop, color-critical work\n\nTunable white: 2700K-5000K range allows circadian-friendly programming. Premium drivers required ($30-$80 fixture premium).\n\nWarm dim (2700K → 1800K as dimmed): premium hospitality/luxury residential — look for 'warm dim' or 'incandescent dim' on driver spec."
+  },
+  {
+    "source_type": "lighting_ref",
+    "source_id": "ref-cri-tlci",
+    "title": "CRI · TM-30 · TLCI Reference",
+    "body": "Color rendering quality metrics:\n\nCRI (Color Rendering Index): legacy 1965 standard. Scale 0-100. CRI 80+ commercial minimum, 90+ for showroom/retail/healthcare, 95+ for art/photography/cosmetic.\n\nR9 (Red rendering): supplements CRI. Look for R9 ≥ 50 for skin tones (retail, hospitality), R9 ≥ 70 for showroom-grade.\n\nTM-30: 2015 IES standard, more accurate than CRI. Two metrics: Rf (fidelity, 0-100) and Rg (gamut, 60-140). Premium fixtures publish TM-30; legacy ones only CRI.\n\nTLCI (Television Lighting Consistency Index): for video/broadcast. Different reference standard than CRI — TLCI 85+ required for broadcast.\n\nAccent showroom standard: minimum CRI 80, target 90+ on all primary display fixtures. Document on vendor playbook when known."
+  },
+  {
+    "source_type": "lighting_ref",
+    "source_id": "ref-emergency",
+    "title": "Emergency Lighting · Compliance Basics",
+    "body": "Emergency lighting compliance (NFPA 101 Life Safety Code):\n\nMinimum requirements: 1 footcandle (fc) average along egress path measured at floor, 0.1 fc minimum at any point, for a duration of 90 minutes after main power loss.\n\nPaths of egress: corridors, stairs, exit routes from any occupiable space ≥50 occupants (or per local code). Means of egress includes the path TO the exit, not just the exit signs.\n\nBattery backup options:\n- Integrated battery driver (most common, 90-min runtime, $30-100 fixture premium)\n- Central inverter (large facilities, single battery for many fixtures)\n- Generator + ATS (for facilities with full backup power)\n\nTest cadence: monthly 30-second test, annual 90-minute test. Records retained 3 years. Self-testing fixtures ($+) automate compliance.\n\nVerify against local code — IBC, IECC, and AHJ (authority having jurisdiction) overlays apply."
+  },
+  {
+    "source_type": "lighting_ref",
+    "source_id": "ref-dimming-protocols",
+    "title": "Dimming · Protocol Selection",
+    "body": "Dimming protocols and use cases:\n\n- 0-10V analog: simplest commercial protocol; one driver per circuit; 10-100% range typical (1-100% premium); good for large open spaces; cheap drivers.\n- DALI / DALI-2: digital, addressable per fixture; 0.1-100% range; supports color tuning, scheduling, occupancy integration; 5-15% fixture premium; preferred for hospitality, healthcare, premium office.\n- Triac (forward-phase): residential standard; 110V line; max ~600W per dimmer; cheap dimmers; some flicker on cheap drivers.\n- ELV / reverse-phase: residential premium; smoother LED dimming than triac; works with electronic low-voltage transformers.\n- Bluetooth/Casambi/wireless: retrofit-friendly; no rewiring; mid-tier hospitality/retail; battery-powered controls available.\n- DMX: theatrical/architectural color-changing; 512 channels per universe; integrators required.\n\nDim-to-off vs dim-to-1%: premium drivers go to 0.1% (looks 'off'), standard goes to 1% (visible glow). Hospitality demands dim-to-off."
+  },
+  {
+    "source_type": "sop",
+    "source_id": "sop-vendor-onboarding",
+    "title": "SOP · Vendor Onboarding (Accent)",
+    "body": "Vendor onboarding sequence at Accent Lighting:\n\n1. Initial contact — rep introduces vendor, sends line card + price book + terms doc. Log in vendor_categories (Supabase).\n2. Score (Tier B-light) — assess on 14-category rubric using available info. Mark 'Unverified' on every category not directly confirmed by rep/vendor.\n3. First order — track in Windward + Quote Generator. Note freight/discount actuals against quoted terms.\n4. Three-month review — re-score with verified data. Promote to Tier A if active 24mo + $5K+ lifetime appears reachable.\n5. Add to outreach campaign — generate scaffold email (existing button on vendor detail) for the 14 categories still 'Unverified'.\n6. Co-op tracking — if vendor offers co-op/rebate, immediately add to coop_tracker with deadline.\n7. Display program — if a display allowance is offered, log in showroom_displays.\n\nHard rules (MASTER §12): Blank beats guessed. Missing = 0 for scoring with 'Unverified' flag. Inactive vendors excluded from tier cutoffs."
+  },
+  {
+    "source_type": "sop",
+    "source_id": "sop-quote-creation",
+    "title": "SOP · Quote Creation",
+    "body": "Quote creation flow at Accent:\n\n1. Open Quotes page → 'New Quote' modal.\n2. Customer: pick from CUSTOMERS dropdown if existing, else type free-text name and create the customer record same session via Customers page.\n3. Project context: project type (commercial/residential/trade), sqft if known, budget if known, contact name + email.\n4. Line items: SKU + description + qty + unit price. List price defaults from inventory_items.list_price when SKU matches; cost defaults from inventory_items.cost.\n5. Tax + freight: enter actuals; freight per vendor's freight terms (see vendor scoring rubric).\n6. Save.\n7. Optional: AI Summary button generates a 2-sentence professional summary via Claude Sonnet.\n8. Convert to PO: Quote → PO button (when stage is quoted/negotiating/won) opens vendor picker; one PO per vendor.\n9. Convert to Job: Quote → Job button presets a job linked to the customer + quote.\n\nGotcha (BUILD_INTELLIGENCE 1.2 + 1.4): customer_id UUID FK isn't always wired in save flow. If linking by name, watch for typo/abbreviation drift."
+  },
+  {
+    "source_type": "sop",
+    "source_id": "sop-rep-outreach",
+    "title": "SOP · Rep Outreach Email Generation",
+    "body": "Rep outreach email scaffolding for vendors with unverified scores:\n\nStep 1 — open vendor detail modal in Vendor Ranking page.\nStep 2 — click 'Generate Outreach Email' button.\nStep 3 — the scaffold pre-fills:\n  - Subject: 'Following up on Accent Lighting partnership terms — [vendor name]'\n  - Body: brief intro paragraph + bullet list of unverified categories (asks one direct question per category) + closing offer to schedule a call\nStep 4 — review, personalize the intro paragraph, send via Gmail (use AccentOS Gmail MCP).\nStep 5 — log the outreach as a customer_interaction (or vendor_note when added) so the next rep follow-up has context.\n\nTone (MASTER §2): concise, professional, never signal reduced purchasing intent. Audit-log on every outreach send.\n\nCampaign state (MASTER §9): 20 emailable rep companies identified, 8 need call lists, 257 vendors have no rep group assigned. Full campaign assets not yet built."
+  },
+  {
+    "source_type": "vendor_playbook",
+    "source_id": "playbook-template",
+    "title": "Vendor Playbook · Template",
+    "body": "Vendor Playbook structure (one row per major vendor, lives in articles or vendor_overrides):\n\nHeader: Vendor name, parent company, primary rep + email, established date, Tier (A/B/C).\n\nTerms snapshot: Discount %, Freight policy, FFA threshold, Returns policy + restock, Lead time average, IMAP enforcement posture, Marketing/Co-op funds, Display allowance, Spiff program.\n\nPositioning: Strengths (2-3 bullets — what makes them strong vs alternatives), Weaknesses (2-3 bullets — known issues), Best fit (project types where this vendor wins).\n\nNegotiation levers: What's negotiable (discount tier, freight threshold), What's not (IMAP, MSRP), Recent wins on this vendor.\n\nContacts: Primary rep, escalation contact at vendor, Accent-side relationship owner.\n\nNotes: Free-text history. Recent disputes, what worked, what didn't.\n\nWhen to update: any time terms change, after every disputed order, quarterly review."
+  },
+  {
+    "source_type": "build_intel",
+    "source_id": "rag-implementation-notes",
+    "title": "RAG · AccentOS Implementation Notes",
+    "body": "Anthropic Contextual Retrieval pattern adapted for AccentOS:\n\nStandard RAG fails when chunks lack context. A chunk reading 'Discount = 9' is meaningless without 'discount of Visual Comfort Group's Premier dealer tier'. The fix: prepend a context prefix to every chunk BEFORE embedding and BEFORE indexing for BM25.\n\nIn AccentOS OS-RAG (js/rag.js), each chunk's `context` is generated by Claude Haiku at ingest time and stored alongside `body` in the rag_chunks table. The `searchable` generated column is `context || ' ' || body` — both tsvector and embedding cover that combined text.\n\nHybrid search (Supabase RPC `rag_hybrid_search`) runs both retrievals in parallel and fuses with reciprocal rank fusion (k=50). Reported recall improvement: 65-78% (vector-only or BM25-only) → 91% recall@10. Free 768-dim embeddings via Cloudflare Workers AI bge-base-en-v1.5 (10K Neurons/day = ~250K embeddings/day).\n\nReranker: Claude Haiku 4.5 scoring 20 candidates → top 6. Generator: Claude Sonnet 4. Total added cost over the existing Knowledge Engine: ~$2/month at 100 queries/day.\n\nBUILD-RAG (skills/accent-rag/scripts) is offline BM25 only — no API calls — used by Claude Code to retrieve repo context fast at session start.",
+    "metadata": {"pinned": true},
+    "pinned": true
+  },
+  {
+    "source_type": "master_doc",
+    "source_id": "master-vendor-data-state",
+    "title": "AccentOS · Vendor Data State (snapshot 2026-05-04)",
+    "body": "Vendor data snapshot (synthesised from MASTER §3):\n\n- 478 total vendors in VD_RAW\n- 2 inactive: ELK HOME (id=137), SAYLITE TX (id=399) — null wl scores, sales history preserved\n- 476 active vendors\n- 306 vendor score categories still showing 'Unverified' badge — outreach campaign closes these\n- Web Listing: top-30 vendors by sales scored via direct web research; 226 lower-volume bulk-assigned score=3 (deferred)\n- Parent company metadata: 130 vendors assigned to parent groups (Visual Comfort Group, HVLG, Maska, Acuity, Minka Group, etc.)\n- Tier eligibility: Tier A (full score, active 24mo + $5K+ lifetime), Tier B (light score), Tier C (archived/inactive)\n- Live tables: vendor_categories, vendor_changelog, vendor_score_states (14 rows/vendor), vendor_parents, vendor_scores, vendor_overrides\n- Scoring categories (14): Discount, Freight, Returns Policy, Lead Time, IMAP Enforcement, Marketing Funds, Display Allowance, Spiff, Web Listing, DTC/Consumer Direct, Consumer Demand, Rebates, Co-op, Rep Score (hidden from Rep View)\n- Scoring rules: Missing = 0 (penalize gap), Confirmed-absent = 0, Unverified = 0 flagged in UI, Case-by-case = N/A in all cats, scoring curve average = 5 with bell distribution, 10 = perfect, 0 = worst, inactive vendors excluded from tier cutoffs."
+  }
+]

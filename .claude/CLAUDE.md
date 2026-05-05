@@ -15,8 +15,9 @@
 3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
 4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
 5. Read BUILD_INTELLIGENCE.md — apply all lessons before touching any code
-6. Run bash /workspaces/accent-os/scripts/status.sh
-7. Begin building without waiting for Michael input
+6. **Refresh BUILD-RAG index** (skill: accent-rag) — `python3 /home/user/accent-os/skills/accent-rag/scripts/rag_build_index.py --quiet`. Takes ~1s; gives the session BM25 search over the whole repo. If a non-trivial task is queued, run `python3 /home/user/accent-os/skills/accent-rag/scripts/rag_search.py "<task description>" --k 5 --format md` and apply the retrieved chunks as additional context before touching code.
+7. Run bash /workspaces/accent-os/scripts/status.sh
+8. Begin building without waiting for Michael input
 
 ## DEFAULT COMMUNICATION STYLE
 - vibe-speak is **always-on** in the default mode (`vibe`).

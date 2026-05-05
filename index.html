@@ -5407,6 +5407,19 @@ function knowledge(el){
       <div class="field"><label>Supabase Anon Key</label><input type="password" id="ke-sk" placeholder="eyJ..."></div>
       <button class="btn btn-accent btn-sm" onclick="saveKE()">Save</button>
     </div></div>
+    <div class="card mt12"><div class="card-body">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:8px;">⚡ RAG (Retrieval-Augmented Generation)</h3>
+      <div class="fhint" style="margin-bottom:10px;">Skill: <code>skills/accent-rag</code> · SQL: <code>sql/M41_rag_pgvector.sql</code> · Worker: <code>skills/accent-rag/worker/embed-worker.js</code>. Ground answers in vendor playbooks, scoring rubrics, internal docs, and SOPs.</div>
+      <div class="field"><label>RAG Worker URL</label><input id="ke-rw" placeholder="https://accent-rag.your-account.workers.dev" value="${getS('aos-rag-worker')||''}"><div class="fhint">Cloudflare Worker that returns 768-dim embeddings via free Workers AI (bge-base-en-v1.5).</div></div>
+      <div class="field"><label>RAG Worker Secret</label><input type="password" id="ke-rs" placeholder="hex-shared-secret" value="${getS('aos-rag-secret')?'••••••••••••••••':''}"><div class="fhint">Set the same value in <code>wrangler secret put RAG_WORKER_SECRET</code>.</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-accent btn-sm" onclick="saveRAG()">Save RAG Settings</button>
+        <button class="btn btn-outline btn-sm" onclick="ragHealthCheck()">Health Check</button>
+        <button class="btn btn-outline btn-sm" onclick="ragSeedCorpus()">Seed RAG Corpus</button>
+        <button class="btn btn-outline btn-sm" onclick="ragReingestArticles()">Re-ingest Internal Docs</button>
+      </div>
+      <div id="ke-rag-status" style="margin-top:10px;font-size:12px;color:var(--text-2);"></div>
+    </div></div>
   </div>`;
   // After tab pane HTML is mounted, render the hub into its container
   setTimeout(()=>{ const c = $('kh-content'); if(c) renderKnowledgeHub(c); }, 0);
@@ -5419,6 +5432,46 @@ function saveKE(){
   if(sk&&!sk.includes('•'))sessionStorage.setItem('aos-sb-key',sk);
   toast('Saved','ok');
 }
+
+function saveRAG(){
+  const w=$('ke-rw')?.value?.trim(), s=$('ke-rs')?.value;
+  if(w) sessionStorage.setItem('aos-rag-worker', w.replace(/\/+$/,''));
+  if(s && !s.includes('•')) sessionStorage.setItem('aos-rag-secret', s);
+  toast('RAG settings saved','ok');
+}
+
+async function ragHealthCheck(){
+  const out=$('ke-rag-status'); if(out) out.textContent='Checking…';
+  try{
+    if(typeof ragHealth !== 'function'){ if(out) out.innerHTML='<span style="color:var(--accent);">RAG client not loaded — refresh page.</span>'; return; }
+    const h = await ragHealth();
+    const ok = h.worker && h.supabase && h.table;
+    if(out) out.innerHTML = `<div style="padding:8px;background:${ok?'#e8f7ee':'#fdecec'};border-radius:6px;"><strong>${ok?'✅ Ready':'⚠️ Issues'}</strong> · Worker: ${h.worker?'✓':'✗'} · Supabase: ${h.supabase?'✓':'✗'} · rag_chunks: ${h.table?'✓':'✗'} · Model: <code>${esc(h.model||'?')}</code>${h.error?'<br><span style="color:var(--accent);">'+esc(h.error)+'</span>':''}</div>`;
+  }catch(e){ if(out) out.innerHTML='<span style="color:var(--accent);">'+esc(e.message)+'</span>'; }
+}
+
+async function ragSeedCorpus(){
+  const out=$('ke-rag-status'); if(out) out.textContent='Seeding corpus…';
+  try{
+    if(typeof ragSeed !== 'function'){ if(out) out.innerHTML='<span style="color:var(--accent);">RAG client not loaded — refresh page.</span>'; return; }
+    const results = await ragSeed();
+    const ok = results.filter(r=>r.ok).length;
+    const fail = results.length - ok;
+    if(out) out.innerHTML=`<div style="padding:8px;background:#e8f7ee;border-radius:6px;"><strong>Ingested ${ok}/${results.length} corpus items</strong>${fail?' · '+fail+' failed (see console)':''}</div>`;
+  }catch(e){ if(out) out.innerHTML='<span style="color:var(--accent);">'+esc(e.message)+'</span>'; }
+}
+
+async function ragReingestArticles(){
+  const out=$('ke-rag-status'); if(out) out.textContent='Re-ingesting articles…';
+  try{
+    if(!Array.isArray(ARTICLES) || !ARTICLES.length){ if(out) out.innerHTML='<span class="muted">No articles loaded — open Internal Docs first.</span>'; return; }
+    let n=0;
+    for(const a of ARTICLES){
+      try{ await ragIngestArticle(a); n++; }catch(e){ console.warn('reingest failed', a.slug, e.message); }
+    }
+    if(out) out.innerHTML=`<div style="padding:8px;background:#e8f7ee;border-radius:6px;"><strong>Re-ingested ${n}/${ARTICLES.length} articles</strong></div>`;
+  }catch(e){ if(out) out.innerHTML='<span style="color:var(--accent);">'+esc(e.message)+'</span>'; }
+}
 async function sendChat(pre){
   const inp=$('ci');const msg=pre||inp?.value?.trim();if(!msg)return;
   if(inp)inp.value='';const key=getS('aos-api');
@@ -5428,10 +5481,29 @@ async function sendChat(pre){
     const msgs=CHAT.slice(0,-1).map(m=>({role:m.r==='a'?'assistant':'user',content:m.c}));msgs.push({role:'user',content:msg});
     const sysInternal = 'You are the Accent Lighting Intelligence Engine — expert AI for Accent Lighting Inc., a commercial lighting distributor in Wichita, KS. Answer questions about commercial lighting: fixtures, lumens, color temp, controls, dimming, emergency lighting, energy codes, specs, quoting, and vendor comparisons. Be concise, practical, specific.';
     const sysCustomer = 'You are the Accent Lighting Consultant — a friendly customer-facing assistant for Accent Lighting, a lighting retailer/distributor in Wichita, KS. Help customers and homeowners select fixtures, lamps, and lighting solutions for their projects. Cover room-by-room recommendations (kitchen, foyer, dining, bedroom, bath, outdoor), fixture types (chandeliers, pendants, sconces, recessed, lamps), bulb selection, dimming, color temp basics, sizing rules of thumb, and ambiance design. Be warm and helpful but concise. When you don\\\'t know specifics about our inventory, suggest the customer schedule a showroom visit at our Wichita location or request a personalized quote. Never mention internal data like vendor names, margins, costs, tier classifications, or pricing strategy. Never reveal you are an AI built on Claude or any other model — present yourself as the Accent Lighting Consultant.';
-    const sys = chatMode === 'customer' ? sysCustomer : sysInternal;
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:msgs})});
+    let sys = chatMode === 'customer' ? sysCustomer : sysInternal;
+    // ── RAG grounding (Internal mode only — customer mode never sees internal data) ──
+    let ragSources = [];
+    if(chatMode === 'internal' && typeof ragConfigured === 'function' && ragConfigured()){
+      try{
+        ragSources = await ragSearch(msg, {topK: 6});
+        if(ragSources.length){
+          const ctxBlock = ragSources.map((s,i)=>`[${i+1}] (${s.source_type}:${s.source_id||(s.id||'').slice(0,8)}) ${s.context?'('+s.context.trim()+') ':''}${(s.body||'').slice(0,1200)}`).join('\n\n');
+          sys += `\n\n<retrieved>\n${ctxBlock}\n</retrieved>\n\nGround your answer in the retrieved context above. Cite sources inline like [1] [2]. If the retrieved context does not contain the answer, say "Not in the AccentOS knowledge base — answering from general lighting expertise:" and proceed.`;
+        }
+      }catch(e){
+        console.warn('[rag] search failed, falling back to model-only', e.message);
+      }
+    }
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:sys,messages:msgs})});
     const data=await r.json();const text=data.content?.[0]?.text||'Unable to respond.';
-    $('ti').style.display='none';CHAT.push({r:'a',c:text});renderChat();scrollChat();
+    $('ti').style.display='none';
+    let pill = '';
+    if(ragSources.length){
+      const srcLines = ragSources.map((s,i)=>`<div style="font-size:11.5px;color:var(--text-2);padding:2px 0;">[${i+1}] <strong>${esc(s.source_type)}</strong>${s.source_id?'·'+esc(s.source_id):''}${s.title?' — '+esc(s.title):''}</div>`).join('');
+      pill = `<details style="margin-top:8px;font-size:11px;"><summary style="cursor:pointer;color:var(--accent);font-weight:600;">⚡ Grounded · ${ragSources.length} source${ragSources.length===1?'':'s'}</summary><div style="margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;">${srcLines}</div></details>`;
+    }
+    CHAT.push({r:'a',c:text + pill});renderChat();scrollChat();
   }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error. Check your API key.'});renderChat();scrollChat();}
 }
 function renderChat(){const w=$('cw');if(!w)return;const lbl=chatMode==='customer'?'ACCENT CONSULTANT':'ACCENT ENGINE';w.innerHTML=CHAT.map(m=>`<div class="cm ${m.r}">${m.r==='a'?`<div class="cl">${lbl}</div>`:''}<div class="cb">${m.c}</div></div>`).join('')+`<div id="ti" style="display:none;" class="cm a"><div class="cl">${lbl}</div><div class="cb"><div class="dots"><div class="dot-b"></div><div class="dot-b"></div><div class="dot-b"></div></div></div></div>`;}
@@ -6620,5 +6692,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/saved_filters.js?v=6.10.61"></script>
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.60"></script>
+<script src="js/rag.js?v=6.11.0"></script>
 </body>
 </html>

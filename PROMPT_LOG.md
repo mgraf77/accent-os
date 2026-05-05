@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-05 — Auto-session start + Custom RAG forge
+**Prompt:** "Look into rag systems. Look at as many as you should to customize one for accentos development build and then for the operating system itself. Then we will forge this skill and optimize it from there. At the end of this session I want it fully customized, optimized, and implemented."
+**Context:** Forge a dual-mode RAG skill. Two retrieval surfaces required: (a) Build-RAG over the AccentOS repo (MASTER, BUILD_PLAN_*, BUILD_INTELLIGENCE, SESSION_LOG, PROMPT_LOG, all js/, sql/, skills/) — file-based, runs inside Claude Code sessions; (b) OS-RAG over the live operational data (vendors, customers, articles, rubrics, SOPs) backed by Supabase pgvector + tsvector hybrid search, contextual chunking (Anthropic pattern), free embeddings via Cloudflare Workers AI (bge-base-en-v1.5), wired into Ask-the-Engine. Constraints: vanilla JS, no build step, zero added cost, Anthropic API + Supabase + Cloudflare only. Branch: claude/custom-rag-system-rIT34.
+
 ### 2026-05-04 — Session resume after Codespace stop
 **Prompt:** "Read SESSION_LOG.md and BUILD_PLAN_CLAUDE.md fresh. Read BUILD_INTELLIGENCE.md and apply all lessons before touching any code. Continue autonomous build from the first incomplete [ ] item in BUILD_PLAN_CLAUDE.md that has no unresolved BLOCKS ON MICHAEL dependency. Run bash /workspaces/accent-os/scripts/status.sh first so I can see current state. Then build without stopping. Go."
 **Context:** Codespace stopped mid-session. Resuming from last clean checkpoint in BUILD_PLAN_CLAUDE.md.
