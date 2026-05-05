@@ -190,6 +190,89 @@ function csvImportFlow(config){
   return { downloadTemplate, openPaste, onFile, processText, commit, fileInputId };
 }
 
+// ── DRAG-DROP CSV UPLOAD (v6.10.56) ───────────────────────
+// One-time document-level listener. When a file is dragged anywhere
+// on the page, find the currently-visible CSV file input + dispatch.
+// Module-agnostic: works for all imports (helper-based AND inline like
+// inventory.js) because every import card uses an <input type="file"
+// accept=".csv,text/csv">. Picks the LAST visible such input on the
+// page (last-rendered = current page).
+let _csvDropInstalled = false;
+function _installCsvDropZone(){
+  if(_csvDropInstalled || typeof document === 'undefined') return;
+  _csvDropInstalled = true;
+  let overlay = null;
+  let dragDepth = 0;
+  function findActiveCsvInput(){
+    const inputs = Array.from(document.querySelectorAll('input[type="file"][accept*="csv"]'));
+    // Filter to currently visible ones (not in hidden cards)
+    const visible = inputs.filter(el => {
+      if(!el.offsetParent) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
+    return visible.length ? visible[visible.length - 1] : null;
+  }
+  function showOverlay(label){
+    if(overlay) return;
+    overlay = document.createElement('div');
+    overlay.id = '_csv-drop-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;pointer-events:none;backdrop-filter:blur(2px);';
+    overlay.innerHTML = `<div style="background:white;border:3px dashed var(--accent,#3b82f6);border-radius:14px;padding:48px 64px;font-size:18px;font-weight:600;color:#1e293b;box-shadow:0 12px 48px rgba(0,0,0,0.3);text-align:center;"><div style="font-size:36px;margin-bottom:10px;">⬇</div>Drop CSV to import<div style="font-size:13px;font-weight:400;margin-top:8px;color:#64748b;">${label || 'Active import card will receive the file'}</div></div>`;
+    document.body.appendChild(overlay);
+  }
+  function hideOverlay(){
+    if(overlay){ overlay.remove(); overlay = null; }
+    dragDepth = 0;
+  }
+  document.addEventListener('dragenter', (e) => {
+    if(!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return;
+    dragDepth++;
+    const input = findActiveCsvInput();
+    if(!input) return;   // no import surface on this page
+    e.preventDefault();
+    // Derive a friendly label from the import card's surrounding heading
+    const card = input.closest('.card');
+    const title = card?.querySelector('.card-title')?.textContent || '';
+    showOverlay(title ? `Active: ${title}` : '');
+  });
+  document.addEventListener('dragover', (e) => {
+    if(!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return;
+    if(findActiveCsvInput()){ e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
+  });
+  document.addEventListener('dragleave', (e) => {
+    dragDepth--;
+    if(dragDepth <= 0) hideOverlay();
+  });
+  document.addEventListener('drop', (e) => {
+    if(!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+    const input = findActiveCsvInput();
+    if(!input){ hideOverlay(); return; }
+    e.preventDefault();
+    hideOverlay();
+    const file = e.dataTransfer.files[0];
+    if(!file.name.toLowerCase().endsWith('.csv') && !(file.type||'').includes('csv')){
+      if(typeof toast === 'function') toast('Drop a .csv file','warn');
+      return;
+    }
+    // Mimic the existing onchange flow: stash the file on the input + fire the handler
+    try{
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+    }catch{ /* DataTransfer not always settable; fall through */ }
+    // Trigger the input's existing onchange handler (works for both inline + helper-driven imports)
+    if(typeof input.onchange === 'function'){
+      input.onchange({ target: input });
+    } else {
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+}
+// Install on first use — csv_import.js loads after the inline DOMContentLoaded handler so
+// document is already ready.
+_installCsvDropZone();
+
 // Helper for normalizer: enum match with fallback + tracking
 // usage: csvEnumNormalizer(['active','inactive','prospect'], 'active', 'status')
 function csvEnumNormalizer(allowed, fallback, trackerKey){
