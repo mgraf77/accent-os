@@ -123,6 +123,7 @@ function renderArticleView(a){
     h = h.replace(/\n/g, '<br>');
     return h;
   };
+  const canPin = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
   return `
     <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
       <div style="flex:1;min-width:0;">
@@ -134,6 +135,7 @@ function renderArticleView(a){
         <div class="muted sm" style="margin-top:3px;">Updated ${updated}</div>
         ${tagsHTML}
       </div>
+      ${canPin ? `<button class="btn btn-outline btn-sm" onclick="toggleArticlePin('${a.id}')" title="${a.pinned?'Unpin':'Pin to top'}">${a.pinned?'📌 Unpin':'📌 Pin'}</button>` : ''}
       <button class="btn btn-outline btn-sm" onclick="openArticleEdit('${a.id}')">Edit</button>
     </div>
     <div style="padding:18px 22px;overflow-y:auto;max-height:480px;font-size:13.5px;line-height:1.55;color:var(--text);">
@@ -212,4 +214,33 @@ async function deleteArticleConfirm(articleId){
   closeModal();
   const c = $('kh-content'); if(c) renderKnowledgeHub(c);
   toast('Article deleted','ok');
+}
+
+// Quick pin/unpin without opening edit modal (v6.10.55)
+async function toggleArticlePin(articleId){
+  const a = ARTICLES.find(x => x.id === articleId);
+  if(!a) return;
+  const next = !a.pinned;
+  const prev = a.pinned;
+  a.pinned = next;
+  // Optimistic UI: re-sort + render so the pinned item floats to the top immediately
+  ARTICLES.sort((x,y) => {
+    if((!!x.pinned) !== (!!y.pinned)) return x.pinned ? -1 : 1;
+    return (y.updated_at||'').localeCompare(x.updated_at||'');
+  });
+  const c = $('kh-content'); if(c) renderKnowledgeHub(c);
+  try {
+    if(typeof sbConfigured === 'function' && sbConfigured()){
+      const res = await sbFetch(`/articles?id=eq.${encodeURIComponent(articleId)}`, {
+        method:'PATCH', headers:{'Prefer':'return=minimal'}, body: JSON.stringify({pinned: next, updated_at: new Date().toISOString()})
+      });
+    }
+  } catch(e) {
+    a.pinned = prev;
+    if(c) renderKnowledgeHub(c);
+    toast('Pin save failed — reverted','err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('article_pin', 'knowledge', {article_id: articleId, pinned: next});
+  toast(next ? `Pinned: ${a.title}` : `Unpinned: ${a.title}`, 'ok');
 }

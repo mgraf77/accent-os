@@ -7,11 +7,22 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean as of v6.10.53 (Employees inline-edit).** Today total = 17 ships: v6.10.37–v6.10.53. Inline-edit + CSV import patterns now applied broadly — "complete coverage" of the modules where they make sense. Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor** (declarative module shell — collapse 4 touchpoints to 1), **Saved Filter Sets** (cross-cutting persisted filter combos on every list page), **Quote→PO draft conversion** (quote lines lack vendor/SKU info — requires UX for users to map vendor per line; more involved), 6.5/6.6 portal phase 2 (needs Michael scoping for external auth — magic-link vs separate Supabase project). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 + M30-M39 schema runs still pending but UIs already ship working.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean as of v6.10.55 (Knowledge Hub article pin).** Today total = 19 ships: v6.10.37–v6.10.55. Inline-edit pattern across 12 modules; CSV import across 7 — both patterns now fully exhausted across modules where they make sense. Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor** (declarative module shell — collapse 4 touchpoints to 1), **Saved Filter Sets** (cross-cutting persisted filter combos on every list page), **Quote→PO draft conversion** (more involved — quote lines lack vendor/SKU), 6.5/6.6 portal phase 2 (needs Michael scoping for external auth — magic-link vs separate Supabase project). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 + M30-M39 schema runs still pending but UIs already ship working.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-05 — Final continue · Co-op + Marketing + Article pin
+**Version:** v6.10.54 → v6.10.55
+**Built/Changed:**
+- **v6.10.54 Co-op Tracker + Marketing Campaigns inline-edit** — Co-op fund status (open/claimed/expired/rejected) inline-editable for senior only (financial). Marketing campaign status (planned/active/complete/paused/cancelled) inline-editable for senior only. Co-op helper lives in index.html (coop is inline); Marketing in js/marketing.js.
+- **v6.10.55 Knowledge Hub article pin/unpin button** — quick "📌 Pin / Unpin" button on the article viewer for senior + Sales. Optimistic UI re-sorts ARTICLES so pinned items float to the top immediately; reverts on save failure. No modal needed for the most common content-curation action.
+**Decisions:** Inline-edit pattern is now exhausted across the major + secondary list pages. Pipeline (drag-drop), Saved Quotes (no status field), Activity Feed (read-only), Alerts (already has per-row action buttons) don't need additional inline-edit. Continuing further would be diminishing returns. Article pin/unpin is the same pattern but expressed as a button rather than a select since it's a 2-state toggle and a button is more discoverable on a viewer panel.
+**Verified:** All 3 modified files parse via `new Function(...)`. Tree clean post-rebase + push.
+**Open loops:** Inline-edit + CSV import patterns are now "complete coverage" — fully exhausted across the modules where they make sense. Day-end coverage = 12 modules with inline-edit, 7 with bulk CSV import.
+**Process notes:** Day total = 19 ships (v6.10.37 → v6.10.55) across this single conversation. Bundling mode held throughout — the last 5 ships averaged ~3-4 tool calls each.
+**Next prompt:** see top of file.
 
 ### 2026-05-05 — Resume run · inline-edit applied to remaining modules
 **Version:** v6.10.51 → v6.10.53
