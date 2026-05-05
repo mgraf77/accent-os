@@ -225,11 +225,20 @@ function renderPOs(el){
 }
 
 let _poEditLines = [];
-function openPOEdit(poId){
+function openPOEdit(poId, preset){
   const isNew = !poId;
-  const p = isNew ? {status:'draft', tax:0, freight:0, order_date: new Date().toISOString().slice(0,10)} : POS.find(x => x.id === poId);
+  let p = isNew ? {status:'draft', tax:0, freight:0, order_date: new Date().toISOString().slice(0,10)} : POS.find(x => x.id === poId);
   if(!p){ toast('PO not found','err'); return; }
-  _poEditLines = isNew ? [] : (PO_LINES[poId]||[]).map(l => ({...l}));
+  if(isNew && preset && typeof preset === 'object'){
+    if(preset.po) p = { ...p, ...preset.po };
+    if(Array.isArray(preset.lines) && preset.lines.length){
+      _poEditLines = preset.lines.map((l,i) => ({line_no:i+1, sku:l.sku||'', description:l.description||'', qty:Number(l.qty)||1, unit_cost:l.unit_cost==null?'':l.unit_cost, qty_received:0, notes:l.notes||null}));
+    } else {
+      _poEditLines = [];
+    }
+  } else {
+    _poEditLines = isNew ? [] : (PO_LINES[poId]||[]).map(l => ({...l}));
+  }
   if(_poEditLines.length === 0) _poEditLines.push({line_no:1, sku:'', description:'', qty:1, unit_cost:'', qty_received:0});
 
   // Vendor dropdown from VD
@@ -396,5 +405,88 @@ async function receivePO(poId){
   closeModal();
   renderPOs($('pg-content'));
   toast(`Received: ${matched} inventory rows updated${unmatched?', '+unmatched+' unmatched':''}`,'ok');
+}
+
+// Quote → PO conversion helper. Called from the Saved Quotes modal.
+// Groups quote line items by vendor; one PO per vendor. Multi-vendor quotes
+// surface a picker so the user can create one PO at a time.
+function createPOFromQuote(quoteIdOrUuid){
+  if(typeof QUOTES === 'undefined' || !QUOTES.length){ toast('No quotes loaded','err'); return; }
+  const q = QUOTES.find(x => x.id === quoteIdOrUuid || x._uuid === quoteIdOrUuid);
+  if(!q){ toast('Quote not found','err'); return; }
+  const lines = (q.lineItems||[]).filter(l => l.desc || l.qty > 0);
+  if(!lines.length){ toast('Quote has no line items','err'); return; }
+  // Group by vendorId. Lines with no vendor go in '__none' bucket.
+  const groups = {};
+  lines.forEach(l => {
+    const k = l.vendorId || '__none';
+    (groups[k] = groups[k] || {vendor_id: l.vendorId||null, vendor_name: l.vendorName||null, lines: []}).lines.push(l);
+  });
+  const keys = Object.keys(groups);
+  // No vendor-tagged lines → open blank PO with quote link, surface a hint.
+  if(keys.length === 1 && keys[0] === '__none'){
+    toast('Quote lines have no vendor — pick one in the PO','info');
+    closeModal();
+    setTimeout(() => openPOEdit(null, {
+      po: {related_quote_id: q._uuid || null},
+      lines: groups.__none.lines.map(l => ({sku:'', description:l.desc, qty:l.qty, unit_cost:l.price, notes:l.cat}))
+    }), 50);
+    return;
+  }
+  // Single vendor group (ignoring an optional __none) → direct preset.
+  const vendorKeys = keys.filter(k => k !== '__none');
+  if(vendorKeys.length === 1){
+    _openPOFromQuoteGroup(q, groups[vendorKeys[0]]);
+    return;
+  }
+  // Multi-vendor → picker modal. Each row creates one PO.
+  const VDmap = (typeof VD !== 'undefined') ? Object.fromEntries(VD.map(v => [String(v.id), v.n])) : {};
+  const rows = vendorKeys.map(k => {
+    const g = groups[k];
+    const name = g.vendor_name || VDmap[String(g.vendor_id)] || 'Vendor #'+g.vendor_id;
+    const total = g.lines.reduce((s,l)=> s + (Number(l.qty)||0)*(Number(l.price)||0), 0);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px;">
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13px;">${esc(name)}</div>
+        <div class="muted sm">${g.lines.length} line${g.lines.length===1?'':'s'} · $${total.toFixed(2)}</div>
+      </div>
+      <button class="btn btn-accent btn-sm" onclick="_poFromQuotePick('${esc(q._uuid||q.id)}','${esc(k)}')">+ PO</button>
+    </div>`;
+  }).join('');
+  const noneNote = groups.__none ? `<div class="muted sm" style="margin-top:8px;font-style:italic;">${groups.__none.lines.length} line${groups.__none.lines.length===1?'':'s'} have no vendor — not shown.</div>` : '';
+  openModal('Create PO from Quote — pick vendor', `
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;">Quote ${esc(q.id)} touches ${vendorKeys.length} vendors. Each row creates one PO with that vendor's lines pre-filled.</div>
+    ${rows}${noneNote}
+  `, `<button class="btn btn-outline" onclick="closeModal()">Done</button>`);
+}
+
+function _poFromQuotePick(quoteKey, vendorKey){
+  const q = (QUOTES||[]).find(x => x.id === quoteKey || x._uuid === quoteKey);
+  if(!q){ toast('Quote not found','err'); return; }
+  const lines = (q.lineItems||[]).filter(l => (l.vendorId || '__none') === vendorKey && (l.desc || l.qty > 0));
+  if(!lines.length){ toast('No lines for that vendor','err'); return; }
+  const g = {
+    vendor_id: vendorKey === '__none' ? null : vendorKey,
+    vendor_name: lines[0].vendorName || null,
+    lines
+  };
+  _openPOFromQuoteGroup(q, g);
+}
+
+function _openPOFromQuoteGroup(q, g){
+  const VDmap = (typeof VD !== 'undefined') ? Object.fromEntries(VD.map(v => [String(v.id), v.n])) : {};
+  const vName = g.vendor_name || VDmap[String(g.vendor_id)] || null;
+  const preset = {
+    po: {
+      vendor_id: g.vendor_id || null,
+      vendor_name: vName,
+      related_quote_id: q._uuid || null,
+      notes: `From quote ${q.id}${q.project?' · '+q.project:''}`
+    },
+    lines: g.lines.map(l => ({sku:'', description:l.desc, qty:l.qty, unit_cost:l.price, notes:l.cat}))
+  };
+  closeModal();
+  setTimeout(() => openPOEdit(null, preset), 50);
+  if(typeof sbAuditLog==='function') sbAuditLog('po_from_quote', 'quotes', {quote_id: q._uuid||q.id, vendor_id: g.vendor_id||null, line_count: g.lines.length});
 }
 

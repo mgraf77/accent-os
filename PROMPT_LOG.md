@@ -64,3 +64,7 @@
 ### 2026-05-05 — Time-budgeted continue (token-efficient run)
 **Prompt:** "i have an hour and 10 minutes until my current session resets (i am at 100% usage and currently using extra usage), knock out whatever you can in the next hour that is unblocked, will take about an hour (bundle tasks if needed), and is low usage required but more time required. basically use as little of my extra usage as you can but get max efficiency out of it. go."
 **Context:** User on Max plan extra-usage with $67 buffer; 70 min wall-clock budget. Pivoted to maximum-density bundling: read once + write once + commit per feature, no exploration. Shipped 4 ships in ~50 min: v6.10.47 (string-input cell variant + inventory bin/location inline edit + Bulk Vendor Score CSV import), v6.10.48 (Customer inline-edit phone+email), v6.10.49 (Job inline-edit status+priority dropdowns), v6.10.50 (Trade Partner inline-edit status+rating). Each ship was a single Edit + cache-bust + commit, ~3-4 tool calls each. Total session count this day: 14 ships.
+
+### 2026-05-05 — Resume building (Quote→PO)
+**Prompt:** "resume building"
+**Context:** Tree clean post-v6.10.57. Next BUILD_PLAN [ ] is 5.13 (blocked M04+M05). Picked Quote→PO draft from the WIP backlog suggestions — proven cross-module preset pattern (mirrors v6.10.42 Deal→Job). Adds "+ PO" button to Saved Quotes modal rows; for multi-vendor quotes, pops a vendor picker so each click creates one PO with that vendor's lines pre-filled.

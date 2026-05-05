@@ -7,11 +7,21 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean as of v6.10.55 (Knowledge Hub article pin).** Today total = 19 ships: v6.10.37–v6.10.55. Inline-edit pattern across 12 modules; CSV import across 7 — both patterns now fully exhausted across modules where they make sense. Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor** (declarative module shell — collapse 4 touchpoints to 1), **Saved Filter Sets** (cross-cutting persisted filter combos on every list page), **Quote→PO draft conversion** (more involved — quote lines lack vendor/SKU), 6.5/6.6 portal phase 2 (needs Michael scoping for external auth — magic-link vs separate Supabase project). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 + M30-M39 schema runs still pending but UIs already ship working.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean as of v6.10.58 (Quote→PO draft).** Cross-module preset pattern now applied twice (v6.10.42 Deal→Job, v6.10.58 Quote→PO). Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor** (declarative module shell — collapse 4 touchpoints to 1), **Saved Filter Sets** (cross-cutting persisted filter combos on every list page), **Bulk action bars** (multi-select + bulk delete/status on list pages), **Compact-view toggle** + **Column visibility toggles** (small polish), 6.5/6.6 portal phase 2 (needs Michael scoping for external auth). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 schema runs still pending but UIs already ship working.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-05 — Resume building · Quote → PO draft
+**Version:** v6.10.58
+**Built/Changed:**
+- **v6.10.58 Quote → PO draft conversion** — "+ PO" button on each row of the Saved Quotes modal. Single-vendor quote → opens new PO with vendor + lines pre-filled, related_quote_id set, notes seeded with quote ID + project. Multi-vendor quote → vendor picker modal listing each vendor with line count + total; one click = one PO with that vendor's lines (user clicks again for the next vendor). Lines without a vendor surface in a footnote on the picker. `openPOEdit(poId, preset)` extended with optional preset arg — when isNew + preset present, merges preset.po into header state and replaces _poEditLines with preset.lines. New helpers: `createPOFromQuote(quoteIdOrUuid)`, `_poFromQuotePick(quoteKey, vendorKey)`, `_openPOFromQuoteGroup(q, g)`. audit_log writes `po_from_quote` per spawn.
+**Decisions:** Cross-module preset pattern now applied twice — same shape as v6.10.42 Deal→Job. Picker modal (instead of one-PO-per-vendor batch) keeps user in control: each PO can be reviewed + tweaked before save, and they can stop after the first vendor if that's all they need. Description-and-price are copied from the quote line; SKU stays blank (quote lines don't have SKUs — user fills before save). Cost = list-price from the quote, which is wrong for vendor cost — flagged with a note in BUILD_INTELLIGENCE so future iteration knows to swap when quote_lines get a cost field.
+**Verified:** purchase_orders.js parses via `node -c`. Tree clean.
+**Open loops:** Quote line items don't carry SKU or vendor cost. Until they do, generated POs need SKU fill-in + cost adjustment before save. Future: when quote_lines schema gains a cost column, swap `unit_cost: l.price` → `unit_cost: l.cost` in `_openPOFromQuoteGroup`.
+**Process notes:** Single-ship session resume. Pattern reuse made this fast — ~5 tool calls from idea to commit-ready (read PO + jobs structure, edit purchase_orders.js, edit index.html showSaved, syntax check). Total session count this day rises to 22 ships.
+**Next prompt:** see top of file.
 
 ### 2026-05-05 — Final continue · Co-op + Marketing + Article pin
 **Version:** v6.10.54 → v6.10.55
