@@ -150,6 +150,12 @@
   - BLOCKS ON MICHAEL: **M03** (Windward written confirmation) AND **M10** (Curtis outreach)
 - [ ] **6.12** — Google Ads / Meta Ads
   - Status: **No API access** per MASTER §10. Manual admin only — not automatable until Google Ads API auth granted by account holder.
+- [ ] **6.13** — APILayer integration (address validation phase 1; currency phase 2)
+  - What: route address writes from `js/deliveries.js`, `js/customers.js`, `js/trade_partners.js` through APILayer's address-validation API on save. Block save with a "did you mean…" toast on suspect input; auto-correct ZIP+4. Cache validations per-address-hash to avoid re-billing on edits that don't change the address. Failed-address attempts surface in Daily Brief.
+  - Architecture: server-side proxy via Supabase Edge Function `apilayer-proxy` (single function, takes `{api, params}` so future APIs ride the same key). Never ship the API key to browser. Same proxy serves Phase 2.
+  - Phase 1 (this track): address validation across deliveries / customers / trade_partners.
+  - Phase 2 (deferred, same Track ID): exchange rates for multi-currency POs (`js/purchase_orders.js`, `js/commission.js`) via Exchange Rates Data API on the same proxy + key.
+  - BLOCKS ON MICHAEL: **M42** (APILayer account + API key)
 
 ---
 

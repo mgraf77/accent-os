@@ -202,6 +202,16 @@
   - Then: paste to Claude → `M09 done — Klaviyo private key: <paste>. Wire into AccentOS.`
   - Unlocks: Track 6.4 (email engagement data into customer profiles + RFM scoring)
 
+- [ ] **M42** — APILayer account + API key (address validation; optional currency)
+  - Where: `https://apilayer.com/auth/sign-up`
+  - Action:
+    1. Sign up (or log in) at apilayer.com.
+    2. Subscribe to **Address Validation API** — start on the free tier (verify call cap covers current delivery + customer + trade-partner write volume; bump to paid only if we exhaust free).
+    3. Copy the API key from the dashboard.
+    4. (Optional Phase 2) also subscribe free tier on **Exchange Rates Data API** — same key.
+  - Then: paste to Claude → `M42 done — APILayer key: <paste>. Subscribed APIs: <address|address+fx>. Wire into AccentOS.`
+  - Unlocks: Track 6.13 (address validation across deliveries / customers / trade partners; future currency on POs + commissions on the same proxy)
+
 ---
 
 ## CATEGORY: WINDWARD / ERP

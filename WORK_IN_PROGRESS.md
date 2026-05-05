@@ -1,9 +1,9 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-05 — session end · vibe-speak v9 shipped + corpus calibration applied
+**Last updated:** 2026-05-05 — apilayer scoping turn (no code shipped, scope-only)
 **Current task:** —
-**Step:** Tree clean on main. Latest AccentOS module: v6.10.65 (Customer→Deal preset + Module Modes bulk retag). Latest meta-skill: vibe-speak v9 (corpus learning + trend awareness + 13 new commands + dim 23, expanded matrix at 97.1% / 709 / 730).
+**Step:** Branch `claude/investigate-apilayer-OGXnQ`. Scoped APILayer integration onto BUILD_PLAN: **Track 6.13** (address validation phase 1 across deliveries / customers / trade_partners; currency phase 2 deferred, same proxy + key) + **M42** (Michael — APILayer account + key, free tier OK to start). Architecture decision logged: single Supabase Edge Function `apilayer-proxy` accepting `{api, params}` so future APILayer APIs ride one key — key never leaves server. No code shipped this turn. Tree clean on main pre-this-turn at v6.10.65.
 
 **Recent shipped (last 7 turns of this session):**
 - vibe-speak v6 → v7 → v8 → v9 (multi-user profiles + benchmarks + KPI + scoring matrix + Step numbering cleanup + lazy-load contract + sessions/ + skill router + corpus learning)
