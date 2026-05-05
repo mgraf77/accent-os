@@ -30,16 +30,71 @@ async function sbLoadModuleModes(){
   }catch(e){
     console.warn('[module_modes] Load failed:', e.message);
   }
-  // Load per-user overrides from localStorage
+  // Load per-user overrides — try Supabase first (real cross-device), fall back to localStorage.
   try{
     const raw = localStorage.getItem('accentos_user_overrides');
     if(raw){ USER_OVERRIDES = JSON.parse(raw); }
   }catch(e){ console.warn('[module_modes] overrides parse failed:', e.message); }
+  await _syncOverridesFromSupabase();
+}
+
+async function _syncOverridesFromSupabase(){
+  if(typeof sbConfigured !== 'function' || !sbConfigured()) return;
+  if(typeof CU !== 'object' || !CU || !CU.user_id) return;
+  try{
+    const isOwner = CU.role === 'Owner';
+    const url = isOwner
+      ? '/user_module_overrides?select=user_id,module_key,access'
+      : `/user_module_overrides?select=user_id,module_key,access&user_id=eq.${encodeURIComponent(CU.user_id)}`;
+    const rows = await sbFetch(url);
+    if(!Array.isArray(rows)) return;
+    // Server is authoritative when present — replace local cache.
+    const map = {};
+    rows.forEach(r => {
+      (map[r.user_id] = map[r.user_id] || {})[r.module_key] = r.access;
+    });
+    USER_OVERRIDES = {version: 1, overrides: map};
+    try{ localStorage.setItem('accentos_user_overrides', JSON.stringify(USER_OVERRIDES)); }catch{}
+    console.log(`[module_modes] Synced ${rows.length} overrides from Supabase`);
+  }catch(e){
+    if(/relation .* does not exist|404/i.test(e.message||'')){
+      console.log('[module_modes] user_module_overrides table not yet created — run sql/M40_user_module_overrides.sql for cross-device gating');
+    } else {
+      console.warn('[module_modes] sync failed:', e.message);
+    }
+  }
 }
 
 function _saveOverrides(){
   try{ localStorage.setItem('accentos_user_overrides', JSON.stringify(USER_OVERRIDES)); }
   catch(e){ console.warn('[module_modes] overrides save failed:', e.message); }
+}
+
+async function _saveOverrideRow(userId, key, access){
+  if(typeof sbConfigured !== 'function' || !sbConfigured()) return false;
+  try{
+    const granted_by = (typeof CU === 'object' && CU) ? CU.user_id : null;
+    if(access){
+      await sbFetch('/user_module_overrides?on_conflict=user_id,module_key', {
+        method: 'POST',
+        headers: {'Prefer': 'resolution=merge-duplicates,return=minimal'},
+        body: JSON.stringify({user_id: userId, module_key: key, access, granted_by, updated_at: new Date().toISOString()})
+      });
+    } else {
+      await sbFetch(`/user_module_overrides?user_id=eq.${encodeURIComponent(userId)}&module_key=eq.${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+        headers: {'Prefer': 'return=minimal'}
+      });
+    }
+    return true;
+  }catch(e){
+    if(/relation .* does not exist|404/i.test(e.message||'')){
+      console.log('[module_modes] override save: table missing (M40 not run)');
+    } else {
+      console.warn('[module_modes] override save failed:', e.message);
+    }
+    return false;
+  }
 }
 
 // ── Resolution ───────────────────────────────────────────
@@ -294,7 +349,7 @@ async function _renderOverridesPanel(host){
   `;
 }
 
-function _mmSetOverride(userId, key, access){
+async function _mmSetOverride(userId, key, access){
   if(!userId || !key) return;
   USER_OVERRIDES.overrides = USER_OVERRIDES.overrides || {};
   USER_OVERRIDES.overrides[userId] = USER_OVERRIDES.overrides[userId] || {};
@@ -305,11 +360,12 @@ function _mmSetOverride(userId, key, access){
     if(!Object.keys(USER_OVERRIDES.overrides[userId]).length) delete USER_OVERRIDES.overrides[userId];
   }
   _saveOverrides();
+  const synced = await _saveOverrideRow(userId, key, access);
   // Re-apply sidebar in case it's the active user.
   applyModuleModesToSidebar();
-  if(typeof sbAuditLog==='function') sbAuditLog('user_module_override', 'module_modes', {user_id: userId, key, access: access||null});
+  if(typeof sbAuditLog==='function') sbAuditLog('user_module_override', 'module_modes', {user_id: userId, key, access: access||null, synced});
   renderModuleModesPanel($('mgmt-content'));
-  toast(access ? `Override: ${key} → ${access}` : `Override cleared: ${key}`, 'ok');
+  toast(access ? `Override: ${key} → ${access}${synced?'':' (local only)'}` : `Override cleared: ${key}${synced?'':' (local only)'}`, 'ok');
 }
 
 // ── Page-level guard ────────────────────────────────────
