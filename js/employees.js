@@ -53,6 +53,51 @@ async function sbSaveEmployee(rec){
   }catch(e){ console.warn('[sb] Save employee failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.53)
+async function sbUpdateEmployeeField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['role','department','active','email','quota','hire_date','terminated_at'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    const res = await sbFetch(`/employees?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update employee field failed:', e.message); return false; }
+}
+
+async function commitEmployeeCell(input){
+  if(!input) return;
+  const id = input.dataset.id;
+  const field = input.dataset.field;
+  const isSelect = input.tagName === 'SELECT';
+  const isBoolean = input.dataset.kind === 'boolean';
+  const orig = input.dataset.orig || '';
+  const valStr = (input.value || '').trim();
+  if(input.style){ input.style.background = 'transparent'; input.style.borderColor = 'transparent'; }
+  if(valStr === orig) return;
+  let next = valStr === '' ? null : valStr;
+  if(isBoolean) next = valStr === 'true' ? true : valStr === 'false' ? false : null;
+  const item = EMPLOYEES.find(x => x.id === id);
+  if(!item){ if(!isSelect) input.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  input.dataset.orig = valStr;
+  const res = await sbUpdateEmployeeField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    input.value = orig;
+    input.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`employee_${field}_edit`, 'employees', {employee_id: id, field, from: prev, to: next});
+  toast(`${item.full_name||'Employee'} · ${field}: ${prev??'—'} → ${next??'—'}`, 'ok');
+  if(field === 'active') renderEmployees($('pg-content'));
+}
+
 async function sbDeleteEmployee(id){
   if(!sbConfigured()) return false;
   try{
@@ -152,14 +197,21 @@ function renderEmployees(c){
             ${all.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">No employees yet. Click "+ Add employee" to seed manually, or wait for Windward CSV import.</td></tr>` : all.sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||'')).map(e => {
               const a = e._agg;
               const scoreCell = a.avgScore!=null ? `<span class="mono fw6" style="color:${a.avgScore>=8?'var(--green)':a.avgScore>=6?'var(--blue)':a.avgScore>=4?'var(--yellow)':'var(--accent)'};">${a.avgScore}</span>` : '<span class="muted">—</span>';
+              const canEditEmp = CU && ['Owner','Admin','Manager'].includes(CU.role);
+              const txtCell = (val, field, w=90) => canEditEmp
+                ? `<td onclick="event.stopPropagation();" style="padding:2px 6px;"><input type="text" value="${esc(val||'')}" data-id="${e.id}" data-field="${field}" data-orig="${esc(val||'')}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitEmployeeCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${w}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;border-radius:4px;" placeholder="—"></td>`
+                : `<td class="sm">${esc(val||'—')}</td>`;
+              const activeCell = canEditEmp
+                ? `<td onclick="event.stopPropagation();"><select data-id="${e.id}" data-field="active" data-orig="${e.active===false?'false':'true'}" data-kind="boolean" onchange="commitEmployeeCell(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;"><option value="true" ${e.active!==false?'selected':''}>active</option><option value="false" ${e.active===false?'selected':''}>inactive</option></select></td>`
+                : `<td>${e.active===false?'<span class="badge bg-gray" style="font-size:10px;">inactive</span>':'<span class="badge bg-green" style="font-size:10px;">active</span>'}</td>`;
               return `<tr style="cursor:pointer;${e.active===false?'opacity:0.5;':''}" onclick="openEmployeeDetail('${e.id}')">
                 <td style="font-weight:600;color:var(--accent);">${esc(e.full_name||'(unnamed)')}</td>
-                <td class="sm">${esc(e.role||'—')}</td>
-                <td class="sm">${esc(e.department||'—')}</td>
+                ${txtCell(e.role, 'role', 110)}
+                ${txtCell(e.department, 'department', 110)}
                 <td class="sm mono">${esc(e.hire_date||'—')}</td>
                 <td>${scoreCell}</td>
                 <td class="sm">${a.periods||0}</td>
-                <td>${e.active===false?'<span class="badge bg-gray" style="font-size:10px;">inactive</span>':'<span class="badge bg-green" style="font-size:10px;">active</span>'}</td>
+                ${activeCell}
                 <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();openEmployeeEdit('${e.id}')">Edit</button></td>
               </tr>`;
             }).join('')}

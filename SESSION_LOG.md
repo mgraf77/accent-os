@@ -7,11 +7,23 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean as of v6.10.50 (Trade Partner inline-edit).** Today total = 14 ships: v6.10.37–v6.10.50. CSV import helper + inline-edit pattern both standardized; new applications of either are ~30 LOC of config. Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor**, **Saved Filter Sets** (cross-cutting), **more inline-edit surfaces** (Employees commission/quota, Warranty status, Deliveries status, Showroom status, PO status), **Quote→PO draft** (more involved — quote lines lack vendor/SKU), 6.5/6.6 portal phase 2 (needs Michael scoping for external auth). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 + M30-M39 schema runs still pending but UIs already ship working.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean as of v6.10.53 (Employees inline-edit).** Today total = 17 ships: v6.10.37–v6.10.53. Inline-edit + CSV import patterns now applied broadly — "complete coverage" of the modules where they make sense. Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor** (declarative module shell — collapse 4 touchpoints to 1), **Saved Filter Sets** (cross-cutting persisted filter combos on every list page), **Quote→PO draft conversion** (quote lines lack vendor/SKU info — requires UX for users to map vendor per line; more involved), 6.5/6.6 portal phase 2 (needs Michael scoping for external auth — magic-link vs separate Supabase project). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 + M30-M39 schema runs still pending but UIs already ship working.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-05 — Resume run · inline-edit applied to remaining modules
+**Version:** v6.10.51 → v6.10.53
+**Built/Changed:**
+- **v6.10.51 Warranty + Deliveries inline-edit** — Warranty severity (cosmetic/functional/safety) + status (7-state); Deliveries status (6-state). Status flips auto-stamp resolution_date / delivered_at; flips back clear them. New sbUpdateWarrantyField + sbUpdateDeliveryField with allow-lists.
+- **v6.10.52 Showroom Displays + POs inline-edit** — Showroom status (6-state, senior + Sales); PO status (6-state, **senior only** because POs are a financial commitment). Inline status-edit on POs does NOT trigger the inventory-bump side effect — that stays gated to the explicit "Mark Received & Update Inventory" button on the detail modal where confirmation is wanted.
+- **v6.10.53 Employees inline-edit** — active toggle (boolean select with true/false → badge), role (text), department (text). Senior only.
+**Decisions:** Continued the bundling-mode rhythm from v6.10.47-50. PO senior-only is a deliberate role-gating tightening — Sales can't change PO state inline. Boolean active field gets a special data-kind="boolean" path in commitEmployeeCell so the value coerces from the select string ("true"/"false") to actual JS booleans before the PATCH (Postgres bool column needs an actual bool, not a string).
+**Verified:** All 5 modified module files parse via `new Function(...)`. Tree clean post-rebase + push of each commit.
+**Open loops:** Inline-edit pattern is now exhausted across the major list pages. Remaining list pages (Co-op funds, Quotes, Calendar events, Pipeline deals) have either (a) inline-edit already via existing UX (drag-drop on pipeline) or (b) low edit-frequency that doesn't justify the surface. Bulk import similarly: only low-value modules left as candidates. CSV import + inline-edit patterns can both be considered "complete coverage" for the modules where they make sense.
+**Process notes:** Day total = 17 ships (v6.10.37 → v6.10.53). The bundling pattern continues to hold at ~3-5 tool calls per ship for established patterns; this 3-ship sub-run took ~12 tool calls total.
+**Next prompt:** see top of file.
 
 ### 2026-05-05 — Token-budgeted run · 4 inline-edit + 1 bulk import ships
 **Version:** v6.10.47 → v6.10.50
