@@ -105,6 +105,7 @@ function renderShowroomDisplays(el){
 
   const vendors = [...new Set(SHOWROOM_DISPLAYS.map(d => d.vendor_name).filter(Boolean))].sort();
 
+  const canImport = CU && (CU.role === 'Owner' || CU.role === 'Admin' || CU.role === 'Manager' || CU.role === 'Sales');
   el.innerHTML = `
     <div class="g4 mb16">
       <div class="card stat-card"><div class="stat-label">Live Displays</div><div class="stat-value">${(counts.active||0)+(counts.installed||0)+(counts.expiring||0)}</div><div class="stat-sub">${counts.planned||0} planned · ${counts.expired||0} expired · ${counts.removed||0} removed</div></div>
@@ -112,6 +113,15 @@ function renderShowroomDisplays(el){
       <div class="card stat-card"><div class="stat-label">Retail Value</div><div class="stat-value">$${(totalRetail/1000).toFixed(1)}K</div><div class="stat-sub">Live SKUs on floor</div></div>
       <div class="card stat-card"><div class="stat-label">Net Cost</div><div class="stat-value">$${((totalCost-totalCoop)/1000).toFixed(1)}K</div><div class="stat-sub">$${(totalCost/1000).toFixed(1)}K paid · $${(totalCoop/1000).toFixed(1)}K co-op</div></div>
     </div>
+    ${canImport ? `<div class="card mb16">
+      <div class="card-hd"><span class="card-title">Import CSV</span></div>
+      <div style="padding:14px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;">
+        <input type="file" accept=".csv,text/csv" style="font-size:12px;" onchange="onShowroomFilePick(this)">
+        <button class="btn btn-outline btn-sm" onclick="openShowroomCsvPaste()">Or paste CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="downloadShowroomCsvTemplate()">Download template</button>
+        <span style="margin-left:auto;color:var(--text-3);">Headers: display_name (req), vendor_name, location, status, install_date, expires_date, participation_cost, coop_value, retail_value, sku_list, notes</span>
+      </div>
+    </div>` : ''}
     <div class="card">
       <div class="card-hd">
         <span class="card-title">Showroom Displays · ${filtered.length}${filtered.length!==SHOWROOM_DISPLAYS.length?` of ${SHOWROOM_DISPLAYS.length}`:''}</span>
@@ -254,3 +264,93 @@ async function deleteShowroomConfirm(displayId){
   renderShowroomDisplays($('pg-content'));
   toast('Display deleted','ok');
 }
+
+// ── BULK CSV IMPORT (v6.10.45) — uses csvImportFlow helper ──
+async function sbBulkSaveShowroomDisplays(rows){
+  if(!sbConfigured()) return false;
+  if(!Array.isArray(rows) || !rows.length) return 0;
+  try{
+    const now = new Date().toISOString();
+    const payload = rows.map(r => ({
+      vendor_id: r.vendor_id || null,
+      vendor_name: r.vendor_name || null,
+      display_name: r.display_name,
+      location: r.location || null,
+      status: r.status || 'active',
+      install_date: r.install_date || null,
+      expires_date: r.expires_date || null,
+      removed_date: r.status === 'removed' ? (r.removed_date || now.slice(0,10)) : null,
+      participation_cost: r.participation_cost,
+      coop_value: r.coop_value,
+      retail_value: r.retail_value,
+      sku_list: r.sku_list || null,
+      contract_terms: r.contract_terms || null,
+      notes: r.notes || null,
+      updated_at: now
+    }));
+    const res = await sbFetch('/showroom_displays', {method:'POST', headers:{'Prefer':'return=representation'}, body: JSON.stringify(payload)});
+    if(Array.isArray(res)) return res.length;
+    return payload.length;
+  }catch(e){ console.warn('[sb] Bulk save showroom_displays failed:', e.message); return false; }
+}
+
+// Register the helper-driven CSV import handlers (window.openShowroomCsvPaste etc.)
+csvImportFlow({
+  key: 'showroom',
+  label: 'Display',
+  labelPlural: 'Displays',
+  templateName: 'showroom_displays_template',
+  tableName: 'showroom_displays',
+  pasteHelp: 'display_name,vendor_name,location,status,install_date,...',
+  templateRows: [
+    ['display_name','vendor_name','location','status','install_date','expires_date','participation_cost','coop_value','retail_value','sku_list','notes'],
+    ['Hudson Valley Pendant Wall','Hudson Valley Lighting','Showroom-Front-Wall','active','2026-03-01','2027-03-01','450','300','1850','HVL-1234,HVL-5678','Featured display, prime visibility'],
+    ['Hinkley Outdoor Vignette','Hinkley','Outdoor-Patio','installed','2026-04-15','','800','500','3200','HIN-OUT-100,HIN-OUT-101','']
+  ],
+  aliasMap: {
+    'display_name':'display_name', 'name':'display_name', 'display':'display_name',
+    'vendor_name':'vendor_name', 'vendor':'vendor_name', 'manufacturer':'vendor_name', 'brand':'vendor_name',
+    'location':'location', 'where':'location', 'placement':'location',
+    'status':'status', 'state':'status',
+    'install_date':'install_date', 'installed':'install_date', 'install':'install_date',
+    'expires_date':'expires_date', 'expires':'expires_date', 'expiry':'expires_date', 'end_date':'expires_date',
+    'participation_cost':'participation_cost', 'cost':'participation_cost', 'paid':'participation_cost',
+    'coop_value':'coop_value', 'co-op':'coop_value', 'co_op':'coop_value', 'coop':'coop_value',
+    'retail_value':'retail_value', 'retail':'retail_value', 'msrp':'retail_value',
+    'sku_list':'sku_list', 'skus':'sku_list', 'sku':'sku_list', 'items':'sku_list',
+    'contract_terms':'contract_terms', 'terms':'contract_terms',
+    'notes':'notes', 'note':'notes', 'comment':'notes', 'comments':'notes'
+  },
+  requiredFields: ['display_name'],
+  normalizers: {
+    status: csvEnumNormalizer(['planned','installed','active','expiring','expired','removed'], 'active', 'status'),
+    participation_cost: csvNumberNormalizer(0),
+    coop_value: csvNumberNormalizer(0),
+    retail_value: csvNumberNormalizer(0)
+  },
+  postProcess: (obj, ctx) => {
+    // Resolve vendor_name → vendor_id when possible
+    if(obj.vendor_name && typeof VD !== 'undefined'){
+      const match = VD.find(v => v?.n && v.n.toLowerCase().trim() === obj.vendor_name.toLowerCase().trim());
+      if(match) obj.vendor_id = String(match.id);
+      else {
+        if(!ctx.trackers.vendor) ctx.trackers.vendor = { unmatched: new Set() };
+        ctx.trackers.vendor.unmatched.add(obj.vendor_name);
+      }
+    }
+  },
+  dupCheck: (obj) => SHOWROOM_DISPLAYS.some(d => d.display_name && d.display_name.toLowerCase().trim() === obj.display_name.toLowerCase().trim()),
+  previewColumns: [
+    { label: 'Display', cell: r => `<span style="font-weight:500;">${esc(r.display_name||'')}</span>` },
+    { label: 'Vendor', cell: r => esc(r.vendor_name||'') + (r.vendor_id ? ' <span class="muted sm">·linked</span>' : '') },
+    { label: 'Location', cell: r => `<span class="sm">${esc(r.location||'')}</span>` },
+    { label: 'Status', cell: r => `<span class="badge bg-gray">${esc(r.status||'')}</span>` },
+    { label: 'Cost', cell: r => `<span class="mono sm">${r.participation_cost!=null?'$'+Number(r.participation_cost).toFixed(0):''}</span>` }
+  ],
+  bulkSave: sbBulkSaveShowroomDisplays,
+  onSuccess: async () => {
+    await sbLoadShowroomDisplays();
+    renderShowroomDisplays($('pg-content'));
+  },
+  auditEvent: 'showroom_displays_import'
+});
