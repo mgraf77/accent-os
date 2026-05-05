@@ -242,3 +242,12 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - prevention_rule: Skill design (Step 6) must explicitly consider "what depends on this being run first" and "what does this skill depend on" — and add a pre-check + redirect block whenever a prerequisite skill exists.
 - applied_to_skill_md: no
 - outcome: success
+
+### gotcha-024 — 2026-05-05 — 11-skill mega-batch (full AccentOS gap closure + new-tool scout)
+- target: 11 skills forged: gmc-feed-audit, bulk-meta-description, broken-link-rescue, rep-group-matchmaker, bottleneck-finder, community-skill-vet, build-plan-status, skill-eval-suite, schema-contract-tests, bc-business-review, vendor-onboard-checklist
+- what_happened: First end-to-end run of skill-forge under the full 10-step approval-gate workflow on a large batch. 21 candidates evaluated (13 prior + 8 new from broader scout including Promptfoo, dbt, claude-ecom, B2B partner patterns), 11 approved, 9 deferred to future-builds, 1 skipped. Step 8 Ralph loop ran 4 iterations on each forged skill, producing 16 real fixes — every skill surfaced ≥1 bug at iter 1. Most fixes were skill-specific (SQL bugs, output-format mismatches, missing edge cases); none were class-level skill-forge issues. The proactive application of gotcha-023's prereq-redirect pattern (e.g. rep-group-matchmaker INSUFFICIENT_DATA filter, bc-business-review insufficient-history handler) confirmed that pattern is real and worth baking into Step 6.
+- root_cause: Large batches stress-test the workflow. The skill-forge approval-gate + Ralph-loop architecture handled 11 skills cleanly; the batch surfaced skill-specific bugs that would have shipped without the Ralph loop.
+- fix_this_run: 16 Ralph fixes applied across 11 skills. No skill-forge SKILL.md changes needed (workflow is stable). gotcha-023 prevention rule applied proactively in 3+ skills this run.
+- prevention_rule: Step 8 Ralph loop with iteration cap of 4 produces real value at every iteration — confirm by counting: every skill in this batch had ≥1 fix at iter 1.
+- applied_to_skill_md: no (this is observational, not corrective)
+- outcome: success
