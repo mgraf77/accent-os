@@ -122,16 +122,25 @@ When Michael says "wrap" / "wrap session" / "session end" / "commit + push final
 
 | Command | What it does |
 |---|---|
-| `/vibe profile` | Print this file's current state |
-| `/vibe tighter` | Drop default intensity by one level for the rest of the session |
-| `/vibe looser` | Bump default intensity up by one for the rest of the session |
+| `/vibe profile` | Print compact profile summary (≤12 lines) — see SKILL.md Step 10 |
+| `/vibe tighter` | Tighten default intensity by one for rest of session (vibe → tight) |
+| `/vibe looser` | Loosen default intensity by one for rest of session (vibe → soft) |
 | `/vibe match me` | Set register-mirror to ON (default) |
-| `/vibe full grammar` | Set register-mirror to OFF — output uses standard prose grammar regardless of input |
-| `/vibe stop translating X` | Add X to hard-keep list, append to feedback-log.md |
-| `/vibe translate X` | Move X to active translation, append to feedback-log.md |
-| `/vibe show learnings` | Print recent observation-log.md entries |
-| `/vibe propose updates` | Run self-optimize check now and surface proposals |
-| `/vibe reset` | Restore profile to SKILL.md defaults — does NOT erase observation-log.md history |
+| `/vibe full grammar` | Set register-mirror to OFF — standard prose grammar regardless of input |
+| `/vibe stop translating X` | Add X to hard-keep, log to feedback-log |
+| `/vibe translate X` | Move X to active translation, log to feedback-log |
+| `/vibe drop filler X` | Add phrase X to filler kill list, log to feedback-log |
+| `/vibe show learnings` | Print last 10 observation-log + last 10 feedback-log entries |
+| `/vibe propose updates` | Run self-optimize check now and surface pending proposals |
+| `/vibe accept proposal` | Bake the most recently surfaced proposal into this profile |
+| `/vibe edit proposal — [text]` | Bake a Michael-modified version of the proposal |
+| `/vibe skip proposal` | Skip proposal — no re-surface for 14 days |
+| `/vibe undo` | Revert most recent profile / feedback-log change made this conversation (1-level deep) |
+| `/vibe what is X` | Introspection — explain a vibe-speak feature (e.g. `/vibe what is status+`) |
+| `/vibe export` | Print full profile + recent observations as a markdown block (cross-device sharing) |
+| `/vibe reset` | Restore profile to SKILL.md defaults — does NOT erase observation-log / feedback-log |
+
+Slash optional for short commands (`tighter` alone matches `/vibe tighter`). Edit-distance ≤ 2 fuzzy match. Inline colloquial variants per SKILL.md Step 10 ("stop with the X" → `/vibe drop filler X`, "use status mode" → status switch, etc.).
 
 ---
 

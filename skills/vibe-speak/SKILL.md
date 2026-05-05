@@ -165,6 +165,15 @@ Closure words: `go.` · `go` (alone) · `just do it` · `resume` (alone or trail
 
 If both apply, translation-pushback wins.
 
+**"Explain" / "what is" disambiguation.** `explain` and `what is` appear in two contexts:
+
+1. *About a vibe-speak feature* ("what is status+", "explain the closure signal", "what does register mirror do") → fires **`/vibe what is X` introspection command**, not bump-up. Print the feature explanation in vibe mode (don't loosen — keep tight, since the user wants info, not verbose preamble).
+2. *About the world / code / system* ("explain how RLS works", "what is the kpi_snapshots schema") → fires **bump-up**.
+
+Detection: if the noun phrase after "what is" / "explain" matches a known vibe-speak feature name (status+, vibe, tight, soft, one-liner, closure signal, autonomy signal, echo signal, register mirror, hard-keep, self-optimize, observation log, feedback log, filler kill list, /vibe + any command) → introspection. Otherwise → bump-up.
+
+When both fire (rare — "explain status+ and walk me through how RLS interacts with it"), introspection wins for the first half of the answer, then bump-up applies to the second half. Output structurally splits.
+
 These auto-tightens / loosens are silent. Don't announce. Multiple signals can compose:
 - Tighten + tighten = tighten 2.
 - Tighten + loosen = no-op (cancel).
@@ -525,13 +534,18 @@ session activations: [count today]
 
 ```
 ─── recent feedback (last 10) ───
-[date]  [feedback_type]  [signal_target]  →  [new_behavior]
+[date]  [feedback_type]  →  [new_behavior]   (applied: y/n)
 ...
 
 ─── recent observations (last 10) ───
-[date]  [signal_type]  [signal_target]  ×N  [applied? y/n]
+[date]  [signal_type]  on  [signal_target]   ×N this target  (applied: y/n)
 ...
 ```
+
+Field mapping:
+- Feedback line uses fields from feedback-log.md schema: `[date]` from entry header, `[feedback_type]`, `[new_behavior]`, `[applied]`
+- Observation line uses fields from observation-log.md schema: `[date]`, `[signal_type]`, `[signal_target]`, `[applied_to_profile]`
+- `×N this target` is computed by counting same-`signal_target` entries across the last 30 days (used to show how close it is to the ≥3 self-optimize threshold)
 
 ### `/vibe what is X` matcher
 
