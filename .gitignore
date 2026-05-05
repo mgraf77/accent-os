@@ -1,0 +1,5 @@
+# Claude Code local settings — never commit (may contain secrets like OPENAI_API_KEY)
+.claude/settings.local.json
+.env
+.env.*
+.openai-key
