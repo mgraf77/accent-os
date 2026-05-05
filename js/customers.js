@@ -93,6 +93,49 @@ async function sbDeleteCustomerInteraction(id){
   }catch(e){ console.warn('[sb] Delete interaction failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.48). Allow-listed fields only.
+async function sbUpdateCustomerField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['name','email','phone','type','address','notes','segment','lifecycle_stage'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString(), updated_by: (CU?.name)||'Unknown' };
+    const res = await sbFetch(`/customers?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update customer field failed:', e.message); return false; }
+}
+
+// Inline-edit handler — saves on blur if value changed; reverts on failure.
+async function commitCustomerCell(input){
+  if(!input) return;
+  const id = input.dataset.id;
+  const field = input.dataset.field;
+  const origStr = input.dataset.orig || '';
+  const valStr = input.value.trim();
+  input.style.background = 'transparent';
+  input.style.borderColor = 'transparent';
+  if(valStr === origStr) return;
+  const next = valStr || null;
+  const item = CUSTOMERS.find(c => c.id === id);
+  if(!item){ input.value = origStr; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  input.dataset.orig = valStr;
+  const res = await sbUpdateCustomerField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    input.value = origStr;
+    input.dataset.orig = origStr;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`customer_${field}_edit`, 'customers', {customer_id: id, field, from: prev, to: next});
+  toast(`Updated ${item.name||'customer'} · ${field}`, 'ok');
+}
+
 async function sbBulkSaveCustomers(rows){
   if(!sbConfigured()) return false;
   if(!Array.isArray(rows) || !rows.length) return 0;
@@ -254,13 +297,18 @@ function renderCustomers(el){
         <table>
           <thead>
             <tr>
-              <th>Name</th><th>Type</th><th>Segment</th><th>Last activity</th><th>12-mo $</th><th>Visits (12-mo)</th><th>Contact</th>
+              <th>Name</th><th>Type</th><th>Segment</th><th>Last activity</th><th>12-mo $</th><th>Visits</th><th>Email</th><th>Phone</th>
             </tr>
           </thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--text-3);">${totalCount===0?'No customers yet. Click "+ New Customer" to add one, or wait for the Windward CSV import.':'No customers match the current filter.'}</td></tr>` : filtered.map(c => {
+            ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${totalCount===0?'No customers yet. Click "+ New Customer" to add one, or wait for the Windward CSV import.':'No customers match the current filter.'}</td></tr>` : filtered.map(c => {
               const r = c._rfm;
               const recDisp = r.recency==null ? '<span class="muted">—</span>' : (r.recency<=30?`<span style="color:var(--green);">${r.recency}d</span>`:r.recency<=180?`<span style="color:var(--text-2);">${r.recency}d</span>`:`<span style="color:var(--accent);">${r.recency}d</span>`);
+              const canEdit = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
+              const editCell = (val, field, width) => {
+                if(!canEdit) return `<td class="sm">${esc(val||'')}</td>`;
+                return `<td class="sm" style="padding:2px 6px;" onclick="event.stopPropagation();"><input type="text" value="${esc(val||'')}" data-id="${c.id}" data-field="${field}" data-orig="${esc(val||'')}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitCustomerCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:${width}px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;border-radius:4px;" placeholder="—" title="Click to edit ${field}"></td>`;
+              };
               return `<tr style="cursor:pointer;" onclick="openCustomerDetail('${c.id}')">
                 <td style="font-weight:600;color:var(--accent);">${esc(c.name||'(unnamed)')}</td>
                 <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc(c.type||'—')}</span></td>
@@ -268,7 +316,8 @@ function renderCustomers(el){
                 <td class="sm">${recDisp}</td>
                 <td class="mono fw6">${r.monetary>0?'$'+Math.round(r.monetary).toLocaleString():'<span class="muted">—</span>'}</td>
                 <td class="sm">${r.frequency||'<span class="muted">0</span>'}</td>
-                <td class="sm">${esc(c.email||c.phone||'')}</td>
+                ${editCell(c.email, 'email', 180)}
+                ${editCell(c.phone, 'phone', 120)}
               </tr>`;
             }).join('')}
           </tbody>
