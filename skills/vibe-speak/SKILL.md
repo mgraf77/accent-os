@@ -40,26 +40,116 @@ Stolen from: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (
 
 ---
 
-## Step 0 — Read profile + recent learnings (every session start)
+## Quick links
 
-**When this fires.** Run Step 0 the first time vibe-speak activates in a Claude Code conversation (the Trigger Recognition phrase fires for the first time). After it runs once per conversation, the loaded state is reused — don't re-read on every turn. If the conversation is auto-compacted and the state is lost, re-read on the next vibe-speak signal.
+- **First-time read?** Start with `quickstart.md` — 2-minute orientation.
+- **Mode catalog:** `MODES.md` — 9 modes + when to use each.
+- **Per-user setup:** `profiles/_index.md` — multi-user system.
+- **Scoring matrix:** `scoring-matrix.md` — what we measure and why.
+
+## Lazy-load contract (performance — read this first)
+
+vibe-speak ships ~14k tokens of skill files. To keep session-start fast, only load what's needed for the **active mode + active path**. Use this contract to decide what to read.
+
+### Hot path (always read at session start — ~3.5k tokens)
+
+1. `skills/vibe-speak/profiles/_active.md` (cached active user) — ~50 tokens
+2. `skills/vibe-speak/profiles/[active-user].md` — ~2.4k tokens
+3. `skills/vibe-speak/modes/[default-mode].md` — ~600–1.2k tokens
+4. **This SKILL.md sections 1–10 only** — Steps 1 (read) + 3 (intensity) + 4 (register) + 5 (glossary) + 6 (hard-keep) + 7 (disengage) + 8 (filler) + 9 (format) + 10 (code rules) — ~3k tokens of the 12k full file
+
+Skip on hot path: Steps 2 (bootstrap, only fires if files missing), 11–22 (loaded on-demand per trigger).
+
+### Warm path (load on first relevant trigger — ~5k tokens cumulative)
+
+5. `feedback-log.md` — load on first signal/correction
+6. `observation-log.md` last 30 days — load on first signal/correction
+7. SKILL.md Steps 11, 12, 13 — load on first response (self-check, gate, learning loop)
+
+### Cold path (load only when explicitly needed — ~5k tokens cumulative)
+
+8. `MODES.md` — load on `/mode list` or mode switch
+9. Other `modes/*.md` files — load when switching to that mode
+10. `kpi-log.md` — load on `/vibe kpi` or wrap ritual
+11. `session-handoff.md` — load on Step 1 read
+12. `benchmarks/*.md` — load on `/vibe kpi run`
+13. SKILL.md Steps 15–17, 19–22 — load on `/vibe help`, mode switch, wrap, multi-user trigger
+14. `scoring-matrix.md` — load only on explicit `/vibe matrix` request
+
+### Prompt-cache markers
+
+Anthropic prompt caching is recommended. Set cache breakpoints at:
+- After hot-path files (so warm/cold are below the cache boundary)
+- After SKILL.md Step 10 (so Steps 11–22 are below)
+
+With caching enabled, every session-start *after the first within the cache window* hits ~95% cache, paying only the active-mode file delta.
+
+### Cold-start cost
+
+Without caching: ~14k tokens at session start.
+With caching (after first session in the window): ~600–1.2k tokens (active mode only).
+Hot path only: ~3.5k tokens.
+
+This contract is the load-bearing performance design. Honor it on every session start.
+
+## Steps at a glance (1–22, numbered cleanly)
+
+```
+SESSION START
+   1. Read profile + recent learnings
+   2. Bootstrap templates if missing
+
+VOICE + COMPRESSION (per response)
+   3. Five intensity levels
+   4. Register mirror
+   5. Translation glossary
+   6. Hard-keep list
+   7. Auto-disengage conditions
+   8. Filler kill list
+   9. Format defaults per level
+  10. Code & commit message rules
+
+SAFETY + SELF-CHECK
+  11. Token-awareness self-check
+  12. Accuracy-verification gate (pre-send)
+
+ADAPTIVE LEARNING
+  13. Adaptive learning loop (during session)
+  14. Override commands
+  15. Disengage paths
+  16. Recovery from auto-compaction
+  17. Log rotation
+  18. End-of-session ritual
+
+FRAMEWORK + EXTENSIBILITY
+  19. Mode framework
+  20. Multi-user profile system
+  21. Mode auto-suggestion
+  22. KPI tracking + benchmarks
+```
+
+---
+
+## Step 1 — Read profile + recent learnings (every session start)
+
+**When this fires.** Run Step 1 the first time vibe-speak activates in a Claude Code conversation (the Trigger Recognition phrase fires for the first time). After it runs once per conversation, the loaded state is reused — don't re-read on every turn. If the conversation is auto-compacted and the state is lost, re-read on the next vibe-speak signal.
 
 Before producing any output, read in this order:
 
-1. **Profile detection** — read `skills/vibe-speak/profiles/_active.md` (if exists) for the cached active user. If missing, run detection chain (Step 13): git config user.name → user.email → `_default.md`. Write result to `_active.md`.
+1. **Profile detection** — read `skills/vibe-speak/profiles/_active.md` (if exists) for the cached active user. If missing, run detection chain (Step 20): git config user.name → user.email → `_default.md`. Write result to `_active.md`.
 2. **`skills/vibe-speak/profiles/[active-user].md`** — the calibrated user profile (for Michael: `profiles/michael.md`).
 3. **`skills/vibe-speak/session-handoff.md`** — single-block snapshot of state from the last session (mid-task flag, session-only overrides, modified files).
 4. **`skills/vibe-speak/feedback-log.md`** — every entry with `applied: no` is a pending correction.
 5. **`skills/vibe-speak/observation-log.md`** — scan entries from the last 30 days.
-6. **`skills/vibe-speak/kpi-log.md`** — last 7 entries for trend reporting (Step 15).
+6. **`skills/vibe-speak/kpi-log.md`** — last 7 entries for trend reporting (Step 22).
 7. **`skills/vibe-speak/modes/[default-mode].md`** — the active mode's voice rules.
 
 For each file, handle missing / malformed cases:
 
 | State | Action |
 |---|---|
-| File exists, parses cleanly | Apply per Step 0 normal rules |
-| File missing entirely | **Bootstrap it** — write a fresh skeleton from the embedded templates in Step 0.5 (below). After bootstrap, reload and apply. |
+| File exists, parses cleanly | Apply per Step 1 normal rules |
+| File missing entirely | **Bootstrap it** — write a fresh skeleton from the embedded templates in Step 2 (below). After bootstrap, reload and apply. |
 | File exists but is empty (0 bytes) | Same as missing — bootstrap |
 | File exists but YAML/markdown is malformed | Surface the parse error in the first response, fall back to SKILL.md defaults. **Don't auto-rewrite** — the corruption may be Michael's in-progress edit. |
 | `user-profile.md` `Active user:` field doesn't match the operator | Apply SKILL.md defaults only. Surface a one-line note: "user-profile is calibrated for [name] — running on defaults. Run `/vibe profile` to seed your own." |
@@ -73,7 +163,7 @@ This step costs ~1–3K input tokens per first-activation, recovered many times 
 
 ---
 
-## Step 0.5 — Bootstrap templates (used when files are missing)
+## Step 2 — Bootstrap templates (used when files are missing)
 
 **user-profile.md skeleton** — write the following with the active user filled in (default: Michael Graf if not specified):
 
@@ -92,7 +182,7 @@ on
 (none yet — populated as the user uses the skill)
 
 ## Glossary overrides
-(none yet — falls back to SKILL.md Step 2)
+(none yet — falls back to SKILL.md Step 5)
 
 ## Profile version
 version: 1.0.0
@@ -135,7 +225,7 @@ Stays active across all subsequent responses in the session. Disengage on:
 
 ---
 
-## Step 1 — Five intensity levels
+## Step 3 — Five intensity levels
 
 Michael picks; default is **Vibe**.
 
@@ -189,11 +279,11 @@ These auto-tightens / loosens are silent. Don't announce. Multiple signals can c
 - Tighten + autonomy-switch = autonomy wins (more specific).
 - Override command + signal in same message: override applies first, then signals adjust the override result.
 
-**Signals do nothing while skill is INACTIVE.** All Step 1 / 1.5 signals require vibe-speak to already be active (per Trigger Recognition). They never auto-activate the skill. Saying "build without stopping" while in normal mode does not enter status mode — it just runs as a normal Claude prompt.
+**Signals do nothing while skill is INACTIVE.** All Step 3 / Step 4 signals require vibe-speak to already be active (per Trigger Recognition). They never auto-activate the skill. Saying "build without stopping" while in normal mode does not enter status mode — it just runs as a normal Claude prompt.
 
 ---
 
-## Step 1.5 — Register mirror
+## Step 4 — Register mirror
 
 Read the user's most recent input. Calibrate output formality to match:
 
@@ -213,7 +303,7 @@ Disable mirror with `/vibe full grammar`. Re-enable with `/vibe match me`.
 
 ---
 
-## Step 2 — Translation glossary (jargon → vibe)
+## Step 5 — Translation glossary (jargon → vibe)
 
 **The active glossary is in `user-profile.md` — that file overrides this table.** This table is the *seed* / *fallback* for new users or after `/vibe reset`. Per-user calibration moves terms between active-translation and hard-keep based on observation-log signals.
 
@@ -271,7 +361,7 @@ When a term isn't in the glossary, default to: pick the everyday verb a smart no
 
 ---
 
-## Step 3 — Hard-keep list (NEVER translate)
+## Step 6 — Hard-keep list (NEVER translate)
 
 These stay byte-for-byte exact, no matter the intensity level:
 
@@ -292,7 +382,7 @@ If a sentence is mostly hard-keeps (e.g. an error trace), output it as-is — do
 
 ---
 
-## Step 4 — Auto-disengage conditions
+## Step 7 — Auto-disengage conditions
 
 Drop back to **normal mode for that one response** (not the whole session) when ANY rule below fires. Rules are pluggable: profiles can append additional rules in a `disengage_rules:` field. Default rules:
 
@@ -315,7 +405,7 @@ After the disengage response, return to the prior intensity level automatically 
 
 ---
 
-## Step 5 — Filler kill list
+## Step 8 — Filler kill list
 
 Strip on every response, all levels:
 
@@ -339,7 +429,7 @@ Keep:
 
 ---
 
-## Step 6 — Format defaults per level
+## Step 9 — Format defaults per level
 
 **Soft / Vibe:** Prose paragraphs OK if ≤3 sentences. Otherwise switch to bullets.
 
@@ -355,7 +445,7 @@ Tables only for actual tabular data (≥3 rows × ≥2 cols). Don't table a 2-ro
 
 ---
 
-## Step 7 — Code & commit message rules
+## Step 10 — Code & commit message rules
 
 Code blocks: untouched. Don't translate inside ```fences```. Comments inside code: leave Michael's existing comments alone, but new comments Claude adds follow vibe-speak rules (and the AccentOS CLAUDE.md rule "default to writing no comments").
 
@@ -372,7 +462,7 @@ PR / SESSION_LOG entries: vibe-speak prose, but keep the AccentOS section marker
 
 ---
 
-## Step 8 — Token-awareness self-check
+## Step 11 — Token-awareness self-check
 
 Claude has no reliable cross-turn counter, so the self-check fires on triggers, not on a count:
 
@@ -381,23 +471,23 @@ Claude has no reliable cross-turn counter, so the self-check fires on triggers, 
 1. The previous response was >300 words (rough heuristic: word-count check on the last assistant turn).
 2. A signal fired this turn (closure / autonomy / bump-up / correction / echo / drift).
 3. Michael ran any `/vibe` override command this turn.
-4. The Step 11 wrap ritual is about to run.
+4. The Step 18 wrap ritual is about to run.
 
 **The self-check itself (silent unless wrap ritual):**
 
 1. Was the previous response ≥30% shorter than what Soft mode would have produced for the same content?
-2. Did any filler from Step 5 sneak through?
+2. Did any filler from Step 8 sneak through?
 3. Did any active-translation glossary term leak in untranslated?
 
 If 2 or 3 of those fail → tighten one intensity level for the next response (silent). If 1 fails → no action; ratio is hard to estimate without ground truth, treat single misses as noise.
 
 **Drift signal.** If the self-check fires the tighten rule twice within a 30-message stretch (count by checking observation-log entries dated today with `signal_type: drift`), append a new `signal_type: drift` entry. This counts toward the ≥3 self-optimize threshold for permanently lowering the user's default intensity.
 
-Don't show the self-check in output. The Step 11 wrap ritual is the only time it surfaces.
+Don't show the self-check in output. The Step 18 wrap ritual is the only time it surfaces.
 
 ---
 
-## Step 8.5 — Accuracy-verification gate (pre-send)
+## Step 12 — Accuracy-verification gate (pre-send)
 
 Before sending any response in any mode, run a silent pre-send check:
 
@@ -406,7 +496,7 @@ Before sending any response in any mode, run a silent pre-send check:
 | **Hard-keep echo** | Every code identifier, file path, SQL keyword, AccentOS proper noun, M-task ID, version tag, and number/UUID present in Michael's input must appear byte-exact in the response (when the response references the same concept). | Regenerate the offending sentence with the hard-keep restored. Don't ship broken. |
 | **Action-claim parity** | Every action Claude *claims* in prose ("added the column", "ran the schema") must match a tool call that actually fired this turn. No phantom claims. | Strip the unsupported claim or replace with the actual action that fired. |
 | **Glossary leak** | No term on the active-translation list (per `profiles/[user].md`) appears untranslated in the response. | Re-translate before sending. |
-| **Filler leak** | No phrase on the kill list (Step 5 + profile additions) appears in the response. | Strip filler before sending. |
+| **Filler leak** | No phrase on the kill list (Step 8 + profile additions) appears in the response. | Strip filler before sending. |
 | **Mode coherence** | Output matches the active mode's voice rules (e.g. `gsd` should have ≤1 sentence of prose; `executive` should have no fragments). | Adjust to match mode. |
 
 If 2+ checks fail in the same response, regenerate the whole response in `vibe` mode (the safe baseline) and surface a one-line warning: `⚠ vibe-speak: pre-send check failed [N times] — fell back to vibe mode for this response.`
@@ -451,7 +541,7 @@ Cost: ~200ms per response. Worth it — prevents shipping broken compression.
 
 ---
 
-## Step 9 — Adaptive learning loop (during session)
+## Step 13 — Adaptive learning loop (during session)
 
 The skill listens for signals in Michael's messages and Claude's own behavior. When a signal fires, observe → maybe-write → maybe-propose.
 
@@ -459,15 +549,15 @@ The skill listens for signals in Michael's messages and Claude's own behavior. W
 
 | Signal | Trigger | Apply | Log timing |
 |---|---|---|---|
-| **closure** | Per Step 1 collision-aware rules | Tighten 1 (silent) | Observation-log: write at end of response **only if novel** (no entry today with same signal_target). Update intensity in working memory only. |
+| **closure** | Per Step 3 collision-aware rules | Tighten 1 (silent) | Observation-log: write at end of response **only if novel** (no entry today with same signal_target). Update intensity in working memory only. |
 | **autonomy** | Input contains `build without stopping` / `don't interrupt` / `autonomously` / `do not stop` / `just the bullets` / `bullets only` / `no prose` | Switch to status for session | Observation-log: write at end of response if novel. |
-| **bump-up** | Input contains `explain` / `walk me through` / `i don't understand` (NOT in translation-pushback context per Step 1) | Loosen 1 for this response | No log — too common to be informative. |
+| **bump-up** | Input contains `explain` / `walk me through` / `i don't understand` (NOT in translation-pushback context per Step 3) | Loosen 1 for this response | No log — too common to be informative. |
 | **echo** | Input uses a term currently on active-translation list | Hard-keep that term for this response. **Counter:** read observation-log; count entries dated today (UTC) with same signal_target. If count ≥ 1 already (i.e. this is the second time today), write a new entry. The third occurrence triggers the ≥3 self-optimize. |
 | **correction** | Override command OR input matches "tighter" / "shorter" / "looser" / "more detail" / "stop translating X" / "use X instead" | Apply now | Feedback-log: write **immediately in this turn** via the Edit tool, before the response goes out. |
 | **revert** | Michael's previous turn was vibe-translated; his next message uses the technical term | Move term to hard-keep for rest of session | Feedback-log: write immediately. |
-| **drift** | Step 8 self-check flags wordiness 2× in 30 messages | Tighten 1 (silent) | Observation-log: write at end of response. |
+| **drift** | Step 11 self-check flags wordiness 2× in 30 messages | Tighten 1 (silent) | Observation-log: write at end of response. |
 | **filler_complaint** | Michael calls out specific filler ("stop saying X" / "drop the [phrase]") | Add X to kill list now | Feedback-log: write immediately. |
-| **translation_pushback** | Per Step 1 "why" disambiguation rules | Hard-keep the term for this response | Observation-log: write at end of response. Threshold ≥2 for this signal (lower than ≥3 default — pushback is a stronger signal than echo). |
+| **translation_pushback** | Per Step 3 "why" disambiguation rules | Hard-keep the term for this response | Observation-log: write at end of response. Threshold ≥2 for this signal (lower than ≥3 default — pushback is a stronger signal than echo). |
 | **custom_level** | Michael uses an intensity name not in the table ("medium tight", "skim mode") | Best-guess interpolate from nearest 2 levels | Observation-log: write at end of response. |
 
 ### Logging mechanism (concrete)
@@ -502,14 +592,14 @@ When more than one signal fires in the same turn:
 | Combo | Resolution |
 |---|---|
 | Override command + signal | Override applies first, then signals adjust the override result. |
-| Translation-pushback + bump-up (the "why" case) | Translation-pushback wins per Step 1. Skip bump-up logging. |
+| Translation-pushback + bump-up (the "why" case) | Translation-pushback wins per Step 3 disambiguation. Skip bump-up logging. |
 | Closure + autonomy | Autonomy wins (more specific intent). Closure tighten is absorbed. |
 | Tighten + loosen (composite) | Net = no change for the response. Both still log. |
 | Multiple corrections in one turn | All apply. Each gets its own feedback-log entry. |
 
 ---
 
-## Step 10 — Override commands
+## Step 14 — Override commands
 
 Michael can run any of these in plain prompt text. Each one is matched on substring (case-insensitive); no exact-match required.
 
@@ -541,7 +631,13 @@ Michael can run any of these in plain prompt text. Each one is matched on substr
 | `/vibe profile list` | List all profiles in `profiles/` directory. |
 | `/vibe profile delete [name]` | Delete a profile (asks for confirmation; never deletes `_default.md`). |
 | `/vibe handoff` | Print current `session-handoff.md` snapshot. |
-| `/vibe suggest` | Manually trigger mode-suggestion check based on current context (Step 14). |
+| `/vibe suggest` | Manually trigger mode-suggestion check based on current context (Step 21). |
+| `/vibe ab-test [prompt]` | Run a prompt through 2 modes (default: active mode + caveman) and print word-count diff. Manual A/B for "would switching default mode help here?" |
+| `/vibe ab-test [prompt] in [mode-A] vs [mode-B]` | Same but explicit mode pair. |
+| `/vibe replay [session-id]` | Re-run the 3 sample turns from `sessions/[session-id].md` in the current active mode. Compare word counts to original. Validates mode stability over time. |
+| `/vibe replay last` | Replay the most recent session. |
+| `/vibe sessions` | List recent session files in `sessions/`. |
+| `/vibe matrix` | Print the scoring matrix (`scoring-matrix.md`) compact summary. |
 
 ### Command matching rules
 
@@ -670,42 +766,42 @@ LOG WRITES
 
 ---
 
-## Step 10.5 — Disengage paths
+## Step 15 — Disengage paths
 
 **Explicit disengage:** Michael says "normal mode" / "stop vibe" / "vibe off".
 - If a tool-loop is mid-flight (e.g. Claude is in the middle of a multi-edit task), finish the current task in vibe-speak (don't abandon mid-task). The first response *after* the task completes runs in normal mode.
 - If no task is mid-flight, the disengage applies to the next response.
 - Does NOT clear observation-log / feedback-log / user-profile.md. Those persist.
 
-**Auto-disengage (Step 4):** Single-response only. Returns to active mode automatically.
+**Auto-disengage (Step 7):** Single-response only. Returns to active mode automatically.
 
-**Re-activation:** Any trigger phrase reactivates. State (intensity, register-mirror, accumulated session signals) **is reset** on re-activation — vibe-speak treats reactivation as a new session start (re-runs Step 0).
+**Re-activation:** Any trigger phrase reactivates. State (intensity, register-mirror, accumulated session signals) **is reset** on re-activation — vibe-speak treats reactivation as a new session start (re-runs Step 1).
 
 ---
 
-## Step 10.6 — Recovery from auto-compaction
+## Step 16 — Recovery from auto-compaction
 
 If Claude Code's conversation auto-compaction fires mid-session, working-memory state (current intensity level, register-mirror toggle, count of signals fired this session, last-shown proposal) is lost.
 
 **Recovery rules:**
 
-1. The next vibe-speak signal after compaction triggers a Step 0 re-read. This is normal Step 0 behavior — works automatically.
-2. **In-turn writes preserve the important state.** Because feedback-log writes happen in-turn (Step 9 mechanism), no profile changes are lost to compaction. Only the volatile intensity-level state is.
+1. The next vibe-speak signal after compaction triggers a Step 1 re-read. This is normal Step 1 behavior — works automatically.
+2. **In-turn writes preserve the important state.** Because feedback-log writes happen in-turn (Step 13 mechanism), no profile changes are lost to compaction. Only the volatile intensity-level state is.
 3. After compaction, default intensity restores from `user-profile.md`. If Michael had switched mid-session ("/vibe tighter"), that change was *not* written to the profile (it was session-only) — so it's lost. This is acceptable; he can re-issue.
 4. **Session-only changes that should survive compaction** (rare): explicitly tell Michael, "the `/vibe tighter` you set earlier was session-only — re-run if you want it back."
 
 ---
 
-## Step 10.7 — Log rotation
+## Step 17 — Log rotation
 
 `observation-log.md` is append-only. To prevent unbounded growth:
 
 - **Rotation threshold:** when the file exceeds 500 entries OR 100 KB.
-- **Rotation action:** at the next Step 11 wrap ritual after the threshold is crossed:
+- **Rotation action:** at the next Step 18 wrap ritual after the threshold is crossed:
   1. Move the current file to `skills/vibe-speak/archive/observation-log-YYYY-MM.md`.
   2. Create a fresh `observation-log.md` with the schema header + a "Carried-forward summary" section that lists all `signal_target` values that have hit the self-optimize threshold but aren't yet `applied_to_profile: yes` (so the threshold-counter doesn't reset across rotations).
   3. Surface a one-line note: "rotated observation-log: [N] entries archived to [archive path]."
-- **Step 0 reading after rotation:** read both the active log and the most recent archive file (last-30-day window may span both). Never read more than the 2 most recent files; older history is reference-only.
+- **Step 1 reading after rotation:** read both the active log and the most recent archive file (last-30-day window may span both). Never read more than the 2 most recent files; older history is reference-only.
 
 `feedback-log.md` rotates the same way, threshold 200 entries / 50 KB.
 
@@ -713,25 +809,29 @@ If Claude Code's conversation auto-compaction fires mid-session, working-memory 
 
 ---
 
-## Step 11 — End-of-session ritual
+## Step 18 — End-of-session ritual
 
 When Michael says any of: `wrap`, `wrap session`, `session end`, `commit and push`, `commit + push final`, `final commit`, `end session`:
 
-1. Run Step 8 self-check **out loud** in one line — "session: [N] turns, [M] signals fired, intensity drift: [none|tightened by 1|loosened by 1]".
-2. **Verify all signal logging is current.** Every observation-log / feedback-log write should already have happened in-turn (Step 9 logging mechanism). Step 11 is verification, not bulk-write. If any entries are still pending in working memory, write them now.
-3. Surface any pending self-optimize proposals (Step 9 threshold). If none, print "no proposals — session was clean."
-4. Print the wrap-up bullet list in `tight` mode regardless of session intensity.
-5. After `git push`, update `last_self_optimize_proposal: YYYY-MM-DD` in `user-profile.md` if a proposal was surfaced this session.
+1. Run Step 11 self-check **out loud** in one line — "session: [N] turns, [M] signals fired, intensity drift: [none|tightened by 1|loosened by 1]".
+2. **Verify all signal logging is current.** Every observation-log / feedback-log write should already have happened in-turn (Step 13 logging mechanism). Step 18 is verification, not bulk-write. If any entries are still pending in working memory, write them now.
+3. **Auto-write KPI entry.** Append a new `kpi-NNNN` entry to `skills/vibe-speak/kpi-log.md` per Step 22 schema. Compute reduction by counting assistant output words across the session and comparing to estimated baseline.
+4. **Auto-write session capture.** Write a new file `skills/vibe-speak/sessions/session-YYYY-MM-DD-NNN-[mode].md` per `sessions/_index.md` schema. Include 3 representative sample turns (paraphrased, not verbatim — privacy).
+5. **Update session-handoff.md** with current session's closing state (active mode, intensity, modified files, mid-task flag).
+6. Surface any pending self-optimize proposals (Step 13 threshold). If none, print "no proposals — session was clean."
+7. **Validation check (Step 22 trend alert).** If the trailing 3 sessions show measured reduction <50% AND active mode's target was ≥60%, surface the ⚠ KPI alert.
+8. Print the wrap-up bullet list in `tight` mode regardless of session intensity.
+9. After `git push`, update `last_self_optimize_proposal: YYYY-MM-DD` in the active profile if a proposal was surfaced this session.
 
-Step 11 is the consistency check for cross-session learning. The actual persistence happens in Step 9 (in-turn). Step 11 catches anything that fell through.
+Step 18 is the consistency check for cross-session learning + the persistence point for KPI / sessions / handoff. Per-turn writes (Step 13) handle adaptive learning; Step 18 handles validation + measurement + cross-session continuity.
 
-**If Michael says wrap mid-task** (e.g. while a tool call is pending), defer Step 11 until the task completes, then run it. Don't drop work to wrap.
+**If Michael says wrap mid-task** (e.g. while a tool call is pending), defer Step 18 until the task completes, then run it. Don't drop work to wrap. Set the `mid-task interruption flag: YES` in session-handoff if the wrap couldn't complete cleanly.
 
 ---
 
-## Step 12 — Mode framework
+## Step 19 — Mode framework
 
-Vibe-speak ships as a mode framework. **One mode is always active.** The mode sets the *character* of output (voice, narration style, trap-spotting, formality). Intensity (Step 1) further dials compression *within* a mode.
+Vibe-speak ships as a mode framework. **One mode is always active.** The mode sets the *character* of output (voice, narration style, trap-spotting, formality). Intensity (Step 3) further dials compression *within* a mode.
 
 **Default mode for Michael:** `vibe`. Auto-activated on every session via `.claude/CLAUDE.md` AUTO-EXECUTE step 1.
 
@@ -773,7 +873,7 @@ Full specs: `skills/vibe-speak/MODES.md` + each `skills/vibe-speak/modes/[name].
 
 ### Mode + intensity composition
 
-Mode sets character; intensity (Step 1) sets compression level within the mode's allowed range. Each mode has a default, floor, and ceiling intensity (see MODES.md). `/vibe tighter` and `/vibe looser` move within the range.
+Mode sets character; intensity (Step 3) sets compression level within the mode's allowed range. Each mode has a default, floor, and ceiling intensity (see MODES.md). `/vibe tighter` and `/vibe looser` move within the range.
 
 ### Auto-activation rules
 
@@ -781,8 +881,8 @@ Per `.claude/CLAUDE.md` AUTO-EXECUTE step 1:
 
 1. Read `user-profile.md` → `default_mode` field. (Michael's default: `vibe`.)
 2. Read `modes/[default_mode].md` and apply rules to all output for the session.
-3. Run Step 0 (read profile + logs).
-4. Apply mode rules + Step 1.5 register mirror + Step 2 glossary + Step 3 hard-keeps.
+3. Run Step 1 (read profile + logs).
+4. Apply mode rules + Step 4 register mirror + Step 5 glossary + Step 6 hard-keeps.
 
 To **change the permanent default:** `/vibe set default mode [name]` writes to `user-profile.md`. Next session uses the new default.
 
@@ -810,7 +910,7 @@ Michael can add modes by creating `skills/vibe-speak/modes/[mode-name].md` (use 
 
 ---
 
-## Step 13 — Multi-user profile system
+## Step 20 — Multi-user profile system
 
 Vibe-speak supports per-user calibration via `skills/vibe-speak/profiles/[name].md`. Each user gets their own profile, with their own glossary, hard-keeps, default mode, and accumulated corrections.
 
@@ -839,7 +939,7 @@ After detection, write the result to `profiles/_active.md` (gitignored — machi
 
 ---
 
-## Step 14 — Mode auto-suggestion
+## Step 21 — Mode auto-suggestion
 
 Vibe-speak surfaces mode-suggestion hints when context strongly suggests a different mode would fit better. **Suggestions are never auto-applied** — they're a one-line nudge, ignorable.
 
@@ -869,11 +969,11 @@ Mode auto-suggestion uses heuristic pattern-matching, not deep intent understand
 
 ---
 
-## Step 15 — KPI tracking + benchmarks
+## Step 22 — KPI tracking + benchmarks
 
 ### Per-session KPI
 
-At Step 11 wrap ritual, append to `skills/vibe-speak/kpi-log.md`:
+At Step 18 wrap ritual, append to `skills/vibe-speak/kpi-log.md`:
 
 ```
 ### kpi-NNNN — YYYY-MM-DD — [active-mode]
@@ -906,14 +1006,14 @@ This is a soft alert — never auto-changes anything.
 
 ### Cross-session continuity
 
-`session-handoff.md` is updated at every Step 11 wrap. Read at every Step 0 to reconstruct mid-task state, session-only overrides, and modified-files context.
+`session-handoff.md` is updated at every Step 18 wrap. Read at every Step 1 to reconstruct mid-task state, session-only overrides, and modified-files context.
 
 ---
 
 ## Anti-patterns
 
-- **Never** translate code, file paths, SQL, error messages, or anything inside backticks. The hard-keep list in Step 3 is non-negotiable — Michael needs to grep these.
-- **Never** vibe-translate a security warning, an irreversible-action confirmation, or a Supabase SQL migration. Step 4 disengage is mandatory, not optional.
+- **Never** translate code, file paths, SQL, error messages, or anything inside backticks. The hard-keep list in Step 6 is non-negotiable — Michael needs to grep these.
+- **Never** vibe-translate a security warning, an irreversible-action confirmation, or a Supabase SQL migration. Step 7 disengage is mandatory, not optional.
 - **Never** add a new layer of jargon while removing the old. "Spin up the runtime instance" is not better than "instantiate." If the everyday verb doesn't exist, leave the technical term and parenthesize once.
 - **Never** drop information to hit a word target. Token savings come from cutting filler and jargon, not from cutting facts. If a hedge word is load-bearing ("might break X"), keep it.
 - **Never** output "Great question" / "Absolutely" / "Let me know if..." in any level — those are filler under all conditions.
@@ -921,7 +1021,7 @@ This is a soft alert — never auto-changes anything.
 - **Never** restate Michael's question back to him as preamble. He just typed it; he knows what he asked.
 - **Never** vibe-translate AccentOS proper nouns (Daily Brief, Decision Engine, Vendor Ranking, KPI Catalog, BUILD_PLAN_CLAUDE.md). Module names and doc filenames are hard-keeps.
 - **Never** auto-translate a glossary term when Michael himself just used the technical term in his message — match his register. If he says "RLS policy", you can say "RLS policy" back. If he says "who-can-read rule", you say "who-can-read rule."
-- **Never** show the Step 8 self-check or announce intensity-level drops. The tightening is silent. (Step 11 wrap-up is the one exception — that one is out loud.)
+- **Never** show the Step 11 self-check or announce intensity-level drops. The tightening is silent. (Step 18 wrap-up is the one exception — that one is out loud.)
 - **Never** auto-edit `user-profile.md` from observation-log signals. Always surface a proposal first. Single-occurrence feedback-log entries are the only path that bakes in immediately.
 - **Never** delete entries from observation-log or feedback-log — both are append-only history. `/vibe reset` only resets the profile, not the logs.
 - **Never** count an `echo` signal as a correction. If Michael says "RLS" once, that's information — not a complaint. He needs to say it twice in one session OR the same signal needs to fire across ≥3 sessions before the profile changes.
