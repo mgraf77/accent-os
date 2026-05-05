@@ -23,7 +23,9 @@ Change with: `/vibe set default mode [name]` (caveman / gsd / vibesplain / pair 
 
 **Drop one level instantly when input contains:** `go.` · `go` · `just do it` · `stop asking` · `resume` · `continue` · `keep going`
 
-**Switch to `status` instantly when input contains:** `build without stopping` · `don't interrupt` · `autonomously` · `do not stop` · `keep building`
+**Switch to `status` instantly when input contains:** `build without stopping` · `don't interrupt` · `autonomously` · `do not stop` · `keep building` · `knock out`
+
+**Time-budgeted recognition** (new signal class — auto-suggest `gsd` mode): when input matches `i have [N] minutes` / `i have [N] hours` / `in the next [time]` / `by EOD` / `before [time]` / `[N] minute budget` — surface "time-budgeted task — switch to gsd for max efficiency?" Don't auto-switch.
 
 **Bump up one level when input contains:** `explain` · `walk me through` · `why` · `i don't understand`
 
@@ -47,10 +49,10 @@ The mirror is **soft** — readability beats imitation. Don't introduce typos in
 These are part of his working vocabulary. Translating them would be condescending.
 
 **Build / ship verbs:**
-build, ship, wire up, hook up, swap, push, pull, run, save, load, fire, kill, blow up
+build, ship, wire up, hook up, swap, push, pull, run, save, load, fire, kill, blow up, extract, extracted, pivot, pivoted, knock out
 
 **AccentOS vocab:**
-BUILD_PLAN, BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, BUILD_INTELLIGENCE, SESSION_LOG, PROMPT_LOG, PROMPT_QUEUE, WORK_IN_PROGRESS, WIP, MASTER, M-task, M01, M02, ..., M29, track 1.3 / track 5.7 / track 6.x, v6.10.41, Daily Brief, Pipeline, Decision Engine, Vendor Ranking, KPI Catalog, Deal Optimizer, Job Tracker, Trade Partners, Warranty Tracker, Marketing Hub, Knowledge Hub, Inventory CSV, Co-op Tracker
+BUILD_PLAN, BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, BUILD_INTELLIGENCE, SESSION_LOG, PROMPT_LOG, PROMPT_QUEUE, WORK_IN_PROGRESS, WIP, MASTER, M-task, M01, M02, ..., M30, track 1.3 / track 5.7 / track 6.x, v6.10.41, v6.10.59, v6.10.65, Daily Brief, Pipeline, Decision Engine, Vendor Ranking, KPI Catalog, Deal Optimizer, Job Tracker, Trade Partners, Warranty Tracker, Marketing Hub, Knowledge Hub, Inventory CSV, Co-op Tracker, Module Modes, inline edit, inline-edit, bulk import, vibe-speak, vibe mode
 
 **Stack vocab he uses comfortably:**
 Supabase, RLS, SQL, schema, table, row, column, FK, PK, JSON, API, CSV, dropdown, modal, sub-tab, sidebar, page, render, sub-tab dispatcher, on_conflict, upsert, migration, Codespace, Cloudflare, BigCommerce, GMC, MCP, Anthropic, Codex, gh CLI
@@ -140,19 +142,20 @@ All universal `/vibe ...` and `/mode ...` commands live in SKILL.md Step 14 + St
 ## Profile state (read by `/vibe profile`)
 
 ```
-version: 2.1.0
+version: 2.2.0
 active_user: Michael Graf
 default_mode: vibe
 default_intensity: vibe
 register_mirror: on
-seeded: 2026-05-05 (PROMPT_LOG analysis, 10 prompts)
-last_edit: 2026-05-05 (v7 — profile compressed, lazy-load contract)
-hard_keep_count: 60
+seeded: 2026-05-05 (PROMPT_LOG analysis, 18 prompts)
+last_edit: 2026-05-05 (v9 corpus calibration — applied 6 proposals: knock out as autonomy verb, time-budgeted as new signal, +inline-edit / Module Modes / vibe-speak / extract / pivot to hard-keep)
+hard_keep_count: 70
 active_glossary_count: 14
 filler_kill_count: 18
 custom_levels: status+
 pending_proposals: 0
 feedback_log_unapplied: 0
+last_corpus_backtest: 2026-05-05
 ```
 
 Update these fields as state changes. Bump `version` minor on schema-additive changes, major on breaking changes. The skill reads this block at Step 0 and writes back to it at Step 11.

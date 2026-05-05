@@ -274,16 +274,19 @@ These appeared in 2026-05-04 or 2026-05-05 for the first time:
 
 ---
 
-## Profile-update proposals (pending Michael review)
+## Profile-update proposals (APPLIED 2026-05-05 → profiles/michael.md v2.2.0)
 
-Run `/vibe propose calibration` to surface these as actionable proposals:
+All 6 proposals from this backtest have been applied to `profiles/michael.md`:
 
-1. **Add `knock out` to autonomy-signal list** (Step 3 trigger words)
-2. **Add `time-budgeted` recognition** — when input contains "i have [N] minutes" / "by EOD" / "in the next hour", auto-suggest gsd mode
-3. **Add `Module Modes` to AccentOS hard-keeps** — feature name
-4. **Add `inline edit` / `inline-edit` to AccentOS hard-keeps** — adopted vocabulary
-5. **Add `pivot` / `pivoted` to action-verb hard-keeps**
-6. **Add `extract` / `extracted` to action-verb hard-keeps** (already implicit but make explicit)
+1. ✓ Added `knock out` to autonomy-signal list (Step 3 trigger words)
+2. ✓ Added `time-budgeted` recognition — `i have [N] minutes` / `by EOD` / `in the next [time]` patterns now surface "switch to gsd?" suggestion
+3. ✓ Added `Module Modes` to AccentOS hard-keeps
+4. ✓ Added `inline edit` / `inline-edit` to AccentOS hard-keeps
+5. ✓ Added `pivot` / `pivoted` to action-verb hard-keeps
+6. ✓ Added `extract` / `extracted` to action-verb hard-keeps
+7. ✓ Bonus: also added `vibe-speak` / `vibe mode`, `bulk import`, M30 / v6.10.59 / v6.10.65 to hard-keeps for currency
+
+Hard-keep count: 60 → 70.
 
 ---
 
