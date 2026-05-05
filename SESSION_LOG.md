@@ -13,6 +13,17 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-05 — Resume cold + Calendar .ics export + My Tasks
+**Version:** v6.10.37 (Calendar .ics) → v6.10.38 (My Tasks)
+**Built/Changed:**
+- **Calendar .ics export** (v6.10.37) — see entry below for the ICS RFC 5545 details. This was an orphan WIP cleanup (button in tree referenced an undefined function).
+- **My Tasks** (v6.10.38) — new sidebar entry under CORE for everyone (Owner/Admin/Manager/Sales/Warehouse). New `js/my_tasks.js`, ~250 LOC. localStorage-only v1 keyed on `accentos_my_tasks_${CU.user_id||'anon'}` — each user gets their own list. Schema: `{id, title, notes, due_date, priority, status, created_at, updated_at, completed_at}`. 4 stat cards (open / due today / overdue / completed). Filters: free-text + status + priority. Edit modal with inline checkbox toggle. Overdue rows redden. Daily Brief tile auto-tunes — shows overdue count (red) if any, else due-today count (amber), else hidden. Module exposes `myTasksDueTodayCount()` + `myTasksOverdueCount()` for the dashboard generator.
+**Decisions:** Personal-only data → localStorage is the right default. No Supabase, no schema, no Michael handoff. If users later request cross-device sync, promote to a real `user_tasks` table — one migration + a sync function gets there. Daily Brief uses a single auto-tuning tile rather than two near-duplicates because the same person owns the data — collapse tiles when one audience navigates their own data.
+**Verified:** js/my_tasks.js parses clean. Inline index.html script parses clean. Wiring count check (7 in index.html, 25 in module file) matches expectations: sidebar entry + PAGE_META + dispatcher + Daily Brief tile generator (3 refs) + script tag = 7. Tree clean post-rebase + push (rebased twice this session over 5 sibling commits — clean each time).
+**Open loops:** Same as last session for blocked items. Polish backlog still open: Saved Filter Sets, MODULE_REGISTRY refactor, 6.5/6.6 portal phase 2 (needs scoping), inventory inline-edit, quote→job conversion flow. Many "feat:" enhancements (v6.10.28-v6.10.36 + customer 360 + vendor 360) still aren't reflected as BUILD_PLAN_CLAUDE items — should they be retro-listed as Track 5/6 entries? Future-me decision.
+**Process notes:** Two clean ships in this session. The orphan-WIP catch (calendar) was load-bearing — would have shipped a broken UI if I'd skipped WIP review. The My Tasks build hit the established compact-CRUD pattern at ~10 minutes for the file + 4 shell touchpoints. Daily Brief tile pattern is well-established now (6.10.21-onwards) and trivial to extend.
+**Next prompt:** see top of file.
+
 ### 2026-05-05 — Resume cold + Calendar .ics export (orphan WIP fix)
 **Version:** v6.10.37
 **Built/Changed:**

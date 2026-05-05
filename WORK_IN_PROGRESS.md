@@ -1,15 +1,17 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-05 — session start · resumed from stale WIP · 1 fix shipped
+**Last updated:** 2026-05-05 — session end · 2 ships clean
 **Current task:** —
-**Step:** Resumed cold from "remue building" prompt. Found orphan WIP: js/calendar.js had the topbar `⬇ .ics` button referencing undefined `exportCalendarIcs()` (would throw on click). Implemented RFC 5545-compliant exporter (escape, line-fold, all-day VALUE=DATE handling, blob download, audit_log entry). Shipped as v6.10.37 + cache-bust bumped to ?v=6.10.37. Pushed clean (rebased over 4 remote-only commits that forged new Claude Code skills). Tree clean.
-**Files touched this session:**
-- js/calendar.js (added _icsEscape / _icsDt / _icsFold / exportCalendarIcs)
-- index.html (calendar.js cache-bust v=6.10.37)
-- PROMPT_LOG.md (new dated entry)
-**Commit status:** committed + pushed (a32979e)
+**Step:** Resumed from "remue building" prompt. Caught + completed orphan WIP (Calendar .ics export → v6.10.37). Then user said "go" → shipped My Tasks (v6.10.38) — per-user localStorage to-do list with Daily Brief tile. Updated BUILD_INTELLIGENCE with 4 new lessons across both ships. Tree clean.
+**Files in this session's commits:**
+- v6.10.37: js/calendar.js, index.html (cache-bust), PROMPT_LOG.md
+- docs (64fe036): WORK_IN_PROGRESS.md, SESSION_LOG.md, BUILD_INTELLIGENCE.md
+- v6.10.38: js/my_tasks.js (new file), index.html (sidebar + PAGE_META + dispatcher + Daily Brief tile + script tag)
+- pending doc batch: BUILD_INTELLIGENCE.md (+2 lessons), this WIP, SESSION_LOG.md (new entry)
+**Commit status:** v6.10.37 + v6.10.38 pushed (a287b9e). Final doc batch uncommitted.
 **Next step if interrupted:**
-1. Update BUILD_PLAN_CLAUDE.md and SESSION_LOG.md to reflect the post-pause backlog of "feat:" commits (v6.10.28 → v6.10.36 + customer 360 + vendor 360 + csv util refactor) — none of those are reflected in BUILD_PLAN_CLAUDE since they were enhancements outside the [ ] queue.
-2. Pick from remaining options without new permissions: 6.5 Trade Portal phase 2 (phase 1 shipped as Portal Preview v6.10.33 — phase 2 needs external auth scoping with Michael), 6.6 Rep Portal phase 2 (same), MODULE_REGISTRY refactor (cleanup), Saved Filter Sets (cross-cutting), or pick a small pure-compute polish (My Tasks / inventory inline-edit / quote-to-job conversion flow).
-3. If picking 6.5/6.6 phase 2, ASK Michael first about external auth: magic-link vs separate Supabase project vs subdomain routing. The portal preview already shows the read-only preview view; phase 2 is the real external-facing build.
+1. `git add WORK_IN_PROGRESS.md SESSION_LOG.md BUILD_INTELLIGENCE.md`
+2. Commit `docs: v6.10.37 + v6.10.38 session wrap + 2 new lessons`
+3. `git push origin main` (rebase if needed — sibling commits land frequently)
+4. Pause. Next session can pick from: Saved Filter Sets, MODULE_REGISTRY refactor, 6.5/6.6 portal phase 2 (needs Michael scoping for external auth), inventory inline-edit, quote→job conversion flow.
