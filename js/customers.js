@@ -291,6 +291,7 @@ function renderCustomers(el){
             <option value="">All types</option>
             ${['residential','trade','designer','contractor','commercial','other'].map(t=>`<option value="${t}" ${custFilter.type===t?'selected':''}>${t}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'customers',currentFilter:custFilter,applyFn:()=>renderCustomers($('pg-content')),fields:['q','segment','type'],resetState:{q:'',segment:'',type:''}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">

@@ -163,6 +163,7 @@ function renderJobs(el){
             <option value="">All priorities</option>
             ${['urgent','high','normal','low'].map(p=>`<option value="${p}" ${jobFilter.priority===p?'selected':''}>${p}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'jobs',currentFilter:jobFilter,applyFn:()=>renderJobs($('pg-content')),fields:['q','status','priority'],resetState:{q:'',status:'',priority:''}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">

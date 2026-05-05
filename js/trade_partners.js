@@ -206,6 +206,7 @@ function renderTradePartners(el){
             <option value="">All statuses</option>
             ${['active','prospect','inactive'].map(s=>`<option value="${s}" ${tpFilter.status===s?'selected':''}>${s}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'tradepartners',currentFilter:tpFilter,applyFn:()=>renderTradePartners($('pg-content')),fields:['q','type','status'],resetState:{q:'',type:'',status:''}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">

@@ -140,6 +140,7 @@ function renderInventory(container) {
             ${locations.map(l=>`<option value="${esc(l)}" ${invFilter.location===l?'selected':''}>${esc(l)}</option>`).join('')}
           </select>` : ''}
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;"><input type="checkbox" ${invFilter.lowOnly?'checked':''} onchange="invFilter.lowOnly=this.checked;renderInventory($('vendor-section-content'))"> Low stock only</label>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'inventory',currentFilter:invFilter,applyFn:()=>renderInventory($('vendor-section-content')),fields:['q','vendor','lowOnly','location'],resetState:{q:'',vendor:'',lowOnly:false,location:''}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 460px);overflow-y:auto;">
