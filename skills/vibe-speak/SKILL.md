@@ -638,6 +638,15 @@ Michael can run any of these in plain prompt text. Each one is matched on substr
 | `/vibe replay last` | Replay the most recent session. |
 | `/vibe sessions` | List recent session files in `sessions/`. |
 | `/vibe matrix` | Print the scoring matrix (`scoring-matrix.md`) compact summary. |
+| `/vibe find skill [topic]` | Run skill-router against `skills/_index.md` and surface matches (Step 23). |
+| `/vibe skills` | List all skills in `skills/_index.md` with 1-line summaries. |
+| `/vibe propose skill` | Surface pending skill proposals from accumulated brute-force patterns. |
+| `/vibe forge skill from pattern` | Approve the most recent skill proposal — invokes skill-forge with the inferred name + description. |
+| `/vibe forge skill from pattern — name=X, desc=Y` | Approve with overrides. |
+| `/vibe skip skill proposal` | Skip the proposal — suppress re-surface for 14 days. |
+| `/vibe brute-force` | Override skill-router for the current task — proceed brute-force regardless of matches. Logs `brute_force` signal. |
+| `/vibe router off` / `/vibe router on` | Disable / enable skill-router for the session. |
+| `/vibe regenerate skill index` | Rebuild `skills/_index.md` from `skills/*/SKILL.md` frontmatter. |
 
 ### Command matching rules
 
@@ -1007,6 +1016,93 @@ This is a soft alert — never auto-changes anything.
 ### Cross-session continuity
 
 `session-handoff.md` is updated at every Step 18 wrap. Read at every Step 1 to reconstruct mid-task state, session-only overrides, and modified-files context.
+
+---
+
+## Step 23 — Skill discovery + routing
+
+The "let me find a better way" mechanism. When a task could be handled by an existing AccentOS skill, surface that skill instead of brute-forcing it. Detection + ranking + surfacing logic lives in `skills/vibe-speak/skill-router.md` (read on demand, not eagerly).
+
+### Why this exists
+
+Without skill discovery, every task gets brute-forced from scratch. Even if `bc-business-review` exists and Michael says "give me the weekly numbers," default Claude reads docs ad-hoc and produces a one-off report. The skill exists; it goes unused.
+
+Step 23 closes that loop by checking the skill registry FIRST.
+
+### Trigger conditions (when the router fires)
+
+1. **Explicit:** Michael says `find a skill` / `is there a skill` / `what's the best way` / `better way` / `easier way` / `existing skill` / `tool for this`.
+2. **Implicit:** the about-to-execute task plan has ≥3 tool calls AND the task description has ≥2 nouns matching skill registry domains (vendor / kpi / schema / gmc / etc.).
+3. **Manual:** `/vibe find skill [topic]` runs the check on demand.
+
+If none fire, no router check; proceed normally.
+
+### Detection chain
+
+1. Read `skills/_index.md` (cached at session start, ~3k tokens, cold-path per lazy-load contract).
+2. For each skill, score the match using `skill-router.md` Step 2 algorithm:
+   - +0.4 for verbatim trigger phrase match
+   - +0.3 for ≥2 keywords from skill summary
+   - +0.2 for primary-domain match
+   - +0.1 for companion-skill cluster
+   - −0.3 for `when_NOT` exclusion criteria
+   - −0.2 for explicit other-skill mention
+3. Rank matches, surface top 1 if score ≥0.5 with gap ≥0.2; top 2 if close.
+4. If no match scores ≥0.5: surface "no existing skill — brute-force or forge new?"
+
+### Surfacing format (per skill-router.md)
+
+**Single match:** `Looks like a fit for [skill]. Run it? (yes / no / show details)`
+
+**Multiple matches:** ranked list with disambiguation prompt.
+
+**No match, routine task:** "no existing skill — brute or forge?"
+
+**No match, one-off task:** silent — proceed brute-force, log `brute_force` signal.
+
+### Pattern detection (the self-improving loop)
+
+Every brute-force task gets logged to `observation-log.md` with `signal_type: brute_force`. When ≥3 brute-forces share the same `signal_target` (or fuzzy-match within 70%), surface a new-skill proposal:
+
+```
+═══ VIBE-SPEAK SKILL PROPOSAL ═══
+Pattern detected: "[task]" — N times across M sessions
+Suggestion: spawn skill-forge to build a reusable skill.
+
+Proposed name:        [auto-generated slug]
+Proposed description: [inferred from brute-force history]
+
+Approve:  /vibe forge skill from pattern
+Modify:   /vibe forge skill from pattern — name=X, desc=Y
+Skip:     /vibe skip skill proposal (suppresses re-surface for 14 days)
+```
+
+If approved, vibe-speak invokes `skill-forge` with the proposed name + description. Result becomes a new entry in `skills/_index.md`.
+
+### Order of preference
+
+When deciding what to do with a task:
+1. **Existing skill matches** → surface, use it
+2. **No existing skill, one-off task** → brute-force silently
+3. **No existing skill, routine pattern (≥3 brute-forces)** → propose forging a new skill
+4. **Multiple existing skills match** → disambiguate
+5. **Skill matches but Michael overrides with brute-force** → respect, log
+
+### Anti-patterns
+
+- **Never** auto-invoke a skill without surfacing first. Wrong skill = wasted tokens AND lost trust.
+- **Never** propose a new skill from a single brute-force. The 3-pattern threshold is the bar.
+- **Never** propose a skill for a one-off task even if no existing skill matches. Routine ≠ recurring.
+- **Never** match on partial words ("vendor" alone). Multi-word triggers > single keywords.
+- **Never** infinite-loop: if `brute_force` is accepted, don't re-fire skill-router on subtasks of the same task.
+- **Never** override `skills/_index.md` auto-generated content silently. Manual edits get a `<!-- override -->` comment.
+- **Never** skip the brute-force option in multi-match surfacing. User may want to bypass all suggestions.
+
+### Disable / re-enable
+
+- `/vibe router off` — disable for current session
+- `/vibe router on` — re-enable
+- If disabled 3+ sessions in a row, surface "router seems unhelpful — adjust thresholds?"
 
 ---
 
