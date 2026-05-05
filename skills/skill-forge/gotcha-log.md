@@ -243,6 +243,15 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - applied_to_skill_md: no
 - outcome: success
 
+### gotcha-025 — 2026-05-05 — codex-review (cross-agent peer-review skill)
+- target: codex-review skill itself (forged this turn)
+- what_happened: Michael proposed a cross-agent review skill: have Codex audit Claude's recent work and auto-apply LOW-risk fixes while surfacing HIGH-risk ones. Forged as standalone skill (not as a step inside skill-forge) since cross-review applies to any AccentOS work product. Ralph loop surfaced 7 real issues across 4 iterations: file-assembly logic for diff vs full-file targets, JSON-array unwrap for OpenAI's response_format object constraint, model-name env-var override, post-apply validation mechanism, exit-vs-halt semantics, apply-mode honesty (manual not automated in v1), empty-target fail-fast.
+- root_cause: First-of-kind skill (cross-agent collaboration); no prior pattern in the library.
+- fix_this_run: 7 Ralph fixes applied; codex-review SKILL.md ships at 277 lines, 8 anti-patterns, 1158-char description.
+- prevention_rule: Cross-agent skills (codex-review and any future "agent-X audits agent-Y") need explicit wait-vs-exit semantics, persistence-of-output paths, and honest documentation of what's automated vs manual in the current version.
+- applied_to_skill_md: yes (built into codex-review SKILL.md from forge time)
+- outcome: success
+
 ### gotcha-024 — 2026-05-05 — 11-skill mega-batch (full AccentOS gap closure + new-tool scout)
 - target: 11 skills forged: gmc-feed-audit, bulk-meta-description, broken-link-rescue, rep-group-matchmaker, bottleneck-finder, community-skill-vet, build-plan-status, skill-eval-suite, schema-contract-tests, bc-business-review, vendor-onboard-checklist
 - what_happened: First end-to-end run of skill-forge under the full 10-step approval-gate workflow on a large batch. 21 candidates evaluated (13 prior + 8 new from broader scout including Promptfoo, dbt, claude-ecom, B2B partner patterns), 11 approved, 9 deferred to future-builds, 1 skipped. Step 8 Ralph loop ran 4 iterations on each forged skill, producing 16 real fixes — every skill surfaced ≥1 bug at iter 1. Most fixes were skill-specific (SQL bugs, output-format mismatches, missing edge cases); none were class-level skill-forge issues. The proactive application of gotcha-023's prereq-redirect pattern (e.g. rep-group-matchmaker INSUFFICIENT_DATA filter, bc-business-review insufficient-history handler) confirmed that pattern is real and worth baking into Step 6.
