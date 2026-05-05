@@ -67,6 +67,24 @@ async function sbDeleteInventoryItem(id){
   }catch(e){ console.warn('[sb] Delete inventory_item failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.43). Returns the updated row or false.
+async function sbUpdateInventoryField(id, field, value){
+  if(!sbConfigured()) return false;
+  if(!id || !field) return false;
+  const allowed = ['qty_on_hand','qty_committed','qty_on_order','reorder_point','unit_cost','list_price','bin','location'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    const res = await sbFetch(`/inventory_items?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {'Prefer':'return=representation'},
+      body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update inventory field failed:', e.message); return false; }
+}
+
 function renderInventory(container) {
   // Stats
   const totalItems = INVENTORY.length;
@@ -129,15 +147,20 @@ function renderInventory(container) {
           <thead><tr><th>SKU</th><th>Vendor</th><th>Description</th><th>On Hand</th><th>Avail</th><th>Reorder</th><th>Location</th><th>Cost</th><th>List</th><th></th></tr></thead>
           <tbody>
             ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--text-3);">${totalItems===0?'No inventory yet. Import a CSV above (template button shows the header schema).':'No SKUs match the current filter.'}</td></tr>` : filtered.map(r => {
+              const qoh = Number(r.qty_on_hand)||0;
               const avail = Number(r.qty_available)||0;
               const reorder = r.reorder_point != null ? Number(r.reorder_point) : null;
               const isLow = reorder != null && avail < reorder;
-              return `<tr style="${isLow?'background:rgba(239,68,68,0.06);':''}">
+              const canEditQty = CU && ['Owner','Admin','Manager','Warehouse'].includes(CU.role);
+              const qtyCell = canEditQty
+                ? `<td class="mono sm" style="padding:2px 6px;"><input type="number" step="1" value="${qoh}" data-id="${r.id}" data-orig="${qoh}" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitInventoryQty(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:64px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;text-align:right;border-radius:4px;" title="Click to edit qty on hand"></td>`
+                : `<td class="mono sm">${qoh}</td>`;
+              return `<tr style="${isLow?'background:rgba(239,68,68,0.06);':''}" data-row-id="${r.id}">
                 <td class="mono fw6 sm">${esc(r.sku||'')}</td>
                 <td class="sm">${esc(r.vendor_name||'—')}</td>
                 <td class="sm" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.description||'')}">${esc(r.description||'')}</td>
-                <td class="mono sm">${Number(r.qty_on_hand)||0}</td>
-                <td class="mono sm" style="${isLow?'color:var(--accent);font-weight:700;':''}">${avail}</td>
+                ${qtyCell}
+                <td class="mono sm" data-avail-for="${r.id}" style="${isLow?'color:var(--accent);font-weight:700;':''}">${avail}</td>
                 <td class="mono sm">${reorder!=null?reorder:'—'}</td>
                 <td class="sm">${esc(r.location||'')}${r.bin?' · '+esc(r.bin):''}</td>
                 <td class="mono sm">${r.unit_cost!=null?'$'+Number(r.unit_cost).toFixed(2):'—'}</td>
@@ -291,4 +314,64 @@ async function deleteInventoryItem(id){
   if(typeof sbAuditLog==='function') sbAuditLog('inventory_delete', 'inventory', {item_id: id});
   renderInventory($('vendor-section-content'));
   toast('Item removed','ok');
+}
+
+// Inline qty edit (v6.10.43). Saves on blur if value changed; reverts and warns on failure.
+async function commitInventoryQty(input){
+  if(!input) return;
+  const id = input.dataset.id;
+  const orig = Number(input.dataset.orig)||0;
+  const next = Number(input.value);
+  // Restore the visual styling regardless of save outcome
+  input.style.background = 'transparent';
+  input.style.borderColor = 'transparent';
+  if(isNaN(next) || next < 0){
+    input.value = orig;
+    toast('Invalid qty — reverted','warn');
+    return;
+  }
+  if(next === orig) return;   // no-op
+  // Optimistic UI: update INVENTORY in memory; recompute available + low-stock styling for the row
+  const item = INVENTORY.find(r => r.id === id);
+  if(!item){ input.value = orig; toast('Row not found','err'); return; }
+  const prevQoh = item.qty_on_hand;
+  const prevAvail = Number(item.qty_available)||0;
+  item.qty_on_hand = next;
+  // Available = on_hand - committed (best-effort; the DB-side trigger may compute differently)
+  const committed = Number(item.qty_committed)||0;
+  item.qty_available = next - committed;
+  input.dataset.orig = String(next);
+  // Update the available cell + row styling without a full re-render
+  const tr = input.closest('tr');
+  const availCell = tr?.querySelector(`[data-avail-for="${id}"]`);
+  if(availCell){
+    availCell.textContent = item.qty_available;
+    const reorder = item.reorder_point != null ? Number(item.reorder_point) : null;
+    const isLow = reorder != null && item.qty_available < reorder;
+    if(tr) tr.style.background = isLow ? 'rgba(239,68,68,0.06)' : '';
+    availCell.style.color = isLow ? 'var(--accent)' : '';
+    availCell.style.fontWeight = isLow ? '700' : '';
+  }
+  // Persist
+  const res = await sbUpdateInventoryField(id, 'qty_on_hand', next);
+  if(res === false){
+    // Revert
+    item.qty_on_hand = prevQoh;
+    item.qty_available = prevAvail;
+    input.value = orig;
+    input.dataset.orig = String(orig);
+    if(availCell) availCell.textContent = prevAvail;
+    toast('Save failed — qty reverted','err');
+    return;
+  }
+  // Sync any DB-side computed fields (qty_available may be a generated column)
+  if(res && typeof res === 'object'){
+    if(res.qty_available != null) {
+      item.qty_available = res.qty_available;
+      if(availCell) availCell.textContent = res.qty_available;
+    }
+    item.updated_at = res.updated_at || item.updated_at;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('inventory_qty_edit', 'inventory', {item_id: id, sku: item.sku, from: orig, to: next});
+  toast(`Updated ${item.sku}: ${orig} → ${next}`, 'ok');
 }
