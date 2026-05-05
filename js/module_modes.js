@@ -217,7 +217,7 @@ function _renderModulesTable(host){
       <input id="mm-q" placeholder="Search by key or title…" value="${esc(_mmFilter)}" oninput="_mmFilter=this.value;clearTimeout(window._mmTimer);window._mmTimer=setTimeout(()=>renderModuleModesPanel($('mgmt-content')),200)" style="flex:1;min-width:200px;">
       ${_mmModeFilter ? `<button class="btn btn-outline btn-sm" onclick="_mmModeFilter='';renderModuleModesPanel($('mgmt-content'))">Clear filter</button>` : ''}
     </div>
-    <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;">${countChips}</div>
+    <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${countChips}<button class="btn btn-outline btn-sm" style="font-size:11px;margin-left:auto;" onclick="_mmAddModulePrompt()">+ Add new module</button></div>
     <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Showing ${filtered.length} of ${entries.length}. Toggle a mode → UI updates immediately + a <span class="mono">/mode key state</span> command is logged for Claude to commit to <span class="mono">module_modes.json</span>.</div>
     <div style="overflow-x:auto;">
     <table style="width:100%;font-size:13px;">
@@ -247,6 +247,50 @@ function _renderModulesTable(host){
     </div>
     <div id="mm-cmd-log" style="margin-top:14px;"></div>
   `;
+}
+
+function _mmAddModulePrompt(){
+  const states = MODULE_MODES.states || [];
+  const stateOpts = states.map(s => `<option value="${s}" ${s==='idea_only'?'selected':''}>${s}</option>`).join('');
+  openModal('Add new module', `
+    <div class="frow">
+      <div class="fcol field"><label>Key * (lowercase, no spaces — e.g. crm_v2)</label><input id="mm-new-key" placeholder="my_module"></div>
+      <div class="fcol field"><label>Initial mode</label><select id="mm-new-mode">${stateOpts}</select></div>
+    </div>
+    <div class="fg"><label>Title *</label><input id="mm-new-title" placeholder="Display name shown in UI"></div>
+    <div class="fg"><label>Notes</label><textarea id="mm-new-notes" rows="2" placeholder="Why this exists, current rollout context, M-task dependencies, etc."></textarea></div>
+    <div style="font-size:11px;color:var(--text-3);">Tip: a key starting with an existing key prefix (e.g. <span class="mono">portal_</span>) groups it visually with related items in search.</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="_mmAddModuleCommit()">Add</button>
+    </div>
+  `);
+}
+
+function _mmAddModuleCommit(){
+  const key = ($('mm-new-key')?.value || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  const title = ($('mm-new-title')?.value || '').trim();
+  const mode = $('mm-new-mode')?.value || 'idea_only';
+  const notes = ($('mm-new-notes')?.value || '').trim();
+  if(!key || !title){ toast('Key + title required', 'err'); return; }
+  if(MODULE_MODES.modules[key]){ toast('That key already exists', 'err'); return; }
+  MODULE_MODES.modules[key] = {title, mode, notes, updated_at: new Date().toISOString().slice(0,10)};
+  applyModuleModesToSidebar();
+  closeModal();
+  // Surface the JSON snippet for Claude to commit
+  const cmd = `/mode add ${key} ${mode} "${title}"${notes?' — '+notes:''}`;
+  const logEl = $('mm-cmd-log');
+  if(logEl){
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:8px 11px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;margin-bottom:6px;font-size:12px;display:flex;align-items:center;gap:8px;';
+    div.innerHTML = `<span class="mono" style="flex:1;">${esc(cmd)}</span>
+      <button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="navigator.clipboard.writeText('${esc(cmd)}').then(()=>toast('Copied','ok'))">Copy</button>
+      <span style="font-size:10px;color:#92400e;">paste to Claude → adds to module_modes.json</span>`;
+    logEl.prepend(div);
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog('module_register', 'module_modes', {key, title, mode});
+  renderModuleModesPanel($('mgmt-content'));
+  toast(`Added ${title} (${mode})`, 'ok');
 }
 
 function _mmSetMode(key, newMode){

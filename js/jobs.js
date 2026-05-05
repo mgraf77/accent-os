@@ -482,6 +482,43 @@ function processJobCsvText(text){
   `);
 }
 
+// Quote → Job conversion helper. Called from the Saved Quotes modal "+ Job" button.
+function createJobFromQuote(quoteIdOrUuid){
+  if(typeof QUOTES === 'undefined' || !QUOTES.length){ toast('No quotes loaded','err'); return; }
+  const q = QUOTES.find(x => x.id === quoteIdOrUuid || x._uuid === quoteIdOrUuid);
+  if(!q){ toast('Quote not found','err'); return; }
+  // Resolve customer_id from quote.customer name if a CRM record matches.
+  let customer_id = null;
+  let customer_name = q.customer || null;
+  if(typeof CUSTOMERS !== 'undefined' && customer_name){
+    const match = CUSTOMERS.find(c => c?.name && c.name.toLowerCase().trim() === customer_name.toLowerCase().trim());
+    if(match){ customer_id = match.id; customer_name = match.name; }
+  }
+  // Pre-fill priority from quote total: high if ≥$10K, urgent if ≥$50K
+  let priority = 'normal';
+  if(q.total >= 50000) priority = 'urgent';
+  else if(q.total >= 10000) priority = 'high';
+  const seedNotes = [
+    q.type ? `Project type: ${q.type}` : null,
+    q.sqft ? `Sq ft: ${q.sqft}` : null,
+    q.budget ? `Budget: ${q.budget}` : null,
+    q.total ? `Quote total: $${Number(q.total).toLocaleString()}` : null,
+    q.notes ? `Quote notes: ${q.notes}` : null
+  ].filter(Boolean).join('\n');
+  const preset = {
+    project_name: q.project || (customer_name ? `${customer_name} project` : 'New project'),
+    customer_id,
+    customer_name,
+    status: 'open',
+    priority,
+    related_quote_id: q._uuid || null,
+    notes: seedNotes
+  };
+  closeModal();
+  setTimeout(() => openJobEdit(null, preset), 50);
+  if(typeof sbAuditLog==='function') sbAuditLog('job_from_quote', 'quotes', {quote_id: q._uuid||q.id, total: q.total});
+}
+
 // Quote / Deal → Job conversion helper. Called from the deal detail modal.
 function createJobFromDeal(dealId){
   if(typeof findDealAnyStage !== 'function'){ toast('Pipeline module not loaded','err'); return; }
