@@ -5114,6 +5114,7 @@ function openDeal(id,sk){
     <div class="field"><label>Notes</label><textarea id="ed-no">${esc(d.notes||'')}</textarea></div>
     <div class="frow"><div class="fcol field"><label>Stage</label><select id="ed-s">${[...STAGES, {key:'lost',label:'Lost'}, {key:'abandoned',label:'Abandoned'}].map(s=>`<option value="${s.key}" ${s.key===sk?'selected':''}>${s.label}</option>`).join('')}</select></div><div class="fcol field" id="ed-loss-wrap" style="${sk==='lost'?'':'display:none;'}"><label>Loss Reason</label><input id="ed-loss" value="${esc(d.loss_reason||'')}"></div></div>`,
     `<button class="btn btn-outline" style="color:var(--accent);border-color:var(--accent);" onclick="delDeal('${d.id}','${sk}')">Delete</button>
+     ${['quoted','negotiating','won'].includes(sk) && typeof createJobFromDeal==='function' ? `<button class="btn btn-outline" style="margin-right:auto;color:var(--green);border-color:var(--green);" onclick="createJobFromDeal('${d.id}')" title="Pre-fill a new Job from this deal's data">+ Create Job</button>` : ''}
      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
      <button class="btn btn-accent" onclick="updDeal('${d.id}','${sk}')">Save</button>`);
   // Wire stage change → toggle loss reason field
@@ -6510,7 +6511,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/customers.js?v=6.10.39"></script>
 <script src="js/employees.js?v=6.10.12"></script>
 <script src="js/knowledge_hub.js?v=6.10.12"></script>
-<script src="js/jobs.js?v=6.10.41"></script>
+<script src="js/jobs.js?v=6.10.42"></script>
 <script src="js/purchase_orders.js?v=6.10.12"></script>
 <script src="js/calendar.js?v=6.10.37"></script>
 <script src="js/inventory.js?v=6.10.12"></script>

@@ -193,10 +193,13 @@ function renderJobs(el){
   `;
 }
 
-function openJobEdit(jobId){
+function openJobEdit(jobId, preset){
   const isNew = !jobId;
-  const j = isNew ? {status:'open', priority:'normal'} : JOBS.find(x => x.id === jobId);
+  let j = isNew ? {status:'open', priority:'normal'} : JOBS.find(x => x.id === jobId);
   if(!j){ toast('Job not found','err'); return; }
+  if(isNew && preset && typeof preset === 'object'){
+    j = { ...j, ...preset };
+  }
   // Customer dropdown
   const customerOptions = (typeof CUSTOMERS !== 'undefined' && CUSTOMERS.length) ? CUSTOMERS.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(c => `<option value="${c.id}" data-name="${esc(c.name||'')}" ${j.customer_id===c.id?'selected':''}>${esc(c.name||'')}</option>`).join('') : '';
   // Quote dropdown
@@ -231,6 +234,8 @@ function openJobEdit(jobId){
       <div class="fcol field"><label>Actual Hours</label><input id="jb-ah" type="number" step="0.25" value="${j.actual_hours!=null?j.actual_hours:''}"></div>
     </div>
     <div class="fg"><label>Notes</label><textarea id="jb-notes" rows="3">${esc(j.notes||'')}</textarea></div>
+    <input type="hidden" id="jb-deal" value="${esc(j.related_deal_id||'')}">
+    ${j.related_deal_id ? `<div style="font-size:11px;color:var(--text-3);margin-top:-6px;">Linked to deal: <span class="mono">${esc(j.related_deal_id)}</span></div>` : ''}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">
       ${!isNew?`<button class="btn btn-outline" style="margin-right:auto;color:var(--accent);" onclick="deleteJobConfirm('${jobId}')">Delete</button>`:''}
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
@@ -258,6 +263,7 @@ async function saveJob(jobId){
     priority: $('jb-pr').value,
     due_date: $('jb-d').value || null,
     related_quote_id: $('jb-q').value || null,
+    related_deal_id: $('jb-deal')?.value || null,
     estimated_hours: $('jb-eh').value || null,
     actual_hours: $('jb-ah').value || null,
     notes: $('jb-notes').value || null
@@ -434,6 +440,46 @@ function processJobCsvText(text){
       <button class="btn btn-accent" onclick="commitJobCsv()">Import ${parsed.length} job${parsed.length===1?'':'s'}</button>
     </div>
   `);
+}
+
+// Quote / Deal → Job conversion helper. Called from the deal detail modal.
+function createJobFromDeal(dealId){
+  if(typeof findDealAnyStage !== 'function'){ toast('Pipeline module not loaded','err'); return; }
+  const found = findDealAnyStage(dealId);
+  if(!found){ toast('Deal not found','err'); return; }
+  const d = found.deal;
+  // Resolve customer_id from deal.company name if a CRM record matches.
+  let customer_id = null;
+  let customer_name = d.company || d.name || null;
+  if(typeof CUSTOMERS !== 'undefined' && customer_name){
+    const match = CUSTOMERS.find(c => c?.name && c.name.toLowerCase().trim() === customer_name.toLowerCase().trim());
+    if(match){ customer_id = match.id; customer_name = match.name; }
+  }
+  // Pre-fill priority from deal value: high if ≥$10K, urgent if ≥$50K
+  let priority = 'normal';
+  if(d.value >= 50000) priority = 'urgent';
+  else if(d.value >= 10000) priority = 'high';
+  // Notes seed: keep deal context discoverable
+  const seedNotes = [
+    d.project_type ? `Project type: ${d.project_type}` : null,
+    d.value ? `Deal value: $${Number(d.value).toLocaleString()}` : null,
+    d.source ? `Source: ${d.source}` : null,
+    d.notes ? `Deal notes: ${d.notes}` : null
+  ].filter(Boolean).join('\n');
+  const preset = {
+    project_name: d.name || (customer_name ? `${customer_name} project` : 'New project'),
+    customer_id,
+    customer_name,
+    status: 'open',
+    priority,
+    due_date: d.close || null,   // deal expected close → job target
+    related_deal_id: d.id,
+    notes: seedNotes
+  };
+  closeModal();
+  // Tiny defer so the closeModal animation completes before the new modal opens.
+  setTimeout(() => openJobEdit(null, preset), 50);
+  if(typeof sbAuditLog==='function') sbAuditLog('job_from_deal', 'pipeline', {deal_id: d.id, deal_value: d.value});
 }
 
 async function commitJobCsv(){
