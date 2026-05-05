@@ -146,6 +146,15 @@ function renderWarranty(el){
             ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${WARRANTY_CLAIMS.length===0?'No warranty claims yet. Click "+ New Claim" to log one (run M24 SQL first if save fails).':'No claims match the current filter.'}</td></tr>` : filtered.map(c => {
               const sb = {open:'bg-yellow', sent_to_vendor:'bg-blue', approved:'bg-blue', denied:'bg-red', replaced:'bg-green', refunded:'bg-green', closed:'bg-gray'}[c.status] || 'bg-gray';
               const sevColor = {safety:'var(--accent)', functional:'var(--yellow)', cosmetic:'var(--text-3)'}[c.severity] || 'var(--text-3)';
+              const canEditW = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
+              const wStatusOpts = ['open','sent_to_vendor','approved','denied','replaced','refunded','closed'];
+              const wSevOpts = ['cosmetic','functional','safety'];
+              const sevCell = canEditW
+                ? `<td onclick="event.stopPropagation();"><select data-id="${c.id}" data-field="severity" data-orig="${esc(c.severity||'')}" onchange="commitWarrantyCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;color:${sevColor};font-weight:600;">${wSevOpts.map(s=>`<option value="${s}" ${c.severity===s?'selected':''}>${s}</option>`).join('')}</select></td>`
+                : `<td><span class="sm" style="color:${sevColor};font-weight:600;text-transform:capitalize;">${esc(c.severity||'—')}</span></td>`;
+              const wStatusCell = canEditW
+                ? `<td onclick="event.stopPropagation();"><select data-id="${c.id}" data-field="status" data-orig="${esc(c.status)}" onchange="commitWarrantyCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${wStatusOpts.map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(c.status.replace('_',' '))}</span></td>`;
               return `<tr style="cursor:pointer;${['closed','denied','refunded','replaced'].includes(c.status)?'opacity:0.65;':''}" onclick="openWarrantyEdit('${c.id}')">
                 <td class="mono fw6 sm">${esc(c.claim_number||'—')}</td>
                 <td class="mono sm">${esc(c.reported_date||'')}</td>
@@ -153,8 +162,8 @@ function renderWarranty(el){
                 <td class="mono sm">${esc(c.sku||'—')}</td>
                 <td class="sm">${esc(c.customer_name||'—')}</td>
                 <td class="sm" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.description||'')}">${esc(c.description||'')}</td>
-                <td><span class="sm" style="color:${sevColor};font-weight:600;text-transform:capitalize;">${esc(c.severity||'—')}</span></td>
-                <td><span class="badge ${sb}" style="font-size:10px;">${esc(c.status.replace('_',' '))}</span></td>
+                ${sevCell}
+                ${wStatusCell}
                 <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();openWarrantyEdit('${c.id}')">Edit</button></td>
               </tr>`;
             }).join('')}
@@ -281,6 +290,50 @@ async function deleteWarrantyConfirm(claimId){
 }
 
 // ── BULK CSV IMPORT (v6.10.46) — uses csvImportFlow helper ──
+// Single-row PATCH for inline edits (v6.10.51)
+async function sbUpdateWarrantyField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['status','severity','assigned_to','notes','vendor_ticket','cost_to_us','refund_amount'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    if(field === 'status'){
+      body.resolution_date = ['replaced','refunded','closed','denied'].includes(value) ? new Date().toISOString().slice(0,10) : null;
+    }
+    const res = await sbFetch(`/warranty_claims?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update warranty field failed:', e.message); return false; }
+}
+
+async function commitWarrantyCellSelect(select){
+  if(!select) return;
+  const id = select.dataset.id;
+  const field = select.dataset.field;
+  const orig = select.dataset.orig || '';
+  const next = select.value;
+  if(next === orig) return;
+  const item = WARRANTY_CLAIMS.find(c => c.id === id);
+  if(!item){ select.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  if(field === 'status') item.resolution_date = ['replaced','refunded','closed','denied'].includes(next) ? new Date().toISOString().slice(0,10) : null;
+  select.dataset.orig = next;
+  const res = await sbUpdateWarrantyField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    select.value = orig;
+    select.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`warranty_${field}_edit`, 'warranty', {claim_id: id, field, from: prev, to: next});
+  toast(`${item.claim_number||'Claim'} · ${field}: ${prev} → ${next}`, 'ok');
+  renderWarranty($('pg-content'));
+}
+
 async function sbBulkSaveWarrantyClaims(rows){
   if(!sbConfigured()) return false;
   if(!Array.isArray(rows) || !rows.length) return 0;

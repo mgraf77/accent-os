@@ -60,6 +60,50 @@ async function sbSaveDelivery(rec){
   }catch(e){ console.warn('[sb] Save delivery failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.51)
+async function sbUpdateDeliveryField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['status','driver','vehicle','time_window','notes','failure_reason'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    if(field === 'status' && value === 'delivered') body.delivered_at = new Date().toISOString();
+    if(field === 'status' && value !== 'delivered') body.delivered_at = null;
+    const res = await sbFetch(`/deliveries?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update delivery field failed:', e.message); return false; }
+}
+
+async function commitDeliveryCellSelect(select){
+  if(!select) return;
+  const id = select.dataset.id;
+  const field = select.dataset.field;
+  const orig = select.dataset.orig || '';
+  const next = select.value;
+  if(next === orig) return;
+  const item = DELIVERIES.find(d => d.id === id);
+  if(!item){ select.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  if(field === 'status' && next === 'delivered') item.delivered_at = new Date().toISOString();
+  if(field === 'status' && next !== 'delivered') item.delivered_at = null;
+  select.dataset.orig = next;
+  const res = await sbUpdateDeliveryField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    select.value = orig;
+    select.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`delivery_${field}_edit`, 'deliveries', {delivery_id: id, field, from: prev, to: next});
+  toast(`${item.delivery_number||'Delivery'} · ${field}: ${prev} → ${next}`, 'ok');
+  renderDeliveries($('pg-content'));
+}
+
 async function sbDeleteDelivery(id){
   if(!sbConfigured()) return false;
   try{
@@ -149,13 +193,18 @@ function renderDeliveries(el){
               const sb = {scheduled:'bg-blue', out_for_delivery:'bg-yellow', delivered:'bg-green', failed:'bg-red', rescheduled:'bg-yellow', cancelled:'bg-gray'}[d.status] || 'bg-gray';
               const isOverdue = d.scheduled_date && d.scheduled_date < todayStr && !['delivered','cancelled'].includes(d.status);
               const dateCell = d.scheduled_date ? `<span class="mono sm" style="color:${isOverdue?'var(--accent)':d.scheduled_date===todayStr?'var(--blue)':'var(--text-2)'};">${d.scheduled_date}${d.time_window?' '+esc(d.time_window):''}${isOverdue?' <span style="font-size:10px;">(overdue)</span>':''}</span>` : '<span class="muted">—</span>';
+              const canEditDel = CU && ['Owner','Admin','Manager','Sales','Warehouse'].includes(CU.role);
+              const dStatusOpts = ['scheduled','out_for_delivery','delivered','failed','rescheduled','cancelled'];
+              const dStatusCell = canEditDel
+                ? `<td onclick="event.stopPropagation();"><select data-id="${d.id}" data-field="status" data-orig="${esc(d.status)}" onchange="commitDeliveryCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${dStatusOpts.map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s.replace(/_/g,' ')}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(d.status.replace(/_/g,' '))}</span></td>`;
               return `<tr style="cursor:pointer;${['delivered','cancelled'].includes(d.status)?'opacity:0.6;':''}" onclick="openDeliveryEdit('${d.id}')">
                 <td class="mono fw6 sm">${esc(d.delivery_number||'—')}</td>
                 <td>${dateCell}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(d.customer_name||'—')}</td>
                 <td class="sm">${esc(d.driver||'')}${d.vehicle?' <span class="muted">/ '+esc(d.vehicle)+'</span>':''}</td>
                 <td class="sm" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(d.items_summary||'')}">${esc(d.items_summary||'')}</td>
-                <td><span class="badge ${sb}" style="font-size:10px;">${esc(d.status.replace(/_/g,' '))}</span></td>
+                ${dStatusCell}
                 <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();openDeliveryEdit('${d.id}')">Edit</button></td>
               </tr>`;
             }).join('')}
