@@ -149,6 +149,7 @@ function demandforecast(c, actions){
             <option value="normal" ${demandFilter.kind==='normal'?'selected':''}>Normal</option>
             <option value="no_data" ${demandFilter.kind==='no_data'?'selected':''}>No data</option>
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'demandforecast',currentFilter:demandFilter,applyFn:()=>demandforecast($('pg-content'),$('pg-actions')),fields:['q','vendor','kind'],resetState:{q:'',vendor:'',kind:''}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 380px);overflow-y:auto;">

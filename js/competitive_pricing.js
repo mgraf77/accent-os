@@ -163,6 +163,7 @@ function renderCompetitive(el){
             <option value="premium" ${cpFilter.position==='premium'?'selected':''}>Premium</option>
             <option value="unknown" ${cpFilter.position==='unknown'?'selected':''}>Unknown</option>
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'competitive',currentFilter:cpFilter,applyFn:()=>renderCompetitive($('pg-content')),fields:['q','competitor','position'],resetState:{q:'',competitor:'',position:''}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">

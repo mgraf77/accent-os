@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-05 — Resume building (auto-session start)
+**Prompt:** "Resume building"
+**Context:** Auto-session start on branch `claude/build-resume-app-qsbsR`. Tree clean at `7b99ba0`. BUILD_PLAN_CLAUDE.md: 36 shipped, 10 pending — all 10 are externally-blocked or scoping-dependent (M03/M04/M05/M06/M09/M10/M18 or external-portal scoping). Per "do not idle" rule, work the WIP polish backlog: extend `savedFiltersBar` to remaining list pages with filter state but no chips bar yet (price_book, competitive_pricing, demand_forecast, alerts, marketing campaigns + assets, decision_engine, knowledge_hub).
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"

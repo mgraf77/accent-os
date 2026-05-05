@@ -357,6 +357,7 @@ function renderAlerts(el){
             <option value="warn" ${alertFilter.severity==='warn'?'selected':''}>Warn</option>
             <option value="info" ${alertFilter.severity==='info'?'selected':''}>Info</option>
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'alerts',currentFilter:alertFilter,applyFn:()=>renderAlerts($('pg-content')),fields:['q','severity','status'],resetState:{q:'',severity:'',status:'unread'}}):''}
         </div>
       </div>
       <div style="max-height:calc(100vh - 360px);overflow-y:auto;">

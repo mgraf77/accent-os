@@ -80,6 +80,7 @@ function renderPriceBook(c){
             ${tiers.map(t=>`<option value="${t}" ${pbFilter.tier===t?'selected':''}>Tier ${t}</option>`).join('')}
           </select>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;"><input type="checkbox" ${pbFilter.inStockOnly?'checked':''} onchange="pbFilter.inStockOnly=this.checked;renderPriceBook($('vendor-section-content'))"> In stock only</label>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'pricebook',currentFilter:pbFilter,applyFn:()=>renderPriceBook($('vendor-section-content')),fields:['q','vendor','tier','inStockOnly'],resetState:{q:'',vendor:'',tier:'',inStockOnly:false}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 460px);overflow-y:auto;">

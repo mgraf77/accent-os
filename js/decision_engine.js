@@ -54,6 +54,7 @@ function renderDecisionEngine(el){
             <option value="2000" ${deFilter.minImpact===2000?'selected':''}>≥ $2K</option>
             <option value="10000" ${deFilter.minImpact===10000?'selected':''}>≥ $10K</option>
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'decisionengine',currentFilter:deFilter,applyFn:()=>renderDecisionEngine($('pg-content')),fields:['kind','minImpact'],resetState:{kind:'',minImpact:0}}):''}
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">

@@ -268,6 +268,7 @@ function renderMktCampaigns(c){
             <option value="">All statuses</option>
             ${['planned','active','complete','paused','cancelled'].map(s=>`<option value="${s}" ${mktCampFilter.status===s?'selected':''}>${s}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'mktcampaigns',currentFilter:mktCampFilter,applyFn:()=>renderMktCampaigns($('mkt-content')),fields:['q','type','status'],resetState:{q:'',type:'',status:''}}):''}
           <button class="btn btn-accent btn-sm" onclick="openCampaignEdit(null)">+ New</button>
         </div>
       </div>
@@ -434,6 +435,7 @@ function renderMktAssets(c){
             <option value="">All types</option>
             ${['image','document','video','link','template','other'].map(t=>`<option value="${t}" ${mktAssetFilter.type===t?'selected':''}>${t}</option>`).join('')}
           </select>
+          ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'mktassets',currentFilter:mktAssetFilter,applyFn:()=>renderMktAssets($('mkt-content')),fields:['q','type'],resetState:{q:'',type:''}}):''}
           <button class="btn btn-accent btn-sm" onclick="openAssetEdit(null)">+ New Asset</button>
         </div>
       </div>
