@@ -243,6 +243,15 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - applied_to_skill_md: no
 - outcome: success
 
+### gotcha-028 — 2026-05-05 — prompt-queue v2 (defer_until + execution_mode + status hook)
+- target: prompt-queue v2 upgrade + build-plan-status hook
+- what_happened: Extended prompt-queue with two new fields: `defer_until` (8 condition types — m_task / track / schema / file / date / prompt / custom + AND-joining) and `execution_mode` (inline / subagent / fresh-session-DEFERRED). Added Step 4.5 RESOLVE for WAITING → QUEUED transitions. Wave-based parallel drain (5 max concurrent subagents) for "drain in parallel". New PAUSED state separate from WAITING for halt-and-wait gates. build-plan-status now pings RESOLVE at end of every run.
+- root_cause: First non-trivial v2 of an existing skill; many edge cases around defer-condition parsing, parallel-execution coordination with halt-and-wait gates, and lifecycle-state distinctions.
+- fix_this_run: 8 Ralph fixes across 4 iterations: AND-joining parser explicit, schema:resolver SCHEMA_PARSE_UNCERTAIN flag (gotcha-026 lesson re-applied), PAUSED as separate state from WAITING, wave-based dispatch for mixed inline+subagent items, VIEW format renders all 5 states, PAUSED no-auto-pull rule, build-plan-status hook clarification.
+- prevention_rule: Skill v2 upgrades that add lifecycle states must update VIEW/render output explicitly — listing the new state in lifecycle summary isn't sufficient.
+- applied_to_skill_md: yes (built into both prompt-queue and build-plan-status)
+- outcome: success
+
 ### gotcha-027 — 2026-05-05 — autonomous-mode + prompt-queue (workflow ergonomics pair)
 - target: walk-away workflow ("I'm going to lunch — keep working") + persistent prompt queue with priority reorder
 - what_happened: Two skills designed in tandem to compose. autonomous-mode handles long-running unattended work with explicit time/token bounds and clean exit semantics; prompt-queue manages the queue Michael builds throughout the day. They chain via "drain the queue while I'm at lunch" → autonomous-mode loops over prompt-queue's EXECUTE-next. Ralph found 6 real issues across both: mid-item time-cap checks, auto-approved vs needs-Michael taxonomy, WORK_IN_PROGRESS resume-hint integration, stale IN_PROGRESS recovery, natural-completion-point surfacing (vs unreliable session-end detection), last_heartbeat field schema. prompt-queue tripped Step 7.5 substitution count on first pass — fixed by mentioning Cloudflare Pages + Supabase mirror pattern naturally in Step 4.

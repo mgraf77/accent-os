@@ -124,6 +124,31 @@ If no drift, output: "BUILD_PLAN markers are in sync with git + SESSION_LOG as o
 
 ---
 
+## Step 6 — Ping prompt-queue resolution loop
+
+At the end of every build-plan-status run (regardless of whether drift was detected this run): if `/home/user/accent-os/PROMPT_QUEUE.md` exists AND has a non-empty WAITING section, invoke prompt-queue's RESOLVE operation. RESOLVE reads current BUILD_PLAN file state directly — it doesn't need a "what flipped" hint to be correct, the file IS the truth.
+
+The integration is a single hook, not a complex pipeline:
+
+1. Check `wc -l < /home/user/accent-os/PROMPT_QUEUE.md` for non-empty.
+2. If it has a `## WAITING` section with rows, invoke prompt-queue's RESOLVE step. "Invoke" here means: Claude reads `/home/user/accent-os/skills/prompt-queue/SKILL.md`, applies its Step 4.5 logic against the current PROMPT_QUEUE.md and BUILD_PLAN files, and writes back any promotions. No tool call or external trigger needed — it's an in-context skill chain.
+3. Surface in this skill's output:
+
+```
+═══ BLOCK 5: PROMPT-QUEUE PROMOTION ═══
+M-tasks/Tracks flipped this run: M27, M30
+Promoted from WAITING → QUEUED:
+  - #3 "backfill customers.segment for top 100" (was waiting on M30)
+  - #7 "verify deliveries data after M27 lands" (was waiting on M27)
+Still WAITING: 4 items (next eligible: prompt:#5 — pending #5 completion)
+```
+
+If PROMPT_QUEUE.md doesn't exist or has no WAITING items, skip BLOCK 5 silently.
+
+This closes the loop: the moment a BUILD_PLAN marker flips, any prompt deferred on that marker becomes ready without Michael having to remember to re-check the queue.
+
+---
+
 ## Anti-patterns
 
 - **Never** auto-apply the Edits. Output only — Michael runs them.
