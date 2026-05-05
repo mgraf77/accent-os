@@ -44,3 +44,7 @@
 ### 2026-05-05 — Continue (extended)
 **Prompt:** "continue"
 **Context:** User confirms more autonomous work. Pivoted off CSV imports (now quadruplicated — at the threshold for extraction) to ship two real workflow improvements: v6.10.42 Deal → Job conversion (button on deal modal pre-fills a Job from deal/customer data; closes a real workflow gap where won deals had to be manually re-typed) and v6.10.43 Inventory inline qty edit (warehouse can adjust qty_on_hand directly in the list with optimistic UI + audit_log). Total session count: 7 ships (v6.10.37/38/39/40/41/42/43). BUILD_INTELLIGENCE +9 lessons across the session.
+
+### 2026-05-05 — Continue (third)
+**Prompt:** "continue"
+**Context:** Three more ships. v6.10.44 extended inventory inline-edit from 1 to 4 editable fields (qty_on_hand / reorder_point / unit_cost / list_price) by generalizing the cell renderer. v6.10.45 finally extracted csvImportFlow() into js/csv_import.js — the CSV import pattern was at 4 inline implementations, past the abstraction threshold; helper exposes 5 conventional window handlers via key-derived names + 2 normalizer utilities (csvEnumNormalizer, csvNumberNormalizer). Used the helper to ship Showroom Displays bulk import. v6.10.46 shipped Warranty bulk import on the same helper — both new use cases land at ~70 LOC of config (down from ~150 LOC inline). Existing 4 imports remain inline since refactoring working production code adds risk without benefit. Total session count: 10 ships. BUILD_INTELLIGENCE +13 lessons.

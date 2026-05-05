@@ -107,6 +107,7 @@ function renderWarranty(el){
 
   const vendors = [...new Set(WARRANTY_CLAIMS.map(c => c.vendor_name).filter(Boolean))].sort();
 
+  const canImport = CU && (CU.role === 'Owner' || CU.role === 'Admin' || CU.role === 'Manager' || CU.role === 'Sales');
   el.innerHTML = `
     <div class="g4 mb16">
       <div class="card stat-card"><div class="stat-label">Open Claims</div><div class="stat-value">${(counts.open||0)+(counts.sent_to_vendor||0)+(counts.approved||0)}</div><div class="stat-sub">${counts.open||0} new · ${counts.sent_to_vendor||0} sent · ${counts.approved||0} approved</div></div>
@@ -114,6 +115,15 @@ function renderWarranty(el){
       <div class="card stat-card"><div class="stat-label">Open Cost-to-Us</div><div class="stat-value">$${(openCost/1000).toFixed(1)}K</div><div class="stat-sub">Pending refund/replace</div></div>
       <div class="card stat-card"><div class="stat-label">Resolved</div><div class="stat-value">${(counts.replaced||0)+(counts.refunded||0)+(counts.closed||0)}</div><div class="stat-sub">${counts.denied||0} denied</div></div>
     </div>
+    ${canImport ? `<div class="card mb16">
+      <div class="card-hd"><span class="card-title">Import CSV</span></div>
+      <div style="padding:14px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;">
+        <input type="file" accept=".csv,text/csv" style="font-size:12px;" onchange="onWarrantyFilePick(this)">
+        <button class="btn btn-outline btn-sm" onclick="openWarrantyCsvPaste()">Or paste CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="downloadWarrantyCsvTemplate()">Download template</button>
+        <span style="margin-left:auto;color:var(--text-3);">Headers: description (req), vendor_name, customer_name, sku, severity, status, reported_date, warranty_expires, cost_to_us, notes</span>
+      </div>
+    </div>` : ''}
     <div class="card">
       <div class="card-hd">
         <span class="card-title">Warranty Claims · ${filtered.length}${filtered.length!==WARRANTY_CLAIMS.length?` of ${WARRANTY_CLAIMS.length}`:''}</span>
@@ -269,3 +279,108 @@ async function deleteWarrantyConfirm(claimId){
   renderWarranty($('pg-content'));
   toast('Claim deleted','ok');
 }
+
+// ── BULK CSV IMPORT (v6.10.46) — uses csvImportFlow helper ──
+async function sbBulkSaveWarrantyClaims(rows){
+  if(!sbConfigured()) return false;
+  if(!Array.isArray(rows) || !rows.length) return 0;
+  try{
+    const now = new Date().toISOString();
+    const today = now.slice(0,10);
+    const payload = rows.map(r => {
+      const claim_number = r.claim_number || ('W-' + String(WARR_NUM++).padStart(4,'0'));
+      return {
+        claim_number,
+        customer_id: r.customer_id || null,
+        customer_name: r.customer_name || null,
+        vendor_id: r.vendor_id || null,
+        vendor_name: r.vendor_name || null,
+        sku: r.sku || null,
+        description: r.description,
+        status: r.status || 'open',
+        severity: r.severity || null,
+        reported_date: r.reported_date || today,
+        purchase_date: r.purchase_date || null,
+        warranty_expires: r.warranty_expires || null,
+        resolution_date: ['replaced','refunded','closed','denied'].includes(r.status) ? (r.resolution_date || today) : null,
+        vendor_ticket: r.vendor_ticket || null,
+        cost_to_us: r.cost_to_us,
+        refund_amount: r.refund_amount,
+        notes: r.notes || null,
+        updated_at: now
+      };
+    });
+    const res = await sbFetch('/warranty_claims', {method:'POST', headers:{'Prefer':'return=representation'}, body: JSON.stringify(payload)});
+    if(Array.isArray(res)) return res.length;
+    return payload.length;
+  }catch(e){ console.warn('[sb] Bulk save warranty_claims failed:', e.message); return false; }
+}
+
+csvImportFlow({
+  key: 'warranty',
+  label: 'Claim',
+  labelPlural: 'Claims',
+  templateName: 'warranty_claims_template',
+  tableName: 'warranty_claims',
+  pasteHelp: 'description,vendor_name,customer_name,sku,severity,status,...',
+  templateRows: [
+    ['description','vendor_name','customer_name','sku','severity','status','reported_date','warranty_expires','cost_to_us','notes'],
+    ['Pendant fixture finish chipped on arrival','Hudson Valley Lighting','Jane Smith','HVL-1234','cosmetic','open','2026-04-20','2027-04-20','185','Photo on file; vendor rep contacted'],
+    ['LED driver failed after 6 months','Hinkley','Acme Lighting Co.','HIN-OUT-100','functional','sent_to_vendor','2026-03-15','2026-09-15','420','RMA-7782 issued']
+  ],
+  aliasMap: {
+    'description':'description', 'desc':'description', 'issue':'description', 'problem':'description', 'summary':'description',
+    'claim_number':'claim_number', 'number':'claim_number', 'claim':'claim_number',
+    'vendor_name':'vendor_name', 'vendor':'vendor_name', 'manufacturer':'vendor_name', 'brand':'vendor_name',
+    'customer_name':'customer_name', 'customer':'customer_name', 'client':'customer_name',
+    'sku':'sku', 'item':'sku', 'part':'sku', 'product':'sku',
+    'severity':'severity', 'priority':'severity',
+    'status':'status', 'state':'status',
+    'reported_date':'reported_date', 'reported':'reported_date', 'date':'reported_date', 'open_date':'reported_date',
+    'purchase_date':'purchase_date', 'purchased':'purchase_date',
+    'warranty_expires':'warranty_expires', 'expires':'warranty_expires', 'warranty_end':'warranty_expires',
+    'resolution_date':'resolution_date', 'closed_date':'resolution_date', 'resolved':'resolution_date',
+    'vendor_ticket':'vendor_ticket', 'ticket':'vendor_ticket', 'rma':'vendor_ticket',
+    'cost_to_us':'cost_to_us', 'cost':'cost_to_us', 'our_cost':'cost_to_us',
+    'refund_amount':'refund_amount', 'refund':'refund_amount', 'credit':'refund_amount',
+    'notes':'notes', 'note':'notes', 'comment':'notes', 'comments':'notes'
+  },
+  requiredFields: ['description'],
+  normalizers: {
+    severity: csvEnumNormalizer(['cosmetic','functional','safety'], 'cosmetic', 'severity'),
+    status: csvEnumNormalizer(['open','sent_to_vendor','approved','denied','replaced','refunded','closed'], 'open', 'status'),
+    cost_to_us: csvNumberNormalizer(0),
+    refund_amount: csvNumberNormalizer(0)
+  },
+  postProcess: (obj, ctx) => {
+    if(obj.vendor_name && typeof VD !== 'undefined'){
+      const match = VD.find(v => v?.n && v.n.toLowerCase().trim() === obj.vendor_name.toLowerCase().trim());
+      if(match) obj.vendor_id = String(match.id);
+      else {
+        if(!ctx.trackers.vendor) ctx.trackers.vendor = { unmatched: new Set() };
+        ctx.trackers.vendor.unmatched.add(obj.vendor_name);
+      }
+    }
+    if(obj.customer_name && typeof CUSTOMERS !== 'undefined'){
+      const match = CUSTOMERS.find(c => c?.name && c.name.toLowerCase().trim() === obj.customer_name.toLowerCase().trim());
+      if(match) obj.customer_id = match.id;
+      else {
+        if(!ctx.trackers.customer) ctx.trackers.customer = { unmatched: new Set() };
+        ctx.trackers.customer.unmatched.add(obj.customer_name);
+      }
+    }
+  },
+  previewColumns: [
+    { label: 'Description', cell: r => `<span style="font-weight:500;">${esc((r.description||'').slice(0,60))}${(r.description||'').length>60?'…':''}</span>` },
+    { label: 'Vendor', cell: r => esc(r.vendor_name||'') + (r.vendor_id ? ' <span class="muted sm">·linked</span>' : '') },
+    { label: 'SKU', cell: r => `<span class="mono sm">${esc(r.sku||'')}</span>` },
+    { label: 'Severity', cell: r => `<span class="badge bg-gray">${esc(r.severity||'')}</span>` },
+    { label: 'Status', cell: r => `<span class="badge bg-gray">${esc((r.status||'').replace('_',' '))}</span>` }
+  ],
+  bulkSave: sbBulkSaveWarrantyClaims,
+  onSuccess: async () => {
+    await sbLoadWarrantyClaims();
+    renderWarranty($('pg-content'));
+  },
+  auditEvent: 'warranty_claims_import'
+});
