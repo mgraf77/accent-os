@@ -61,6 +61,59 @@ async function sbDeleteTradePartner(id){
   }catch(e){ console.warn('[sb] Delete trade_partner failed:', e.message); return false; }
 }
 
+// Single-row PATCH for inline edits (v6.10.50)
+async function sbUpdateTradePartnerField(id, field, value){
+  if(!sbConfigured() || !id || !field) return false;
+  const allowed = ['status','rating','type','email','phone','company','notes','tags','preferred_terms'];
+  if(!allowed.includes(field)) return false;
+  try{
+    const body = { [field]: value, updated_at: new Date().toISOString() };
+    const res = await sbFetch(`/trade_partners?id=eq.${encodeURIComponent(id)}`, {
+      method:'PATCH', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)
+    });
+    if(Array.isArray(res) && res[0]) return res[0];
+    return true;
+  }catch(e){ console.warn('[sb] Update trade_partner field failed:', e.message); return false; }
+}
+
+async function commitTradePartnerCell(input){
+  if(!input) return;
+  const id = input.dataset.id;
+  const field = input.dataset.field;
+  const orig = input.dataset.orig || '';
+  const isNumber = input.dataset.kind === 'number';
+  const valStr = (input.value || '').trim();
+  if(input.style){ input.style.background = 'transparent'; input.style.borderColor = 'transparent'; }
+  if(valStr === orig) return;
+  let next = null;
+  if(valStr !== ''){
+    if(isNumber){
+      const n = Number(valStr);
+      if(isNaN(n) || n < 0 || n > 10){ input.value = orig; toast('Invalid rating (0-10) — reverted','warn'); return; }
+      next = n;
+    } else {
+      next = valStr;
+    }
+  }
+  const item = TRADE_PARTNERS.find(p => p.id === id);
+  if(!item){ input.value = orig; toast('Row not found','err'); return; }
+  const prev = item[field];
+  item[field] = next;
+  input.dataset.orig = next == null ? '' : String(next);
+  const res = await sbUpdateTradePartnerField(id, field, next);
+  if(res === false){
+    item[field] = prev;
+    input.value = orig;
+    input.dataset.orig = orig;
+    toast(`Save failed — ${field} reverted`,'err');
+    return;
+  }
+  if(typeof sbAuditLog==='function') sbAuditLog(`tp_${field}_edit`, 'trade_partners', {partner_id: id, field, from: prev, to: next});
+  toast(`${item.name||'Partner'} · ${field}: ${prev??'—'} → ${next??'—'}`, 'ok');
+  // Re-render so badge/rating styling updates with the new value (especially for status select)
+  if(field === 'status' || field === 'rating') renderTradePartners($('pg-content'));
+}
+
 async function sbBulkSaveTradePartners(rows){
   if(!sbConfigured()) return false;
   if(!Array.isArray(rows) || !rows.length) return 0;
@@ -162,13 +215,21 @@ function renderTradePartners(el){
             ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-3);">${TRADE_PARTNERS.length===0?'No trade partners yet. Click "+ New Partner" to add one (run M24 SQL first if save fails).':'No partners match the current filter.'}</td></tr>` : filtered.map(p => {
               const sb = {active:'bg-green', prospect:'bg-blue', inactive:'bg-gray'}[p.status] || 'bg-gray';
               const ratingCell = p.rating != null ? `<span class="mono fw6" style="color:${p.rating>=8?'var(--green)':p.rating>=6?'var(--blue)':'var(--yellow)'};">${Number(p.rating).toFixed(1)}</span>` : '<span class="muted">—</span>';
+              const canEditTp = CU && ['Owner','Admin','Manager','Sales'].includes(CU.role);
+              const tpStatusOpts = ['active','prospect','inactive'];
+              const statusCell = canEditTp
+                ? `<td onclick="event.stopPropagation();"><select data-id="${p.id}" data-field="status" data-orig="${esc(p.status)}" onchange="commitTradePartnerCell(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${tpStatusOpts.map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
+                : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(p.status)}</span></td>`;
+              const ratingEditCell = canEditTp
+                ? `<td onclick="event.stopPropagation();" style="padding:2px 6px;"><input type="number" min="0" max="10" step="0.1" value="${p.rating!=null?Number(p.rating).toFixed(1):''}" data-id="${p.id}" data-field="rating" data-orig="${p.rating!=null?Number(p.rating).toFixed(1):''}" data-kind="number" onfocus="this.select();this.style.background='var(--surface)';this.style.borderColor='var(--accent)';" onblur="commitTradePartnerCell(this)" onkeydown="if(event.key==='Enter'){this.blur();}else if(event.key==='Escape'){this.value=this.dataset.orig;this.blur();}" style="width:60px;border:1px solid transparent;background:transparent;padding:4px 6px;font-family:inherit;font-size:13px;text-align:right;border-radius:4px;" placeholder="—" title="Click to edit rating (0-10)"></td>`
+                : `<td>${ratingCell}</td>`;
               return `<tr style="cursor:pointer;${p.status==='inactive'?'opacity:0.6;':''}" onclick="openTradePartnerEdit('${p.id}')">
                 <td style="font-weight:600;color:var(--accent);">${esc(p.name)}</td>
                 <td><span class="badge bg-gray" style="font-size:10px;text-transform:capitalize;">${esc(p.type||'—')}</span></td>
                 <td class="sm">${esc(p.company||'—')}</td>
                 <td class="sm">${esc(p.email||p.phone||'')}</td>
-                <td>${ratingCell}</td>
-                <td><span class="badge ${sb}" style="font-size:10px;">${esc(p.status)}</span></td>
+                ${ratingEditCell}
+                ${statusCell}
                 <td class="sm mono">${esc(p.last_engaged||'')}</td>
                 <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();openTradePartnerEdit('${p.id}')">Edit</button></td>
               </tr>`;
