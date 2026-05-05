@@ -188,12 +188,13 @@ function renderPOs(el){
             ${vendors.map(v=>`<option value="${esc(v)}" ${poFilter.vendor===v?'selected':''}>${esc(v)}</option>`).join('')}
           </select>
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'purchaseorders',currentFilter:poFilter,applyFn:()=>renderPOs($('pg-content')),fields:['q','status','vendor'],resetState:{q:'',status:'',vendor:''}}):''}
+          ${typeof colMenuButton==='function'?colMenuButton('purchaseorders',[{key:'order_date',label:'Order date'},{key:'expected',label:'Expected'},{key:'lines',label:'Lines'},{key:'total',label:'Total'}],'_poReRender'):''}
         </div>
       </div>
       ${typeof bulkSelBar==='function'?bulkSelBar('purchaseorders'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('purchaseorders',filtered.map(x=>x.id)):''}</th><th>PO #</th><th>Vendor</th><th>Status</th><th>Order date</th><th>Expected</th><th>Lines</th><th>Total</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('purchaseorders',filtered.map(x=>x.id)):''}</th><th>PO #</th><th>Vendor</th><th>Status</th><th class="${typeof colCls==='function'?colCls('purchaseorders','order_date'):''}">Order date</th><th class="${typeof colCls==='function'?colCls('purchaseorders','expected'):''}">Expected</th><th class="${typeof colCls==='function'?colCls('purchaseorders','lines'):''}">Lines</th><th class="${typeof colCls==='function'?colCls('purchaseorders','total'):''}">Total</th><th></th></tr></thead>
           <tbody>
             ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${POS.length===0?'No purchase orders yet. Click "+ New PO" to create one (run M23 SQL first if save fails).':'No POs match the current filter.'}</td></tr>` : filtered.map(p => {
               const sb = {draft:'bg-gray', sent:'bg-blue', confirmed:'bg-blue', partial:'bg-yellow', received:'bg-green', cancelled:'bg-gray'}[p.status] || 'bg-gray';
@@ -208,15 +209,16 @@ function renderPOs(el){
               const poStatusCell = canEditPo
                 ? `<td onclick="event.stopPropagation();"><select data-id="${p.id}" data-field="status" data-orig="${esc(p.status)}" onchange="commitPOCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${poStatusOpts.map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(p.status)}</span></td>`;
+              const poCl = (k) => typeof colCls==='function' ? colCls('purchaseorders',k) : '';
               return `<tr style="cursor:pointer;${['received','cancelled'].includes(p.status)?'opacity:0.6;':''}" onclick="openPOEdit('${p.id}')">
                 <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('purchaseorders',p.id):''}</td>
                 <td class="mono fw6 sm">${esc(p.po_number||'—')}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(p.vendor_name||'—')}</td>
                 ${poStatusCell}
-                <td class="mono sm">${esc(p.order_date||'')}</td>
-                <td>${expCell}</td>
-                <td class="sm">${lineCount}</td>
-                <td class="mono fw6 sm">$${Number(p.total||0).toLocaleString()}</td>
+                <td class="mono sm ${poCl('order_date')}">${esc(p.order_date||'')}</td>
+                <td class="${poCl('expected')}">${expCell}</td>
+                <td class="sm ${poCl('lines')}">${lineCount}</td>
+                <td class="mono fw6 sm ${poCl('total')}">$${Number(p.total||0).toLocaleString()}</td>
                 <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();openPOEdit('${p.id}')">Edit</button></td>
               </tr>`;
             }).join('')}
@@ -250,6 +252,8 @@ async function doBulkPOStatus(ids, newStatus){
   renderPOs($('pg-content'));
   toast(`${ok} updated${fail?', '+fail+' failed':''}`, fail?'err':'ok');
 }
+
+function _poReRender(){ renderPOs($('pg-content')); }
 
 async function doBulkPODelete(ids){
   if(!ids?.length) return;

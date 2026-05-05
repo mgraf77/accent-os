@@ -164,12 +164,13 @@ function renderJobs(el){
             ${['urgent','high','normal','low'].map(p=>`<option value="${p}" ${jobFilter.priority===p?'selected':''}>${p}</option>`).join('')}
           </select>
           ${typeof savedFiltersBar==='function'?savedFiltersBar({moduleKey:'jobs',currentFilter:jobFilter,applyFn:()=>renderJobs($('pg-content')),fields:['q','status','priority'],resetState:{q:'',status:'',priority:''}}):''}
+          ${typeof colMenuButton==='function'?colMenuButton('jobs',[{key:'customer',label:'Customer'},{key:'priority',label:'Priority'},{key:'due',label:'Due'},{key:'hrs',label:'Hrs (est/act)'}],'_jobReRender'):''}
         </div>
       </div>
       ${typeof bulkSelBar==='function'?bulkSelBar('jobs'):''}
       <div class="tbl-wrap" style="max-height:calc(100vh - 360px);overflow-y:auto;">
         <table>
-          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('jobs',filtered.map(x=>x.id)):''}</th><th>#</th><th>Project</th><th>Customer</th><th>Status</th><th>Priority</th><th>Due</th><th>Hrs (est/act)</th><th></th></tr></thead>
+          <thead><tr><th style="width:30px;">${typeof bulkSelHeaderCheckbox==='function'?bulkSelHeaderCheckbox('jobs',filtered.map(x=>x.id)):''}</th><th>#</th><th>Project</th><th class="${typeof colCls==='function'?colCls('jobs','customer'):''}">Customer</th><th>Status</th><th class="${typeof colCls==='function'?colCls('jobs','priority'):''}">Priority</th><th class="${typeof colCls==='function'?colCls('jobs','due'):''}">Due</th><th class="${typeof colCls==='function'?colCls('jobs','hrs'):''}">Hrs (est/act)</th><th></th></tr></thead>
           <tbody>
             ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-3);">${JOBS.length===0?'No jobs yet. Click "+ New Job" to create one (run M21 SQL first if save fails).':'No jobs match the current filter.'}</td></tr>` : filtered.map(j => {
               const sb = {open:'bg-blue', in_progress:'bg-yellow', blocked:'bg-red', complete:'bg-green', cancelled:'bg-gray'}[j.status] || 'bg-gray';
@@ -180,21 +181,22 @@ function renderJobs(el){
               const canEdit = CU && ['Owner','Admin','Manager','Sales','Warehouse'].includes(CU.role);
               const statusOpts = ['open','in_progress','blocked','complete','cancelled'];
               const priorityOpts = ['urgent','high','normal','low'];
+              const jCl = (k) => typeof colCls==='function' ? colCls('jobs',k) : '';
               const statusCell = canEdit
                 ? `<td onclick="event.stopPropagation();"><select data-id="${j.id}" data-field="status" data-orig="${esc(j.status)}" onchange="commitJobCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${statusOpts.map(s=>`<option value="${s}" ${j.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select></td>`
                 : `<td><span class="badge ${sb}" style="font-size:10px;">${esc(j.status.replace('_',' '))}</span></td>`;
               const priorityCell = canEdit
-                ? `<td onclick="event.stopPropagation();"><select data-id="${j.id}" data-field="priority" data-orig="${esc(j.priority||'normal')}" onchange="commitJobCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${priorityOpts.map(p=>`<option value="${p}" ${(j.priority||'normal')===p?'selected':''}>${p}</option>`).join('')}</select></td>`
-                : `<td><span class="badge ${pb}" style="font-size:10px;">${esc(j.priority||'normal')}</span></td>`;
+                ? `<td class="${jCl('priority')}" onclick="event.stopPropagation();"><select data-id="${j.id}" data-field="priority" data-orig="${esc(j.priority||'normal')}" onchange="commitJobCellSelect(this)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border-light);border-radius:4px;background:transparent;font-family:inherit;cursor:pointer;">${priorityOpts.map(p=>`<option value="${p}" ${(j.priority||'normal')===p?'selected':''}>${p}</option>`).join('')}</select></td>`
+                : `<td class="${jCl('priority')}"><span class="badge ${pb}" style="font-size:10px;">${esc(j.priority||'normal')}</span></td>`;
               return `<tr style="cursor:pointer;${['complete','cancelled'].includes(j.status)?'opacity:0.6;':''}" onclick="openJobEdit('${j.id}')">
                 <td onclick="event.stopPropagation();">${typeof bulkSelCheckbox==='function'?bulkSelCheckbox('jobs',j.id):''}</td>
                 <td class="mono sm">${esc(j.job_number||'—')}</td>
                 <td style="font-weight:600;color:var(--accent);">${esc(j.project_name)}</td>
-                <td class="sm">${esc(j.customer_name||'—')}</td>
+                <td class="sm ${jCl('customer')}">${esc(j.customer_name||'—')}</td>
                 ${statusCell}
                 ${priorityCell}
-                <td>${dueCell}</td>
-                <td>${hrsCell}</td>
+                <td class="${jCl('due')}">${dueCell}</td>
+                <td class="${jCl('hrs')}">${hrsCell}</td>
                 <td><button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 7px;" onclick="event.stopPropagation();openJobEdit('${j.id}')">Edit</button></td>
               </tr>`;
             }).join('')}
@@ -211,6 +213,8 @@ function renderJobs(el){
     ] : []);
   }
 }
+
+function _jobReRender(){ renderJobs($('pg-content')); }
 
 async function doBulkJobStatus(ids, status){
   if(!ids?.length) return;
