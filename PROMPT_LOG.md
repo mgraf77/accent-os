@@ -40,3 +40,7 @@
 ### 2026-05-05 — Continue (unblocked work)
 **Prompt:** "continue working on things that are not blocked by me, or that have been unblocked"
 **Context:** After the calendar ICS fix (v6.10.37) + My Tasks (v6.10.38), user signaled "keep going". Reviewed BUILD_PLAN_MICHAEL: M19/M20 are user-action backlog tasks; M04/M05/M06/M09 are external API keys; M24-M29 are SQL runs the user does. Polish backlog ships freely. Picked the bulk-import vector since the Inventory CSV pattern was already proven and the Customers + Trade Partners modules both saw real-world use cases for bulk loading. Shipped v6.10.39 (Customer CSV import) + v6.10.40 (Trade Partners CSV import). Same parse → preview → commit flow, type/status enum normalization, duplicate flagging, header alias map. Reused the global parseCsv + csvDownload utilities so both modules add ~150 LOC each with no new infrastructure.
+
+### 2026-05-05 — Continue (extended)
+**Prompt:** "continue"
+**Context:** User confirms more autonomous work. Pivoted off CSV imports (now quadruplicated — at the threshold for extraction) to ship two real workflow improvements: v6.10.42 Deal → Job conversion (button on deal modal pre-fills a Job from deal/customer data; closes a real workflow gap where won deals had to be manually re-typed) and v6.10.43 Inventory inline qty edit (warehouse can adjust qty_on_hand directly in the list with optimistic UI + audit_log). Total session count: 7 ships (v6.10.37/38/39/40/41/42/43). BUILD_INTELLIGENCE +9 lessons across the session.
