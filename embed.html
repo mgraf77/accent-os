@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AccentOS Tools</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#1a1a1a;background:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── Header ── */
+.hd{background:#1a1a1a;color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.hd-logo{display:flex;align-items:center;gap:8px;}
+.hd-mark{width:24px;height:24px;background:#e65100;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;}
+.hd-title{font-size:13px;font-weight:700;}
+.hd-sub{font-size:10px;opacity:.6;margin-left:4px;}
+.hd-right{display:flex;align-items:center;gap:8px;}
+.hd-user{font-size:10px;opacity:.7;}
+.icon-btn{background:none;border:none;color:#fff;cursor:pointer;opacity:.7;font-size:15px;padding:2px 4px;}
+.icon-btn:hover{opacity:1;}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid #e5e7eb;flex-shrink:0;background:#fafafa;}
+.tab{flex:1;padding:8px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:#6b7280;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;}
+.tab.active{color:#e65100;border-bottom-color:#e65100;background:#fff;}
+.tab:hover:not(.active){color:#374151;background:#f3f4f6;}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;padding:14px;}
+
+/* ── Auth screen ── */
+.auth-wrap{padding:30px 20px;text-align:center;}
+.auth-mark{width:48px;height:48px;background:#e65100;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:20px;margin-bottom:14px;}
+.auth-title{font-size:16px;font-weight:700;margin-bottom:6px;}
+.auth-sub{font-size:12px;color:#6b7280;margin-bottom:20px;}
+.form-input{width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;outline:none;}
+.form-input:focus{border-color:#e65100;box-shadow:0 0 0 2px rgba(230,81,0,.1);}
+.btn-primary{width:100%;padding:10px;background:#e65100;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px;}
+.btn-primary:hover{background:#d14800;}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+.msg{font-size:12px;text-align:center;margin-top:10px;padding:8px;border-radius:6px;}
+.msg.ok{background:#dcfce7;color:#166534;}
+.msg.err{background:#fee2e2;color:#991b1b;}
+.hidden{display:none!important;}
+
+/* ── Settings screen ── */
+.settings-row{margin-bottom:12px;}
+.settings-label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+
+/* ── Inventory search ── */
+.search-wrap{display:flex;gap:8px;margin-bottom:12px;}
+.search-input{flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:13px;outline:none;}
+.search-input:focus{border-color:#e65100;}
+.search-btn{padding:8px 14px;background:#e65100;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.search-btn:hover{background:#d14800;}
+.result-row{padding:8px 0;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.result-row:last-child{border-bottom:none;}
+.result-sku{font-family:monospace;font-size:11px;color:#6b7280;white-space:nowrap;}
+.result-desc{font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.result-price{font-weight:700;white-space:nowrap;}
+.result-qty{font-size:11px;color:#6b7280;white-space:nowrap;}
+.empty{color:#9ca3af;font-size:12px;text-align:center;padding:24px 0;}
+
+/* ── Chat ── */
+.chat-sys{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px;font-size:11.5px;color:#0369a1;margin-bottom:12px;}
+.chat-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+.msg-user{align-self:flex-end;background:#e65100;color:#fff;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:85%;font-size:12.5px;line-height:1.4;}
+.msg-ai{align-self:flex-start;background:#f3f4f6;padding:8px 12px;border-radius:12px 12px 12px 2px;max-width:90%;font-size:12.5px;line-height:1.6;}
+.chat-input-row{display:flex;gap:8px;}
+.chat-textarea{flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:12.5px;resize:none;outline:none;height:60px;line-height:1.4;}
+.chat-textarea:focus{border-color:#e65100;}
+.chat-send{padding:8px 12px;background:#e65100;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-end;}
+.chat-send:hover{background:#d14800;}
+.chat-send:disabled{opacity:.5;cursor:not-allowed;}
+.chat-api-warn{font-size:11.5px;color:#9ca3af;margin-top:8px;text-align:center;}
+
+/* ── Quick Quote ── */
+.form-row{margin-bottom:10px;}
+.form-label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px;}
+.form-textarea{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:12.5px;resize:none;outline:none;}
+.form-textarea:focus{border-color:#e65100;}
+.submit-btn{padding:10px 16px;background:#1a1a1a;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;}
+.submit-btn:hover{background:#374151;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const SB_URL  = 'https://hsyjcrrazrzqngwkqsqa.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzeWpjcnJhenJ6cW5nd2txc3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDE5NzAsImV4cCI6MjA4ODM3Nzk3MH0.KRsvN3BoNBd7JU4oKn-Cul8aX8bmFv6lyu3cLx1Us3E';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let E = {
+  jwt: null, email: null, role: null,
+  tab: 'inv',
+  invQuery: '', invResults: null,
+  chatMsgs: [],
+  chatBusy: false,
+};
+
+// ── Persistence (localStorage so it survives new tabs) ────────────────────────
+function lsGet(k){ try{ return localStorage.getItem('aos-embed-'+k)||''; }catch{ return ''; } }
+function lsSet(k,v){ try{ localStorage.setItem('aos-embed-'+k,v); }catch{} }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function root(){ return document.getElementById('root'); }
+function $(id){ return document.getElementById(id); }
+
+async function sbAuthFetch(path, opts={}){
+  const r = await fetch(SB_URL+'/auth/v1'+path, Object.assign({method:'POST'}, opts, {
+    headers: Object.assign({'apikey':SB_ANON,'Content-Type':'application/json'}, opts.headers||{})
+  }));
+  const t = await r.text();
+  if(!r.ok) throw new Error(t);
+  return t ? JSON.parse(t) : null;
+}
+
+async function sbFetch(path, opts={}){
+  const headers = {'apikey':SB_ANON,'Content-Type':'application/json'};
+  if(E.jwt) headers['Authorization'] = 'Bearer '+E.jwt;
+  const r = await fetch(SB_URL+'/rest/v1'+path, Object.assign({}, opts, {headers}));
+  const t = await r.text();
+  if(!r.ok) throw new Error(t);
+  return t ? JSON.parse(t) : [];
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+async function sendMagicLink(email){
+  const btn = $('em-btn'); if(btn) btn.disabled = true;
+  const msg = $('em-msg');
+  if(msg){ msg.className='msg hidden'; }
+  try {
+    await sbAuthFetch('/otp', {body: JSON.stringify({email: email.trim().toLowerCase(), create_user:false})});
+    if(msg){ msg.textContent='✓ Magic link sent — check your inbox.'; msg.className='msg ok'; }
+    if(btn){ btn.disabled=false; btn.textContent='Resend'; }
+  } catch(e){
+    const detail = (() => { try{return JSON.parse(e.message).msg||e.message;}catch{return e.message;} })();
+    if(msg){ msg.textContent = detail.includes('not found') ? 'No AccentOS account found. Contact admin.' : 'Error: '+detail; msg.className='msg err'; }
+    if(btn){ btn.disabled=false; }
+  }
+}
+
+async function doSignOut(){
+  try{ await sbAuthFetch('/logout', {method:'POST', headers:{'Authorization':'Bearer '+E.jwt}}); }catch{}
+  lsSet('jwt',''); lsSet('email',''); lsSet('role','');
+  E.jwt=null; E.email=null; E.role=null;
+  renderAuth();
+}
+
+// ── Boot / session restore ────────────────────────────────────────────────────
+
+async function boot(){
+  // Check for magic-link token in URL hash
+  const hash = location.hash.replace(/^#/,'');
+  if(hash){
+    const params = {};
+    hash.split('&').forEach(p=>{ const [k,...vs]=p.split('='); params[decodeURIComponent(k)]=decodeURIComponent(vs.join('=')); });
+    if(params.access_token){
+      E.jwt = params.access_token;
+      history.replaceState(null,'',location.pathname);
+      try{
+        const u = await sbAuthFetch('/user', {method:'GET', headers:{'Authorization':'Bearer '+E.jwt}});
+        E.email = u.email;
+        await loadProfile();
+        lsSet('jwt',E.jwt); lsSet('email',E.email); lsSet('role',E.role||'');
+      }catch{ E.jwt=null; }
+    }
+  }
+
+  // Restore from localStorage
+  if(!E.jwt){
+    const stored = lsGet('jwt');
+    if(stored){
+      E.jwt=stored; E.email=lsGet('email'); E.role=lsGet('role')||null;
+      // Light verify
+      try{ await sbAuthFetch('/user', {method:'GET', headers:{'Authorization':'Bearer '+E.jwt}}); }
+      catch{ E.jwt=null; lsSet('jwt',''); }
+    }
+  }
+
+  if(E.jwt){ render(); } else { renderAuth(); }
+}
+
+async function loadProfile(){
+  try{
+    const rows = await sbFetch('/user_profiles?user_id=eq.'+encodeURIComponent(lsGet('uid'))+'&select=role&limit=1');
+    if(rows&&rows.length) E.role = rows[0].role;
+  }catch{}
+}
+
+// ── Render: auth ──────────────────────────────────────────────────────────────
+
+function renderAuth(){
+  root().innerHTML = `
+    <div class="hd">
+      <div class="hd-logo"><div class="hd-mark">A</div><span class="hd-title">AccentOS<span class="hd-sub">Employee Tools</span></span></div>
+    </div>
+    <div class="content">
+      <div class="auth-wrap">
+        <div class="auth-mark">A</div>
+        <div class="auth-title">Sign In</div>
+        <div class="auth-sub">AccentOS employee access only. Enter your work email to receive a login link.</div>
+        <input id="em-email" class="form-input" type="email" placeholder="you@accentlightinginc.com"
+          onkeydown="if(event.key==='Enter'){ const v=this.value.trim(); if(v) sendMagicLink(v); }">
+        <button id="em-btn" class="btn-primary" onclick="const v=$('em-email').value.trim();if(v)sendMagicLink(v);">Send login link</button>
+        <div id="em-msg" class="msg hidden"></div>
+      </div>
+    </div>
+  `;
+  const el = $('em-email'); if(el) el.focus();
+}
+
+// ── Render: main ──────────────────────────────────────────────────────────────
+
+function render(){
+  const tabs = [
+    {id:'inv', label:'🔍 Inventory'},
+    {id:'quote', label:'📋 Quick Quote'},
+    {id:'chat', label:'🤖 AI Chat'},
+    {id:'settings', label:'⚙'},
+  ];
+  root().innerHTML = `
+    <div class="hd">
+      <div class="hd-logo"><div class="hd-mark">A</div><span class="hd-title">AccentOS<span class="hd-sub">Employee Tools</span></span></div>
+      <div class="hd-right">
+        <span class="hd-user">${esc(E.email||'')}</span>
+        <button class="icon-btn" onclick="doSignOut()" title="Sign out">↩</button>
+      </div>
+    </div>
+    <div class="tabs">
+      ${tabs.map(t=>`<button class="tab${E.tab===t.id?' active':''}" onclick="E.tab='${t.id}';render()">${t.label}</button>`).join('')}
+    </div>
+    <div class="content" id="tab-content"></div>
+  `;
+  renderTab();
+}
+
+function renderTab(){
+  const c = $('tab-content'); if(!c) return;
+  if(E.tab==='inv') renderInv(c);
+  else if(E.tab==='quote') renderQuote(c);
+  else if(E.tab==='chat') renderChat(c);
+  else renderSettings(c);
+}
+
+// ── Inventory tab ─────────────────────────────────────────────────────────────
+
+function renderInv(c){
+  c.innerHTML = `
+    <div class="search-wrap">
+      <input id="inv-q" class="search-input" placeholder="SKU or description…" value="${esc(E.invQuery)}"
+        onkeydown="if(event.key==='Enter') doInvSearch()">
+      <button class="search-btn" onclick="doInvSearch()">Search</button>
+    </div>
+    <div id="inv-results">${renderInvResults()}</div>
+  `;
+  if(!E.invQuery) { const el=$('inv-q'); if(el) el.focus(); }
+}
+
+function renderInvResults(){
+  if(!E.invResults) return '<div class="empty">Search AccentOS inventory by SKU or product description.</div>';
+  if(!E.invResults.length) return '<div class="empty">No results for "'+esc(E.invQuery)+'".</div>';
+  return E.invResults.slice(0,20).map(r=>`
+    <div class="result-row">
+      <span class="result-sku">${esc(r.sku||'')}</span>
+      <span class="result-desc" title="${esc(r.description||'')}">${esc(r.description||'')}</span>
+      <span class="result-qty">${r.qty_available||0} avail</span>
+      <span class="result-price">$${Number(r.list_price||0).toFixed(2)}</span>
+    </div>`).join('');
+}
+
+async function doInvSearch(){
+  const q = ($('inv-q')?.value||'').trim();
+  if(!q) return;
+  E.invQuery = q;
+  const res = $('inv-results');
+  if(res) res.innerHTML = '<div class="empty">Searching…</div>';
+  try {
+    const enc = encodeURIComponent(q);
+    const rows = await sbFetch(`/inventory_items?or=(sku.ilike.*${enc}*,description.ilike.*${enc}*)&select=sku,description,qty_available,list_price&order=qty_available.desc&limit=20`);
+    E.invResults = rows;
+  } catch(e){
+    E.invResults = [];
+    console.warn('[embed] inv search:', e.message);
+  }
+  if(res) res.innerHTML = renderInvResults();
+}
+
+// ── Quick Quote tab ───────────────────────────────────────────────────────────
+
+function renderQuote(c){
+  c.innerHTML = `
+    <div class="form-row"><label class="form-label">Customer</label>
+      <input id="qq-cust" class="form-input" placeholder="Customer name or company"></div>
+    <div class="form-row"><label class="form-label">Project description</label>
+      <textarea id="qq-proj" class="form-textarea" rows="2" placeholder="Brief project description"></textarea></div>
+    <div class="form-row"><label class="form-label">Items / notes</label>
+      <textarea id="qq-items" class="form-textarea" rows="3" placeholder="List products, quantities, or requirements"></textarea></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="submit-btn" onclick="doSendQuoteRequest()">Send to AccentOS</button>
+      <span id="qq-msg" style="font-size:11.5px;color:#6b7280;"></span>
+    </div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:12px;">
+      This captures a quick note. Open AccentOS → Quotes for a full quote builder.
+    </div>
+  `;
+}
+
+async function doSendQuoteRequest(){
+  const cust = ($('qq-cust')?.value||'').trim();
+  const proj = ($('qq-proj')?.value||'').trim();
+  const items = ($('qq-items')?.value||'').trim();
+  const msg = $('qq-msg');
+  if(!cust){ if(msg) msg.textContent='Enter customer name.'; return; }
+
+  try {
+    await sbFetch('/calendar_events', {
+      method: 'POST',
+      headers: {'Prefer':'return=minimal'},
+      body: JSON.stringify({
+        title: `Quote request: ${cust}`,
+        description: `Project: ${proj||'—'}\n\nItems/notes:\n${items||'—'}\n\nCreated via AccentOS embed on ${new Date().toLocaleString()}`,
+        category: 'other',
+        starts_at: new Date().toISOString(),
+        ends_at: new Date().toISOString(),
+        created_by: E.email||'embed',
+      })
+    });
+    if(msg){ msg.style.color='#166534'; msg.textContent='✓ Saved — check AccentOS Calendar.'; }
+    $('qq-cust').value=''; $('qq-proj').value=''; $('qq-items').value='';
+  } catch(e){
+    if(msg){ msg.style.color='#991b1b'; msg.textContent='Error — check AccentOS connection.'; }
+    console.warn('[embed] quote request:', e.message);
+  }
+}
+
+// ── AI Chat tab ───────────────────────────────────────────────────────────────
+
+function renderChat(c){
+  const apiKey = lsGet('apikey');
+  const msgsHtml = E.chatMsgs.map(m=>
+    m.role==='user'
+      ? `<div class="msg-user">${esc(m.content)}</div>`
+      : `<div class="msg-ai">${esc(m.content)}</div>`
+  ).join('');
+
+  c.innerHTML = `
+    <div class="chat-sys">Internal mode — employee use only. Full access to product specs, pricing, and vendor info.</div>
+    <div class="chat-messages" id="chat-msgs">${msgsHtml||'<div class="empty">Ask about inventory, lighting specs, vendor terms, or anything Accent-related.</div>'}</div>
+    <div class="chat-input-row">
+      <textarea id="chat-in" class="chat-textarea" placeholder="Ask anything…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doChat();}"></textarea>
+      <button id="chat-send" class="chat-send" onclick="doChat()">Send</button>
+    </div>
+    ${apiKey ? '' : '<div class="chat-api-warn">⚠ Set your Anthropic API key in Settings tab to enable AI chat.</div>'}
+  `;
+  const msgs = $('chat-msgs');
+  if(msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function doChat(){
+  const inp = $('chat-in'); if(!inp) return;
+  const text = inp.value.trim(); if(!text) return;
+  const apiKey = lsGet('apikey');
+  if(!apiKey){ alert('Add your Anthropic API key in the Settings tab.'); return; }
+
+  inp.value='';
+  E.chatMsgs.push({role:'user', content:text});
+  renderTab();
+
+  const send = $('chat-send'); if(send) send.disabled=true;
+  try{
+    const sys = `You are an internal AccentOS tool for Accent Lighting Inc. employees. You help with inventory questions, vendor info, lighting specifications, and sales support. Today is ${new Date().toLocaleDateString()}. Be concise and direct.`;
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:600,
+        system:sys,
+        messages: E.chatMsgs.map(m=>({role:m.role, content:m.content}))
+      })
+    });
+    const data = await r.json();
+    const reply = data.content?.[0]?.text || '(no response)';
+    E.chatMsgs.push({role:'assistant', content:reply});
+  }catch(e){
+    E.chatMsgs.push({role:'assistant', content:'Error: '+e.message});
+  }
+  renderTab();
+  if(send) send.disabled=false;
+}
+
+// ── Settings tab ──────────────────────────────────────────────────────────────
+
+function renderSettings(c){
+  const key = lsGet('apikey');
+  c.innerHTML = `
+    <div class="settings-row">
+      <div class="settings-label">Anthropic API Key</div>
+      <input id="st-key" class="form-input" type="password" placeholder="sk-ant-…"
+        value="${key ? '••••••••••••' + key.slice(-4) : ''}">
+      <button class="submit-btn" style="margin-top:8px;" onclick="
+        const v=$('st-key').value.trim();
+        if(v && !v.includes('•')){ lsSet('apikey',v); alert('API key saved.'); render(); }
+      ">Save Key</button>
+    </div>
+    <div class="settings-row" style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb;">
+      <div class="settings-label">Session</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">Signed in as: ${esc(E.email||'—')}</div>
+      <button class="submit-btn" onclick="doSignOut()">Sign Out</button>
+    </div>
+    <div style="margin-top:20px;font-size:11px;color:#9ca3af;">
+      AccentOS embed v6.11.2 · Deployed via Cloudflare Pages<br>
+      Keys stored in browser localStorage — not sent to AccentOS servers.
+    </div>
+  `;
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', boot);
+</script>
+</body>
+</html>

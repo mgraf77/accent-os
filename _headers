@@ -1,0 +1,18 @@
+# Cloudflare Pages — HTTP response headers
+# See: https://developers.cloudflare.com/pages/configuration/headers/
+
+# ── embed.html: allow framing from accentlightinginc.com ──────────────────────
+/embed.html
+  Content-Security-Policy: frame-ancestors 'self' https://accentlightinginc.com https://www.accentlightinginc.com https://store.accentlightinginc.com
+  X-Content-Type-Options: nosniff
+
+# ── portal.html: public external portal, no frame-restrict needed ─────────────
+/portal.html
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# ── Main app: no embedding allowed ────────────────────────────────────────────
+/index.html
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
