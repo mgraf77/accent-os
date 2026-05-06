@@ -2,6 +2,10 @@
 > This file is read automatically by Claude Code on every session start.
 
 ## AUTO-EXECUTE ON START
+0. **Load wiki handoff state** (accent-rag skill):
+   a. Read `wiki/hot.md` — current task, what shipped, open loops, next-session entry point.
+   b. Read last 10 entries of `wiki/log.md` — recent ingest/update/ralph-loop activity.
+   c. If hot.md shows incomplete task → complete it before BUILD_PLAN work.
 1. **Activate vibe-speak in default mode** (per SKILL.md Step 0):
    a. Detect active user — read `skills/vibe-speak/profiles/_active.md` if it exists; else run detection chain (git config user.name → user.email → `_default.md`).
    b. Read `skills/vibe-speak/profiles/[active-user].md` for default mode + calibration. (For Michael: `profiles/michael.md`, default mode `vibe`.)

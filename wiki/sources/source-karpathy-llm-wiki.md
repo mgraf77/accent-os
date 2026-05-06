@@ -28,7 +28,7 @@ updated: 2026-05-06
 
 AccentOS's wiki follows this pattern with:
 - YAML frontmatter (type, slug, confidence, sensitive, created, updated)
-- [[wikilink]] syntax rendered by js/wiki.js
+- Double-bracket slug wikilink syntax rendered by js/wiki.js
 - wiki/index.md as the slug registry (replaces a full search index for primary path)
 - Three-layer architecture: wiki primary → pgvector secondary → Claude fallback
 

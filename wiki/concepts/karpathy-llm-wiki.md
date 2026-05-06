@@ -18,7 +18,7 @@ Andrej Karpathy's proposal: instead of training models on fresh data continuousl
 
 1. **Human-readable first**: pages are useful to humans, not just machines. No embedding-only content.
 2. **Density over coverage**: 500 words of signal beats 5000 words of fluff. Edit ruthlessly.
-3. **Cross-links as knowledge graph**: `[[wikilinks]]` between pages builds a traversable graph the LLM can follow.
+3. **Cross-links as knowledge graph**: double-bracket slug wikilinks between pages build a traversable graph the LLM can follow.
 4. **Confidence-tagged**: every page has a confidence score so the LLM knows when to hedge.
 5. **Zero extra infra**: pure markdown files, fetched over HTTP. No vector DB required for the primary path.
 
@@ -62,4 +62,4 @@ Layer 3: BM25 + dense index    ← optional dev tool
 
 ## Related
 
-[[ADR-007]] · [[overview]]
+[[ADR-007]]

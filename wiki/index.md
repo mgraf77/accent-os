@@ -77,4 +77,5 @@
 
 | slug | title | confidence | updated |
 |------|-------|-----------|---------|
+| overview | AccentOS Wiki System Overview | high | 2026-05-06 |
 | rag-eval-matrix-v1 | RAG Eval Matrix v1 | high | 2026-05-06 |
