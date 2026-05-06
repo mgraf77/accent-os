@@ -897,8 +897,12 @@ async function submitFB(){
 }
 
 // ── ACTIVITY LOG ──────────────────────────────────────────
-let activity=[];
-function log(color,icon,text,time){ activity.unshift({color,icon,text,time}); if(activity.length>30)activity.pop(); }
+// Renamed from `activity` to `_activityLog` to avoid collision with
+// activity_feed.js's `async function activity()` page handler — both
+// were declared at top-level script scope, which threw a SyntaxError
+// and aborted activity_feed.js parsing.
+let _activityLog=[];
+function log(color,icon,text,time){ _activityLog.unshift({color,icon,text,time}); if(_activityLog.length>30)_activityLog.pop(); }
 log('grn','⚡','AccentOS v6.9 loaded — 494 vendors · 14 categories · Parent grouping','Today');
 
 // ── PRODUCT CATEGORY TAXONOMY (3-tier, matches accentlightinginc.com) ──────
