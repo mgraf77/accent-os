@@ -57,6 +57,9 @@ Run when Michael says:
 - "tighten [skill]" / "sharpen [skill]" / "polish [skill]"
 - "work on [skill]" / "next pass on [skill]" / "one more pass" / "go again"
 - "optomize [skill]" / "optimise [skill]" (common misspellings — match and route correctly)
+- "gap analysis [skill]" / "do a gap analysis of [skill]"
+- "find ways to push [skill] further" / "push [skill] further" / "push yourself on [skill]"
+- "how do we get [skill] to 100" / "push [skill] to 100" / "get [skill] to [score]"
 
 **Batch mode:** When Michael says "optimize all skills" or "batch optimize", run Steps 0–3 (profile + score) for all target skills in parallel, present a priority-ranked list (lowest score first) with estimated effort, then run the full pass loop on each skill in sequence. Commit each skill independently before moving to the next.
 
@@ -155,6 +158,8 @@ PERSPECTIVE SWEEP — [question or context]
 ## Step 0 — Preflight
 
 Do in parallel:
+
+Run items 1 and 2 first to resolve skill name and scope. Once resolved, run items 3–6 in parallel (all depend on the skill name).
 
 1. **Identify target.** Accept skill name, path, or description. If ambiguous, pick highest-likelihood match — do not ask.
 2. **Detect scope.** Check both `~/.claude/skills/[skill]/SKILL.md` and `/home/user/accent-os/skills/[skill]/SKILL.md`. Both found → BOTH. One only → that scope. Neither → output `SKILL NOT FOUND: [name]` — list all SKILL.md paths found under both skill roots — stop. Do not continue past this point.
@@ -526,7 +531,7 @@ BOTH SCOPE DIVERGENCE CHECK
   Verdict: [NO DIVERGENCE ✓ | DIVERGENCE DETECTED — [describe] — resolve before committing]
 ```
 
-Fix any validation failure before committing. **Validation failure procedure:** identify which specific check failed; fix that element only; re-run the entire checklist from check 1 before attempting commit. Never commit a partially-valid file. **Validation failure procedure:** identify which specific check failed; fix that element only; re-run the entire checklist from check 1 before attempting commit. Never commit a partially-valid file.
+Fix any validation failure before committing. **Validation failure procedure:** identify which specific check failed; fix that element only; re-run the entire checklist from check 1 before attempting commit. Never commit a partially-valid file.
 
 **Branch:** NOT on main → commit to current branch. On main → create `claude/optimize-[skill]-[8-char-rand]`.
 
@@ -599,6 +604,8 @@ For each active dimension i, compute:
 2. `potential_i`: actual delta if targeted, halved if resisted (<0.5 delta while targeted), 0 if structural ceiling (±0.5 for 3+ passes), 0.5 default if not targeted
 3. `expected_impact_i = gap_i × potential_i`
 4. `new_weight_i ∝ expected_impact_i` — renormalize; clamp min 3%, max 35%
+
+**Definition — "targeted":** A dimension is targeted in a pass if it appeared as a top-2 gap-contribution dim in any brainstorm loop OR if a hypothesis specifically addressing it was included in the final assembled plan. Dimensions addressed only by Perspective Sweep roles (not in the assembled plan) are NOT counted as targeted.
 
 **Parallelism:** Compute all Expected Impact values simultaneously — each dim's computation depends only on its own gap and potential, with no cross-dim dependencies.
 
@@ -741,6 +748,30 @@ NEXT-PASS ANALYSIS  (on Rubric v[N+1])
 
   Estimated delta: +[X] pts → projected [Y.Y]
   [MEANINGFUL ≥2.0 ✓ | THIN <2.0 — ⚠ second thin pass would trigger plateau stop]
+
+RUBRIC IMPROVEMENT ROADMAP  (what it takes to close each dim's gap toward 100)
+  Dim                | Now | Next achievable       | Practical ceiling | What blocks the ceiling
+  ───────────────────────────────────────────────────────────────────────────────────────────────
+  [Dim 1]            | X.X | X.X ([what enables it]) | X.X             | [evidence / design / test gap]
+  [Dim 2]            | X.X | X.X ([what enables it]) | X.X             | [evidence / design / test gap]
+  ...
+  Session ceiling:   ~[X.X]  (without formal test suite — evidence constraints)
+  Formal ceiling:    ~[X.X]  (with promptfoo test suite covering all documented cases)
+
+PASS VALUE ANALYSIS  (is the next pass worth doing?)
+  Projected gain:         +[X.X] pts
+  Skill size:             ~[N] lines  →  ~[N] steps × ~[avg tokens/step] ≈ ~[N]k tokens/pass
+  Estimated next session: ~[N]k tokens   ~[N] min
+  Points per 10k tokens:  [X.X]
+
+  Thresholds:
+    HIGH VALUE    ≥1.0 pt/10k tokens  →  clear structural gaps; strong ROI — proceed
+    MARGINAL      0.3–1.0 pt/10k      →  evidence-only or near-ceiling gains; weigh cost
+    LOW VALUE    <0.3 pt/10k          →  diminishing returns — consider stopping
+
+  Verdict:   [HIGH VALUE ✓ | MARGINAL — explain | LOW VALUE — stop recommended]
+  Recommendation: [proceed / stop / force-another-pass]
+  Note: token estimates are heuristic (~lines × avg step cost). Actual usage may vary ±30%.
 
 UNRESOLVED FEEDBACK
   [⚠ N FAIL/PARTIAL entries in skill-feedback.md not yet addressed]
