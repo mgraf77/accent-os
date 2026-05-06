@@ -35,8 +35,14 @@ Run this skill when Michael says anything like:
 - "name this query"
 - "preserve this"
 - "save it as [name]"
+- "log this run"
+- "save the query"
+- "snapshot the query"
+- "make this query permanent"
+- "I'll need this again"
+- "turn this into a saved report"
 
-Also fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run where the result clearly has re-runnable value (a recurring report shape, a diagnostic that'll be needed again, a query Michael spent time refining).
+Also fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run against `hsyjcrrazrzqngwkqsqa` (or BigCommerce store `store-cwqiwcjxes`) where the result clearly has re-runnable value (a recurring report shape, a diagnostic that'll be needed again, a query Michael spent time refining).
 
 ---
 
@@ -68,7 +74,10 @@ If any component is missing from context (rare), ask Michael for it once. Do not
 
 Generate the filename: `snapshot-NNN-[kebab-name].md`
 
-- `NNN` is the next sequential 3-digit number (read `analyses/INDEX.md` to find current max)
+**Do in parallel:** Read `analyses/INDEX.md` to find current max NNN AND check whether `/home/user/accent-os/analyses/` directory exists (create it if not — `mkdir -p /home/user/accent-os/analyses/`). Both reads are independent.
+
+- `NNN` is the next sequential 3-digit number (read `analyses/INDEX.md` to find current max; if file is missing, NNN = 001)
+- If `snapshot-NNN-[name].md` already exists (collision), increment NNN until a free slot is found. Never overwrite an existing snapshot silently.
 - `[kebab-name]` is short, descriptive, action-oriented. Examples:
   - `snapshot-001-vendor-rank-drops-weekly.md`
   - `snapshot-002-gmc-missing-images-by-brand.md`
@@ -78,7 +87,9 @@ If Michael said "save it as [name]", use that name (kebab-cased). Otherwise infe
 
 ---
 
-## Step 4 — Write the snapshot file
+## Step 4 — Write the snapshot file and update index
+
+**Do in parallel:** Write the snapshot file (below) AND update `analyses/INDEX.md` (Step 5). Both writes are independent once NNN is confirmed.
 
 Write to `/home/user/accent-os/analyses/snapshot-NNN-[name].md`:
 

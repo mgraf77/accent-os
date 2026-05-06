@@ -44,6 +44,10 @@ Run when Michael says any of:
 - "until [time]" / "for the next [N] hours"
 - "drain the prompt queue"
 - "work through the build plan"
+- "keep building while I'm away"
+- "run autonomously on [task]"
+- "I'll be back at [time], work until then"
+- "take it from here, I'm out"
 
 If the trigger is ambiguous about scope OR exit criteria, ask one question and wait — don't guess.
 
@@ -154,9 +158,11 @@ Then begin Step 4.
 
 ## Step 4 — Execute the work loop
 
+Do in parallel at loop start: update `autonomous_mode.json` heartbeat AND read next item from scope — these are independent reads.
+
 ```
 while (mode is running):
-  1. Update autonomous_mode.json: current_item, last_heartbeat
+  1. Update autonomous_mode.json: current_item, last_heartbeat (write atomically)
   2. Pick next item per scope:
      - prompt-queue: top-priority QUEUED item from PROMPT_QUEUE.md
      - BUILD_PLAN_CLAUDE walk: first [ ] item with no unresolved BLOCKS ON MICHAEL
@@ -165,15 +171,17 @@ while (mode is running):
      - Standard branch + commit + push flow
      - Run skill-forge / kpi-data-audit / etc. as needed
      - Update WORK_IN_PROGRESS.md after every discrete sub-step
-  4. On item complete: append to items_completed in autonomous_mode.json
+  4. On item complete: append to items_completed in autonomous_mode.json; increment actual_commits
   5. Check exit criteria:
      - time_bound exceeded → stop
-     - token budget high → stop, log "stopping early to preserve session"
+     - token budget ≥ 80% of estimated_tokens → stop, log "stopping early to preserve session"
      - new non-queue prompt detected → stop, hand back to Michael
-     - commit failure / CI failure → stop, surface for review
+     - commit failure / CI failure → stop, surface error + blocked-item name for review
      - scope exhausted → stop, "all scope completed"
   6. If stopping → Step 5; else continue loop
 ```
+
+**Exit criteria precedence:** hard-stops (commit failure, CI failure, needs-Michael item) always override soft-caps (time, token). Never delay a hard-stop to "finish the wave."
 
 **Heartbeat cadence:** update WORK_IN_PROGRESS.md after every sub-step (file save, commit, etc.) — not just after item completion. This keeps the resume-point fresh.
 

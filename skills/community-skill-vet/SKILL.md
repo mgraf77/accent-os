@@ -30,9 +30,12 @@ Stolen from: skill-audit (aptratcn/skill-audit) — the pre-install community-sk
 
 Run when Michael says:
 - "vet this skill" / "audit [skill name or URL]"
-- "is this skill safe"
-- "should I install [skill]"
+- "is this skill safe" / "is it safe to install"
+- "should I install [skill]" / "worth installing [skill]"
 - "review before install" / "skill audit for [name]"
+- "check this skill out" / "look at this before I add it"
+- "trust this skill?" / "community skill check"
+- "pre-install check on [name]" / "can I use this skill"
 
 ---
 
@@ -41,11 +44,15 @@ Run when Michael says:
 Input is one of:
 - GitHub URL pointing to a SKILL.md or skill directory
 - Plugin marketplace identifier (e.g. `c-level-skills@claude-code-skills`)
-- Local path (if Michael cloned it but hasn't moved to skills/)
+- Local path (if Michael cloned it but hasn't moved to `/home/user/accent-os/skills/`)
 
 Fetch the SKILL.md and any `references/*.md`, scripts, or assets in the same directory. If the source is a plugin, fetch the plugin manifest.
 
 **Auth-required URLs:** if the candidate is in a private repo or requires GitHub auth, WebFetch will fail. Ask Michael once: "This source requires auth — paste the SKILL.md contents here." Do not attempt to vet a skill blind.
+
+**Zero-content fail-fast:** if the fetched SKILL.md is empty, 404s, or <100 chars, stop immediately and output: "Cannot vet — skill content is empty or inaccessible. Paste the SKILL.md directly or verify the URL/path."
+
+**Do in parallel:** Run Steps 3 (code-pattern scan) and 4 (author reputation) concurrently — they access independent data sources. Merge findings before Step 5.
 
 ---
 
@@ -60,7 +67,7 @@ For each tool the skill invokes (visible from SKILL.md mentions of Bash/Edit/Wri
 | Write outside `/home/user/accent-os/` (e.g. `/tmp/`, `~/`) | MEDIUM |
 | Bash with arbitrary command | HIGH — must justify |
 | Network calls (WebFetch, MCP servers, curl) | MEDIUM — verify destinations |
-| Calls to MCP servers handling credentials (Supabase, Gmail, GitHub) | HIGH — verify scope |
+| Calls to MCP servers handling credentials (Supabase hsyjcrrazrzqngwkqsqa, Gmail, GitHub) | HIGH — verify scope |
 
 For each HIGH-risk permission, the SKILL.md must explicitly justify the use. If unjustified, that's evidence toward REJECT.
 

@@ -35,6 +35,9 @@ Run when Michael says:
 - "have codex check this" / "second-opinion on [target]"
 - "peer review the last commit" / "review what we just did"
 - "cross-review" / "cross-agent review"
+- "fresh eyes on this" / "get another agent to look at this"
+- "double-check what we built" / "sanity check the skill"
+- "review [skill-name]" / "audit the last changes"
 
 Also fire automatically (with confirmation) at the end of any skill-forge run that produced ≥3 forged skills — the cross-review payoff is highest on multi-skill batches.
 
@@ -52,6 +55,8 @@ Overrides:
 - `codex review vs [branch]` → diff against that branch
 
 Output the chosen target up front. Cap at 10 files per invocation — if the target spans more, split into batches and run sequentially (cost + quality drop-off above 10).
+
+**Do in parallel:** Reading the target files (Step 1 I/O) and detecting Codex availability (Step 2 probe) can run concurrently — fire both before combining results.
 
 **Empty-target fail-fast.** If the resolved target produces zero files (e.g. `git diff main` is empty because nothing has changed, or the named skill directory doesn't exist), stop immediately and output: "No files in review target. Either nothing has changed since main, or the target was misspelled. Specify a different target with: `codex review [skill-name | path | SHA | vs branch]`." Do not invoke Codex on an empty input — wastes tokens and produces noise.
 
@@ -277,3 +282,5 @@ If everything was clean (Codex returned 0 recommendations OR all were schema-rej
 - **Never** trust Codex's recommendation when its `old_string` and `new_string` are semantically identical (e.g. just whitespace differences) — reject as no-op in Step 5.
 - **Never** modify files outside the Step 1 review scope, even if Codex suggests it. Scope is scope.
 - **Never** auto-revert a Step 6 edit silently — if Step 7.5 validation fails post-edit, log the revert in BLOCK 2 explicitly so Michael sees what happened.
+- **Never** run codex-review on AccentOS skill files from a dirty working tree without noting unstaged changes — unstaged edits won't appear in `git diff` and will produce an incomplete review.
+- **Never** allow the review to continue if the combined file content exceeds 50KB without chunking — Codex context limits produce silent truncation errors above this threshold.

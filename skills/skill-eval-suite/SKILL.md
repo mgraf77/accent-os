@@ -33,6 +33,10 @@ Run when Michael says:
 - "regression tests for [skill]"
 - "automate the Ralph loop"
 - "lock in [skill] behavior"
+- "write evals for [skill]"
+- "make sure [skill] doesn't regress"
+- "coverage for [skill]"
+- "add tests to [skill]"
 
 ---
 
@@ -40,27 +44,35 @@ Run when Michael says:
 
 Input: skill name (e.g. `vendor-cascade`) or path (e.g. `/home/user/accent-os/skills/vendor-cascade/`).
 
-Read:
-- `SKILL.md` — for description, trigger phrases, workflow steps, output format
-- `references/*.md` — for any templated outputs
-- Recent `gotcha-log.md` entries that mention this skill — for known edge cases
+Do in parallel:
+- Read `SKILL.md` — for description, trigger phrases, workflow steps, output format
+- Read `references/*.md` — for any templated outputs
+- Read `/home/user/accent-os/skills/skill-forge/gotcha-log.md` — for known edge cases mentioning this skill
 
-If the skill doesn't exist in `/home/user/accent-os/skills/`, output "Skill not found" and stop.
+**Edge cases:**
+- Skill not found in `/home/user/accent-os/skills/` → check `~/.claude/skills/` before failing. If absent in both, output "Skill not found at either path" and stop.
+- `gotcha-log.md` absent → skip silently; note in Step 5 Block 4 that no gotcha entries were incorporated.
+- Skill exists but has no `references/` folder → proceed; only assert on SKILL.md-level outputs.
+
+Output of Step 1: confirmed file paths read, gotcha entry IDs relevant to this skill (or "none").
 
 ---
 
 ## Step 2 — Identify the test surface
 
-For each skill, define what's testable:
+For each skill, define what's testable. Output a test-surface table before writing cases:
 
-| Test class | What it asserts |
-|---|---|
-| **Trigger coverage** | At least one phrase from the trigger list, when used as input, fires the skill |
-| **Output shape** | The output contains the named blocks (e.g. "BLOCK 1", "BLOCK 2", or whatever Step 5/6/7 of the skill defines) |
-| **Required fields** | Specific fields present in the output (e.g. vendor_id, sku, severity) |
-| **AccentOS substitutions** | Output mentions AccentOS-specific substitutions (Supabase ID, BC store ID, etc.) when relevant |
-| **Edge case from gotcha-log** | The skill handles a known edge case correctly (e.g. empty input, missing prereq) |
-| **Anti-pattern compliance** | The skill doesn't do what its anti-patterns prohibit (e.g. doesn't auto-apply mutations) |
+| Test class | What it asserts | Assertion type |
+|---|---|---|
+| **Trigger coverage** | At least one phrase from the trigger list, when used as input, fires the skill | `contains` block header |
+| **Output shape** | The output contains the named blocks (e.g. "BLOCK 1", "BLOCK 2", or whatever Step 5/6/7 of the skill defines) | `contains` / `regex` |
+| **Required fields** | Specific fields present in the output (e.g. vendor_id, sku, severity) | `contains` |
+| **AccentOS substitutions** | Output mentions AccentOS-specific substitutions (Supabase `hsyjcrrazrzqngwkqsqa`, BC `store-cwqiwcjxes`, etc.) when relevant | `contains-any` |
+| **Edge case from gotcha-log** | The skill handles a known edge case correctly (e.g. empty input, missing prereq) | `not-contains` ERROR + `contains` redirect |
+| **Anti-pattern compliance** | The skill doesn't do what its anti-patterns prohibit (e.g. doesn't auto-apply mutations) | `not-contains` |
+| **SKILL.md frontmatter** | description ≥ 250 chars, name kebab-case, no unfilled `[bracketed]` placeholders outside fenced blocks | `javascript:` assertion |
+
+**If the target skill has no named output blocks** (no BLOCK headers), derive shape assertions from: the first fenced code block in the last workflow step, or the scan-block pattern at the end of the workflow.
 
 ---
 
@@ -68,16 +80,24 @@ For each skill, define what's testable:
 
 Generate 5–8 test cases. Mandatory structure:
 
-1. **Canonical happy path** — most common Michael phrasing → expected full output
-2. **Alternate trigger phrase** — second most common phrasing → same output shape
-3. **Empty / minimal input** — what does the skill do when the prereq data is missing?
-4. **Edge case from gotcha-log** — pull the most recent gotcha entry mentioning this skill
+1. **Canonical happy path** — most common Michael phrasing → expected full output shape
+2. **Alternate trigger phrase** — second most common phrasing → same output shape asserted
+3. **Empty / minimal input** — what does the skill do when the prereq data is missing? Assert graceful redirect, not raw error.
+4. **Edge case from gotcha-log** — pull the most recent gotcha entry mentioning this skill; if none, use the skill's own "Out of scope" or fail-fast clause as the input.
 5. **Anti-pattern violation attempt** — input that would tempt the skill to break a rule (e.g. asking it to auto-apply)
-6. **Stack-substitution check** — does the output reference Supabase/BC/AccentOS appropriately?
-7. **Output-shape regression** — exact-match assertion on the BLOCK headers
-8. **SKILL.md frontmatter parses** — meta-test that asserts the target's own YAML frontmatter is valid (description ≥ 250 chars, name kebab-case, no unfilled `[bracketed]` placeholders outside fenced blocks). Implement as a Promptfoo `javascript:` assertion that reads the SKILL.md file and runs the validation regex set OR as a `python:` script using `python-frontmatter` for the YAML parse step. Catches regressions in the SKILL.md itself.
+6. **Stack-substitution check** — does the output reference `hsyjcrrazrzqngwkqsqa` / `store-cwqiwcjxes` / AccentOS appropriately when the skill is PROJECT or BOTH scope?
+7. **Output-shape regression** — `contains` assertion on every named BLOCK header in the skill's output section
+8. **SKILL.md frontmatter parses** — meta-test asserting valid frontmatter: description ≥ 250 chars, name kebab-case, no unfilled `[bracketed]` placeholders outside fenced blocks. Implement as a Promptfoo `javascript:` assertion reading the SKILL.md file and running the validation regex set OR as a `python:` script using `python-frontmatter`. Catches regressions in the SKILL.md itself.
 
-For each test case, define `vars` (input), `assert` array (one or more assertions), and optional `description`.
+For each test case, output a structured block:
+```
+TEST-N: [test class name]
+  vars.input: "[exact input string]"
+  assert:
+    - type: [contains | not-contains | contains-any | regex | javascript:]
+      value: "[expected value or script path]"
+  description: "[one sentence — what this case protects against]"
+```
 
 ---
 
