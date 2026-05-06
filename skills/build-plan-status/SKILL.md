@@ -167,3 +167,5 @@ This closes the loop: the moment a BUILD_PLAN marker flips, any prompt deferred 
 - **Never** invent ship dates or commit SHAs. Cite exact source.
 - **Never** modify BUILD_PLAN_MICHAEL items based on Claude commits — Michael's plan reflects Michael's work, not Claude's.
 - **Never** skip the WORK_IN_PROGRESS.md source — it's often the most recent signal.
+- **Never** produce an Edit command that replaces only the `[ ]` marker without including the trailing text — the Edit tool requires a unique old string; replacing just `[ ]` on its own will match multiple lines and corrupt the plan.
+- **Never** assume a `[?]` marker means "done" — treat it identically to `[ ]` (pending) until explicit shipped evidence is found.
