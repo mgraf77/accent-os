@@ -623,6 +623,38 @@ Based on typical outcomes from CRM + ERP adoption in similar SMBs (5–20 person
 **The math is simple: one extra mid-size sale per quarter covers Phase 0 forever.**` }
 ];
 
+// ── PREP HIERARCHY: GROUPS → SUBGROUPS → SECTIONS ────────────────────────────
+const IM_GROUPS = [
+  { id:'build', order:1, title:'🏗️ AccentOS Build',     subtitle:'Where we are and what comes next' },
+  { id:'what',  order:2, title:'💡 What is AccentOS?',  subtitle:'Vision · Functionality · Why it matters' }
+];
+
+const IM_SUBGROUPS = [
+  { id:'current',       group:'build', order:1, title:'📍 Current Status',     subtitle:'Where things stand today' },
+  { id:'next',          group:'build', order:2, title:'🚀 Next Phases',        subtitle:'What needs approval to move forward' },
+  { id:'vision',        group:'what',  order:1, title:'🎯 Long-term Vision',   subtitle:'How AccentOS works at scale' },
+  { id:'functionality', group:'what',  order:2, title:'⚙️ Functionality',      subtitle:'What it does today' },
+  { id:'why',           group:'what',  order:3, title:'📈 Why Accent Needs It',subtitle:'The business case' }
+];
+
+// section_key → [groupId, subgroupId]
+const IM_SECTION_MAP = {
+  billing_reality: ['build', 'current'],
+  risks:           ['build', 'current'],
+  build_process:   ['build', 'current'],
+  timeline:        ['build', 'current'],
+  seat_structure:  ['build', 'next'],
+  ip_ownership:    ['build', 'next'],
+  cost_plan:       ['build', 'next'],
+  adoption:        ['build', 'next'],
+  agent_dispatch:  ['what',  'vision'],
+  live_workflow:   ['what',  'vision'],
+  dashboards:      ['what',  'functionality'],
+  functionality:   ['what',  'functionality'],
+  ease_of_use:     ['what',  'functionality'],
+  projections:     ['what',  'why']
+};
+
 
 // ── AGENDA TEMPLATES ─────────────────────────────────────────────────────────
 const IM_TEMPLATES = {
@@ -977,13 +1009,30 @@ function imRender(){
       .im-subtab{padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'Outfit',sans-serif;}
       .im-subtab:hover{color:var(--text);}
       .im-subtab.on{color:var(--accent);border-bottom-color:var(--accent);}
-      .im-prep-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
-      .im-prep-hd{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;background:var(--surface);transition:background .15s;}
+      .im-prep-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;}
+      .im-prep-hd{padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;background:var(--surface);transition:background .15s;}
       .im-prep-hd:hover{background:var(--bg);}
       .im-prep-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3);background:var(--bg);padding:2px 7px;border-radius:10px;flex-shrink:0;}
-      .im-prep-title{flex:1;font-size:14px;font-weight:600;color:var(--text);}
+      .im-prep-title{flex:1;font-size:13.5px;font-weight:600;color:var(--text);}
       .im-prep-chev{color:var(--text-3);font-size:11px;transition:transform .2s;}
       .im-prep-body{padding:6px 22px 18px;border-top:1px solid var(--border-light);font-size:13.5px;color:var(--text);line-height:1.55;}
+      .im-group{margin-bottom:18px;}
+      .im-group-hd{display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(90deg,#1a1a1a,#2a2a2a);color:#fff;border-radius:10px;cursor:pointer;border:1px solid var(--border);}
+      .im-group-hd:hover{filter:brightness(1.15);}
+      .im-group-titlewrap{flex:1;display:flex;flex-direction:column;gap:2px;}
+      .im-group-title{font-size:16px;font-weight:700;letter-spacing:-.01em;}
+      .im-group-sub{font-size:11.5px;font-weight:500;opacity:.75;}
+      .im-group-count{font-family:'DM Mono',monospace;font-size:11px;background:rgba(255,255,255,.12);padding:3px 9px;border-radius:10px;}
+      .im-group-chev{font-size:13px;transition:transform .2s;}
+      .im-group-body{padding:14px 0 4px;}
+      .im-subgroup{margin:8px 0 14px;}
+      .im-subgroup-hd{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;}
+      .im-subgroup-hd:hover{background:var(--surface);}
+      .im-subgroup-title{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+      .im-subgroup-sub{font-size:11px;color:var(--text-3);font-weight:500;}
+      .im-subgroup-count{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text-3);background:var(--surface);padding:2px 7px;border-radius:9px;border:1px solid var(--border);}
+      .im-subgroup-chev{font-size:11px;color:var(--text-3);transition:transform .2s;}
+      .im-subgroup-body{padding:10px 0 0 14px;border-left:2px solid var(--border);margin-left:8px;}
       .im-note-row{padding:11px 14px;background:var(--surface);border-radius:8px;border-left:3px solid var(--text-3);margin-bottom:8px;}
       .im-note-row.t-feedback{border-left-color:#f59e0b;}
       .im-note-row.t-decision{border-left-color:#10b981;}
@@ -1134,7 +1183,7 @@ function imRenderSub(id){
   }
 }
 
-// ── PREP SUB-TAB (collapsible briefing sections) ─────────────────────────────
+// ── PREP SUB-TAB (3-level collapsible: groups → subgroups → sections) ────────
 function imRenderPrep(el, id){
   const sections = (IM_PREP[id]||[]).slice().sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
   if(!sections.length){
@@ -1147,12 +1196,27 @@ function imRenderPrep(el, id){
       </div>`;
     return;
   }
-  // Default: collapsed unless user has opened
-  const cards = sections.map((s, idx) => {
+
+  // Bucket sections by group/subgroup using IM_SECTION_MAP; unmapped sections fall under a "custom" group
+  const buckets = {};
+  sections.forEach(s => {
+    const map = IM_SECTION_MAP[s.section_key];
+    const g = map ? map[0] : 'custom';
+    const sg = map ? map[1] : 'custom';
+    (buckets[g] = buckets[g] || {})[sg] = (buckets[g][sg] || []);
+    buckets[g][sg].push(s);
+  });
+
+  const groupsToRender = IM_GROUPS.slice().sort((a,b) => a.order - b.order);
+  if(buckets.custom){
+    groupsToRender.push({ id:'custom', order:99, title:'➕ Custom Sections', subtitle:'Sections you added' });
+  }
+
+  const renderSection = (s, idx) => {
     const sid = s.id || `_p_${idx}`;
     const open = IM_PREP_OPEN[sid] === true;
     return `
-      <div class="im-prep-card" id="im-prep-${esc(sid)}">
+      <div class="im-prep-card">
         <div class="im-prep-hd" onclick="imTogglePrep('${esc(sid)}')">
           <span class="im-prep-num">${String(s.sort_order||idx+1).padStart(2,'0')}</span>
           <span class="im-prep-title">${esc(s.title)}</span>
@@ -1160,18 +1224,71 @@ function imRenderPrep(el, id){
         </div>
         ${open ? `<div class="im-prep-body">${imMd(s.content)}</div>` : ''}
       </div>`;
-  }).join('');
+  };
+
+  const renderSubgroup = (sg, list) => {
+    const key = `sg:${sg.group}_${sg.id}`;
+    const open = IM_PREP_OPEN[key] !== false;
+    const cards = list.map(renderSection).join('');
+    return `
+      <div class="im-subgroup">
+        <div class="im-subgroup-hd" onclick="imToggleSubgroup('${esc(sg.group)}','${esc(sg.id)}')">
+          <span class="im-subgroup-title">${esc(sg.title)}</span>
+          ${sg.subtitle?`<span class="im-subgroup-sub">${esc(sg.subtitle)}</span>`:''}
+          <span class="im-subgroup-count">${list.length}</span>
+          <span class="im-subgroup-chev" style="transform:rotate(${open?'0':'-90'}deg);">▼</span>
+        </div>
+        ${open ? `<div class="im-subgroup-body">${cards}</div>` : ''}
+      </div>`;
+  };
+
+  const renderGroup = (g) => {
+    const gKey = `g:${g.id}`;
+    const open = IM_PREP_OPEN[gKey] !== false;
+    const groupBucket = buckets[g.id] || {};
+    const subgroups = IM_SUBGROUPS.filter(sg => sg.group === g.id).sort((a,b) => a.order - b.order);
+    let inner = '';
+    let total = 0;
+    if(g.id === 'custom'){
+      const list = groupBucket.custom || [];
+      total = list.length;
+      inner = list.map(renderSection).join('');
+    } else {
+      subgroups.forEach(sg => {
+        const list = groupBucket[sg.id] || [];
+        if(!list.length) return;
+        total += list.length;
+        inner += renderSubgroup(sg, list);
+      });
+    }
+    if(!total) return '';
+    return `
+      <div class="im-group">
+        <div class="im-group-hd" onclick="imToggleGroup('${esc(g.id)}')">
+          <div class="im-group-titlewrap">
+            <span class="im-group-title">${esc(g.title)}</span>
+            ${g.subtitle?`<span class="im-group-sub">${esc(g.subtitle)}</span>`:''}
+          </div>
+          <span class="im-group-count">${total}</span>
+          <span class="im-group-chev" style="transform:rotate(${open?'0':'-90'}deg);">▼</span>
+        </div>
+        ${open ? `<div class="im-group-body">${inner}</div>` : ''}
+      </div>`;
+  };
+
+  const groupsHtml = groupsToRender.map(renderGroup).join('');
 
   el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;">
-      <div class="muted sm">${sections.length} briefing sections — click to expand</div>
-      <div style="display:flex;gap:6px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap;">
+      <div class="muted sm">${sections.length} sections across ${groupsToRender.filter(g=>buckets[g.id]).length} groups — click any header to expand</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="imExpandAllPrep('${esc(id)}',true)">Expand all</button>
         <button class="btn btn-outline btn-sm" onclick="imExpandAllPrep('${esc(id)}',false)">Collapse all</button>
+        <button class="btn btn-outline btn-sm" onclick="imCollapseSectionsOnly('${esc(id)}')">Collapse sections</button>
         <button class="btn btn-accent btn-sm" onclick="imAddPrepSection('${esc(id)}')">+ Section</button>
       </div>
     </div>
-    ${cards}`;
+    ${groupsHtml}`;
 }
 
 function imTogglePrep(sid){
@@ -1179,8 +1296,32 @@ function imTogglePrep(sid){
   imRenderSub(IM_CUR_ID);
 }
 
+function imToggleGroup(gid){
+  const k = `g:${gid}`;
+  IM_PREP_OPEN[k] = !(IM_PREP_OPEN[k] !== false); // default open → first click closes
+  imRenderSub(IM_CUR_ID);
+}
+
+function imToggleSubgroup(gid, sgid){
+  const k = `sg:${gid}_${sgid}`;
+  IM_PREP_OPEN[k] = !(IM_PREP_OPEN[k] !== false);
+  imRenderSub(IM_CUR_ID);
+}
+
 function imExpandAllPrep(id, open){
+  // sections
   (IM_PREP[id]||[]).forEach((s, idx) => { IM_PREP_OPEN[s.id || `_p_${idx}`] = open; });
+  // groups
+  IM_GROUPS.forEach(g => { IM_PREP_OPEN[`g:${g.id}`] = open; });
+  IM_PREP_OPEN['g:custom'] = open;
+  // subgroups
+  IM_SUBGROUPS.forEach(sg => { IM_PREP_OPEN[`sg:${sg.group}_${sg.id}`] = open; });
+  imRenderSub(id);
+}
+
+// Keep groups/subgroups open, collapse only the section-level cards
+function imCollapseSectionsOnly(id){
+  (IM_PREP[id]||[]).forEach((s, idx) => { IM_PREP_OPEN[s.id || `_p_${idx}`] = false; });
   imRenderSub(id);
 }
 
