@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-06 — skill-optimizer build
+**Prompt:** "Build a skill that is used to optimize existing skills or code as it is used. Call it skill optimizer. For example it creates a weighted scoring rubric to self evaluate the current version based on the desired output(s), methodology, speed, efficiency, accuracy, and anything else needed. Then it creates a recommended or user input desired score threshold (can say +10%, additional abilities, minimum thresholds, etc). Then it runs Ralph loop styled brainstorm sessions until it has a plan that can meet that threshold. Then it asks for input on the plan, responds to input, then executes once plan is finalized. Then it runs a real scored matrix test and is finished when it meets the threshold. If it did not meet the threshold, then it does Ralph loops until it gets there. If it cannot meet the threshold in x(determined and or hardwired) loops, then it pushes the highest scored changes. Lastly, it outputs a breakdown of how the skill was optimized and how to use it instructions."
+**Context:** New skill build session. WIP was clean. Building skill-optimizer from scratch — a rubric-score → brainstorm-loop → plan-gate → execute → test-loop meta-skill for improving existing AccentOS skills.
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"

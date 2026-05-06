@@ -196,6 +196,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: single-vendor audits
 - companion: vendor-cascade, vendor-clarity-test
 
+### skill-optimizer
+- summary: Score any AccentOS skill against a weighted rubric, brainstorm improvements via Ralph loops (cap 5), gate on approval, execute changes, and verify with a scored matrix test before shipping a final breakdown.
+- triggers: "optimize [skill]", "tune [skill]", "make [skill] better", "level up [skill]", "score this skill", "skill optimizer", "upgrade [skill]", "squeeze more out of [skill]", "what's wrong with [skill]", "tighten up [skill]"
+- when_to_use: any existing skill that needs systematic improvement; when a skill feels vague, slow, or miss-triggered; after a Ralph loop surfaces repeated failure patterns
+- when_NOT: building a new skill from scratch (use skill-forge); running automated promptfoo regression tests (use skill-eval-suite); single-line typo fix (use Edit)
+- companion: skill-forge, skill-eval-suite, codex-review
+
 ### vibe-speak
 - summary: AccentOS default communication framework — 9 modes, adaptive learning, native-English compression.
 - triggers: auto-active per `.claude/CLAUDE.md`; mode switches: "caveman", "gsd", "vibesplain", "pair up", "teach me", "exec mode"
