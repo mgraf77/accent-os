@@ -13,6 +13,25 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-06 — AccentOS Wiki shipped (v6.11.1) — SHIPPED
+**Version:** v6.11.1 (Karpathy LLM Wiki primary path)
+**Built/Changed:**
+- `wiki/` knowledge base — 42 pages: 25 concepts (vendor-scoring hub + 14 rubric pages + karpathy-llm-wiki + lighting-reference hub + 5 lighting sub-pages + 3 SOP pages), 7 ADRs, 3 employee entities (sensitive:true), 6 sources, 1 synthesis
+- `wiki/CLAUDE.md` — schema + workflows + ingest rules + log.md/hot.md/index.md formats
+- `skills/accent-rag/SKILL.md` — 12-step skill spec: three-layer architecture, /aos-ingest workflow, Ralph loop protocol
+- 9 slash commands: `aos-ingest`, `aos-search`, `aos-wiki`, `aos-build`, `aos-eval`, `aos-lint`, `aos-index`, `aos-ralph`, `aos-close`
+- 5 Python scripts: `wiki_lint.py` (7 check types, exit 0/1/2), `wiki_seed.py` (auto-gen from js/*.js + VD_RAW), `rag_build_index.py` (BM25 + 1.3× wiki boost), `rag_search.py` (--wiki-only flag), `rag_eval.py` (32 golden Q&A, 6-dim scoring)
+- `js/wiki.js` — two-pane AccentOS Wiki sidebar module: index parse, search, wikilink navigation, markdown renderer, wiki grounding for sendChat
+- `index.html` — sidebar entry under INTELLIGENCE, PAGE_META, dispatcher, script tag, version bump to v6.11.1; sendChat() wiki-grounding (term overlap → fetch top-3 → inject context → "Grounded · N wiki" pill)
+- `.claude/CLAUDE.md` — AUTO-EXECUTE step 0: read wiki/hot.md + last 10 wiki/log.md at every session start
+- `rag-eval-matrix-v1.md` — 88.2% composite (recall 84.4%, precision 44.8%, coverage 100%) over 32 golden Q&A pairs, 5 clusters
+- 3 Ralph loops; zero issues after loop 3
+**Decisions:** Wiki-first over pgvector for static domain facts (50ms vs 200ms, zero infra cost, human-readable). Synthesis pages excluded from grounding (self-contamination). Lint skips wikilinks inside backtick code spans.
+**Open loops:** `wiki/entities/vendors/` top-30 auto-gen pending. `wiki/modules/` auto-gen pending. M42/M43 pgvector optional path not activated.
+**Next:** wiki_seed.py --modules + --vendors to populate remaining wiki sections.
+
+---
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9) — SHIPPED
 **Version:** vibe-speak v0 → v9 (23-dim matrix at 97.1% / 709 of 730)
 **Built/Changed:**

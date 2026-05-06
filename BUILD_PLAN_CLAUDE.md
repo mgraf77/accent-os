@@ -150,6 +150,15 @@
   - BLOCKS ON MICHAEL: **M03** (Windward written confirmation) AND **M10** (Curtis outreach)
 - [ ] **6.12** — Google Ads / Meta Ads
   - Status: **No API access** per MASTER §10. Manual admin only — not automatable until Google Ads API auth granted by account holder.
+- [x] **6.13** — AccentOS Wiki (Karpathy LLM Wiki pattern)
+  - Shipped v6.11.1: wiki/ knowledge base (42 pages: 25 concepts, 7 ADRs, 3 entities, 6 sources, 1 synthesis + overview)
+  - skills/accent-rag/SKILL.md + 9 slash commands (aos-ingest/search/wiki/build/eval/lint/index/ralph/close)
+  - 5 Python tooling scripts: wiki_lint.py, wiki_seed.py, rag_build_index.py, rag_search.py, rag_eval.py
+  - js/wiki.js: two-pane AccentOS Wiki sidebar module with wikilink navigation
+  - sendChat() wiki-grounding: term overlap → fetch → inject context → "Grounded · N wiki" pill
+  - .claude/CLAUDE.md AUTO-EXECUTE step 0: reads wiki/hot.md + wiki/log.md at every session start
+  - RAG eval: 88.2% composite (recall 84.4%, coverage 100%) over 32 golden Q&A pairs
+  - 3 Ralph loops: zero issues after loop 3; fixes: synthesis page exclusion from grounding, lint code-block skip
 
 ---
 

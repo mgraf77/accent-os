@@ -175,6 +175,8 @@ async function wikiGroundQuery(query, chatMode) {
       .filter(e => {
         // Never serve sensitive pages to customer mode
         if (chatMode === 'customer' && (e.type === 'entity' || e.confidence === 'low')) return false;
+        // Never use synthesis/eval pages as grounding context (self-contamination)
+        if (e.type === 'synthesis') return false;
         return true;
       })
       .map(e => {

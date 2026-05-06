@@ -68,7 +68,11 @@ def parse_frontmatter(filepath):
 
 
 def extract_wikilinks(text):
-    return set(re.findall(r'\[\[([^\]]+)\]\]', text))
+    # Strip code blocks and inline code before extracting wikilinks
+    # to avoid false positives on [[slug]] in code examples
+    no_code = re.sub(r'```[\s\S]*?```', '', text)
+    no_code = re.sub(r'`[^`]+`', '', no_code)
+    return set(re.findall(r'\[\[([^\]]+)\]\]', no_code))
 
 
 def load_index(source_dir):

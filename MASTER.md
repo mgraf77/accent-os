@@ -82,7 +82,7 @@ Founded: 1979 | Brick-and-mortar lighting showroom + ecommerce
 ## 3. ACCENTOS — CURRENT STATE
 
 ### Version
-**v6.10.2** (as of 2026-05-04)  
+**v6.11.1** (as of 2026-05-06)  
 File size: ~651KB JS / ~680KB total HTML | Split trigger: 900KB hard limit (76% used)
 
 ### What's Live
@@ -114,6 +114,7 @@ File size: ~651KB JS / ~680KB total HTML | Split trigger: 900KB hard limit (76% 
 | Role-Based Dashboards | ✅ Live | Per-role landing — Warehouse / Sales / Owner+Admin+Manager variants (Track 3.2) |
 | CRM / Sales Pipeline | 🔲 Planned | Track 1 |
 | Daily Command Center | 🔲 Planned | Track 1 |
+| **AccentOS Wiki** | ✅ Live | **v6.11.1** — Karpathy LLM Wiki · 42 pages (concepts, decisions, entities, sources, syntheses) · js/wiki.js two-pane module · sendChat wiki-grounding · 9 /aos-* slash commands · 5 Python tooling scripts · 88.2% eval composite (Track 6.13) |
 
 ### Vendor Data State
 - 478 total vendors in `VD_RAW`
@@ -731,6 +732,14 @@ If built as off-the-shelf tools, AccentOS would cost **$8,300+/month** in softwa
 ## 15. SESSION LOG
 
 > **Format:** Most recent at top. One entry per session. Auto-appended at session end.
+
+---
+
+### 2026-05-06 — AccentOS Wiki shipped (v6.11.1)
+**Shipped:** Karpathy LLM Wiki primary path. 42 wiki pages (25 concepts, 7 ADRs, 3 employee entities, 6 sources, 1 synthesis). `js/wiki.js` two-pane sidebar module with wikilink navigation, search, and `renderWikiMd`. `sendChat()` wiki-grounding (term overlap → fetch top-3 → inject context → "Grounded · N wiki" pill). 9 `/aos-*` slash commands. 5 Python tooling scripts (wiki_lint, wiki_seed, rag_build_index, rag_search, rag_eval). `.claude/CLAUDE.md` AUTO-EXECUTE step 0 reads `wiki/hot.md` + last 10 `wiki/log.md` entries. BM25 index with 1.3× wiki boost + `--wiki-only` flag. RAG eval: 88.2% composite (recall 84.4%, precision 44.8%, coverage 100%). 3 Ralph loops; zero issues after loop 3.  
+**Fixes:** Synthesis page exclusion from grounding (self-contamination), lint code-block skip for inline code wikilinks, offline fallback in wiki fetch.  
+**Open loops:** wiki/entities/vendors/ top-30 auto-gen (wiki_seed.py --vendors pending), wiki/modules/ auto-gen from js/*.js pending. M42/M43 pgvector optional path not activated.  
+**Next:** Run wiki_seed.py --modules + --vendors to populate remaining wiki sections.
 
 ---
 
