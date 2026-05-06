@@ -59,12 +59,13 @@ If unclear, default to capturing — better to have a slightly redundant snapsho
 
 ## Step 2 — Extract the analysis components
 
-Pull from the current conversation context:
-- **Originating prompt** — what Michael actually asked
-- **Parameters** — vendor IDs, date ranges, thresholds, filters that were specific to this run
-- **Query / SQL** — the literal SQL or vendor-cascade input that produced the result
-- **Reasoning pattern** — if Claude did interpretation, capture the steps as bullets
-- **Output shape** — what format the result took (table, list, single number)
+Pull from the current conversation context. Each component must be explicitly present in the snapshot file — never leave a field blank; use "unknown" or "none" if genuinely absent:
+
+- **Originating prompt** — verbatim or close paraphrase of what Michael actually asked
+- **Parameters** — vendor IDs, date ranges, thresholds, filters that were specific to this run (list each as `param: value — type/range`)
+- **Query / SQL** — the literal SQL or vendor-cascade input that produced the result (paste verbatim; parameterize values that will change on re-runs using `{{param_name}}`)
+- **Reasoning pattern** — if Claude did interpretation, capture the steps as a numbered list (minimum 1 step; "direct query, no interpretation" if none)
+- **Output shape** — what format the result took: `table | list | single number | chart spec`
 
 If any component is missing from context (rare), ask Michael for it once. Do not invent.
 
@@ -131,6 +132,8 @@ Write to `/home/user/accent-os/analyses/snapshot-NNN-[name].md`:
 
 ## Step 5 — Update the index
 
+(Run in parallel with Step 4 — see note above.)
+
 Append to `/home/user/accent-os/analyses/INDEX.md` (create if missing):
 
 ```markdown
@@ -145,22 +148,24 @@ Sort by NNN descending (newest first).
 
 ## Step 6 — Output
 
-Confirmation block to Michael:
+Exact confirmation block format (required — never substitute prose):
 
 ```
 ANALYSIS SNAPSHOT — saved
 
-File: /home/user/accent-os/analyses/snapshot-NNN-[name].md
-Indexed: yes
+File:      /home/user/accent-os/analyses/snapshot-NNN-[name].md
+Indexed:   yes (analyses/INDEX.md — row NNN added)
+Cadence:   [weekly | monthly | quarterly | ad-hoc]
+Source:    [originating skill: vendor-cascade | supabase-sql-magic | ad-hoc]
 
 Re-run any time with:
   > "Re-run snapshot-NNN with [param: value, param: value]"
 
-Or list all snapshots with:
+List all snapshots:
   > "Show analyses/INDEX.md"
 ```
 
-If the snapshot was created off the back of a vendor-cascade or supabase-sql-magic run, also note: "Originating skill: [name]" so the chain is traceable.
+If the snapshot was created off the back of a vendor-cascade or supabase-sql-magic run against `hsyjcrrazrzqngwkqsqa`, set `Source:` accordingly so the chain is traceable. If originating skill is unknown, set `Source: ad-hoc`.
 
 ---
 
@@ -172,3 +177,5 @@ If the snapshot was created off the back of a vendor-cascade or supabase-sql-mag
 - **Never** modify the originating SQL or cascade input when snapshotting. Capture-as-is. Improvements happen on the next re-run.
 - **Never** skip the INDEX.md update. An un-indexed snapshot is invisible.
 - **Never** name a snapshot generically (`snapshot-001-vendors.md`). Specificity is what makes it findable in 6 months.
+- **Never** overwrite an existing snapshot file silently — if NNN collides, increment until a free slot is found and surface the collision in the output block.
+- **Never** skip creating `analyses/` if the directory is missing — `mkdir -p` before writing the file; do not let a missing directory silently abort the skill.
