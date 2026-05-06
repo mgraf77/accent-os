@@ -727,16 +727,18 @@ async function imLoadMeetingData(id){
   IM_LOADED[id] = true;
   if(!sbConfigured() || id.startsWith('_')) return;
   try{
-    const [notes, todos, fups, prep] = await Promise.all([
+    const [notes, todos, fups, prep, transcripts] = await Promise.all([
       sbFetch(`/meeting_notes?meeting_id=eq.${id}&order=created_at.asc`).catch(()=>[]),
       sbFetch(`/meeting_todos?meeting_id=eq.${id}&order=created_at.asc`).catch(()=>[]),
       sbFetch(`/meeting_followups?meeting_id=eq.${id}&order=due_date.asc.nullslast`).catch(()=>[]),
-      sbFetch(`/meeting_prep_sections?meeting_id=eq.${id}&order=sort_order.asc`).catch(()=>[])
+      sbFetch(`/meeting_prep_sections?meeting_id=eq.${id}&order=sort_order.asc`).catch(()=>[]),
+      sbFetch(`/meeting_transcripts?meeting_id=eq.${id}&order=created_at.desc`).catch(()=>[])
     ]);
-    IM_NOTES[id]     = Array.isArray(notes) ? notes : [];
-    IM_TODOS[id]     = Array.isArray(todos) ? todos : [];
-    IM_FOLLOWUPS[id] = Array.isArray(fups)  ? fups  : [];
-    IM_PREP[id]      = Array.isArray(prep) && prep.length ? prep : (IM_PREP[id]||[]);
+    IM_NOTES[id]       = Array.isArray(notes) ? notes : [];
+    IM_TODOS[id]       = Array.isArray(todos) ? todos : [];
+    IM_FOLLOWUPS[id]   = Array.isArray(fups)  ? fups  : [];
+    IM_PREP[id]        = Array.isArray(prep) && prep.length ? prep : (IM_PREP[id]||[]);
+    IM_TRANSCRIPTS[id] = Array.isArray(transcripts) ? transcripts : [];
     if(!IM_AGENDA[id]) IM_AGENDA[id] = [];
   }catch(e){ console.warn('[meetings] load meeting data failed:', e.message); }
 }
@@ -2056,10 +2058,18 @@ function imParseTranscript(id){
   if(!IM_TRANSCRIPTS[id]) IM_TRANSCRIPTS[id] = [];
   IM_TRANSCRIPTS[id].unshift(transcript);
 
-  // Persist if Supabase configured
+  // Persist if Supabase configured — reconcile temp id with real DB UUID so same-session delete works
   if(sbConfigured() && !id.startsWith('_')){
     const {id:_, ...body} = transcript;
-    sbFetch('/meeting_transcripts', {method:'POST', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(body)}).catch(e => console.warn('[transcripts] save failed:', e.message));
+    sbFetch('/meeting_transcripts', {method:'POST', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)})
+      .then(res => {
+        const saved = Array.isArray(res) ? res[0] : res;
+        if(saved?.id){
+          const i = IM_TRANSCRIPTS[id].findIndex(x => x.id === transcript.id);
+          if(i >= 0) IM_TRANSCRIPTS[id][i] = saved;
+        }
+      })
+      .catch(e => console.warn('[transcripts] save failed:', e.message));
   }
 
   if($('im-tx-text')) $('im-tx-text').value = '';
