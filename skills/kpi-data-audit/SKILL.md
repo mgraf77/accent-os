@@ -72,7 +72,7 @@ Detect from Michael's prompt:
 
 Output the parsed mode at the top of the report so the run is reproducible.
 
-## Step 1 — Locate the catalog and schema sources
+## Step 1 — Locate the catalog and schema sources (read all four in parallel)
 
 Read in parallel:
 
