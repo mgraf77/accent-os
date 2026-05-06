@@ -4,3 +4,6 @@
 .env.*
 .openai-key
 skills/vibe-speak/profiles/_active.md
+
+# efficiency-monitor — runtime stop-hook output, regenerated every session
+skills/efficiency-monitor/_aggregator.log
