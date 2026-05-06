@@ -33,6 +33,10 @@ Run when Michael says:
 - "what are my biggest vendor risks"
 - "vendor risk audit"
 - "rank by risk"
+- "which vendors are highest risk"
+- "if [vendor] disappeared what happens"
+- "vendor exposure report"
+- "stockout risk vendors"
 
 ---
 
@@ -47,7 +51,7 @@ If Michael says "top 5" or "top 20", use that. If he says "this quarter," use 90
 
 ---
 
-## Step 2 — Compute the four risk dimensions
+## Step 2 — Compute the four risk dimensions (run all four SQL blocks in parallel)
 
 Generate the SQL via supabase-sql-magic style — paste-ready against `hsyjcrrazrzqngwkqsqa`:
 
@@ -169,9 +173,14 @@ Owner: Michael for everything (solo build) — but tag the AccentOS module that 
 
 ## Step 6 — Output
 
+**Edge cases before rendering:**
+- If ALL four dimensions are missing for a vendor (e.g. no deals, no scores, no inventory rows, no feed_status rows), exclude from the register entirely and list in a BLOCK 4 "excluded — no dimension data" section. Never classify these as LOW risk.
+- If the entire `deals` table is empty (Dimension A fails), surface the register using B/C/D only; prepend: "WARNING: Dimension A (concentration) excluded — no completed deals in `hsyjcrrazrzqngwkqsqa`. Composite scores are B/C/D only; re-run after deals land."
+- If N > total vendor count with any data, cap N silently and note: "Only [M] vendors had sufficient data; register shows all [M]."
+
 ```
 ═══ BLOCK 1: VENDOR RISK REGISTER ═══
-[full Step 4 table]
+[full Step 4 table — N rows, no truncation]
 
 ═══ BLOCK 2: MITIGATIONS ═══
 For each HIGH/MEDIUM row:
@@ -201,3 +210,5 @@ Next review: +90 days.
 - **Never** skip the concentration cap check. >15% revenue from a single vendor is the most common AccentOS risk pattern and must always surface.
 - **Never** rank vendors that have zero data in all four dimensions — those are out-of-scope for this register, not "low risk."
 - **Never** invent normalization denominators when a dimension's data is missing — flag the missing dimension and weight the others.
+- **Never** re-normalize weights without showing the re-normalized values in the output — Michael must see which weights shifted so he can judge whether the composite is still meaningful.
+- **Never** use a fixed lookback of 90 days without noting it in BLOCK 1; Michael's "this year" or custom window overrides must be clearly labeled so the register is reproducible.
