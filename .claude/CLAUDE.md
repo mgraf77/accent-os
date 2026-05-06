@@ -12,6 +12,7 @@
    g. Read `skills/vibe-speak/modes/[default-mode].md` and apply its voice rules.
    h. Read `skills/_index.md` for the AccentOS skill registry — used by Step 23 (skill router) to detect when a task could be handled by an existing skill instead of brute-forcing.
    i. SKILL.md Step 7 expanded auto-disengage rules + Step 12 pre-send accuracy gate + Step 23 skill discovery apply to every response.
+   j. Read `skills/ai-task-router/SKILL.md` Steps 1–4 + `references/task-taxonomy.md` — always-on tool-routing pilot. Apply passive routing gate before every response: classify task type → score all tools → surface nudge only if another tool scores ≥25% higher than Claude Code.
 2. Log session start to PROMPT_LOG.md: `### [date] — Auto-session start`
 3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
 4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
