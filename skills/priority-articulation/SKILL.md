@@ -35,13 +35,23 @@ Run this skill when Michael says anything like:
 - "what would [priority] mean numerically"
 - "operationalize [X]"
 - "translate [priority] into weights"
+- "define what [X] means as a score"
+- "how do we measure [X]"
+- "put a number on [X]"
+- "what threshold should we use for [X]"
+- "connect [priority] to vendor scores"
+- "GMC compliance rule" / "margin floor" / "stockout threshold"
 
 ---
 
-## Step 1 — Capture the priority statement
+## Steps 1 + 2 — Capture priority and load schema (run in parallel)
+
+**Do in parallel:** Step 1 (priority capture) and Step 2 (Supabase schema load) — they are independent reads.
+
+### Step 1 — Capture the priority statement
 
 Pull the priority from one of these in order:
-1. Michael's stated input in the current prompt
+1. Michael's stated input in the current prompt (highest precedence)
 2. `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` → "Accent Lighting Ecommerce" → "Known capability gaps"
 3. `/home/user/accent-os/MASTER.md` → search for "priority" / "Q4" / "margin" / "GMC"
 
@@ -58,9 +68,15 @@ If the priority is genuinely vague ("be better at GMC"), ask Michael for the tar
 
 ---
 
-## Step 2 — Map to Supabase data fields
+### Step 2 — Map to Supabase data fields
 
-Load the active schema from `/home/user/accent-os/sql/M02_core_schema.sql` and any later M-files (M21 phase3, M22 inventory, M28 competitor_prices, M29 marketing). Identify which tables/columns could measure the priority:
+Load the active schema from `/home/user/accent-os/sql/M02_core_schema.sql` and any later M-files (M21 phase3, M22 inventory, M28 competitor_prices, M29 marketing) in Supabase hsyjcrrazrzqngwkqsqa. Identify which tables/columns could measure the priority.
+
+Edge cases:
+- If the M-schema files don't exist at `/home/user/accent-os/sql/`, output "Schema files not found at expected path — cannot validate field names. Run schema setup first." and stop.
+- If a priority clearly maps to a BigCommerce store-cwqiwcjxes field not yet mirrored in Supabase (e.g. BC order-level data), flag the gap: "Field exists in BC store-cwqiwcjxes but not yet in Supabase hsyjcrrazrzqngwkqsqa schema — requires ETL M-task."
+
+Identify which tables/columns could measure the priority:
 
 - **Vendor-level** → `vendors`, `vendor_scores`, `vendor_overrides`
 - **Deal-level** → `deals`, `quotes`, `coop_funds`
@@ -141,8 +157,10 @@ Recommended primary: [name]   |   Recommended backup: [name]
 
 ## Anti-patterns
 
-- **Never** invent threshold numbers. They come from Michael's stated input or get asked once. The skill is articulation, not arbitrary cutoff-setting.
-- **Never** propose new schema additions in this skill. If no field measures the priority, flag and stop — schema changes are M-task work for Michael.
-- **Never** modify vendor_scores or vendor_overrides directly. This skill produces rule specs that vendor-cascade then consumes.
-- **Never** skip the Supabase schema read. Articulating against imagined fields wastes Michael's review time.
-- **Never** produce more than 3 rules per priority. Picking 1 primary + 1 backup is the deliverable; offering 7 alternatives shifts the decision burden onto Michael.
+- **Never** invent threshold numbers. They come from Michael's stated input or get asked for once. The skill is articulation, not arbitrary cutoff-setting.
+- **Never** propose new schema additions in this skill. If no field measures the priority, flag "No measurement coverage" and stop — schema additions are M-task work, not priority-articulation output.
+- **Never** modify `vendor_scores`, `vendor_overrides`, or any Supabase hsyjcrrazrzqngwkqsqa table directly. This skill produces rule specs that vendor-cascade then consumes.
+- **Never** skip the Supabase schema read from `/home/user/accent-os/sql/`. Articulating against imagined field names produces rules that break at cascade time.
+- **Never** produce more than 3 rules per priority. 1 primary + 1 backup is the deliverable; offering 7 alternatives shifts the decision burden onto Michael.
+- **Never** run Step 1 (priority capture) and Step 2 (schema load) sequentially — they are independent reads and can execute in parallel.
+- **Never** output BLOCK 1 (rule table) without BLOCK 2 (project-profiles.md paste-in) — the paste-in is what connects this output to vendor-cascade's priority input.
