@@ -554,7 +554,9 @@ async function doLogin(){
     if(typeof applyModuleModesAfterHydrate === 'function'){
       try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[login] module modes init failed:', e.message); }
     }
-    goTo('dashboard');
+    if(CU.role==='TradePartner'){if(typeof tpInitSidebar==='function')tpInitSidebar();goTo('tradeportal');}
+    else if(CU.role==='VendorRep'){if(typeof vrInitSidebar==='function')vrInitSidebar();goTo('vendorrep');}
+    else{goTo('dashboard');}
   }catch(e){
     setJwt('');
     if(errEl){ errEl.textContent = e.message.includes('Invalid login') ? 'Invalid credentials.' : e.message; errEl.style.display='block'; }
@@ -745,6 +747,18 @@ const PAGE_META={
   settings:  {t:'Settings',s:''},
   modulemodes: {t:'Module Modes',s:'Rollout state · per-user overrides'},
   wiki:       {t:'AccentOS Wiki',s:'SOPs · ADRs · Clusters · Entities'},
+  repoutreach:{t:'Rep Outreach',s:'Outreach campaigns · Rep communication'},
+  tradeportal:{t:'Trade Portal',s:'Quotes · Jobs · Deliveries · Resources'},
+  tpquotes:   {t:'My Quotes',s:'Trade Partner quote history'},
+  tpjobs:     {t:'My Jobs',s:'Active project tracker'},
+  tpdeliveries:{t:'My Deliveries',s:'Delivery status'},
+  tpresources:{t:'Resources',s:'Trade resources · spec sheets · guides'},
+  tpcontact:  {t:'Contact Us',s:'Get in touch with our team'},
+  vendorrep:  {t:'Vendor Portal',s:'Scorecard · Co-op · Products'},
+  vrscorecard:{t:'Score Card',s:'Vendor performance scores'},
+  vrcoop:     {t:'Co-op Funds',s:'Co-op fund status'},
+  vrproducts: {t:'My Products',s:'SKU-level inventory view'},
+  vrcontact:  {t:'Contact Us',s:'Get in touch with our team'},
 };
 let curPage='';
 function goTo(page){
@@ -757,7 +771,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,wiki,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,wiki,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,tradeportal,tpquotes,tpjobs,tpdeliveries,tpresources,tpcontact,vendorrep,vrscorecard,vrcoop,vrproducts,vrcontact};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6582,7 +6596,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[boot] module modes init failed:', e.message); }
   }
   sbAuditLog('session_resume', 'auth');
-  goTo('dashboard');
+  if(CU.role==='TradePartner'){if(typeof tpInitSidebar==='function')tpInitSidebar();goTo('tradeportal');}
+  else if(CU.role==='VendorRep'){if(typeof vrInitSidebar==='function')vrInitSidebar();goTo('vendorrep');}
+  else{goTo('dashboard');}
 });
 </script>
 <!-- Module files extracted during file split (v6.10.12). Loaded after main inline script
@@ -6626,5 +6642,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
 <script src="js/wiki.js?v=6.11.1"></script>
+<script src="js/trade_portal.js?v=6.11.2"></script>
+<script src="js/vendor_portal.js?v=6.11.2"></script>
 </body>
 </html>

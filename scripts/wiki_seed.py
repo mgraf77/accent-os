@@ -27,7 +27,7 @@ except ImportError:
     sys.exit(2)
 
 WIKI_ROOT = Path(__file__).parent.parent / "wiki"
-TYPED_DIRS = ["clusters", "sops", "adrs", "entities", "sources"]
+TYPED_DIRS = ["clusters", "sops", "adrs", "entities", "sources", "concepts"]
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n(.*)", re.DOTALL)
 
 dry_run = "--dry-run" in sys.argv

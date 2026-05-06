@@ -21,7 +21,7 @@ except ImportError:
     sys.exit(2)
 
 WIKI_ROOT = Path(__file__).parent.parent / "wiki"
-TYPED_DIRS = ["clusters", "sops", "adrs", "entities", "sources"]
+TYPED_DIRS = ["clusters", "sops", "adrs", "entities", "sources", "concepts"]
 META_FILES = {"CLAUDE.md", "hot.md", "log.md", "_index.md"}
 
 ALLOWED_TYPES = {"cluster", "sop", "adr", "entity", "source_summary", "concept", "runbook"}

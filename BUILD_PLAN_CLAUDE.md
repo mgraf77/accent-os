@@ -136,8 +136,10 @@
   - BLOCKS ON MICHAEL: **M04**
 - [ ] **6.4** — Klaviyo integration
   - BLOCKS ON MICHAEL: **M09** (Klaviyo API key)
-- [ ] **6.5** — Trade & Designer Portal (external-facing)
-- [ ] **6.6** — Vendor Rep Portal (external-facing)
+- [x] **6.5** — Trade & Designer Portal (external-facing)
+  - Shipped v6.11.2: `js/trade_portal.js`. TradePartner role. 6 pages: tradeportal (dashboard + stats), tpquotes, tpjobs, tpdeliveries, tpresources, tpcontact. `tpInitSidebar()` replaces .sb-nav with portal-specific navigation. Role redirect on login/session-restore in index.html. Partner matched by email → `trade_partners` table.
+- [x] **6.6** — Vendor Rep Portal (external-facing)
+  - Shipped v6.11.2: `js/vendor_portal.js`. VendorRep role. 5 pages: vendorrep (dashboard + score bar chart), vrscorecard, vrcoop, vrproducts, vrcontact. `vrInitSidebar()` replaces .sb-nav. Vendor matched by email → VENDOR_DATA. Co-op, inventory, and score data all filtered to the rep's vendor. Tier computed: A ≥7.5, B ≥5, C otherwise.
 - [x] **6.7** — AI Lighting Consultant (phase 1 — customer mode toggle inside AccentOS)
   - Shipped v6.10.23: Added "Customer Mode" toggle to the existing Knowledge Engine "Ask the Engine" tab. Two modes: **Internal** (existing — vendor names + margins + specs OK) vs **Customer** (warm consumer-facing tone, room-by-room recommendations, fixture sizing, layered design ideas; never reveals internal data). Mode persists via sessionStorage. Different intro text, chip suggestions (5 customer-friendly questions), and label ("ACCENT CONSULTANT" vs "ACCENT ENGINE"). Different system prompt: customer mode warns it never reveals being an AI on Claude and routes specifics to "schedule a showroom visit or request a quote." Phase 2 (deferred): extract chat to a public iframe embeddable on accentlightinginc.com once M18 site approval lands and Track 6.10 deploys the embed.
 - [x] **6.8** — Intelligent Alerts (Agentic Level 3 → 4 cross-system)
