@@ -46,7 +46,7 @@ Note: strong candidate for ChatGPT or Claude.ai — different model = genuine in
 ### `research`
 Strong signals: "research", "look up", "what's the latest on", "how does X work" (general concept, not AccentOS-specific), "competitive", "market"
 Weak signals: "I've heard", "apparently", "is it true that", "what do people say about"
-Note: Perplexity is often best here — live citations beat training data
+Note: Gemini (Google Search integration) is strongest for research with live citations
 
 ### `quick-lookup`
 Strong signals: short message (≤15 words), single concept/question, factual query, "what is X", "when did", "who is", "define"
@@ -82,7 +82,7 @@ Note: Gemini Pro (1M token window) wins here unless AccentOS context bonus appli
 ### `real-time-data`
 Strong signals: "today's", "current price", "latest news", "right now", "as of today", "live", "this week's", stock tickers, "has X happened"
 Weak signals: "recent", "latest", "new"
-Note: Perplexity = best for web real-time; Gemini = best for Google-ecosystem real-time
+Note: Gemini is strongest for real-time data via Google Search integration
 
 ### `image-gen`
 Strong signals: "generate an image", "create a graphic", "make a logo", "draw", "visualize", "render"

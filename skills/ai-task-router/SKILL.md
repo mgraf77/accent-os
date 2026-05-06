@@ -5,7 +5,7 @@ description: >
   against a multidimensional scoring matrix (ability, speed, accuracy, token efficiency,
   action capability, context depth, data freshness, creativity) across all available tools:
   Claude Code, ChatGPT, Gemini, Claude.ai, OpenAI Codex, Canva AI, Dispatch, Routines,
-  Perplexity, and more. Passively surfaces a one-line nudge when another tool would score
+  and more. Passively surfaces a one-line nudge when another tool would score
   ≥25% higher on a given task — silent otherwise. Active query mode (/route [task]) produces
   a full ranked comparison table with per-dimension breakdown and a one-line rationale.
   Token-budget aware: never recommends a pricier tool unless the score gap clears the cost
@@ -80,7 +80,6 @@ Then probe tool availability (run once, cache for session):
 | Canva AI | assume available if MCP server `31dc75b2` is active |
 | Dispatch | assume available if referenced in MASTER.md or BUILD_PLAN_CLAUDE.md |
 | Routines | same as Dispatch |
-| Perplexity | assume available (browser/API) |
 
 Mark unavailable tools in working memory. They still appear in `/route` tables but are grayed as "(not configured)".
 

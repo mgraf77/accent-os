@@ -130,6 +130,6 @@ Keep blending to 2 types max. If 3+ types present, pick the dominant one only.
 
 **Context (CX):** Gemini Pro = 9–10 (1M token window). Claude Code = 8 (200K + project files). Browser tools = 6–8 (200K but no persistent file memory).
 
-**Freshness (FR):** Perplexity = 10 (live citations). Gemini = 9 (Google Search). ChatGPT = 8 (Bing search tool). Claude Code = 2–4 (training cutoff, WebSearch tool available but not primary).
+**Freshness (FR):** Gemini = 9 (Google Search integration). ChatGPT = 8 (Bing search tool). Claude Code = 2–4 (training cutoff, WebSearch tool available but not primary).
 
 **Creativity (CR):** ChatGPT 4o and Claude.ai score highest here — strongest for divergent ideation. Codex scores lowest (optimized for precision, not novelty).

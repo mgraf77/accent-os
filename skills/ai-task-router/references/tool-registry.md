@@ -247,34 +247,6 @@
 
 ---
 
-### Perplexity
-- **Access:** perplexity.ai in browser, or API key
-- **Cost class:** free tier / subscription
-- **Context window:** medium (~32K)
-- **Action capability:** NONE — search + synthesis only
-- **Freshness:** live web — strongest real-time data of all tools listed
-- **Best for:** research, real-time-data, quick-lookup with citations, competitive intel
-
-| Task type | AB | SP | AC | TC | AX | CX | FR | CR |
-|---|---|---|---|---|---|---|---|---|
-| code-build | 2 | 8 | 4 | 8 | 1 | 3 | 8 | 3 |
-| code-review | 2 | 8 | 4 | 8 | 1 | 3 | 8 | 3 |
-| debug | 2 | 8 | 4 | 8 | 1 | 3 | 8 | 3 |
-| brainstorm | 6 | 9 | 6 | 9 | 1 | 3 | 9 | 6 |
-| cross-check | 7 | 9 | 7 | 9 | 1 | 3 | 9 | 5 |
-| research | 10 | 9 | 8 | 9 | 1 | 4 | 10 | 5 |
-| quick-lookup | 9 | 9 | 8 | 9 | 1 | 3 | 10 | 4 |
-| design-visual | 2 | 7 | 3 | 8 | 1 | 2 | 7 | 3 |
-| doc-write | 6 | 8 | 7 | 9 | 1 | 3 | 8 | 6 |
-| data-analysis | 4 | 8 | 5 | 8 | 1 | 3 | 8 | 3 |
-| automation | 2 | 7 | 3 | 8 | 1 | 2 | 7 | 2 |
-| long-context | 3 | 7 | 5 | 7 | 1 | 3 | 8 | 3 |
-| real-time-data | 10 | 9 | 9 | 9 | 1 | 3 | 10 | 4 |
-| image-gen | 2 | 7 | 3 | 8 | 1 | 1 | 7 | 3 |
-| planning | 5 | 8 | 6 | 9 | 1 | 3 | 8 | 5 |
-
----
-
 ## How to update this registry
 
 When a tool gains new capabilities (e.g. Gemini gets file system access, Claude Code gets image generation), update the relevant score cells and add a changelog note below.

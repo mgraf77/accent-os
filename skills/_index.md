@@ -15,7 +15,7 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 ## Skills
 
 ### ai-task-router
-- summary: Always-on AI command center for AccentOS — scores every incoming task across all available tools (Claude Code, ChatGPT, Gemini, Claude.ai, Codex, Canva AI, Dispatch, Routines, Perplexity) on 8 dimensions and nudges when another tool would do significantly better.
+- summary: Always-on AI command center for AccentOS — scores every incoming task across all available tools (Claude Code, ChatGPT, Gemini, Claude.ai, Codex, Canva AI, Dispatch, Routines) on 8 dimensions and nudges when another tool would do significantly better.
 - triggers: "where should I do X", "best tool for", "which AI", "route this", "should I use ChatGPT", "/route [task]", "wrong tool?", "is Claude Code right for this"
 - when_to_use: every incoming task (passive gate via CLAUDE.md step 1j); explicit query when Michael wants a full comparison table
 - when_NOT: vibe-speak meta-commands, /route queries themselves, session wrap steps, mid-task tool-loop continuations
