@@ -33,6 +33,10 @@ Run when Michael says:
 - "do my vendors agree"
 - "scoring sanity check"
 - "are scores explainable"
+- "why does [vendor] rank so high/low"
+- "spot check the scoring"
+- "vendor score spot check"
+- "check vendor rank logic"
 
 Also fire as a sanity gate after any priority-articulation or vendor-cascade run that adjusted weights.
 
@@ -52,7 +56,7 @@ Override: if Michael specified vendor IDs in the prompt, use those instead. If M
 
 ---
 
-## Step 2 — Pull each vendor's three angles
+## Step 2 — Pull each vendor's three angles (run all three queries in parallel)
 
 For each of the 5 vendors, build three views:
 
@@ -112,7 +116,9 @@ Verdicts:
 
 ```
 ═══ BLOCK 1: 5-VENDOR CLARITY TABLE ═══
-[full Step 3 table]
+[full Step 3 table — all 5 rows, no truncation]
+| Vendor | Math #1 (metric, weight) | Notes #1 (reason, set_at) | Priority #1 | Verdict |
+|--------|--------------------------|---------------------------|-------------|---------|
 
 ═══ BLOCK 2: SUMMARY ═══
 PASS: [count of ✓ rows] / 5
@@ -128,6 +134,11 @@ Overall verdict:
 For each ⚠ or ✗ row:
   - Suggested next skill to run (priority-articulation if math/priority drift,
     vendor-cascade for full trace, or write-an-override for missing notes)
+
+═══ BLOCK 4: SCHEMA-GAP NOTES ═══
+(Only if view B fields are absent from M*.sql — otherwise omit block)
+  - Missing column: [table.column] — View B result was (schema-gap) for [N] vendors
+  - Recommended: add to next M*.sql migration
 ```
 
 ---
@@ -139,3 +150,5 @@ For each ⚠ or ✗ row:
 - **Never** auto-fix scoring weights from this skill. The job is detection, not remediation.
 - **Never** sample the same 5 vendors twice in a row when running periodically — random-seed each invocation so coverage rotates.
 - **Never** conflate priority drift with override-staleness. They're different problems with different fixes.
+- **Never** omit Block 4 schema-gap notes when `vendor_overrides` columns are missing from `M*.sql` — silent schema gaps corrupt View B results invisibly.
+- **Never** report a verdict of ✓ agree when View C (priority mapping) returned `(empty)` — an unmapped priority cannot confirm alignment, only View A + B agree at best (`⚠ partial`).
