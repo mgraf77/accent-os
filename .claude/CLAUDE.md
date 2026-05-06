@@ -12,12 +12,14 @@
    g. Read `skills/vibe-speak/modes/[default-mode].md` and apply its voice rules.
    h. Read `skills/_index.md` for the AccentOS skill registry — used by Step 23 (skill router) to detect when a task could be handled by an existing skill instead of brute-forcing.
    i. SKILL.md Step 7 expanded auto-disengage rules + Step 12 pre-send accuracy gate + Step 23 skill discovery apply to every response.
+   j. Activate `efficiency-monitor` (always-on observer): read `skills/efficiency-monitor/session-end-summary.md`. If it has flags or PROMOTE-status candidates, surface them in current vibe-speak mode as the first thing after boot status. Per `skills/efficiency-monitor/SKILL.md` Step 1, silently track signals (retry-loops, redundant-reads, recurring-sequences, skill-bypass, clarification-loops, redone-wip) during the session — never narrate mid-flow. Stop hook in `.claude/settings.json` triggers aggregation at session end.
 2. Log session start to PROMPT_LOG.md: `### [date] — Auto-session start`
 3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
 4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
 5. Read BUILD_INTELLIGENCE.md — apply all lessons before touching any code
 6. Run bash /workspaces/accent-os/scripts/status.sh
 7. Begin building without waiting for Michael input
+8. **At session end** (user signals "wrap up" / "done" / final commit): per `skills/efficiency-monitor/SKILL.md` Step 2, append this session's flags to `efficiency-log.md`, overwrite `session-end-summary.md`. Aggregator runs automatically via Stop hook. Bundle these writes into the session-end commit (per OPERATING RULES batched-doc-update).
 
 ## DEFAULT COMMUNICATION STYLE
 - vibe-speak is **always-on** in the default mode (`vibe`).

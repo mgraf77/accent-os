@@ -91,6 +91,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: small WIP changes
 - companion: build-plan-status, decision-log
 
+### efficiency-monitor
+- summary: Always-on observer that flags inefficiencies (retries, redundant reads, recurring multi-step patterns, skill bypass, clarification loops, redone WIP) and recommends patterns for promotion to real skills. Surfaces only at session boundaries.
+- triggers: auto-active per `.claude/CLAUDE.md` step 1.j and step 8; manual: "efficiency check", "what could be a skill", "audit this session", "/efficiency end"
+- when_to_use: every session (default-on, silent during work, surfaces at start + end)
+- when_NOT: when you want raw work with zero meta-observation (use raw mode)
+- companion: skill-forge (promotes candidates), vibe-speak (surfaces flags in current mode), build-plan-status
+
 ### gmc-feed-audit
 - summary: Scan Google Merchant Center feed for missing images, disapproved status, schema gaps.
 - triggers: "GMC audit", "merchant center check", "feed audit", "GMC compliance"
