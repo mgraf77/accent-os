@@ -211,6 +211,18 @@ HISTORY CHECK: [N prior passes found]
 
 List each field's raw content — no summaries. This is the scoring source of truth.
 
+```
+SKILL PROFILE — [skill-name]  (Pass [N], from Step 1b read)
+  Trigger phrases:       [N] total — [list first 5, "...N more"]
+  Workflow steps:        Steps [0–N] — [step title → output block name]
+  Output blocks:         [N] named — [list block names]
+  Anti-patterns:         [N] entries
+  AccentOS substitutions: [list paths, IDs, tool names found]
+  Description length:    [N] chars
+  Companion skills:      [list]
+  Scope signals:         [AccentOS/project refs | generic only]
+```
+
 _(On Pass N+1: re-read the SKILL.md as written by Step 7 — not the pre-execution version from Pass N. The skill changed; the profile must reflect the updated file.)_
 
 _`references/*.md`: re-read only if Step 9 (prior pass) evolved rubric structure or anchor definitions. If no structural rubric changes, the Step 9 Rubric Evolution output from the prior pass is sufficient — skip the re-read._
@@ -414,8 +426,8 @@ H[N]. [Change description]
 **Occam's Razor tie-break:** Equal estimated gain → prefer lower complexity.
 
 **Each loop:**
-1. Sort dimensions by gap contribution (highest first). Target top-2 dims this loop.
-2. Generate hypotheses for those dims using priority order above.
+1. Sort dimensions by **gap contribution pts** (highest first — not raw gap score; pts = (10 − score) × weight / 10). Target top-2 dims this loop.
+2. Generate hypotheses for those dims using priority order above. When top-2 dims have independent root causes, generate their hypotheses in parallel.
 3. Stack non-overlapping hypotheses with highest combined gap-contribution delta.
 4. Simulate score: apply deltas to baseline, sum.
 5. Check per-dimension floor targets.
