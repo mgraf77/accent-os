@@ -23,6 +23,8 @@ VALID_TYPES = {"concept", "decision", "entity", "module", "source", "synthesis"}
 VALID_CONFIDENCE = {"high", "medium", "low"}
 PAGE_WORD_LIMIT = 800
 PAGE_WORD_WARNING = 700
+# Operational pages that are always valid wikilink targets but not indexed as regular pages
+OPERATIONAL_SLUGS = {"overview", "log", "hot"}
 
 
 def find_wiki_pages(source_dir):
@@ -172,7 +174,8 @@ def run_lint(source_dir, strict=False):
         # Check wikilinks in body
         wikilinks = extract_wikilinks(body)
         for link in wikilinks:
-            if link not in all_page_slugs and link not in index_slugs:
+            valid = all_page_slugs | index_slugs | OPERATIONAL_SLUGS
+            if link not in valid:
                 errors["broken_wikilinks"].append(f"{filepath}: [[{link}]] not found in wiki")
             else:
                 inbound_links[link] = inbound_links.get(link, 0) + 1
@@ -181,7 +184,7 @@ def run_lint(source_dir, strict=False):
         related = meta.get("related", [])
         if isinstance(related, list):
             for link in related:
-                if link and link not in all_page_slugs and link not in index_slugs:
+                if link and link not in all_page_slugs and link not in index_slugs and link not in OPERATIONAL_SLUGS:
                     errors["broken_wikilinks"].append(f"{filepath}: related [[{link}]] not found in wiki")
                 elif link:
                     inbound_links[link] = inbound_links.get(link, 0) + 1
@@ -200,8 +203,8 @@ def run_lint(source_dir, strict=False):
                 except ValueError:
                     pass
 
-    # Pass 3: orphan pages (no inbound links, skip sources and overview-type pages)
-    skip_orphan_types = {"source", "synthesis"}
+    # Pass 3: orphan pages (skip auto-gen reference pages; check concept/decision/synthesis only)
+    skip_orphan_types = {"source", "synthesis", "module", "entity"}
     for slug, data in page_meta.items():
         page_type = data["meta"].get("type", "")
         if page_type not in skip_orphan_types and inbound_links.get(slug, 0) == 0:

@@ -58,8 +58,8 @@ def update_index(index_path, type_, slug, title, confidence="medium"):
     with open(index_path, encoding="utf-8") as fh:
         content = fh.read()
 
-    if slug in content:
-        return  # Already indexed
+    if re.search(r'^\|\s*' + re.escape(slug) + r'\s*\|', content, re.MULTILINE):
+        return  # Already indexed (exact table-row match)
 
     # Find the correct section
     section_header = f"## {type_} pages"
@@ -169,41 +169,94 @@ def seed_modules(js_dir, wiki_dir):
 
 # ── VENDOR GENERATION ──────────────────────────────────────
 
+def _find_array_end(content, start):
+    """Return index of closing ] for the array starting at content[start]."""
+    depth = 0
+    i = start
+    while i < len(content):
+        if content[i] == '[':
+            depth += 1
+        elif content[i] == ']':
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return len(content) - 1
+
+
+def _find_top_level_objects(array_str):
+    """Yield (start, end) slices of top-level {} objects in an array string."""
+    depth = 0
+    obj_start = None
+    for i, ch in enumerate(array_str):
+        if ch == '{':
+            if depth == 0:
+                obj_start = i
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0 and obj_start is not None:
+                yield array_str[obj_start:i + 1]
+                obj_start = None
+
+
+def _parse_vendor_obj(obj_str):
+    """Parse a VD_RAW vendor object string into a dict with normalized keys."""
+    vendor = {}
+    # name field: "n":"..."
+    m = re.search(r'"n"\s*:\s*"([^"]*)"', obj_str)
+    if m:
+        vendor["name"] = m.group(1)
+    # total sales: inside "sl":{..."t":N...}
+    sl_match = re.search(r'"sl"\s*:\s*(\{[^}]*\})', obj_str)
+    if sl_match:
+        t_match = re.search(r'"t"\s*:\s*([\d.]+)', sl_match.group(1))
+        if t_match:
+            vendor["sales"] = float(t_match.group(1))
+    # website
+    m = re.search(r'"web"\s*:\s*"([^"]*)"', obj_str)
+    if m:
+        vendor["web"] = m.group(1)
+    # description
+    m = re.search(r'"desc"\s*:\s*"([^"]*)"', obj_str)
+    if m:
+        vendor["desc"] = m.group(1)
+    # inactive flag
+    m = re.search(r'"inactive"\s*:\s*(true|false)', obj_str)
+    if m:
+        vendor["inactive"] = m.group(1) == "true"
+    # parent company → category field
+    m = re.search(r'"pc"\s*:\s*"([^"]*)"', obj_str)
+    if m:
+        vendor["category"] = m.group(1)
+    return vendor
+
+
 def extract_vd_raw(html_path):
-    """Extract VD_RAW vendor list from index.html via regex."""
+    """Extract VD_RAW vendor list from index.html using bracket counting."""
     with open(html_path, encoding="utf-8") as fh:
         content = fh.read()
 
-    # Find VD_RAW array definition
-    match = re.search(r'const\s+VD_RAW\s*=\s*(\[[\s\S]*?\]);', content)
-    if not match:
+    # Find the start of the VD_RAW array (handles both `=[` and `= [` spacing)
+    marker = 'const VD_RAW=['
+    start_pos = content.find(marker)
+    if start_pos == -1:
+        marker = 'const VD_RAW = ['
+        start_pos = content.find(marker)
+    if start_pos == -1:
         print("  Warning: VD_RAW not found in index.html")
         return []
 
-    vd_raw_str = match.group(1)
+    array_open = content.index('[', start_pos + len(marker) - 1)
+    array_close = _find_array_end(content, array_open)
+    vd_raw_str = content[array_open:array_close + 1]
 
-    # Extract vendor objects: {id:N, name:"...", sales:N, ...}
     vendors = []
-    for m in re.finditer(r'\{[^}]+\}', vd_raw_str):
-        obj_str = m.group(0)
-        vendor = {}
-        for field_match in re.finditer(r'(\w+)\s*:\s*("[^"]*"|\d+(?:\.\d+)?|true|false)', obj_str):
-            key = field_match.group(1)
-            val = field_match.group(2)
-            if val.startswith('"'):
-                val = val[1:-1]
-            elif val in ('true', 'false'):
-                val = val == 'true'
-            else:
-                try:
-                    val = float(val) if '.' in val else int(val)
-                except ValueError:
-                    pass
-            vendor[key] = val
+    for obj_str in _find_top_level_objects(vd_raw_str):
+        vendor = _parse_vendor_obj(obj_str)
         if vendor.get("name"):
             vendors.append(vendor)
 
-    # Sort by sales descending, return top 30
     vendors.sort(key=lambda v: v.get("sales", 0) or 0, reverse=True)
     return vendors[:30]
 
@@ -228,13 +281,20 @@ def generate_vendor_page(vendor, wiki_dir, index_path):
         related=["vendor-scoring"],
         confidence="medium"
     )
+    web = vendor.get("web", "")
+    desc = vendor.get("desc", "")
+
     content += f"\n# {name}\n\n"
     if inactive:
         content += "**Status**: Inactive\n\n"
     if category:
-        content += f"**Category**: {category}\n"
+        content += f"**Parent company**: {category}\n"
     if sales:
-        content += f"**Annual sales (Accent)**: ${sales:,.0f}\n"
+        content += f"**Total sales (Accent)**: ${sales:,.0f}\n"
+    if web:
+        content += f"**Website**: {web}\n"
+    if desc:
+        content += f"\n{desc}\n"
     content += "\n## Scoring\n\n"
     content += f"See [[vendor-scoring]] for rubric. Scores in AccentOS → Vendor Ranking → {name}.\n\n"
     content += "## Notes\n\n"
