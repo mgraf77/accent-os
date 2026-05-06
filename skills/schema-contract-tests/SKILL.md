@@ -32,12 +32,24 @@ Run when Michael says:
 - "data quality tests" / "dbt-style tests"
 - "test the [table] schema"
 - "lock in the [table] contract"
+- "generate tests for [table]"
+- "add dbt tests"
+- "integrity checks for [table]"
+- "write contract SQL for [table]"
+- "nightly data quality check"
+- "pre-deploy schema gate"
 
 ---
 
-## Step 1 — Identify the target table
+## Step 1 — Identify the target table (Steps 1 SQL file reads run in parallel when target is "all")
 
 Input: table name (e.g. `vendor_scores`) or file (e.g. `M02_core_schema.sql` → all tables in that file) or "all" (every table in `/home/user/accent-os/sql/M*.sql`).
+
+**Edge cases:**
+- If the named table doesn't exist in any `M*.sql` file, abort and output: "Table `[name]` not found in `/home/user/accent-os/sql/M*.sql`. Check spelling or run with an M-file name (e.g. `M02_core_schema.sql`) to see all tables in that file."
+- If `"all"` mode would generate > 20 files, warn: "Full schema has [N] tables — generating [N] contract files. Confirm to proceed or specify a single M-file to narrow scope."
+- If `/home/user/accent-os/sql/tests/` directory doesn't exist, create it before writing artifacts (note: the directory creation IS allowed — only the test SQL execution is Michael's responsibility).
+- If an enum type in `CREATE TYPE` has been altered by a later `ALTER TYPE ... ADD VALUE`, the accepted_values test must include the new enum value — parse all `ALTER TYPE` statements too.
 
 Read the relevant `M*.sql` file(s). Extract:
 - Table name and primary key
