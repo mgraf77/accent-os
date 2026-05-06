@@ -41,6 +41,21 @@
 - fix: /aos-close command — enforces hot.md refresh + log append before commit
 - note: 0 new issues surfaced — 2 consecutive clean iterations reached
 
+## 2026-05-06 session-2
+- create: wiki/modules/ — 35 module pages auto-generated from js/*.js (wiki_seed.py --modules)
+- create: wiki/entities/vendors/ — 30 vendor entity pages auto-generated from VD_RAW top-30 by sales (wiki_seed.py --vendors)
+- fix: wiki_seed.py — VD_RAW bracket-counting extraction, update_index table-row regex, generate_vendor_page with website+desc fields
+- fix: wiki_lint.py — OPERATIONAL_SLUGS constant (overview/log/hot always valid), skip_orphan_types += module+entity
+- reindex: wiki/index.md — 107 pages across 6 types
+- rebuild: rag_index.json — 154 chunks, 2550-term vocabulary, 762KB
+
+## 2026-05-06 session-close-2
+- portal.html, embed.html, sql/M41, bigcommerce-embed-snippet.js, _headers shipped (tracks 6.5/6.6/6.10)
+- MASTER.md v6.11.3, live table updated (Partner Portal + AccentOS Embed rows)
+- BUILD_INTELLIGENCE.md: 5 new entries (VD_RAW extraction, update_index, operational slugs, external auth scope, embed CORS)
+- SESSION_LOG.md: v6.11.2/6.11.3 entry appended
+- BUILD_PLAN: all items either [x] or blocked by Michael M-tasks
+
 ## 2026-05-06 session-close
 - hot.md updated to v6.11.1-shipped state
 - BUILD_PLAN_CLAUDE item 6.13 checked off

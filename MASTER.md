@@ -82,7 +82,7 @@ Founded: 1979 | Brick-and-mortar lighting showroom + ecommerce
 ## 3. ACCENTOS — CURRENT STATE
 
 ### Version
-**v6.11.1** (as of 2026-05-06)  
+**v6.11.3** (as of 2026-05-06)  
 File size: ~651KB JS / ~680KB total HTML | Split trigger: 900KB hard limit (76% used)
 
 ### What's Live
@@ -114,7 +114,9 @@ File size: ~651KB JS / ~680KB total HTML | Split trigger: 900KB hard limit (76% 
 | Role-Based Dashboards | ✅ Live | Per-role landing — Warehouse / Sales / Owner+Admin+Manager variants (Track 3.2) |
 | CRM / Sales Pipeline | 🔲 Planned | Track 1 |
 | Daily Command Center | 🔲 Planned | Track 1 |
-| **AccentOS Wiki** | ✅ Live | **v6.11.1** — Karpathy LLM Wiki · 42 pages (concepts, decisions, entities, sources, syntheses) · js/wiki.js two-pane module · sendChat wiki-grounding · 9 /aos-* slash commands · 5 Python tooling scripts · 88.2% eval composite (Track 6.13) |
+| **AccentOS Wiki** | ✅ Live | **v6.11.1** — Karpathy LLM Wiki · 107 pages (concepts, decisions, entities/vendors/employees, sources, modules, syntheses) · js/wiki.js two-pane module · sendChat wiki-grounding · 9 /aos-* slash commands · 5 Python tooling scripts · 88.2% eval composite (Track 6.13) |
+| **Partner Portal** | ✅ Live | **v6.11.2** — portal.html standalone external portal (magic-link auth) · Trade Partner + Vendor Rep views · staff provisioning via Portal Preview → "Provision Access" · sql/M41_external_portals.sql schema · BLOCKS ON MICHAEL: M41 SQL + Supabase email auth (Tracks 6.5/6.6) |
+| **AccentOS Embed** | ✅ Live | **v6.11.3** — embed.html employee widget for accentlightinginc.com · inventory search / quick quote / AI chat tabs · bigcommerce-embed-snippet.js for BC Script Manager · _headers for Cloudflare Pages CORS (Track 6.10) |
 
 ### Vendor Data State
 - 478 total vendors in `VD_RAW`

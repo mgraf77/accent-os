@@ -13,6 +13,22 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-06 — Portal + Embed shipped (v6.11.2 → v6.11.3) — SHIPPED
+**Version:** v6.11.2 (external portals) + v6.11.3 (embed)
+**Built/Changed:**
+- wiki: +35 module pages (auto-gen from js/*.js via wiki_seed.py --modules) + top-30 vendor entity pages (wiki_seed.py --vendors, fixed VD_RAW bracket-counting extraction) · wiki_seed.py: fixed update_index table-row regex · wiki_lint.py: added OPERATIONAL_SLUGS constant + module/entity orphan suppression · 107 total wiki pages (0 errors, 0 warnings)
+- portal.html: standalone external Partner Portal (magic-link auth, no external deps) · Trade Partner view (projects, quotes, deliveries) · Vendor Rep view (co-op funds, warranty) · graceful no-op if M41 not run
+- sql/M41_external_portals.sql: external_user_profiles table + RLS + trigger (links auth user on first login by email match) + downstream RLS on jobs/quotes/deliveries/inventory
+- portal_preview.js: "Provision Access" button → writes external_user_profiles row for selected partner/rep
+- embed.html: compact employee widget (magic-link auth, localStorage JWT) · 4 tabs: Inventory search / Quick Quote / AI Chat / Settings
+- bigcommerce-embed-snippet.js: paste into BC Script Manager → floating "A" button + iframe overlay on accentlightinginc.com
+- _headers: Cloudflare Pages CORS rules (embed allows framing from accentlightinginc.com, index denies all framing)
+**Decisions:** External auth via provisioned email + OTP (avoids service-key exposure). Widget always visible (non-employees see login, employees access tools). Cloudflare Pages `_headers` file for per-path CORS rather than Worker middleware.
+**Open loops (needs Michael):** M41 SQL run + Supabase email auth enabled for external users; embed URL in bigcommerce-embed-snippet.js updated after Cloudflare Pages deploy URL confirmed.
+**Next:** All BUILD_PLAN items either shipped or blocked by Michael M-tasks. Awaiting M04, M05, M06, M09, M41 to unblock 5.13, 6.1, 6.2, 6.3, 6.4, 6.5/6.6 live.
+
+---
+
 ### 2026-05-06 — AccentOS Wiki shipped (v6.11.1) — SHIPPED
 **Version:** v6.11.1 (Karpathy LLM Wiki primary path)
 **Built/Changed:**
