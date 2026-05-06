@@ -35,6 +35,12 @@ Run when Michael says:
 - "is this vendor complete" / "vendor complete?"
 - "audit [vendor name or ID] record"
 - "verify [vendor] data"
+- "check the [vendor] record"
+- "what's missing from [vendor]"
+- "M19 completeness check"
+- "just assigned a rep group, now what"
+- "newly onboarded vendors"
+- "vendor data gap"
 
 ---
 
@@ -75,7 +81,7 @@ If the actual schema in `/home/user/accent-os/sql/M02_core_schema.sql` doesn't m
 
 ---
 
-## Step 3 — Run the per-vendor check
+## Step 3 — Run the per-vendor check (Steps 3 and 4 run in parallel per vendor)
 
 For each vendor in scope, build a row:
 
@@ -130,6 +136,11 @@ Flag outliers — e.g. "Acme Lighting has Net60 but every other Pendant-category
 
 ## Step 5 — Output
 
+**Edge cases:**
+- If vendor scope resolves to zero vendors (e.g. `--all-incomplete` on a fully complete table), output: "No vendors matched the scope — all records appear complete. Re-run with a specific vendor ID to confirm."
+- If schema in `M02_core_schema.sql` is missing a contract field (e.g. `w9_on_file` column absent), note it in BLOCK 4 as `CONTRACT_SCHEMA_MISMATCH` and continue checking remaining fields.
+- If a vendor has `rep_group_id` set but the FK target doesn't exist in `rep_groups`, flag as `BROKEN_FK` (✗), not just DESIRED.
+
 ```
 ═══ BLOCK 1: SUMMARY ═══
 Vendors checked: [N]
@@ -169,3 +180,5 @@ UPDATE vendors SET moq_dollars = [VALUE]
 - **Never** flag a "DESIRED" field as a failure. Required vs. desired is the contract.
 - **Never** mark a vendor "complete" just because all required columns are non-null — also run the cross-vendor consistency check.
 - **Never** modify the contract definition (Step 2 table) from inside this skill. Updates to the contract live in this SKILL.md, not at runtime.
+- **Never** silently skip the cross-vendor consistency check because `brand_category` has <3 siblings — always output the explicit "check skipped — only N siblings" message so Michael knows a norm comparison wasn't made.
+- **Never** produce UPDATE stubs for DESIRED fields without labeling them `-- OPTIONAL:` to prevent confusion with required-field stubs.
