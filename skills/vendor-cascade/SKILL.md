@@ -34,46 +34,56 @@ Run this skill when Michael says anything like:
 - "rebuild the scoring rationale"
 - "sum-check the weights"
 - "where does this score come from"
+- "explain the vendor ranking to me"
+- "show me how the score is built"
+- "walk me through vendor X's number"
+- "vendor score breakdown"
+- "metric weights don't add up"
+- "which priority is pulling vendor Y down"
 
 Also trigger when Michael questions a specific vendor's rank or asks for score explainability for a partner/board/owner.
 
 ---
 
-## Step 1 — Load the priorities
+## Step 1 + 2 — Load priorities and scoring formula (run in parallel)
+
+**Do in parallel:**
+
+### Step 1 — Load the priorities
 
 Read Accent Lighting's active priorities from one of these in order:
-1. `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` → "Accent Lighting Ecommerce" → "Known capability gaps"
-2. `/home/user/accent-os/MASTER.md` → search for "priority" / "Q4" / "margin"
-3. Michael's stated input in the current prompt
+1. Michael's stated input in the current prompt (highest precedence)
+2. `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` → "Accent Lighting Ecommerce" → "Known capability gaps"
+3. `/home/user/accent-os/MASTER.md` → search for "priority" / "Q4" / "margin"
 
-If no priorities are explicit, ask Michael for the top 3–5 active priorities. Do not invent them.
+If no priorities are found in any source, output "No priorities located — check project-profiles.md or MASTER.md" and stop. Do not invent priorities.
 
 Output a numbered priority list:
 
 ```
-P1 — [name]   |   weight: [0.0–1.0]   |   source: [where this came from]
+P1 — [name]   |   weight: [0.0–1.0]   |   source: [project-profiles.md | MASTER.md | prompt]
 P2 — ...
 ```
 
-Priorities must sum to 1.0 across the full set. If they don't, flag the imbalance and proceed with normalized weights.
+Priorities must sum to 1.0 across the full set. If they don't, flag the imbalance and proceed with normalized weights. If only 1 priority is found, assign weight 1.0 and note it.
 
----
-
-## Step 2 — Load the scoring formula
+### Step 2 — Load the scoring formula
 
 Pull the current vendor scoring metrics from AccentOS:
-- Primary location: `/home/user/accent-os/index.html` (search for "score", "weight", "vendor")
-- Module candidates: `/home/user/accent-os/js/decision_engine.js`, `deal_optimizer.js`, `competitive_pricing.js`, `inventory_analytics.js`
-- If a `vendor_scores` table schema exists in `/home/user/accent-os/sql/`, prefer that as ground truth
+- Primary source: `/home/user/accent-os/sql/` — check for `vendor_scores` table schema in M02 or later M-files (M21–M29)
+- Secondary: `/home/user/accent-os/js/decision_engine.js`, `deal_optimizer.js`, `competitive_pricing.js`, `inventory_analytics.js`
+- Tertiary: `/home/user/accent-os/index.html` (search for "score", "weight", "vendor")
+
+Edge cases:
+- If formula exists in multiple sources and they conflict, prefer the SQL schema as ground truth and note the conflict.
+- If no formula is found in any location, output "Scoring formula not located — provide path or paste current weights" and stop. Do not invent weights.
 
 Output a flat metric list:
 
 ```
-M1 — [metric name]   |   current weight: [0.0–1.0]   |   data field: [BC field / Supabase column]
+M1 — [metric name]   |   current weight: [0.0–1.0]   |   data field: [BC store-cwqiwcjxes field / Supabase hsyjcrrazrzqngwkqsqa column]   |   source file: [path]
 M2 — ...
 ```
-
-If no formula is found, output "Scoring formula not located — provide path or paste current weights" and stop.
 
 ---
 
@@ -186,8 +196,10 @@ This variant uses Steps 1–3 then branches; Steps 4–5 are skipped, Step 6 pro
 ## Anti-patterns
 
 - **Never** invent priorities. They come from project-profiles.md, MASTER.md, or Michael's prompt — never from the LLM's general knowledge of "what an ecommerce business should care about."
-- **Never** propose new metrics in this skill. This is a trace-only skill. Metric design lives elsewhere.
-- **Never** modify `/home/user/accent-os/index.html`, `js/*.js`, or any scoring code. Output proposals only.
-- **Never** skip the sum-check. Drift in weights is the single most common source of vendor-rank surprises.
-- **Never** skip the SQL stub. The point of this skill is paste-readiness for `vendor_scores` — prose-only output is a failed run.
+- **Never** propose new metrics in this skill. This is a trace-only skill. Metric design lives elsewhere (priority-articulation).
+- **Never** modify `/home/user/accent-os/index.html`, `js/*.js`, `/home/user/accent-os/sql/*.sql`, or any scoring code. Output proposals only.
+- **Never** skip the sum-check. Drift in weights is the single most common source of vendor-rank surprises in AccentOS.
+- **Never** skip the SQL stub. The point of this skill is paste-readiness for `vendor_scores` in Supabase hsyjcrrazrzqngwkqsqa — prose-only output is a failed run.
 - **Never** ask Michael to disambiguate a metric — pick the highest-weight match and state which one in the output.
+- **Never** run Steps 1 and 2 sequentially when both sources are available — they are independent reads; parallel execution halves latency.
+- **Never** normalize weights silently. Always announce the normalization and show the before/after weights in the output.
