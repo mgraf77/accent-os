@@ -2,21 +2,24 @@
 name: skill-optimizer
 description: >
   Systematically upgrades any existing AccentOS skill or code file using a
-  five-phase loop: score the current version against a weighted rubric
+  nine-phase loop: score the current version against a dynamic weighted rubric
   (output quality, methodology fitness, trigger coverage, accuracy,
-  speed/efficiency, AccentOS fit, anti-pattern compliance), set a target
-  threshold (default +15 pts or user-specified as "+10%", "minimum 85",
-  "add ability to X"), run Ralph-loop brainstorm sessions (cap: 5) until a
-  plan can hit the threshold, gate on Michael's approval, execute the
-  approved changes, and verify with a real scored matrix test. If the
-  threshold is not met after 3 refinement passes, the highest-scored
-  version is committed and flagged. Ends with a full optimization
-  breakdown and updated how-to-use instructions for the improved skill.
+  speed/efficiency, AccentOS fit, anti-pattern compliance), calibrate weights
+  to match desired outcomes (accuracy-heavy, output-heavy, trigger-focused,
+  custom), set a target threshold (default +15 pts or user-specified as "+10%",
+  "minimum 85", "add ability to X"), run Ralph-loop brainstorm sessions
+  (cap: 5) targeting highest gap-contribution dimensions first until a plan
+  can hit the threshold, gate on Michael's approval, execute the approved
+  changes, and verify with a real scored matrix test. If the threshold is not
+  met after 3 refinement passes, the highest-scored version is committed and
+  flagged. Ends with a full optimization breakdown and updated how-to-use
+  instructions for the improved skill.
   Use this skill when Michael says: "optimize [skill]", "tune [skill]",
   "make [skill] better", "level up [skill]", "score this skill",
-  "skill optimizer", "upgrade [skill]", "squeeze more out of [skill]",
-  "what's wrong with [skill]", "tighten up [skill]", or any phrasing
-  that asks to systematically improve an existing AccentOS skill.
+  "skill optimizer", "run skill optimizer on [skill]", "upgrade [skill]",
+  "squeeze more out of [skill]", "what's wrong with [skill]",
+  "tighten up [skill]", "batch optimize", "optimize all skills",
+  or any phrasing that asks to systematically improve an existing AccentOS skill.
   Do not use to build a new skill from scratch (use skill-forge) or to
   run automated test suites (use skill-eval-suite). Always edits files
   and produces a scored report — never stops at advice-only output.
@@ -24,9 +27,9 @@ description: >
 
 # skill-optimizer
 
-**Purpose:** Score any AccentOS skill against a weighted rubric, brainstorm targeted improvements in Ralph loops until a plan can clear the threshold, gate on Michael's approval, execute, and verify with a scored matrix test before shipping the final breakdown.
+**Purpose:** Score any AccentOS skill against a dynamic weighted rubric, calibrate weights to match desired outcomes, brainstorm targeted improvements in Ralph loops (gap-contribution-aware) until a plan can clear the threshold, gate on Michael's approval, execute, and verify with a scored matrix test before shipping the final breakdown.
 
-Eight phases in order: **preflight → profile → score → threshold → brainstorm-loop → plan-gate → execute → score-test → report**. The plan gate and score test are non-negotiable checkpoints — nothing executes without approval and nothing ships without a verified score.
+Nine phases in order: **preflight → profile → score → weight-calibration → threshold → brainstorm-loop → plan-gate → execute → score-test → report**. The weight calibration, plan gate, and score test are non-negotiable checkpoints — nothing executes without approval and nothing ships without a verified score.
 
 ---
 
@@ -42,6 +45,7 @@ Run when Michael says:
 - "what's wrong with [skill]" / "analyze [skill]"
 - "squeeze more out of [skill]" / "tighten up [skill]"
 - "how can [skill] be better"
+- "batch optimize" / "optimize all skills"
 
 **Do NOT trigger for:**
 - Building a new skill from scratch → use skill-forge
@@ -91,17 +95,21 @@ List each field's raw content — no summaries. This is the scoring source of tr
 
 Score the current skill against the weighted rubric. See `references/rubric-weights.md` for scoring guidance per dimension.
 
-| Dimension | Weight | Raw (0–10) | Weighted | Evidence |
-|---|---|---|---|---|
-| **Output Quality** | 25% | | | Each step names a concrete output; output blocks defined |
-| **Methodology Fitness** | 20% | | | Steps ordered, non-overlapping, imperative-voiced |
-| **Trigger Coverage** | 15% | | | ≥4 triggers; match Michael's actual phrasing vs. hypothetical |
-| **Accuracy** | 15% | | | Constraints, edge cases, and validation explicitly handled |
-| **Speed / Efficiency** | 10% | | | No unnecessary loops, redundant context reads, or token waste |
-| **AccentOS Fit** | 10% | | | ≥3 AccentOS-stack substitutions; correct paths and stack names |
-| **Anti-pattern Compliance** | 5% | | | ≥3 anti-patterns; specific and enforceable |
+| Dimension | Weight | Raw (0–10) | Weighted | Gap Contribution | Evidence |
+|---|---|---|---|---|---|
+| **Output Quality** | 25% | | | (10−raw)×0.25 | Each step names a concrete output; output blocks defined |
+| **Methodology Fitness** | 20% | | | (10−raw)×0.20 | Steps ordered, non-overlapping, imperative-voiced |
+| **Trigger Coverage** | 15% | | | (10−raw)×0.15 | ≥4 triggers; match Michael's actual phrasing vs. hypothetical |
+| **Accuracy** | 15% | | | (10−raw)×0.15 | Constraints, edge cases, and validation explicitly handled |
+| **Speed / Efficiency** | 10% | | | (10−raw)×0.10 | No unnecessary loops, redundant context reads, or token waste |
+| **AccentOS Fit** | 10% | | | (10−raw)×0.10 | ≥3 AccentOS-stack substitutions; correct paths and stack names |
+| **Anti-pattern Compliance** | 5% | | | (10−raw)×0.05 | ≥3 anti-patterns; specific and enforceable |
 
 **Baseline Score** = Σ (Weight × Raw / 10) × 100. Range: 0–100.
+
+**Gap Contribution** = (10 − raw) × weight for each dimension. Higher gap contribution = higher improvement potential per unit of effort. This drives Step 2.5 calibration and Step 4 brainstorm targeting.
+
+**BOTH scope note:** If scope is BOTH, score the project version as primary. Note any divergence between global and project versions — divergence in anti-patterns, triggers, or AccentOS Fit counts as an Accuracy penalty.
 
 Output below the table:
 ```
@@ -110,7 +118,61 @@ Scoring notes:
   - [Strongest dimension and why]
   - [Weakest dimension and why]
   - [2–3 additional observations — what's crisp, what's vague, what's missing]
+
+Gap contribution ranking (highest → lowest):
+  1. [Dimension]: [gap contribution value] — [one sentence on why this has room]
+  2. [Dimension]: [gap contribution value]
+  3. [Dimension]: [gap contribution value]
+  ...
 ```
+
+---
+
+## Step 2.5 — Weight Calibration (Dynamic Scoring Matrix)
+
+Adjust rubric weights to match the desired outcome profile before setting the threshold. This runs once per optimization session.
+
+**Default profile (balanced):** Use the weights in Step 2 as-is. Skip this step if Michael gives no weight override.
+
+**Built-in profiles:**
+
+| Profile | When to use | Weight adjustments |
+|---|---|---|
+| **balanced** | Default | No change — use Step 2 weights as-is |
+| **accuracy-heavy** | Critical logic / data correctness skills | Accuracy → 30%, Output Quality → 20%, Speed → 5% |
+| **output-heavy** | Report / artifact generation skills | Output Quality → 35%, Methodology → 20%, AccentOS Fit → 5% |
+| **trigger-focused** | Trigger recognition / routing skills | Trigger Coverage → 30%, Accuracy → 20%, Anti-pattern → 5% |
+| **efficiency-heavy** | High-frequency / token-sensitive skills | Speed/Efficiency → 25%, Methodology → 25%, Anti-pattern → 5% |
+
+**Custom weight overrides (any of these):**
+- `"accuracy is critical"` → apply accuracy-heavy profile
+- `"output matters most"` → apply output-heavy profile
+- `"focus on triggers"` → apply trigger-focused profile
+- `"make it lean"` → apply efficiency-heavy profile
+- `"[dimension] = [N]%"` → set that dimension's weight to N%; auto-redistribute remaining weights proportionally to sum to 100%
+- `"per-dimension goals: [dim] ≥ [X]"` → record per-dimension floor targets; flag any dimension that stays below floor even if total score passes
+- No override stated → use balanced (default) — do not ask
+
+**After applying overrides:**
+1. Confirm all weights sum to 100%. If not, normalize proportionally.
+2. Recalculate baseline score using new weights.
+3. Recalculate all gap contribution values.
+4. Update the gap contribution ranking.
+
+Output:
+```
+WEIGHT CALIBRATION
+  Profile: [balanced | accuracy-heavy | output-heavy | trigger-focused | efficiency-heavy | custom]
+  Adjusted weights: [list any changed dimensions with old → new]
+  Recalculated baseline: [X.X / 100]  (was: [Y.Y])
+  Updated gap contribution ranking:
+    1. [Dimension]: [gap contribution]
+    2. [Dimension]: [gap contribution]
+    ...
+  Per-dimension floor targets (if set): [list or "none"]
+```
+
+If weights are unchanged (balanced default): output one line — `WEIGHT CALIBRATION: balanced (no changes)` — and continue.
 
 ---
 
@@ -143,34 +205,39 @@ Proceed to Step 4 immediately unless Michael explicitly says to stop here.
 
 ---
 
-## Step 4 — Brainstorm Loop (Ralph style)
+## Step 4 — Brainstorm Loop (Ralph style, gap-contribution-aware)
 
 **Goal:** Produce a consolidated plan whose estimated post-change score ≥ threshold.
 
 **Hard cap: 5 loops.** Run them in sequence:
 
-Each loop:
-1. Generate 3–5 concrete improvement hypotheses. Each hypothesis must name:
+**Each loop:**
+1. Sort dimensions by gap contribution (highest first). Target the top-2 gap-contribution dimensions this loop — hypotheses that don't address a top-2 gap dimension require explicit justification.
+2. Generate 3–5 concrete improvement hypotheses. Each hypothesis must name:
    - The specific change (e.g., "Rewrite Step 3 output block as a paste-ready table")
    - The dimension it improves
    - Estimated raw-score delta (+1 / +2 / +3 only — no fractional estimates)
-2. Stack the non-overlapping hypotheses with the highest combined delta into a running plan.
-3. Simulate the plan's total score: apply deltas to the baseline, re-weight, sum.
-4. **If estimated score ≥ threshold** → lock the plan. Output the final loop summary and proceed to Step 5.
-5. **If estimated score < threshold** → log the gap, drop already-stacked hypotheses from the pool, generate 3–5 fresh hypotheses targeting the remaining gap dimensions, and loop.
+   - Gap contribution delta: (delta) × (dimension weight) — this is the expected weighted-score gain
+3. Stack the non-overlapping hypotheses with the highest combined gap-contribution delta into a running plan.
+4. Simulate the plan's total score: apply deltas to the baseline, re-weight, sum.
+5. Check per-dimension floor targets (if set from Step 2.5) — flag any dimension still below floor even if total score passes.
+6. **If estimated score ≥ threshold AND all floors met** → lock the plan. Output the final loop summary and proceed to Step 5.
+7. **If estimated score < threshold OR any floor unmet** → log the gap, drop already-stacked hypotheses from the pool, generate 3–5 fresh hypotheses targeting the remaining highest-gap-contribution dimensions, and loop.
 
 After each loop:
 ```
 LOOP [N/5]: estimated [X.X] vs. threshold [Y.Y]
   Gap remaining: [Z.Z pts]
+  Top gap-contribution dimensions this loop: [Dim1] ([gap contrib]), [Dim2] ([gap contrib])
   New hypotheses this loop:
-    H1. [Change] — [Dimension] +[delta]
-    H2. [Change] — [Dimension] +[delta]
-    H3. [Change] — [Dimension] +[delta]
+    H1. [Change] — [Dimension] +[delta raw] → +[weighted gain] pts
+    H2. [Change] — [Dimension] +[delta raw] → +[weighted gain] pts
+    H3. [Change] — [Dimension] +[delta raw] → +[weighted gain] pts
   Running plan (cumulative):
     1. [Change]
     2. [Change]
     ...
+  Floor targets: [all met | [Dimension] still at [X] < floor [Y]]
 ```
 
 **If 5 loops complete and estimated score < threshold:**
@@ -192,6 +259,7 @@ Scope: GLOBAL | PROJECT | BOTH
   BOTH:    both paths above (universal changes → both; project-specific → project only)
 
 Baseline: [X.X / 100]  →  Estimated post-change: [Y.Y / 100]  →  Threshold: [Z.Z / 100]
+Weight profile: [balanced | accuracy-heavy | ...]
 
 Planned changes:
   1. [Change — what, where in the file, applies to: GLOBAL | PROJECT | BOTH]
@@ -239,7 +307,10 @@ After writing all changes, run validation per scope:
 2. No AccentOS/Accent Lighting hardcoding — uses `[project-root]/`, generic language.
 3. ≥3 anti-pattern entries. No prose walls.
 
-If any check fails → fix in place before committing.
+**BOTH scope — divergence check:**
+After writing both files, diff them at the structural level (step count, anti-pattern count, trigger count). Flag any unintentional divergence — universal changes must be in both.
+
+If any validation check fails → fix in place before committing.
 
 **Branch handling:**
 - If NOT on main → commit to current branch.
@@ -251,20 +322,21 @@ Commit message: `optimize: [skill-name] ([scope]) — [one-line summary of top c
 
 ## Step 7 — Score Matrix Test
 
-Re-run the full rubric from Step 2 against the updated SKILL.md. Produce the same table format with new scores. Output:
+Re-run the full rubric from Step 2 against the updated SKILL.md using the calibrated weights from Step 2.5. Produce the same table format with new scores. Output:
 
 ```
 SCORE TEST RESULT
-Dimension            | Before | After  | Delta
-Output Quality       | [X.X]  | [Y.Y]  | [±Z]
-Methodology Fitness  | [X.X]  | [Y.Y]  | [±Z]
-Trigger Coverage     | [X.X]  | [Y.Y]  | [±Z]
-Accuracy             | [X.X]  | [Y.Y]  | [±Z]
-Speed / Efficiency   | [X.X]  | [Y.Y]  | [±Z]
-AccentOS Fit         | [X.X]  | [Y.Y]  | [±Z]
-Anti-pattern         | [X.X]  | [Y.Y]  | [±Z]
-─────────────────────────────────────────────
-FINAL SCORE:  [X.X / 100]   Threshold: [Y.Y]
+Dimension            | Weight | Before | After  | Delta | Gap Contrib (after)
+Output Quality       | 25%    | [X.X]  | [Y.Y]  | [±Z]  | [remaining gap]
+Methodology Fitness  | 20%    | [X.X]  | [Y.Y]  | [±Z]  | [remaining gap]
+Trigger Coverage     | 15%    | [X.X]  | [Y.Y]  | [±Z]  | [remaining gap]
+Accuracy             | 15%    | [X.X]  | [Y.Y]  | [±Z]  | [remaining gap]
+Speed / Efficiency   | 10%    | [X.X]  | [Y.Y]  | [±Z]  | [remaining gap]
+AccentOS Fit         | 10%    | [X.X]  | [Y.Y]  | [±Z]  | [remaining gap]
+Anti-pattern         | 5%     | [X.X]  | [Y.Y]  | [±Z]  | [remaining gap]
+─────────────────────────────────────────────────────────────────────────────
+FINAL SCORE:  [X.X / 100]   Threshold: [Y.Y]   Weight profile: [name]
+Floor targets: [all met ✓ | [Dimension] at [X] < floor [Y] ✗]
 STATUS: PASSED ✓  |  FAILED ✗
 ```
 
@@ -273,7 +345,7 @@ STATUS: PASSED ✓  |  FAILED ✗
 **If FAILED — refinement loop (cap: 3 passes):**
 
 Each refinement pass:
-1. Identify which dimensions still fall short of their threshold contribution.
+1. Identify which dimensions still fall short of their threshold contribution AND have the highest gap contribution remaining.
 2. Generate 2–3 targeted fixes for those dimensions only.
 3. Apply fixes via Edit, re-run validation, re-score.
 4. Output score update and status after each pass.
@@ -297,10 +369,12 @@ Files:  [list all files that were edited — global and/or project]
 Branch: [branch-name]   Commit: [SHA short]
 
 SCORE SUMMARY
+  Weight profile: [name]
   Baseline:   [X.X / 100]
   Final:      [Y.Y / 100]
   Threshold:  [Z.Z / 100]
   Status:     MET ✓  |  BEST AVAILABLE ✗  (gap: [delta] pts)
+  Floor targets: [all met ✓ | [Dimension] at [X] < floor [Y] ✗]
 
 WHAT CHANGED
   1. [Change title] — [one sentence: what was done + why it moved the score]
@@ -350,3 +424,5 @@ Brainstorm loops run: [N / 5]   Refinement passes: [M / 3]
 - **Never** claim the threshold is met without running the Step 7 scored matrix test — estimated scores are estimates, not facts.
 - **Never** push to main without explicit permission — branch first.
 - **Never** run more than one dimension's custom weight adjustment at a time without re-summing all weights to 100%.
+- **Never** skip Step 2.5 weight calibration when Michael specifies a desired outcome profile — brainstorm targeting without calibrated weights misses the highest-value improvements.
+- **Never** target low gap-contribution dimensions first in brainstorm loops — always sort by gap contribution and address the top-2 dimensions each loop.
