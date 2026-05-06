@@ -98,6 +98,7 @@ Do in parallel:
 3. **Record branch.** `git -C /home/user/accent-os branch --show-current`. If on main, Step 6 will create `claude/optimize-[skill-name]-[8-char-rand]` before committing.
 4. **Check recent history.** `git -C /home/user/accent-os log --oneline -5 -- skills/[skill-name]/` — note whether skill has been recently modified.
 5. **Load optimization history.** Read `/home/user/accent-os/skills/skill-optimizer/optimization-history.md`. Extract all prior entries for this skill. If none found: `History: none (first run)`.
+6. **Load skill feedback.** Read `/home/user/accent-os/skills/skill-feedback.md`. Extract FAIL/PARTIAL entries for this skill — these are real-world failure reports from live runs. They become high-priority brainstorm seeds labeled `[FEEDBACK: real failure]`. If none found: `Feedback: none`.
 
 Output: preflight block + session state initialized.
 
@@ -274,6 +275,8 @@ THRESHOLD SET: [X.X / 100]
 
 **Load cross-skill patterns:** From history check, import candidate hypotheses from similar skills where a pattern achieved +2 delta. Label these `[PATTERN: from [skill]]` and evaluate them first.
 
+**Load real-world failures:** From `skill-feedback.md` entries for this skill, extract gap descriptions. These become highest-priority hypotheses — a skill that failed in real use has a documented gap that is definitionally worth fixing. Label these `[FEEDBACK: real failure]` and target them before any estimated-delta hypotheses.
+
 **Each loop:**
 1. Sort dimensions by gap contribution (highest first). Target top-2 gap-contribution dimensions this loop — lower-gap hypotheses need explicit justification.
 2. Generate 3–5 concrete improvement hypotheses. Each must name:
@@ -295,7 +298,7 @@ LOOP [N/5]: estimated [X.X] vs. threshold [Y.Y]
   Gap remaining: [Z.Z pts]
   Top gap-contribution dims: [Dim1] ([gap]), [Dim2] ([gap])
   New hypotheses:
-    H1. [Change] — [Dim] +[Δraw] → +[Δweighted] pts  [PATTERN: X | NEW]
+    H1. [Change] — [Dim] +[Δraw] → +[Δweighted] pts  [FEEDBACK: real failure | PATTERN: X | NEW]
     H2. [Change] — [Dim] +[Δraw] → +[Δweighted] pts  [NEW]
     H3. ...
   Running plan:
@@ -523,6 +526,10 @@ OPTIONS
   "another pass, focus on [X]"     → next pass targets [X] dimension specifically
   "new idea: [change]"             → add to next-pass plan, then run
   "done" / "stop" / "looks good"  → end session, skip to Step 13
+
+Note: if this skill has FAIL/PARTIAL entries in skill-feedback.md that were NOT addressed this session,
+flag them: "⚠ Unresolved feedback entries remain — run another pass or log as out-of-scope."
+Skill-finder (planned): routes FAIL outcomes to optimizer (fix) vs. forge (rebuild) automatically.
 ═════════════════════════
 ```
 
@@ -592,7 +599,9 @@ After appending, output: `HISTORY LOGGED — [skill-name] Pass [N] appended to o
 - Skill registry: /home/user/accent-os/skills/_index.md
 - Rubric guidance: /home/user/accent-os/skills/skill-optimizer/references/rubric-weights.md
 - Optimization history: /home/user/accent-os/skills/skill-optimizer/optimization-history.md
+- Skill feedback queue: /home/user/accent-os/skills/skill-feedback.md
 - Gotcha log: /home/user/accent-os/skills/skill-forge/gotcha-log.md
+- Skill-finder: planned companion — routes FAIL outcomes to optimizer (fix) vs. forge (rebuild)
 
 ---
 
@@ -613,3 +622,23 @@ After appending, output: `HISTORY LOGGED — [skill-name] Pass [N] appended to o
 - **Never** skip Step 13 history log — every session end must append to optimization-history.md, even if threshold was not met.
 - **Never** auto-continue more than 3 passes without re-confirming with Michael — unattended loops without a cap can produce diminishing-return changes that make the skill harder to read.
 - **Never** compare before/after scores when weights changed between passes without flagging rubric drift — the numbers are on different scales.
+- **Never** ignore FAIL/PARTIAL entries in `skill-feedback.md` for the target skill — real-world failure data outranks estimated-delta hypotheses and must be addressed first or explicitly deferred.
+- **Never** close a session with unresolved skill-feedback entries without flagging them in the pass gate output.
+
+## Outcome Signal
+
+At the end of every optimization session, emit:
+
+**If threshold MET:**
+```
+SKILL OUTCOME: PASS — skill-optimizer → [skill-name] optimized [X.X → Y.Y / 100] in [N] passes
+```
+
+**If threshold NOT MET (best available):**
+```
+SKILL OUTCOME: PARTIAL — skill-optimizer
+  Delivered: [skill-name] improved [X.X → Y.Y / 100]
+  Gap:       [delta] pts below threshold [T.T] after [N] passes + 3 refinement passes
+  Options:   "another pass" → continue optimizing | "done" → accept best available
+  → Logged to skills/skill-feedback.md
+```

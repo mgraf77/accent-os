@@ -70,6 +70,36 @@ Run this skill when Michael says anything like:
 - Never [common failure mode 1]
 - Never [common failure mode 2]
 - Never [generic-output failure mode]
+
+## Outcome Signal
+
+At the end of every run, emit one of:
+
+**PASS:**
+```
+SKILL OUTCOME: PASS — [skill-name] → [one-line summary of what was delivered]
+```
+
+**PARTIAL** (output produced but goal not fully met):
+```
+SKILL OUTCOME: PARTIAL — [skill-name]
+  Delivered: [what was produced]
+  Gap:       [what was missing or wrong]
+  Options:   "optimize [skill-name]" → fix the skill
+             re-run with [adjusted input hint]
+  → Logged to skills/skill-feedback.md
+```
+
+**FAIL** (skill could not complete):
+```
+SKILL OUTCOME: FAIL — [skill-name]
+  Reason:  [missing prereq | ambiguous input | out of scope | other]
+  Options: "optimize [skill-name]" → fix the skill
+           "forge a skill for [goal]" → build a better one
+  → Logged to skills/skill-feedback.md
+```
+
+**Logging rule:** PARTIAL and FAIL are automatically appended to `/home/user/accent-os/skills/skill-feedback.md`. PASS is not logged — no noise in the queue.
 ```
 
 ---
