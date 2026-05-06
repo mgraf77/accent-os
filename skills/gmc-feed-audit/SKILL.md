@@ -105,10 +105,18 @@ Per row, assign one fix type (in priority order — first match wins):
 
 Sort by:
 1. Severity (HIGH > MEDIUM > LOW)
-2. Vendor revenue tier (top vendors first — from `vendors.revenue_tier` if available)
+2. Vendor revenue tier (top vendors first — from `vendors.revenue_tier` in Supabase hsyjcrrazrzqngwkqsqa, or BigCommerce store-cwqiwcjxes revenue rank if Supabase column absent)
 3. SKU age descending (newer SKUs first per Feedenomics M17 rule)
 
 Chunk into **fix sprints** of 50–100 SKUs per fix type so Michael can work them serially.
+
+Output the sprint index with a count per sprint and an estimated time-to-fix (HIGH: 5 min/SKU, MEDIUM: 2 min/SKU, LOW: 1 min/SKU) so Michael can plan the work session.
+
+```
+SPRINT_001 — 50 HIGH/MISSING_PRIMARY   ~4.2 hrs to clear
+SPRINT_002 — 50 HIGH/DISAPPROVED       ~4.2 hrs
+...
+```
 
 ---
 
@@ -140,8 +148,10 @@ SPRINT_002 — next 50 HIGH
 
 ## Anti-patterns
 
-- **Never** modify GMC or BC data from this skill — read+report only.
-- **Never** dump 20K rows as a single block. Sprint chunking is the point.
-- **Never** rank without revenue-tier weighting when data is available.
-- **Never** silently skip ambiguous rows — flag as `UNKNOWN`.
-- **Never** invent severity. Use the explicit table in Step 3.
+- **Never** modify GMC merchant ID 687520574, BigCommerce store-cwqiwcjxes, or Supabase hsyjcrrazrzqngwkqsqa from this skill — read+report only.
+- **Never** dump 20K rows as a single block. Sprint chunking (50–100 SKUs) is the point of this skill.
+- **Never** rank without revenue-tier weighting when `vendors.revenue_tier` data is available — unweighted queues optimize for the wrong vendors.
+- **Never** silently skip ambiguous rows — flag them as `fix_type=UNKNOWN, severity=MEDIUM` so they appear in the queue.
+- **Never** invent severity levels. Use only HIGH / MEDIUM / LOW / CLEAN from the explicit table in Step 3.
+- **Never** run Step 1 source discovery sequentially when all four sources can be probed in parallel — unnecessary latency on a 20K-SKU dataset.
+- **Never** produce BLOCK 2 (CSV) without BLOCK 3 (sprint index) — the CSV without the sprint grouping defeats the "10 sprints not 1 queue" goal.
