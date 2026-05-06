@@ -183,6 +183,8 @@ Add to .github/workflows/skill-eval.yml:
 
 - **Never** generate evals that test implementation details that could legitimately change. Test behaviors, not specific phrasings of internal text.
 - **Never** assert on exact LLM output strings — use `contains` / `regex` / `contains-any` instead. LLM outputs vary; tests should pass on equivalent outputs.
-- **Never** skip the gotcha-log edge case test. That's the regression-protection point.
+- **Never** skip the gotcha-log edge case test. That's the regression-protection point. If no gotcha exists, derive an edge case from the skill's own out-of-scope clause.
 - **Never** generate fewer than 5 test cases — coverage matters.
 - **Never** auto-run the eval suite. Output the command; Michael runs it (cost + token budget control).
+- **Never** write assertions without a `description` field — undocumented assertions become unmaintainable.
+- **Never** assume a skill lives only in `/home/user/accent-os/skills/` — check `~/.claude/skills/` for GLOBAL-scope skills before failing Step 1.
