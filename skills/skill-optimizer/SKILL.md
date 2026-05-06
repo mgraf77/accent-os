@@ -69,16 +69,22 @@ Track these values throughout the session. Initialize in Step 0, update each pas
 
 ```
 SESSION STATE
-  Skill:         [skill-name]
-  Scope:         GLOBAL | PROJECT | BOTH
-  Branch:        [branch]
-  Pass:          [N]   (increment each time loop restarts at Step 1)
-  Pass baseline: [score at start of THIS pass]
-  Session start: [score at start of Pass 1]
-  Weight profile: [name]
-  Auto-continue: YES (until [N]) | NO
-  Already tried: [list of changes applied in prior passes this session]
-  History loaded: YES | NO
+  Skill:                [skill-name]
+  Scope:                GLOBAL | PROJECT | BOTH
+  Branch:               [branch]
+  Pass:                 [N]   (increment each time loop restarts at Step 3)
+  Pass baseline:        [score at start of THIS pass]
+  Session start:        [score at start of Pass 1]
+  Pass scores:          [P1: X.X | P2: X.X | ...]  (all actual scores, appended each pass)
+  Rubric version:       v[N]  (matches current pass number)
+  Weight profile:       [name]
+  Auto-continue:        YES (until [N]) | NO
+  Already tried:        [list of changes applied in prior passes this session]
+  History loaded:       YES | NO
+  Last pass delta:      [X.X pts | — (first pass)]
+  Consecutive thin:     [N]   (passes with delta < 2.0 pts in a row; reset to 0 on meaningful gain)
+  Plateau:              NO | YES (triggered at consecutive thin = 2)
+  Thin threshold:       2.0 pts  (override with "meaningful means [X] pts" at session start)
 ```
 
 ---
@@ -190,32 +196,46 @@ Rubric drift alert: [YES — weights changed since last pass | NO]
 
 ---
 
-## Step 3.5 — Rubric Review (Pass N > 1 only)
+## Step 3.5 — Rubric Review & New Rubric Matrix (Pass N > 1 only)
 
-**Skip on Pass 1.** On subsequent passes, review whether the current weights still reflect the highest-value improvements available.
+**Skip on Pass 1** — Rubric v1 is the default balanced weights. On Pass N>1, build a new versioned rubric based on what actually moved last pass.
 
-**Momentum analysis:**
-- Dimensions with ↑ momentum that are now at raw ≥ 8 → consider reducing weight by 3–5% (diminishing returns)
-- Dimensions with ↓ momentum (targeted but didn't move) → flag as "resistance dimension"; consider reducing weight by 3–5% and redistributing to a dimension that IS moving
-- Dimensions at raw < 5 that haven't been targeted → consider increasing weight by 3–5% to prioritize in next brainstorm
+**Momentum analysis rules:**
+- ↑ dimension now at raw ≥ 8 → diminishing returns → reduce weight 3–5%, redistribute to lowest-raw dimension
+- ↓ dimension (targeted but moved < +0.5) → resistance → reduce weight 3–5%, redistribute to a moving dimension
+- Untargeted dimension at raw < 5 → opportunity → increase weight 3–5%
+- Max ±5% per dimension per pass. Always renormalize to sum = 100%.
 
-**Propose weight adjustments** (max ±5% per dimension per pass, always renormalize to 100%):
+**Output the new rubric as a named versioned matrix:**
+
 ```
-RUBRIC REVIEW — Pass [N]
-  Momentum analysis:
-    ↑ [Dimension] (raw [X], was [Y]) — high score, diminishing returns
-    ↓ [Dimension] (raw [X], was [Y]) — targeted but resisted
-    → [Dimension] (raw [X]) — untargeted, room available
-  Proposed weight adjustments:
-    [Dimension]: [old]% → [new]%  (reason: [diminishing returns | resisted | untargeted room])
-    ...
-  New weights sum: 100%
-  Recalculated baseline with new weights: [X.X / 100]
+╔══════════════════════════════════════════════════════════════════════╗
+║  RUBRIC v[N]  —  Effective for Pass [N]  (replaces Rubric v[N-1])  ║
+╠══════════════════════╦════════╦══════════╦════════════╦═════════════╣
+║ Dimension            ║ Weight ║ Old Wt   ║ Gap Contrib║ Adjustment  ║
+╠══════════════════════╬════════╬══════════╬════════════╬═════════════╣
+║ Output Quality       ║  XX%   ║  XX%     ║   X.XX     ║ [reason]    ║
+║ Methodology Fitness  ║  XX%   ║  XX%     ║   X.XX     ║ [reason]    ║
+║ Trigger Coverage     ║  XX%   ║  XX%     ║   X.XX     ║ [reason]    ║
+║ Accuracy             ║  XX%   ║  XX%     ║   X.XX     ║ [reason]    ║
+║ Speed / Efficiency   ║  XX%   ║  XX%     ║   X.XX     ║ [reason]    ║
+║ AccentOS Fit         ║  XX%   ║  XX%     ║   X.XX     ║ [reason]    ║
+║ Anti-pattern         ║  XX%   ║  XX%     ║   X.XX     ║ [reason]    ║
+╠══════════════════════╬════════╬══════════╬════════════╬═════════════╣
+║ TOTAL                ║ 100%   ║  100%    ║            ║             ║
+╚══════════════════════╩════════╩══════════╩════════════╩═════════════╝
 
-Auto-applying minor adjustments (≤3% per dim) or awaiting approval for larger ones.
+Weights sum: 100% ✓
+Rubric drift from v[N-1]: [YES — [N] dimensions changed | NO — weights unchanged]
+Recalculated Pass [N] baseline on Rubric v[N]: [X.X / 100]
+  (was [Y.Y] on Rubric v[N-1] — delta is rubric drift, not skill change)
 ```
 
-If Michael does not respond to rubric review → auto-apply adjustments ≤3% per dimension. Flag larger adjustments as "weight-adjusted" in the score comparison so before/after scores are clearly on different rubrics.
+**Adjustment reason shorthand:** `↓ dim-returns` | `↓ resisted` | `↑ untargeted` | `unchanged`
+
+Auto-apply adjustments ≤3% per dimension without waiting. Flag adjustments >3% in the rubric drift alert so weight-adjusted cross-pass comparisons are clearly labeled.
+
+This rubric matrix is the scoring authority for Step 9. All recommendations in Step 10 are derived from Rubric v[N] gap contributions — not the prior rubric.
 
 ---
 
@@ -383,24 +403,34 @@ Update session state: add changes to "already tried" list.
 
 ## Step 9 — Score Matrix Test
 
-Re-run the full rubric against the updated SKILL.md using calibrated weights. Output:
+Re-score the updated SKILL.md against **Rubric v[N]** (the rubric produced in Step 3.5 for this pass). Show all previous passes for longitudinal comparison — fill `—` for passes that haven't occurred yet.
 
 ```
-SCORE TEST — PASS [N]
-Dimension            | Weight | Pass[N-1] | Pass[N] | Delta | Gap (after) | Momentum
-Output Quality       | 25%    | [X]       | [Y]     | [±Z]  | [gap]       | [↑↓→]
-Methodology Fitness  | 20%    | [X]       | [Y]     | [±Z]  | [gap]       | [↑↓→]
-Trigger Coverage     | 15%    | [X]       | [Y]     | [±Z]  | [gap]       | [↑↓→]
-Accuracy             | 15%    | [X]       | [Y]     | [±Z]  | [gap]       | [↑↓→]
-Speed / Efficiency   | 10%    | [X]       | [Y]     | [±Z]  | [gap]       | [↑↓→]
-AccentOS Fit         | 10%    | [X]       | [Y]     | [±Z]  | [gap]       | [↑↓→]
-Anti-pattern         | 5%     | [X]       | [Y]     | [±Z]  | [gap]       | [↑↓→]
-──────────────────────────────────────────────────────────────────────────────────
-PASS [N] SCORE: [X.X / 100]   Threshold: [Y.Y]   Session start: [Z.Z]
-Rubric drift: [YES — comparison is weight-adjusted | NO]
-Floor targets: [all met ✓ | [Dim] at [X] < floor [Y] ✗]
-STATUS: PASSED ✓  |  FAILED ✗
+SCORE TEST — PASS [N]  (Rubric v[N])
+─────────────────────────────────────────────────────────────────────────────────────────
+Dimension            | Wt  | Start | P1  | P2  | P3  | P4  | P5  | NOW  | Δ pass | Gap
+Output Quality       | XX% | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   | X.XX
+Methodology Fitness  | XX% | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   | X.XX
+Trigger Coverage     | XX% | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   | X.XX
+Accuracy             | XX% | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   | X.XX
+Speed / Efficiency   | XX% | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   | X.XX
+AccentOS Fit         | XX% | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   | X.XX
+Anti-pattern         | XX% | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   | X.XX
+─────────────────────────────────────────────────────────────────────────────────────────
+TOTAL                |     | X.X   | X.X | X.X | —   | —   | —   | X.X  | [±Z]   |
+
+PASS [N] SCORE:  [X.X / 100]   on Rubric v[N]
+Threshold:       [Y.Y / 100]
+Session start:   [Z.Z / 100]   Total session gain: +[Δ] pts across [N] passes
+Rubric drift:    [YES — [N] dims weight-changed; cross-pass comparison is approximate | NO]
+Floor targets:   [all met ✓ | [Dim] at [X] < floor [Y] ✗]
+STATUS:          PASSED ✓  |  FAILED ✗
+
+Pass delta log:  P1 +[X.X] | P2 +[X.X] | P3 +[X.X] | ...
+Thin passes:     [N consecutive passes below 2.0 pts]
 ```
+
+**Note on rubric drift:** When Rubric v[N] weights differ from prior versions, the "Start" and prior-pass columns are re-expressed on the new weights for visual consistency. Flag this clearly — the numbers changed because the rubric changed, not because the skill regressed.
 
 **If PASSED:** proceed to Step 10.
 
@@ -445,8 +475,13 @@ NEXT-PASS ANALYSIS
   Cross-skill patterns available for next pass:
     - "[Pattern description]" (applied to [skill], moved [Dim] +[delta])
 
-  Rubric adjustment recommendation: [none | reduce [Dim] by X%, increase [Dim] by X%]
+  RUBRIC v[N+1] PREVIEW (proposed adjustments for next pass):
+    [Dimension]: [old]% → [new]%  ([reason])
+    Under new weights, top gaps would shift to: [Dim1] ([new gap contrib]), [Dim2] ([new gap contrib])
+    These become the brainstorm targets for Pass [N+1].
+
   Estimated next-pass score: [current] + [estimated gain] = [projected]
+  Estimated pass delta: +[X] pts  ([MEANINGFUL ≥2.0 | THIN <2.0 — warning])
 ```
 
 ---
@@ -500,40 +535,84 @@ Brainstorm loops: [N/5]   Refinement passes: [M/3]   Total session passes: [P]
 
 ## Step 12 — Pass Gate
 
-**Always runs after Step 11.** Auto-continue mode skips this gate (up to 3 auto-continue passes).
+**Always runs after Step 11.** Auto-continue mode skips this gate (up to 3 auto-continue passes, but plateau detection still applies).
 
-Output exactly:
+**First: evaluate this pass's delta and update plateau state.**
+
+```
+PASS [N] DELTA ASSESSMENT
+  This pass gain:       +[X.X] pts
+  Meaningful threshold: ≥2.0 pts
+  Assessment:           MEANINGFUL ✓  |  THIN ✗
+  Consecutive thin:     [N]  (was [N-1])
+  Session pass deltas:  P1 +[X] | P2 +[X] | P3 +[X] | ...
+```
+
+Update session state:
+- If delta ≥ 2.0 → set `Consecutive thin: 0`. Continue normally.
+- If delta < 2.0 → increment `Consecutive thin`. If now = 1 → warn. If now = 2 → set `Plateau: YES`.
+
+**If Plateau = YES (2 consecutive thin passes):**
+
+```
+🛑 PLATEAU DETECTED
+  Pass [N-1] gain: +[X] pts (thin)
+  Pass [N] gain:   +[X] pts (thin)
+  Two consecutive passes below the 2.0 pt meaningful threshold.
+
+  The skill has reached a local ceiling under the current rubric and approach.
+  Best committed version is: [score] / 100.
+
+  Recommendation: STOP HERE.
+  Continuing is likely to produce marginal changes that add noise without
+  meaningful quality gain. The best version is already committed.
+
+  To override: "force another pass" — overrides plateau once, then re-evaluates.
+  To accept:   "done" / "stop"
+═════════════════════════
+```
+
+Do NOT present "another pass" as a standard option when Plateau = YES. Require explicit "force another pass" to continue. Log the plateau in Step 13 history entry.
+
+**If no plateau, output the standard pass gate:**
 
 ```
 ═══ PASS GATE ═══
 Pass [N] complete.
-  Score:    [before] → [after]   (+[delta] this pass)
+  Score:    [before] → [after]   (+[delta] this pass — [MEANINGFUL | THIN])
   Session:  [start] → [now]      (+[total] across [N] passes)
+  Rubric:   v[N] applied this pass
 
-NEXT PASS PREVIEW
-  I would target: [top 2 dimensions from Next-Pass Analysis]
-  Estimated gain: +[X] pts → projected score [Y.Y]
+NEXT PASS PREVIEW  (based on Rubric v[N+1])
+  Rubric v[N+1] shifts priority to: [Dim1] ([new gap]), [Dim2] ([new gap])
+  Estimated gain: +[X] pts → projected [Y.Y]  ([MEANINGFUL ≥2.0 | THIN <2.0 — consider stopping])
   Key hypotheses:
     1. [H from Step 10]
     2. [H from Step 10]
 
-  [If resistance detected]: ⚠ [Dimension] is showing diminishing returns.
-    Consider: [rubric weight reduction | switching focus | stopping here]
+  [If thin warning]: ⚠ Estimated next pass is also thin (+[X] pts). Two thin passes = auto-stop.
+  [If resistance detected]: ⚠ [Dimension] resisted twice — rubric weight reduced in v[N+1].
+
+UNRESOLVED FEEDBACK
+  [If entries exist]: ⚠ [N] FAIL/PARTIAL entries in skill-feedback.md not yet addressed.
+  [If none]: ✓ No unresolved feedback entries.
 
 OPTIONS
-  "another pass"                   → run Pass [N+1] with next-pass hypotheses
-  "keep going until [score]"       → auto-continue until [score] or 3 passes
-  "another pass, focus on [X]"     → next pass targets [X] dimension specifically
+  "another pass"                   → run Pass [N+1] with Rubric v[N+1] and next-pass hypotheses
+  "keep going until [score]"       → auto-continue (plateau detection still active)
+  "another pass, focus on [X]"     → next pass targets [X] dimension; Rubric v[N+1] reweights accordingly
   "new idea: [change]"             → add to next-pass plan, then run
+  "meaningful means [X] pts"       → change thin threshold for this session
   "done" / "stop" / "looks good"  → end session, skip to Step 13
 
-Note: if this skill has FAIL/PARTIAL entries in skill-feedback.md that were NOT addressed this session,
-flag them: "⚠ Unresolved feedback entries remain — run another pass or log as out-of-scope."
-Skill-finder (planned): routes FAIL outcomes to optimizer (fix) vs. forge (rebuild) automatically.
+I am stopped here. Waiting for your reply.
 ═════════════════════════
 ```
 
-Parse reply. If another pass → increment pass counter, return to Step 3 (re-score current file as pass baseline), apply next-pass hypotheses as starting brainstorm seed. If done → proceed to Step 13.
+Parse reply:
+- "another pass" / "force another pass" → increment pass counter, increment Rubric version, return to Step 3.5 (build Rubric v[N+1]) → Step 3 (re-score on new rubric) → continue. Seed brainstorm with Step 10 hypotheses.
+- "done" / "stop" → proceed to Step 13.
+- "meaningful means [X]" → update thin threshold in session state, re-evaluate current pass, re-output gate.
 
 ---
 
@@ -565,7 +644,8 @@ Append a structured entry to `/home/user/accent-os/skills/skill-optimizer/optimi
 | Anti-pattern | 5% | | | | |
 | **TOTAL** | | **[start]** | **[end]** | **+[delta]** | |
 
-**Threshold:** [T.T] | **Status:** MET ✓ | BEST AVAILABLE ✗
+**Threshold:** [T.T] | **Status:** MET ✓ | BEST AVAILABLE ✗ | PLATEAU STOP ✗
+**Plateau triggered:** YES (after passes [N-1] and [N] both thin) | NO
 
 ### Changes Applied
 1. [Change] — [Dimension] +[delta]
@@ -624,6 +704,8 @@ After appending, output: `HISTORY LOGGED — [skill-name] Pass [N] appended to o
 - **Never** compare before/after scores when weights changed between passes without flagging rubric drift — the numbers are on different scales.
 - **Never** ignore FAIL/PARTIAL entries in `skill-feedback.md` for the target skill — real-world failure data outranks estimated-delta hypotheses and must be addressed first or explicitly deferred.
 - **Never** close a session with unresolved skill-feedback entries without flagging them in the pass gate output.
+- **Never** score a pass on a different rubric version without re-expressing all prior pass scores on the new weights — silent rubric drift makes longitudinal comparisons meaningless.
+- **Never** continue past 2 consecutive thin passes (<2.0 pts gain each) without explicit "force another pass" — plateau detection exists to prevent marginal changes that add noise and reduce skill readability without meaningful quality gain.
 
 ## Outcome Signal
 
