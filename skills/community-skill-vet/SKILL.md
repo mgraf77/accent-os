@@ -114,6 +114,18 @@ Apply the same Step 7.5 validation that skill-forge runs on its own outputs:
 - Numbered workflow steps with concrete outputs
 - No prose walls
 
+Output per-check result as a table:
+
+```
+Quality check        | Result  | Note
+---------------------|---------|-----
+Description ≥250c    | PASS/FAIL | [char count]
+Names AccentOS ctx   | PASS/FAIL | [present/absent]
+≥3 anti-patterns     | PASS/FAIL | [count found]
+Numbered steps+outputs | PASS/FAIL | [step count]
+No prose walls       | PASS/FAIL | [any blocks >6 lines solid?]
+```
+
 A community skill that fails these is a quality risk, not a safety risk — but worth flagging.
 
 ---
@@ -128,7 +140,9 @@ Based on Steps 2–5:
 | **HOLD** | One or two MEDIUM concerns; not blocking but worth pre-install fix or upstream issue filed |
 | **REJECT** | Any HIGH-risk pattern unjustified, OR ≥3 MEDIUM concerns combined, OR credential-handling pattern visible |
 
-For REJECT, propose an alternative: "Re-forge this concept yourself via skill-forge — `look into [original target]` — to get a sandboxed version."
+For REJECT, propose an alternative: "Re-forge this concept yourself via skill-forge — `look into [original target]` — to get a sandboxed AccentOS-native version in /home/user/accent-os/skills/."
+
+**Edge case — borderline HOLD/REJECT:** if the skill has exactly 2 MEDIUM concerns + 1 unjustified HIGH, override to REJECT — the unjustified HIGH is never acceptable regardless of MEDIUM count.
 
 ---
 
@@ -160,7 +174,7 @@ For HOLD:
 
 For REJECT:
   Reason: [one sentence]
-  Alternative: Run skill-forge with target=[original target] to forge a sandboxed AccentOS-native version.
+  Alternative: Run skill-forge with target=[original target] to forge a sandboxed AccentOS-native version into /home/user/accent-os/skills/[name]/.
 ```
 
 ---
@@ -172,3 +186,6 @@ For REJECT:
 - **Never** trust a SKILL.md description alone — read the actual workflow and any included scripts.
 - **Never** auto-install. Output the install command; Michael executes.
 - **Never** REJECT without proposing the skill-forge alternative — the concept is usually still worth stealing.
+- **Never** vet a skill without reading its full workflow steps — description-only review misses injection vectors embedded in Bash steps.
+- **Never** verdict HOLD when any unjustified HIGH-risk pattern is present — HOLD is reserved for MEDIUM-only concerns.
+- **Never** skip the quality-signals table (Step 5) on the grounds that the skill "looks fine" — quality and safety are independent checks.
