@@ -54,8 +54,22 @@ Run when Michael says:
 - "batch optimize" / "optimize all skills"
 - "another pass" / "run another pass on [skill]"
 - "keep going" / "keep going until [score]"
+- "tighten [skill]" / "sharpen [skill]" / "polish [skill]"
+- "work on [skill]" / "next pass on [skill]" / "one more pass" / "go again"
+- "optomize [skill]" / "optimise [skill]" (common misspellings — match and route correctly)
 
 **Batch mode:** When Michael says "optimize all skills" or "batch optimize", run Steps 0–3 (profile + score) for all target skills in parallel, present a priority-ranked list (lowest score first) with estimated effort, then run the full pass loop on each skill in sequence. Commit each skill independently before moving to the next.
+
+Output after parallel profiling:
+```
+BATCH PRIORITY LIST  (profiled in parallel)
+  Skill          | Score | Gap  | Est. passes | Priority reason
+  ─────────────────────────────────────────────────────────────
+  [skill-1]      | X.X   | XX.X | 1–2         | [why highest priority]
+  [skill-2]      | X.X   | XX.X | 1           |
+  ...
+  Starting with: [skill-1]   Sequence: [skill-1] → [skill-2] → ...
+```
 
 **Auto-continue mode:** When Michael says "keep going until [N]" or "run [N] more passes" — skip Step 11 pass gate and loop automatically. Hard cap: 3 auto-continue passes before requiring explicit confirmation. Plan gate approval still required before each execute step. Plateau detection still active.
 
@@ -143,10 +157,10 @@ PERSPECTIVE SWEEP — [question or context]
 Do in parallel:
 
 1. **Identify target.** Accept skill name, path, or description. If ambiguous, pick highest-likelihood match — do not ask.
-2. **Detect scope.** Check both `~/.claude/skills/[skill]/SKILL.md` and `/home/user/accent-os/skills/[skill]/SKILL.md`. Both found → BOTH. One only → that scope. Neither → "Skill not found" + list candidates, then stop.
+2. **Detect scope.** Check both `~/.claude/skills/[skill]/SKILL.md` and `/home/user/accent-os/skills/[skill]/SKILL.md`. Both found → BOTH. One only → that scope. Neither → output `SKILL NOT FOUND: [name]` — list all SKILL.md paths found under both skill roots — stop. Do not continue past this point.
 3. **Record branch.** `git -C /home/user/accent-os branch --show-current`. If on main, Step 7 creates `claude/optimize-[skill]-[8-char-rand]`.
 4. **Check recent history.** `git -C /home/user/accent-os log --oneline -5 -- skills/[skill]/` — note recent changes.
-5. **Load optimization history.** Read `/home/user/accent-os/skills/skill-optimizer/optimization-history.md`. Extract all prior entries for this skill.
+5. **Load optimization history.** Read `/home/user/accent-os/skills/skill-optimizer/optimization-history.md`. Extract all prior entries for this skill. If the file does not exist → create it with the standard header and entry format from Step 12 (first two comment lines only); note `First run — no history` in PREFLIGHT output.
 6. **Load skill feedback.** Read `/home/user/accent-os/skills/skill-feedback.md`. Extract FAIL/PARTIAL entries for this skill — real-world failure reports. Label these `[FEEDBACK: real failure]`.
 
 Output:
@@ -172,6 +186,7 @@ Do both simultaneously. Do not wait for one before starting the other.
 - **Resistance dims:** stalled despite targeting → candidates for weight reduction or approach change
 - **Cross-skill patterns:** improvements achieving ≥+2 delta on similar skills → import as `[PATTERN: from [skill]]` hypotheses
 - **Prior dimension changes:** any additions/retirements/renames for this skill
+- **Gotcha log (Pass 1 only):** Read `/home/user/accent-os/skills/skill-forge/gotcha-log.md` for entries matching this skill type — real-failure patterns from skill-forge sessions. Label as `[FEEDBACK: gotcha]` in brainstorm. Skip on Pass N>1 (already absorbed into already-tried pool).
 
 ```
 HISTORY CHECK: [N prior passes found]
@@ -197,6 +212,8 @@ HISTORY CHECK: [N prior passes found]
 List each field's raw content — no summaries. This is the scoring source of truth.
 
 _(On Pass N+1: re-read the SKILL.md as written by Step 7 — not the pre-execution version from Pass N. The skill changed; the profile must reflect the updated file.)_
+
+_`references/*.md`: re-read only if Step 9 (prior pass) evolved rubric structure or anchor definitions. If no structural rubric changes, the Step 9 Rubric Evolution output from the prior pass is sufficient — skip the re-read._
 
 Wait for both 1a and 1b outputs before proceeding.
 
@@ -302,6 +319,8 @@ Score the current skill against the dimension registry from Step 2. **Read `refe
 
 Cap at 3 levels per dimension. Skip if dim ≥7.0.
 
+**Parallelism:** Score all dimensions simultaneously — no sequential dependencies between dim scores. When multiple dims require Socratic drilling, run all drills in parallel.
+
 Output:
 ```
 PASS [N] BASELINE: [X.X / 100]   (Session start: [Y.Y] | Session delta: [±Z])
@@ -317,7 +336,7 @@ Gap contribution ranking (descending):
   3. ...
 ```
 
-**Perspective Sweep (auto when any score > 8.0; optional when a score seems off):** Run Contrarian + Methodologist. "Why is [Dim] at [X] and not lower?" Inflation is the expected failure mode. Their challenge must be resolved before finalizing the score.
+**Perspective Sweep (auto when any score > 8.0 OR when any score differs from prior-pass score by >1.0; optional otherwise):** Run Contrarian + Methodologist. "Why is [Dim] at [X] and not lower?" Inflation is the expected failure mode. Their challenge must be resolved before finalizing the score.
 
 ---
 
@@ -364,7 +383,16 @@ THRESHOLD: [X.X / 100]
 
 **Cap: 5 loops per pass.**
 
-**Before Loop 1, load in priority order:**
+**Before Loop 1, print the full combined already-tried pool** (session + all prior history). Distinguish status:
+```
+ALREADY TRIED — [N] total (skip all):
+  Succeeded:   [change] (Pass [N])
+  Failed:      [change] — [reason it didn't move the score]
+  Deferred:    [change] — [reason skipped, not tried]
+  From history: [list or none]
+```
+
+**Load in priority order:**
 1. `[FEEDBACK: real failure]` — from skill-feedback.md. Documented real failures outrank all estimated-delta hypotheses. These are addressed first or explicitly deferred with a reason.
 2. `[ROOT: DimName]` — Socratic root causes from Step 3. Each root must appear as a hypothesis target or be explicitly deferred.
 3. `[PATTERN: from [skill]]` — cross-skill patterns from Step 1 history check (≥+2 delta confirmed).
@@ -478,7 +506,15 @@ Apply each approved change using Edit for surgical edits. Use Write only when �
 
 **BOTH scope — divergence check:** Diff step count, anti-pattern count, trigger count. Flag unintentional divergence.
 
-Fix any validation failure before committing.
+```
+BOTH SCOPE DIVERGENCE CHECK
+  Step count:       global [N] | project [N]  [MATCH ✓ | DIVERGE ✗]
+  Trigger count:    global [N] | project [N]  [MATCH ✓ | DIVERGE ✗]
+  Anti-pattern ct:  global [N] | project [N]  [MATCH ✓ | DIVERGE ✗]
+  Verdict: [NO DIVERGENCE ✓ | DIVERGENCE DETECTED — [describe] — resolve before committing]
+```
+
+Fix any validation failure before committing. **Validation failure procedure:** identify which specific check failed; fix that element only; re-run the entire checklist from check 1 before attempting commit. Never commit a partially-valid file. **Validation failure procedure:** identify which specific check failed; fix that element only; re-run the entire checklist from check 1 before attempting commit. Never commit a partially-valid file.
 
 **Branch:** NOT on main → commit to current branch. On main → create `claude/optimize-[skill]-[8-char-rand]`.
 
@@ -523,6 +559,8 @@ PREDICTION vs. ACTUAL
   Calibration note: [e.g., "3/4 over-estimates → reduce future +1 estimates to +0.5 for this skill"]
 ```
 
+**If new score is lower than Step 3 baseline (regression):** On feature branch not yet pushed → `git reset --soft HEAD~1` to unstage the commit, then restore the file. Already pushed → `git revert HEAD` (creates a new revert commit). Log the change as `[tried + regression: score dropped X → Y]` in the already-tried list. Do not retry the same change.
+
 **If PASSED:** proceed to Step 9.
 
 **If FAILED — refinement loop (cap: 3 passes):**
@@ -549,6 +587,8 @@ For each active dimension i, compute:
 2. `potential_i`: actual delta if targeted, halved if resisted (<0.5 delta while targeted), 0 if structural ceiling (±0.5 for 3+ passes), 0.5 default if not targeted
 3. `expected_impact_i = gap_i × potential_i`
 4. `new_weight_i ∝ expected_impact_i` — renormalize; clamp min 3%, max 35%
+
+**Parallelism:** Compute all Expected Impact values simultaneously — each dim's computation depends only on its own gap and potential, with no cross-dim dependencies.
 
 This replaces simple momentum heuristics. Weight flows toward dimensions with the highest combination of remaining gap AND realistic improvement potential. Ceilings — structural or design — receive floor weight (3%) and are no longer targeted.
 
@@ -630,7 +670,7 @@ Brainstorm loops: [N/5]   Refinement passes: [M/3]   Session passes: [P]
 
 ## Step 11 — Pass Gate + Next-Pass Analysis
 
-**First: plateau assessment.**
+**11a — Plateau Assessment:**
 
 ```
 PASS [N] DELTA ASSESSMENT
@@ -663,7 +703,7 @@ Update session state: delta ≥2.0 → `Consecutive thin: 0`. Delta <2.0 → inc
 
 Do NOT present "another pass" as a standard option when Plateau = YES. Require explicit override.
 
-**If no plateau, output standard pass gate with embedded next-pass analysis:**
+**11b — Pass Gate + Next-Pass Analysis (runs only if 11a finds no plateau):**
 
 ```
 ═══ PASS GATE ═══
@@ -809,6 +849,13 @@ Output: `HISTORY LOGGED — [skill-name] Pass [N] appended to optimization-histo
 - Optimization history: /home/user/accent-os/skills/skill-optimizer/optimization-history.md
 - Skill feedback queue: /home/user/accent-os/skills/skill-feedback.md
 - Gotcha log: /home/user/accent-os/skills/skill-forge/gotcha-log.md
+
+**Profile guidance by AccentOS skill type:**
+- **BC sync / inventory skill** (store-cwqiwcjxes) → efficiency-heavy profile — runs frequently; token cost matters; correctness failures are caught downstream by BC itself
+- **Supabase query / data skill** (hsyjcrrazrzqngwkqsqa) → accuracy-heavy — wrong data silently corrupts AccentOS operations; correctness is the primary deliverable
+- **Klaviyo / GMC integration skill** → accuracy-heavy + trigger-focused — routing precision and data field mapping are both critical; errors reach customers
+- **Claude API / inference skill** → balanced or output-heavy — response quality is the primary deliverable; latency is secondary
+- **Meta / workflow skill** (like this one) → balanced — all dimensions matter roughly equally; AccentOS Fit ceiling is ~6-7 by design
 
 ---
 
