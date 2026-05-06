@@ -27,7 +27,7 @@ except ImportError:
     sys.exit(2)
 
 WIKI_ROOT = Path(__file__).parent.parent / "wiki"
-TYPED_DIRS = ["clusters", "sops", "adrs", "entities", "sources", "concepts"]
+TYPED_DIRS = ["clusters", "sops", "adrs", "entities", "sources", "concepts", "runbooks"]
 FRONTMATTER_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n(.*)", re.DOTALL)
 
 dry_run = "--dry-run" in sys.argv
@@ -169,6 +169,16 @@ def run_self_test(pages: list[dict]):
         ("why did we choose supabase over firebase architecture decision", "adr-002-supabase-backend"),
         ("pendant chandelier indoor decorative luminaire fixture residential", "indoor-decorative"),
         ("warehouse employee role inventory deliveries labels access", "emp-warehouse"),
+        # concept pages
+        ("rfm recency frequency monetary customer segments at-risk win-back", "rfm-segments"),
+        ("layered lighting ambient task accent fixture specification CCT kelvin", "layered-lighting"),
+        ("vendor relationship model commercial terms lifecycle stages scoring at-risk", "vendor-relationship"),
+        ("co-op cooperative advertising fund claim deadline accrual", "co-op-mechanics"),
+        ("margin markup dealer-net cost list price trade discount profitability", "margin-structure"),
+        ("trade program designer architect contractor discount preferred-terms", "trade-program-terms"),
+        # runbooks
+        ("quarterly vendor review scorecard at-risk audit score update", "runbook-vendor-review"),
+        ("cut offboard vendor inactive remove purchase orders inventory", "runbook-cut-vendor"),
     ]
     print("\nSelf-test (top-1 recall):")
     passed = 0

@@ -1,9 +1,8 @@
-// ── PORTAL PREVIEW (Tracks 6.5 + 6.6 phase 1) ──
-// Staff-side internal preview of what external Trade Partners and Vendor
-// Reps will see when phase 2 ships with their own Supabase Auth role
-// (TradePartner / VendorRep). Pure-compute over already-loaded data.
-// Lets Michael validate the external view before scoping the auth + branding
-// work. No new schema, no API.
+// ── PORTAL PREVIEW ──
+// Staff-side preview of what external Trade Partners and Vendor Reps see.
+// The live portals shipped v6.11.2 (js/trade_portal.js + js/vendor_portal.js).
+// This page lets Owner/Admin impersonate any partner or rep to QA the live
+// data scope without logging out. No new schema, no API.
 
 let portalPreview = {mode:'trade', selectedId:''};
 
@@ -14,8 +13,11 @@ function portalpreview(c, actions){
   }
 
   c.innerHTML = `
-    <div class="alert" style="background:linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%);border-left:3px solid var(--yellow);margin-bottom:14px;font-size:12px;">
-      <strong>📺 Portal Preview Mode.</strong> This is what an external user (designer / contractor / vendor rep) will see when phase 2 ships with their own login. No external auth yet — this view is staff-only and stays inside AccentOS. Use it to validate the external-facing data scope before we wire the public portal in Track 6.10.
+    <div class="alert" style="background:linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 100%);border-left:3px solid var(--green);margin-bottom:14px;font-size:12px;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;"><strong>✓ Live as of v6.11.2.</strong> TradePartner and VendorRep users see their own portal on login. Use this page to impersonate any partner or rep and QA the data scope without logging out.</div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button onclick="_ppOpenLivePortal()" style="padding:4px 10px;font-size:11px;border:1px solid var(--green);border-radius:4px;background:none;cursor:pointer;color:var(--green);font-weight:600;">Open live portal ↗</button>
+      </div>
     </div>
     <div class="card mb16">
       <div style="padding:14px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
@@ -162,7 +164,7 @@ function _ppRenderTrade(body){
       </div>
 
       <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3);">
-        <strong>Phase 2 will add:</strong> request a quote inline, message your account rep, view delivery tracking, download spec sheets. Designer pricing tier applied automatically once external auth ships.
+        <strong>Live portal pages (v6.11.2):</strong> tradeportal · tpquotes · tpjobs · tpdeliveries · tpresources · tpcontact. TradePartner users land here on login.
       </div>
     </div>
   `;
@@ -265,10 +267,15 @@ function _ppRenderRep(body){
       </div>
 
       <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3);">
-        <strong>Phase 2 will add:</strong> message Accent staff inline, see attribution-attached deal pipeline, request co-op claims, upload spec sheets / new product launches, see your peer-rep leaderboard.
+        <strong>Live portal pages (v6.11.2):</strong> vendorrep · vrscorecard · vrcoop · vrproducts · vrcontact. VendorRep users land here on login.
       </div>
     </div>
   `;
+}
+
+function _ppOpenLivePortal(){
+  if(portalPreview.mode === 'trade') goTo('tradeportal');
+  else goTo('vendorrep');
 }
 
 function _ppCopySummary(){

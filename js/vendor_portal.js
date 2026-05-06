@@ -306,7 +306,7 @@ function _vrComputeTier(avg){
 }
 
 function _vrStatCard(label, value, sub, onclick){
-  return `<div ${onclick?`onclick="${onclick}" style="cursor:pointer;"`:''} style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:16px 20px;">
+  return `<div ${onclick?`onclick="${onclick}"`:''}  style="${onclick?'cursor:pointer;':''}background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:16px 20px;">
     <div style="font-size:24px;font-weight:700;color:var(--accent);">${value}</div>
     <div style="font-size:13px;font-weight:600;margin:4px 0 2px;">${label}</div>
     <div style="font-size:11px;color:var(--text-3);">${sub}</div>

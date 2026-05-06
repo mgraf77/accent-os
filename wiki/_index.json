@@ -150,6 +150,62 @@
     "excerpt": "ADR-007 — Wiki-Pattern RAG vs pgvector Status Accepted — wiki-pattern shipped v6.11.1 (2026-05-06) Context AccentOS needed a knowledge retrieval system so Claude Code sessions could reference Accent Lighting domain knowledge (SOPs, product clusters, employee roles, data sources, architectural decisi"
   },
   {
+    "id": "runbook-cut-vendor",
+    "title": "Runbook: Cut or Offboard a Vendor",
+    "type": "runbook",
+    "status": "published",
+    "weight": 8,
+    "tags": [
+      "vendor",
+      "cut-vendor",
+      "offboard",
+      "runbook",
+      "at-risk",
+      "inactive",
+      "vendor-ranking",
+      "inventory",
+      "purchase-orders"
+    ],
+    "related": [
+      "runbook-vendor-review",
+      "vendor-relationship",
+      "sop-001-vendor-onboarding"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/runbooks/runbook-cut-vendor.md",
+    "excerpt": "Runbook: Cut or Offboard a Vendor Use when a vendor is being fully removed from active purchasing. This is irreversible from an operational standpoint — do the quarterly review first (runbook-vendor-review) and confirm the decision at Owner level before proceeding. Triggers for this runbook - Vendor"
+  },
+  {
+    "id": "runbook-vendor-review",
+    "title": "Runbook: Quarterly Vendor Review",
+    "type": "runbook",
+    "status": "published",
+    "weight": 8,
+    "tags": [
+      "vendor",
+      "vendor-review",
+      "quarterly",
+      "scorecard",
+      "runbook",
+      "audit",
+      "scores",
+      "vendor-ranking",
+      "at-risk",
+      "cascade"
+    ],
+    "related": [
+      "vendor-relationship",
+      "sop-001-vendor-onboarding",
+      "co-op-mechanics",
+      "supabase-source"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/runbooks/runbook-vendor-review.md",
+    "excerpt": "Runbook: Quarterly Vendor Review Run this process at the end of each quarter (March, June, September, December). Takes 30–60 minutes with AccentOS open. Pre-requisites - Owner or Admin role - Inventory CSV loaded (for fill-rate proxy) - Co-op funds up to date in AccentOS - Changelog entries current "
+  },
+  {
     "id": "adr-001-module-architecture",
     "title": "ADR-001 — Single-File HTML with External JS Modules",
     "type": "adr",
@@ -281,6 +337,33 @@
     "excerpt": "Outdoor & Architectural Lighting Cluster Overview Outdoor and architectural lighting: residential exterior, landscape, commercial façade, and site lighting. Second largest revenue cluster. Longer sales cycles than decorative — typically tied to construction and renovation projects. Product categorie"
   },
   {
+    "id": "co-op-mechanics",
+    "title": "Co-op Fund Mechanics",
+    "type": "concept",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "co-op",
+      "cooperative-advertising",
+      "marketing-fund",
+      "vendor",
+      "deadline",
+      "claim",
+      "accrual",
+      "fund-type",
+      "budget"
+    ],
+    "related": [
+      "vendor-relationship",
+      "sop-001-vendor-onboarding",
+      "supabase-source"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/concepts/co-op-mechanics.md",
+    "excerpt": "Co-op Fund Mechanics Co-operative advertising funds (co-op) are marketing dollars that vendors commit to Accent Lighting, earmarked for jointly promoting the vendor's products. Fund lifecycle Open → (spend approved) → Claimed → Closed ↘ Expired (deadline passed, unclaimed) AccentOS tracks this via t"
+  },
+  {
     "id": "layered-lighting",
     "title": "Layered Lighting Design",
     "type": "concept",
@@ -313,6 +396,34 @@
     "excerpt": "Layered Lighting Design Layered lighting is the industry-standard approach to specifying luminaires for a space. It combines three functional tiers into a unified design that balances visibility, mood, and emphasis. The three layers 1. Ambient (general) lighting Provides overall illumination. Goal: "
   },
   {
+    "id": "margin-structure",
+    "title": "Margin Structure",
+    "type": "concept",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "margin",
+      "markup",
+      "pricing",
+      "cost",
+      "list-price",
+      "discount",
+      "price-book",
+      "dealer-net",
+      "trade-discount",
+      "profitability"
+    ],
+    "related": [
+      "vendor-relationship",
+      "rfm-segments",
+      "supabase-source"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/concepts/margin-structure.md",
+    "excerpt": "Margin Structure Understanding how Accent Lighting prices products requires knowing the difference between margin and markup, and how dealer-net pricing flows from the vendor to the customer. Key pricing terms Term Formula Example --------- List price Vendor's published MSRP $100.00 Dealer net List "
+  },
+  {
     "id": "rfm-segments",
     "title": "RFM Customer Segments",
     "type": "concept",
@@ -340,6 +451,35 @@
     "updated": "2026-05-06",
     "path": "wiki/concepts/rfm-segments.md",
     "excerpt": "RFM Customer Segments RFM (Recency · Frequency · Monetary) is AccentOS's primary method for segmenting the customer base and prioritizing outreach. How RFM scores are calculated Each customer receives a score of 1–5 on each dimension: Dimension Measures Score 5 = --------- Recency Days since last pu"
+  },
+  {
+    "id": "trade-program-terms",
+    "title": "Trade Program Terms",
+    "type": "concept",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "trade",
+      "trade-partner",
+      "designer",
+      "contractor",
+      "architect",
+      "program",
+      "discount",
+      "net-terms",
+      "trade-account",
+      "preferred-terms"
+    ],
+    "related": [
+      "layered-lighting",
+      "vendor-relationship",
+      "margin-structure",
+      "sop-002-quote-to-close"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/concepts/trade-program-terms.md",
+    "excerpt": "Trade Program Terms Accent Lighting's trade program gives credentialed professionals (designers, architects, contractors, builders, installers) preferred pricing and services not available to retail customers. Who qualifies Type Qualification ------ Interior Designer ASID / IDS / NCIDQ credential or"
   },
   {
     "id": "vendor-relationship",

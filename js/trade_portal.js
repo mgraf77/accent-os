@@ -192,7 +192,7 @@ function tpjobs(el){
     <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:16px 20px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
         <span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:${STATUS_COLOR[j.status]||'var(--bg-2)'};color:#fff;">${(j.status||'').replace('_',' ').toUpperCase()}</span>
-        <span style="font-weight:700;font-size:14px;">${esc(j.job_number||'')} — ${esc(j.title||j.description||'Untitled')}</span>
+        <span style="font-weight:700;font-size:14px;">${esc(j.job_number||'')} — ${esc(j.project_name||j.title||j.description||'Untitled')}</span>
         <span style="margin-left:auto;font-size:12px;color:var(--text-3);">Due: ${esc(j.due_date||'TBD')}</span>
       </div>
       <div style="font-size:12px;color:var(--text-2);">${esc(j.description||'')}</div>
