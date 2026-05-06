@@ -32,19 +32,31 @@ Run when Michael says:
 - "what unblocks the most"
 - "TOC analysis"
 - "where's the build stuck"
+- "what's blocking progress"
+- "prioritize the build plan"
+- "what should Claude tackle first"
+- "what's the critical path"
+- "what has the most leverage right now"
+- "where should we focus"
 
 ---
 
 ## Step 1 — Load the build state
 
-Read in parallel:
+Read in parallel (all 5 files are independent reads):
 - `/home/user/accent-os/BUILD_PLAN_CLAUDE.md` — open tracks (`- [ ]`)
 - `/home/user/accent-os/BUILD_PLAN_MICHAEL.md` — open M-tasks (`- [ ] **M[NN]**`)
 - `/home/user/accent-os/WORK_IN_PROGRESS.md` — current step + next-if-interrupted
-- `/home/user/accent-os/PROMPT_QUEUE.md` — queued items
+- `/home/user/accent-os/PROMPT_QUEUE.md` — queued items (signal: what Michael thinks is the constraint)
 - `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` — capability gaps
 
-Output a one-line state summary: open tracks count, open M-tasks count, WIP status.
+If any file is missing, note it and continue with available data — do not abort.
+
+Output a state summary block:
+
+```
+STATE: open-tracks=[N] | open-M-tasks=[N] | WIP=[current item or "none"] | queue-depth=[N ready / W waiting]
+```
 
 ---
 
@@ -127,21 +139,31 @@ CONSTRAINT: M04 (BigCommerce API credentials)
 
 ```
 ═══ BLOCK 1: BUILD STATE ═══
-Open tracks: [N]   Open M-tasks: [N]   WIP: [from WORK_IN_PROGRESS]
+Open tracks: [N]   Open M-tasks: [N]   WIP: [item name or "none"]   Queue: [N ready / W waiting]
+[cycle warnings if any from Step 3]
 
 ═══ BLOCK 2: TOP 5 CONSTRAINTS BY LEVERAGE ═══
-[Step 4 table]
+| Rank | Task | Direct unblocks | Cascading leverage | Type (external/internal/mixed) |
+|---|---|---|---|---|
+[one row per candidate, sorted by leverage descending]
 
 ═══ BLOCK 3: PRIMARY CONSTRAINT — EXPLOIT BEFORE ELEVATE ═══
-[Step 5 block for the rank-1 constraint]
+CONSTRAINT: [task-id] ([name])
+  Direct unblocks: [list]
+  Cascading: [list]
+  Exploit option A: [description — specific AccentOS workaround or partial-mode approach]
+  Exploit option B: [description — manual fallback or data-export workaround]
+  [OR: elevation_only: true — "No internal exploit found. Direct external action required: [action]."]
+  Elevate option: [concrete action + time estimate]
 
 ═══ BLOCK 4: NEXT-SESSION RECOMMENDATION ═══
-- If M-tasks (external) dominate the top 5: Michael focus, Claude pick
-  highest-leverage internal task in parallel
-- If internal tasks dominate: Claude work autonomously on rank-1
-- If WIP shows mid-task interruption: finish that first; re-run
-  bottleneck-finder after
+- ACTION: [one concrete next step for Claude, imperative-voiced]
+- MICHAEL NEEDED: [yes/no + what specifically]
+- PARALLEL OPTION: [if an internal task can run while Michael handles external constraint, name it]
+- If WIP shows mid-task interruption: finish that first; re-run bottleneck-finder after
 ```
+
+**Empty state handling:** If BUILD_PLAN_CLAUDE.md has 0 open items and BUILD_PLAN_MICHAEL.md has 0 open M-tasks, output: "Build plan appears complete. Verify against MASTER.md and PROMPT_QUEUE.md for any unrecorded work."
 
 ---
 
@@ -152,3 +174,6 @@ Open tracks: [N]   Open M-tasks: [N]   WIP: [from WORK_IN_PROGRESS]
 - **Never** propose a constraint without naming exploit options. "Wait for Michael" is not an exploit.
 - **Never** rank by [ ] count alone — leverage matters more than raw blocker count.
 - **Never** ignore PROMPT_QUEUE.md — Michael-queued items are signal about what he thinks is the constraint.
+- **Never** output prose-only conclusions. Every run produces the full 4-block structured output, even if some blocks are sparse.
+- **Never** fabricate weak exploit options to avoid outputting `elevation_only: true`. If no genuine internal exploit exists, say so.
+- **Never** skip cycle detection. Circular dependencies in the build plan cause infinite leverage recursion — always use the visited-set DFS guard.

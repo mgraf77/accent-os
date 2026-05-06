@@ -34,6 +34,12 @@ Run when Michael says:
 - "table profile"
 - "is this data sane"
 - "feed quality check"
+- "check [table] data"
+- "profile [table] columns"
+- "sanity check [table]"
+- "null check [table]"
+- "how clean is [table]"
+- "column breakdown on [table]"
 
 ---
 
@@ -49,15 +55,22 @@ If Michael says "all columns" explicitly, proceed with all but warn that the out
 
 The target is one of:
 
-- A Supabase table name (e.g. `vendors`, `vendor_scores`, `deals`, `inventory.feed_status`)
+- A Supabase table name in `hsyjcrrazrzqngwkqsqa` (e.g. `vendors`, `vendor_scores`, `deals`, `inventory.feed_status`)
 - A query result from a prior supabase-sql-magic run
 - A specific column on a specific table (e.g. `vendors.gross_margin_pct`)
 
-Confirm the target exists by reading `/home/user/accent-os/sql/M*.sql`. If not found, output "Target not found in /home/user/accent-os/sql/" and stop.
+**Do in parallel:** Confirm the target exists by reading `/home/user/accent-os/sql/M*.sql` AND check if Michael named the table with a schema prefix (e.g. `inventory.feed_status` → schema=`inventory`, table=`feed_status`). Both checks are independent.
+
+Edge cases:
+- If the table is not found in `/home/user/accent-os/sql/`, output: `Target not found in /home/user/accent-os/sql/ — confirm table name in hsyjcrrazrzqngwkqsqa` and stop.
+- If the table exists in schema files but has 0 rows at query time, the zero-row path fires in Step 4 (EMPTY flag). Do not abort — the schema profile is still valid.
+- If Michael references a BigCommerce `store-cwqiwcjxes` export table (e.g. a synced orders or catalog table), treat as a normal Supabase table — same profiling applies.
 
 ---
 
 ## Step 2 — Generate profile SQL
+
+**Do in parallel:** Generate the per-column probe UNION block AND the top-10 frequency queries for text/enum columns. Both are independent SQL generation tasks.
 
 For the target table, generate a profile query. Build it column-by-column from the schema:
 
@@ -183,5 +196,7 @@ For each fired flag, suggest a follow-up:
 - **Never** use `SELECT *` on the target table for the profile — generate per-column probes.
 - **Never** profile a table without first verifying it exists in `/home/user/accent-os/sql/M*.sql`.
 - **Never** report Top values for columns where every row is unique (UUIDs, timestamps) — meaningless and noisy.
-- **Never** silently skip a column. If profiling fails on a specific column (e.g. JSON type with awkward shape), flag it and continue with the others.
-- **Never** run the profile SQL automatically — output it as paste-ready blocks. Michael runs the queries.
+- **Never** silently skip a column. If profiling fails on a specific column (e.g. JSON type with awkward shape), flag it explicitly in BLOCK 2 as `[column].SKIP — [reason]` and continue with the others.
+- **Never** run the profile SQL automatically — output it as paste-ready blocks. Michael runs the queries against `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`.
+- **Never** run `WIDTH_BUCKET` without explicit min/max bounds from a subquery — NULL min/max causes a runtime error; always use the `WITH bounds AS (...)` pattern from Step 2.
+- **Never** surface the EMPTY flag and then continue with per-column outlier checks. Zero rows = stop at the EMPTY flag; per-column stats are meaningless on empty tables.

@@ -33,12 +33,17 @@ Run when Michael says:
 - "do my plans agree"
 - "audit my docs"
 - "drift check" / "consistency check on plans"
+- "sync my planning docs"
+- "are my plans out of sync"
+- "find contradictions in my docs"
+- "what disagreed between plans"
+- "reconcile my docs"
 
 ---
 
 ## Step 1 — Load all source-of-truth docs
 
-Read each file. If any is missing, flag and continue with what exists:
+Do in parallel: read all files simultaneously — they are independent sources.
 
 - `/home/user/accent-os/MASTER.md`
 - `/home/user/accent-os/BUILD_PLAN_CLAUDE.md`
@@ -48,6 +53,10 @@ Read each file. If any is missing, flag and continue with what exists:
 - `/home/user/accent-os/WORK_IN_PROGRESS.md`
 - `/home/user/accent-os/PROMPT_QUEUE.md`
 - `/home/user/accent-os/skills/repo-scout/references/project-profiles.md`
+
+For each missing file, output: `⚠ MISSING: [path] — skipping; claims from this source will be absent from delta table.`
+
+**Minimum viable run:** if fewer than 2 of {MASTER.md, BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md} are present, abort with: "doc-drift needs at least 2 of the 3 primary planning docs (MASTER, BUILD_PLAN_CLAUDE, BUILD_PLAN_MICHAEL). Found: [list]. Cannot produce a meaningful comparison."
 
 ---
 
@@ -97,21 +106,33 @@ For each ✗ DRIFT row, classify:
 
 ```
 ═══ BLOCK 1: AGREEMENT TABLE ═══
-[full Step 3 table]
+| Claim class | MASTER | BUILD_PLAN_CLAUDE | BUILD_PLAN_MICHAEL | project-profiles | SESSION_LOG | PROMPT_LOG | Verdict |
+|---|---|---|---|---|---|---|---|
+[one row per claim class; quote source lines; use ✓ agree / ⚠ silent / ✗ DRIFT]
 
 ═══ BLOCK 2: DRIFT LIST ═══
-For each ✗ DRIFT, list:
-  - Claim class + claim
-  - Drift type (stale-marker / priority / status-label)
-  - Recommended source-of-truth (which doc to align others to)
+[For each ✗ DRIFT row:]
+  DRIFT #N: [claim class]
+    Claim in [doc-A]: "[verbatim quote]"
+    Claim in [doc-B]: "[verbatim quote]"
+    Drift type: stale-marker | priority | status-label
+    Source-of-truth: [which doc wins and why — e.g. "SESSION_LOG: most recent, references commit SHA"]
+    Risk level: HIGH (priority drift, can cause wrong-track build) | MEDIUM (stale marker) | LOW (cosmetic label)
 
 ═══ BLOCK 3: PASTE-READY FIXES ═══
-For each drift, output an Edit-tool command Michael can run:
-  Edit BUILD_PLAN_CLAUDE.md: change `- [ ] 0.4 Full DB schema` → `- [x] 0.4 Full DB schema (M21/M22/M23 ran clean 2026-05-04)`
-  Edit project-profiles.md: remove "Full DB schema (Track 0.4) — all tables in one SQL execution" from "Known capability gaps"
+[For each drift, one Edit command per fix, using exact file path and exact old/new strings:]
+  File: /home/user/accent-os/[filename]
+  Change: `[old text]` → `[new text]`
+
+═══ BLOCK 4: SUMMARY ═══
+  Total claims evaluated: [N]
+  Agreements: [N] (✓)
+  Silent (not contradictory): [N] (⚠)
+  Drifts: [N] (✗)  HIGH=[N] MEDIUM=[N] LOW=[N]
+  Recommended action: [one-line — e.g. "Apply 2 HIGH fixes before next build session."]
 ```
 
-If no drift exists, output: "All docs agree on priorities, active tracks, and statuses as of [timestamp]." This is a valid happy-path result.
+If no drift exists, output: "All docs agree on priorities, active tracks, and statuses as of [ISO timestamp]. No fixes required." This is a valid happy-path result.
 
 ---
 
@@ -123,3 +144,6 @@ If no drift exists, output: "All docs agree on priorities, active tracks, and st
 - **Never** report drift without a recommended source-of-truth. "These disagree, you figure it out" is not useful.
 - **Never** load files that don't exist as if they were empty — flag the missing file explicitly.
 - **Never** flag a `[x]` in BUILD_PLAN_MICHAEL.md that doesn't yet appear in BUILD_PLAN_CLAUDE.md as drift. Michael's plan and Claude's plan diverge by design during active Michael work; sync happens at session end.
+- **Never** produce prose-only drift output. Every run must include all 4 output blocks (BLOCK 1–4), even if DRIFT LIST is empty.
+- **Never** read the docs sequentially — Step 1 specifies parallel reads. Sequential reads on large planning docs are a token-waste anti-pattern.
+- **Never** abort if fewer than all 8 docs are present. The minimum viable threshold is 2 of the 3 primary planning docs — less than that, abort with the stated message; otherwise continue.

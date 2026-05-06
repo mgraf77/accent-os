@@ -33,6 +33,14 @@ Run when Michael says:
 - "what's broken in GMC" / "GMC missing images report"
 - "scan the feed" / "feed audit"
 - "what products are failing GMC"
+- "fix the GMC issues"
+- "how many products are disapproved"
+- "GMC sprint" / "next fix sprint"
+- "product feed health"
+- "Feedenomics audit"
+- "M14 progress" / "image backfill status"
+- "what's the GMC queue look like"
+- "how many SKUs are broken"
 
 ---
 
@@ -40,13 +48,19 @@ Run when Michael says:
 
 The Accent Lighting feed flows: BigCommerce store-cwqiwcjxes → Feedenomics → Lights America → GMC merchant ID 687520574.
 
-Determine the source for this audit (in preference order):
-- **Live GMC** — requires M05 (GMC API service account)
-- **Feedenomics export** — CSV from the Feedenomics dashboard output
-- **Supabase mirror** — if `marketing.feed_status` exists in `/home/user/accent-os/sql/M29_marketing_schema.sql`, prefer for cached data
-- **BC product list as proxy** — fallback when above unavailable
+**Do in parallel:** Check all four sources simultaneously; select the first that has data.
 
-Output the chosen source up front so the rest of the audit is reproducible.
+Determine the source for this audit (in preference order):
+- **Live GMC** — requires M05 (GMC API service account credential in Supabase hsyjcrrazrzqngwkqsqa)
+- **Feedenomics export** — CSV from the Feedenomics dashboard output (Accent Lighting account)
+- **Supabase mirror** — if `marketing.feed_status` exists in `/home/user/accent-os/sql/M29_marketing_schema.sql`
+- **BC product list as proxy** — query BigCommerce store-cwqiwcjxes products API as last resort
+
+Edge cases:
+- If all four sources are unavailable, output: "All feed sources unavailable — M05 pending, Feedenomics export needed, Supabase marketing schema not deployed. Cannot run audit." and stop.
+- If Feedenomics CSV is stale (>7 days), note it and use Supabase mirror if available.
+
+Output the chosen source and its freshness date up front so the rest of the audit is reproducible.
 
 ---
 

@@ -261,3 +261,5 @@ Going dark. Will surface a summary in SESSION_LOG.md on exit.
 - **Never** auto-rebase or auto-resolve merge conflicts in autonomous mode. Stop, flag, await Michael.
 - **Never** delete autonomous_mode.json on exit. Leave it as audit trail.
 - **Never** treat WORK_IN_PROGRESS.md as a queue — it's a resume-point indicator. The queue is PROMPT_QUEUE.md.
+- **Never** skip the per-commit budget check (Step 4 rule: check after each `git commit`, not only between items). A single Track item can burn 60K+ tokens unchecked.
+- **Never** classify a task as auto-approved without walking the full auto-approved list in Step 1. Ambiguous items default to needs-Michael, not auto-approved.

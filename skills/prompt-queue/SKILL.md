@@ -419,3 +419,5 @@ Do not auto-execute without explicit confirmation. The "I don't want to interrup
 - **Never** hold queue state in memory. Every operation writes to PROMPT_QUEUE.md immediately.
 - **Never** strip Michael's verbatim phrasing from the prompt — execute it as he wrote it, not a paraphrase.
 - **Never** auto-promote a queued prompt to higher priority based on "what Claude thinks is important." Priority is Michael's call.
+- **Never** auto-resume a PAUSED item on a generic "execute next queued" — PAUSED items require explicit `resume #N` or `resume all paused`. Rationale: a PAUSED item is mid-decision; auto-resuming risks discarding pending input.
+- **Never** evaluate `custom:[bash]` resolvers without enforcing the 5-second timeout. An unbound shell command in a defer condition can stall queue operations indefinitely.
