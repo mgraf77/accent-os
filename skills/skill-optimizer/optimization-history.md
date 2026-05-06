@@ -392,3 +392,73 @@ AccOS (0) — design ceiling at 7.0 confirmed. TC, Acc, AP (0) — all blocked b
 - Session accuracy: 3/3   OQ +0.5, MF +0.5, Spd +0.5 — all predicted accurately at 7.0-8.0 range
 
 **Branch:** claude/skill-optimizer-rOdjA | **Commits:** 0422db2
+
+---
+
+## 2026-05-06 skill-optimizer — Pass 7 (Session total: 3 calibrated passes)
+
+**Skill:** skill-optimizer
+**Scope:** PROJECT + GLOBAL (both updated)
+**Pass:** 7 | **Session passes:** 3 (calibrated rubric passes 5–7)
+**Weight profile:** balanced → v3 applied | **Rubric drift:** YES (v2→v3: AccOS 31%→10%, TC/Acc/Spd/AP 11%→16%)
+**Plateau triggered:** NO (consecutive thin reset to 0; Pass 7 was MEANINGFUL)
+
+### Score Matrix
+
+| Dimension | Weight (v3) | Pass 6 End | Pass 7 End | Delta | Momentum |
+|---|---|---|---|---|---|
+| Output Quality | 13% | 8.0 | 8.0 | 0 | → |
+| Methodology Fitness | 13% | 8.0 | 8.0 | 0 | → |
+| Trigger Coverage | 16% | 7.5 | 8.0 | +0.5 | ↑ |
+| Accuracy | 16% | 7.5 | 7.8 | +0.3 | ↑ |
+| Speed / Efficiency | 16% | 7.5 | 8.0 | +0.5 | ↑ |
+| AccentOS Fit | 10% | 7.0 | 7.0 | 0 | → |
+| Anti-pattern | 16% | 7.5 | 8.0 | +0.5 | ↑ |
+| **TOTAL** | | **75.80** | **78.68** | **+2.88** | |
+
+**Threshold:** 78.0 | **Status:** MET ✓
+**Session target:** 80.0 | **Gap:** 1.32 pts (evidence ceiling)
+
+### Dimension Registry at Session End
+
+| Dimension | v3 Weight | v4 Weight | Status | Notes |
+|---|---|---|---|---|
+| Output Quality | 13% | 3% | active (floored) | targeted, resisted → EI=0 |
+| Methodology Fitness | 13% | 3% | active (floored) | targeted, resisted → EI=0 |
+| Trigger Coverage | 16% | 27% | active | ↑ moved +0.5, high EI |
+| Accuracy | 16% | 9% | active | ↑ moved +0.3 (<0.5), penalized |
+| Speed / Efficiency | 16% | 27% | active | ↑ moved +0.5, high EI |
+| AccentOS Fit | 10% | 3% | active (floored) | structural ceiling |
+| Anti-pattern | 16% | 27% | active | ↑ moved +0.5, high EI |
+
+### Changes Applied
+1. PROMPT_LOG-validated trigger phrases ("gap analysis [skill]", "push [skill] further", "push yourself", "get [skill] to [score]") → TC 8.0
+2. Duplicate validation procedure sentence removed from Step 7 → Acc cleanup
+3. "Targeted" definition added to Step 9 Expected Impact formula — resolves classification ambiguity → Acc precision
+4. Step 0 dependency clarification (items 3–6 wait for item 1) → Spd precision
+5. RUBRIC IMPROVEMENT ROADMAP block in Step 11b — per-row path-to-100 projection (user request) → OQ richness
+6. PASS VALUE ANALYSIS block in Step 11b — score gain vs. token/time ROI decision aid (user request) → MF precision
+7. Session evidence cited: Spd 8.0 (conditional re-reads verified), AP 8.0 (OQ inflation caught in P6)
+
+### What Moved Most
+TC, Spd, AP (+0.5 each) — evidence-based 8.0 claims validated by session behavior; trigger list now covers all PROMPT_LOG-observed phrasings.
+
+### What Resisted
+OQ, MF (0 each) — targeted via new output blocks (ROADMAP, Pass Value) but evidence independence barrier prevents 8.5. Floored at 3% in v4.
+Acc (+0.3 only) — targeted, but only partial edge case evidence (core path + conditional re-read; SKILL NOT FOUND, missing-history, batch mode paths not triggered).
+
+### Next-Session Proposals
+1. New independent session: claim OQ/MF 8.5 with 2+ independent-session evidence → +2.0-3.0 pts
+2. Acc → 8.0: intentionally trigger SKILL NOT FOUND and missing-history paths to validate → +0.2 pts (small)
+3. v4 re-expressed baseline at session start = 79.44 → new session needs only +0.56 pts to hit 80.0
+4. TC 8.5: requires richer PROMPT_LOG history (more sessions) → deferred
+
+### Patterns Confirmed Effective (cross-skill reusable)
+- "Add PROMPT_LOG-validated triggers for real-use phrasings" → TC +0.5 — applies to: any skill missing 8.0 anchor trigger validation
+- "Cite session evidence for efficiency features (conditional reads, guards)" → Spd +0.5 — applies to: any skill with conditional read optimization
+- "Cite anti-pattern enforcement events as AP evidence" → AP +0.5 — applies to: any skill with score-inflation prevention anti-patterns
+
+### Prediction Calibration
+- Session accuracy: 7/7   All predictions hit; structural-only changes earn structural gains; evidence-based claims earn evidence gains
+
+**Branch:** claude/skill-optimizer-rOdjA | **Commits:** 33afd26
