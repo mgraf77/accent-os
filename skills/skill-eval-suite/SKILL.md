@@ -53,12 +53,17 @@ Do in parallel:
 - Skill not found in `/home/user/accent-os/skills/` → check `~/.claude/skills/` before failing. If absent in both, output "Skill not found at either path" and stop.
 - `gotcha-log.md` absent → skip silently; note in Step 5 Block 4 that no gotcha entries were incorporated.
 - Skill exists but has no `references/` folder → proceed; only assert on SKILL.md-level outputs.
+- Skill has no named output blocks (no BLOCK headers, no fenced code in last step) → derive shape assertions from the first fenced code block in the workflow, or flag: "No assertable output shape found — Step 2 assertions will test trigger response only."
+- **BOTH-scope skill:** check that global version (`~/.claude/skills/[skill]/SKILL.md`) contains no AccentOS-specific hardcoding. Add a test case: `assert not-contains: ["hsyjcrrazrzqngwkqsqa", "store-cwqiwcjxes", "/home/user/accent-os"]` against the global file content.
+- **Existing `promptfooconfig.yaml`:** if the file already exists, output: "promptfooconfig.yaml exists at [path]. Overwrite? (yes / version-increment — saves as promptfooconfig-v[N].yaml)". Do not overwrite without confirmation.
 
 Output of Step 1: confirmed file paths read, gotcha entry IDs relevant to this skill (or "none").
 
 ---
 
 ## Step 2 — Identify the test surface
+
+**Do in parallel with early Step 3 setup** (read skill structure while beginning to draft test case outlines):
 
 For each skill, define what's testable. Output a test-surface table before writing cases:
 
@@ -148,7 +153,47 @@ tests:
       - type: not-contains
         value: "ERROR"
 
-  # ... 4 more test cases following Step 3 structure
+  - description: "Anti-pattern violation — auto-apply attempt → skill refuses"
+    vars:
+      input: "[input that would cause skill to auto-mutate data or auto-run]"
+    assert:
+      - type: not-contains
+        value: "auto-applied"
+      - type: contains-any
+        value: ["Michael", "approve", "confirm", "run command"]
+
+  - description: "AccentOS stack-substitution check"
+    vars:
+      input: "[trigger phrase for PROJECT or BOTH scope skill]"
+    assert:
+      - type: contains-any
+        value: ["hsyjcrrazrzqngwkqsqa", "store-cwqiwcjxes", "AccentOS", "Accent Lighting"]
+
+  - description: "Output-shape regression — all named BLOCK headers present"
+    vars:
+      input: "[canonical trigger phrase]"
+    assert:
+      - type: contains
+        value: "BLOCK 1"
+      - type: contains
+        value: "BLOCK 2"
+      - type: contains
+        value: "BLOCK 3"
+
+  - description: "SKILL.md frontmatter parses — description ≥250 chars, no unfilled placeholders"
+    vars:
+      input: "validate frontmatter of [skill-name]/SKILL.md"
+    assert:
+      - type: javascript
+        value: |
+          const fs = require('fs');
+          const path = '/home/user/accent-os/skills/[skill-name]/SKILL.md';
+          const content = fs.readFileSync(path, 'utf8');
+          const descMatch = content.match(/description:\s*>([\s\S]*?)^---/m);
+          const desc = descMatch ? descMatch[1].replace(/\s+/g, ' ').trim() : '';
+          const hasUnfilled = /\[(?!your-|project-|skill-|N\]|X\])[a-z]/.test(content.split('```')[0]);
+          return desc.length >= 250 && !hasUnfilled;
+        description: "description ≥250 chars and no unfilled [brackets] in frontmatter"
 ```
 
 ---
@@ -173,8 +218,12 @@ Add to .github/workflows/skill-eval.yml:
 
 ═══ BLOCK 4: WHAT'S TESTED ═══
 - [N] test cases generated
-- Coverage: trigger phrases, output shape, edge cases, anti-pattern compliance
-- gotcha-log edge cases incorporated: [list IDs]
+- Coverage: trigger phrases, output shape, edge cases, anti-pattern compliance, frontmatter validation
+- Gotcha-log edge cases incorporated:
+    [gotcha-ID] → TEST-[N]: [one sentence on what it protects]
+    (or "none — no gotcha entries found for this skill")
+- BOTH-scope check: [included | not applicable — PROJECT scope]
+- Existing config: [overwritten | saved as promptfooconfig-v[N].yaml | new file]
 ```
 
 ---
@@ -188,3 +237,6 @@ Add to .github/workflows/skill-eval.yml:
 - **Never** auto-run the eval suite. Output the command; Michael runs it (cost + token budget control).
 - **Never** write assertions without a `description` field — undocumented assertions become unmaintainable.
 - **Never** assume a skill lives only in `/home/user/accent-os/skills/` — check `~/.claude/skills/` for GLOBAL-scope skills before failing Step 1.
+- **Never** assert on exact internal phrasing of LLM output steps — assert on output block headers and required fields, not implementation text that may vary.
+- **Never** omit the `description` field from any test case — undocumented assertions are unmaintainable and will be silently skipped in CI review.
+- **Never** overwrite an existing `promptfooconfig.yaml` without confirmation — always offer the version-increment option.
