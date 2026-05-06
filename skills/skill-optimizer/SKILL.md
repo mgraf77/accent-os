@@ -146,7 +146,16 @@ Do in parallel:
 5. **Load optimization history.** Read `/home/user/accent-os/skills/skill-optimizer/optimization-history.md`. Extract all prior entries for this skill.
 6. **Load skill feedback.** Read `/home/user/accent-os/skills/skill-feedback.md`. Extract FAIL/PARTIAL entries for this skill — real-world failure reports. Label these `[FEEDBACK: real failure]`.
 
-Output: preflight block + session state initialized.
+Output:
+```
+PREFLIGHT
+  Skill:    [name]   Scope: [GLOBAL | PROJECT | BOTH]   Branch: [branch]
+  History:  [N prior passes | none — first run]
+  Feedback: [N FAIL/PARTIAL entries | none]
+  Est. session: [1 pass (~10–15k tokens)] | [2–3 passes (~30–50k tokens)]
+               (based on: baseline gap [X pts], skill size [N lines], history depth)
+```
+Session state: initialized.
 
 ---
 
@@ -183,6 +192,8 @@ HISTORY CHECK: [N prior passes found]
 | Companion skills | Listed pairs or dependencies |
 
 List each field's raw content — no summaries. This is the scoring source of truth.
+
+_(On Pass N+1: re-read the SKILL.md as written by Step 7 — not the pre-execution version from Pass N. The skill changed; the profile must reflect the updated file.)_
 
 Wait for both 1a and 1b outputs before proceeding.
 
@@ -375,7 +386,7 @@ LOOP [N/5]: estimated [X.X] vs. threshold [Y.Y]
   Feedback entries addressed: [list if any | none yet]
 ```
 
-**Perspective Sweep (auto in final loop — before Red Team):** All 6 roles each generate one hypothesis from their angle. Merge non-overlapping, non-already-tried ones into the running plan before finalizing. This ensures the plan wasn't built from a single evaluator's blind spot.
+**Perspective Sweep (auto in final loop — before Red Team):** All 6 roles each generate one hypothesis from their angle. Merge non-overlapping, non-already-tried ones into the running plan. Output as a labeled `PERSPECTIVE SWEEP` block (format: see Perspective Sweep Framework above) positioned between the final loop's output and the Red Team Pass — not inline in the `LOOP [N/5]` block.
 
 **Red Team Pass** (run once, after plan is assembled):
 ```
@@ -665,7 +676,33 @@ OPTIONS
 ```
 
 **First Principles Reset** (use when plateau is confirmed or on request):
-Strip the skill to its core purpose statement ("This skill exists to do [X]"). Ask: "What is the minimum set of dimensions that captures THIS skill's quality?" Rebuild the registry with 4–6 tightly focused dimensions. Resets rubric version to v1-fp. Useful when the current rubric is measuring the wrong things — plateau detection can trigger because of rubric mismatch, not because the skill can't improve.
+
+Run these substeps before returning to Step 2:
+
+1. **State core purpose.** One sentence: "This skill exists to [single most important job]." If more than one sentence is needed, the purpose is unclear — that's the root of the plateau.
+2. **List minimum dimensions.** Ask: "What 4–6 dimensions directly measure whether this skill does its core job well?" Exclude proxies and nice-to-haves.
+3. **Justify each.** For each proposed dimension: "If this scored 10/10, would the skill be reliably better at its core job?" If no → drop it.
+4. **Output a REGISTRY RESET block:**
+
+```
+REGISTRY RESET — v1-fp  (First Principles rebuild)
+  Core purpose: "[single-sentence purpose statement]"
+
+  Dimension          | Weight | Justification
+  ─────────────────────────────────────────────────────────────────
+  [Dim 1]            |  [%]   | [why this directly measures the core job]
+  [Dim 2]            |  [%]   |
+  ...
+  Weights sum: 100% ✓
+
+  Retired from prior registry:
+    [OldDim] — [reason: measuring a proxy, not the core job]
+
+  Note: Cross-pass score comparison paused — new registry.
+        Rubric resets to v1-fp. Longitudinal tracking resumes at v2-fp.
+```
+
+Resets rubric version to v1-fp. Useful when the current rubric is plateauing because it's measuring proxies rather than the core job. Plateau detection can trigger from rubric mismatch, not because the skill can't improve.
 
 Parse reply:
 - "another pass" / "force another pass" → increment pass counter, increment rubric version, return to Step 1b (re-profile updated skill) → Step 2 (apply v[N+1] registry) → Step 3 → continue. Seed brainstorm with pre-loaded hypotheses from this step.
