@@ -312,6 +312,52 @@ tbody tr:hover td{background:var(--bg);}
 .rank-num{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;min-width:28px;text-align:right;}
 .rank-bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
 .rank-fill{height:100%;border-radius:4px;}
+
+/* ── MOBILE HAMBURGER (topbar) ── */
+.mobile-menu-btn{display:none;background:none;border:none;cursor:pointer;font-size:22px;color:var(--text);padding:6px 10px;border-radius:6px;line-height:1;}
+.mobile-menu-btn:hover{background:var(--bg);}
+.sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99;opacity:0;transition:opacity .2s;}
+.sb-backdrop.on{display:block;opacity:1;}
+
+/* ── QUICK ACTIONS FAB ── */
+.qa-fab{position:fixed;right:22px;bottom:22px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 6px 20px rgba(237,28,36,.45);z-index:300;transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;}
+.qa-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 8px 26px rgba(237,28,36,.55);}
+.qa-fab.on{transform:rotate(45deg);}
+.qa-menu{position:fixed;right:22px;bottom:90px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.18);z-index:301;min-width:240px;padding:8px;display:none;flex-direction:column;gap:2px;font-family:Outfit,sans-serif;}
+.qa-menu.on{display:flex;animation:qaIn .18s ease-out;}
+@keyframes qaIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.qa-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--text);font-size:13.5px;font-weight:500;background:none;border:none;text-align:left;font-family:inherit;}
+.qa-item:hover{background:var(--bg);}
+.qa-item .qa-ico{font-size:18px;width:24px;text-align:center;}
+.qa-sep{height:1px;background:var(--border);margin:4px 0;}
+.qa-hd{padding:8px 12px 4px;font-size:10.5px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;}
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width:900px){
+  .mobile-menu-btn{display:inline-flex;align-items:center;}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .25s ease;z-index:100;width:260px;min-width:260px;box-shadow:0 0 24px rgba(0,0,0,.35);}
+  .sidebar.mobile-open{transform:translateX(0);}
+  .sidebar.col{width:260px;min-width:260px;} /* ignore desktop-collapse on mobile */
+  .sidebar.col .sb-sect,.sidebar.col .ni-label,.sidebar.col .un,.sidebar.col .ur{opacity:1;}
+  .sb-toggle{display:none;}
+  .main{width:100vw;}
+  .topbar{padding:0 14px;gap:8px;}
+  .topbar-title{font-size:15px;}
+  .topbar-sub{display:none;}
+  .topbar > div:last-child > button[onclick*="openGlobalSearch"]{min-width:0!important;padding:6px 10px!important;}
+  .topbar > div:last-child > button[onclick*="openGlobalSearch"] > span:nth-child(2),
+  .topbar > div:last-child > button[onclick*="openGlobalSearch"] > span:nth-child(3){display:none;}
+  .content{padding:14px!important;}
+  .g4,.g3,.g2{grid-template-columns:1fr!important;}
+  .tbl-wrap{overflow-x:auto;}
+  .modal{width:calc(100vw - 24px)!important;max-width:none!important;}
+  .qa-fab{right:16px;bottom:16px;width:52px;height:52px;}
+  .qa-menu{right:16px;bottom:80px;left:16px;min-width:0;}
+}
+@media (max-width:560px){
+  .topbar{padding:0 10px;}
+  .stat-value{font-size:20px!important;}
+}
 </style>
 </head>
 <body>
@@ -385,6 +431,7 @@ tbody tr:hover td{background:var(--bg);}
 
   <div class="main">
     <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSB()" title="Menu">☰</button>
       <div><span class="topbar-title" id="pg-title">Dashboard</span><span class="topbar-sub" id="pg-sub"></span></div>
       <div style="display:flex;align-items:center;gap:14px;">
         <button onclick="openGlobalSearch()" title="Search (Ctrl+K)" style="display:flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-3);font-size:12px;cursor:pointer;min-width:200px;">
@@ -396,6 +443,26 @@ tbody tr:hover td{background:var(--bg);}
     </div>
     <div class="content" id="pg-content"></div>
   </div>
+</div>
+
+<!-- MOBILE BACKDROP -->
+<div class="sb-backdrop" id="sb-backdrop" onclick="toggleSB()"></div>
+
+<!-- QUICK ACTIONS FAB -->
+<button class="qa-fab" id="qa-fab" onclick="toggleQA()" title="Quick actions">+</button>
+<div class="qa-menu" id="qa-menu">
+  <div class="qa-hd">Create</div>
+  <button class="qa-item" onclick="qaGo('quotes')"><span class="qa-ico">📝</span>New Quote</button>
+  <button class="qa-item" onclick="qaGo('customers')"><span class="qa-ico">👤</span>New Customer</button>
+  <button class="qa-item" onclick="qaGo('pipeline')"><span class="qa-ico">💼</span>New Deal</button>
+  <button class="qa-item" onclick="qaGo('jobs')"><span class="qa-ico">🔧</span>New Job</button>
+  <button class="qa-item" onclick="qaGo('mytasks')"><span class="qa-ico">✓</span>New Task</button>
+  <div class="qa-sep"></div>
+  <div class="qa-hd">Jump to</div>
+  <button class="qa-item" onclick="qaGo('dashboard')"><span class="qa-ico">⌂</span>Dashboard</button>
+  <button class="qa-item" onclick="qaGo('vendors')"><span class="qa-ico">⊟</span>Vendor Ranking</button>
+  <button class="qa-item" onclick="qaGo('internalmeetings')"><span class="qa-ico">⚎</span>Internal Meetings</button>
+  <button class="qa-item" onclick="openGlobalSearch();toggleQA()"><span class="qa-ico">🔍</span>Search… <span style="margin-left:auto;font-family:DM Mono,monospace;font-size:10px;color:var(--text-3);">⌘K</span></button>
 </div>
 
 <!-- VENDOR SIDE PANEL -->
@@ -649,7 +716,48 @@ async function doLogout(){
 
 // ── SIDEBAR ───────────────────────────────────────────────
 let sbCol=false;
-function toggleSB(){ sbCol=!sbCol; $('sb').classList.toggle('col',sbCol); }
+function toggleSB(){
+  const isMobile = window.matchMedia('(max-width:900px)').matches;
+  const sb = $('sb'), bd = $('sb-backdrop');
+  if(isMobile){
+    const open = !sb.classList.contains('mobile-open');
+    sb.classList.toggle('mobile-open', open);
+    if(bd) bd.classList.toggle('on', open);
+  } else {
+    sbCol = !sbCol;
+    sb.classList.toggle('col', sbCol);
+  }
+}
+// auto-close mobile sidebar on nav click
+document.addEventListener('click', (e) => {
+  const ni = e.target.closest && e.target.closest('.ni');
+  if(ni && window.matchMedia('(max-width:900px)').matches){
+    const sb = $('sb'), bd = $('sb-backdrop');
+    if(sb && sb.classList.contains('mobile-open')){
+      sb.classList.remove('mobile-open');
+      if(bd) bd.classList.remove('on');
+    }
+  }
+}, true);
+
+// ── QUICK ACTIONS FAB ──
+function toggleQA(){
+  const fab = $('qa-fab'), menu = $('qa-menu');
+  const open = !menu.classList.contains('on');
+  menu.classList.toggle('on', open);
+  fab.classList.toggle('on', open);
+}
+function qaGo(page){
+  toggleQA();
+  goTo(page);
+}
+document.addEventListener('click', (e) => {
+  const menu = $('qa-menu'), fab = $('qa-fab');
+  if(!menu || !menu.classList.contains('on')) return;
+  if(menu.contains(e.target) || (fab && fab.contains(e.target))) return;
+  menu.classList.remove('on');
+  fab.classList.remove('on');
+});
 
 // ── UTILS ─────────────────────────────────────────────────
 const $=id=>document.getElementById(id);
