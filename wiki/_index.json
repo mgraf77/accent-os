@@ -1,0 +1,567 @@
+[
+  {
+    "id": "sop-001-vendor-onboarding",
+    "title": "SOP-001 — Vendor Onboarding",
+    "type": "sop",
+    "status": "published",
+    "weight": 9,
+    "tags": [
+      "vendor",
+      "onboarding",
+      "add-vendor",
+      "vendor-data",
+      "VD",
+      "rep-group",
+      "scoring",
+      "baseline",
+      "AccentOS",
+      "SOP"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "emp-owner",
+      "windward-erp",
+      "sop-002-quote-to-close"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/sops/sop-001-vendor-onboarding.md",
+    "excerpt": "SOP-001 — Vendor Onboarding Add a new vendor to AccentOS, score them, and connect all downstream modules. Prerequisites - Owner or Admin role (Vendor Data page is Owner/Admin-gated) - Vendor's contact info, terms, rep group assignment, and at least a rough spend estimate --- Steps 1. Create the vend"
+  },
+  {
+    "id": "sop-002-quote-to-close",
+    "title": "SOP-002 — Quote to Close",
+    "type": "sop",
+    "status": "published",
+    "weight": 9,
+    "tags": [
+      "quote",
+      "deal",
+      "close",
+      "pipeline",
+      "sale",
+      "customer",
+      "create-quote",
+      "win-deal",
+      "job",
+      "SOP",
+      "AccentOS",
+      "sales-workflow"
+    ],
+    "related": [
+      "sop-001-vendor-onboarding",
+      "sop-003-inventory-reorder",
+      "emp-sales",
+      "indoor-decorative",
+      "adr-005-append-only-observations"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/sops/sop-002-quote-to-close.md",
+    "excerpt": "SOP-002 — Quote to Close End-to-end workflow: customer inquiry → quote → deal → closed job. Prerequisites - Sales, Manager, Admin, or Owner role - Customer record exists (or you'll create one inline) --- Steps 1. Create or verify the customer record 1. Open AccentOS → Customers. 2. Search for the cu"
+  },
+  {
+    "id": "sop-003-inventory-reorder",
+    "title": "SOP-003 — Inventory Reorder Workflow",
+    "type": "sop",
+    "status": "published",
+    "weight": 9,
+    "tags": [
+      "inventory",
+      "reorder",
+      "purchase-order",
+      "PO",
+      "demand-forecast",
+      "low-stock",
+      "reorder-point",
+      "AccentOS",
+      "SOP",
+      "warehouse"
+    ],
+    "related": [
+      "sop-001-vendor-onboarding",
+      "sop-002-quote-to-close",
+      "emp-warehouse",
+      "windward-erp",
+      "adr-005-append-only-observations"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/sops/sop-003-inventory-reorder.md",
+    "excerpt": "SOP-003 — Inventory Reorder Workflow Identify low-stock SKUs, generate a purchase order, and update inventory on receipt. Prerequisites - Owner, Admin, or Manager role for PO creation; Warehouse role for receipt - Inventory module has been seeded (at least one CSV import or Windward sync) --- Steps "
+  },
+  {
+    "id": "adr-002-supabase-backend",
+    "title": "ADR-002 — Supabase as Primary Backend",
+    "type": "adr",
+    "status": "published",
+    "weight": 8,
+    "tags": [
+      "supabase",
+      "backend",
+      "database",
+      "postgres",
+      "REST",
+      "RLS",
+      "auth",
+      "persistence",
+      "AccentOS",
+      "architecture",
+      "decision",
+      "why-supabase",
+      "firebase",
+      "chose"
+    ],
+    "related": [
+      "adr-003-localstorage-personal",
+      "adr-005-append-only-observations",
+      "supabase-source"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/adrs/adr-002-supabase-backend.md",
+    "excerpt": "ADR-002 — Supabase as Primary Backend Status Accepted — in use from v6.9.7 (2026-05-04) Context AccentOS needed a backend that: - Stores shared data (deals, quotes, customers, inventory) across users and devices - Provides role-based access control without a custom auth server - Is deployable immedi"
+  },
+  {
+    "id": "adr-007-wiki-rag-vs-pgvector",
+    "title": "ADR-007 — Wiki-Pattern RAG vs pgvector",
+    "type": "adr",
+    "status": "published",
+    "weight": 8,
+    "tags": [
+      "RAG",
+      "pgvector",
+      "wiki",
+      "accent-rag",
+      "embeddings",
+      "search",
+      "architecture",
+      "decision",
+      "AccentOS",
+      "knowledge-base"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "adr-003-localstorage-personal"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/adrs/adr-007-wiki-rag-vs-pgvector.md",
+    "excerpt": "ADR-007 — Wiki-Pattern RAG vs pgvector Status Accepted — wiki-pattern shipped v6.11.1 (2026-05-06) Context AccentOS needed a knowledge retrieval system so Claude Code sessions could reference Accent Lighting domain knowledge (SOPs, product clusters, employee roles, data sources, architectural decisi"
+  },
+  {
+    "id": "adr-001-module-architecture",
+    "title": "ADR-001 — Single-File HTML with External JS Modules",
+    "type": "adr",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "architecture",
+      "javascript",
+      "modules",
+      "single-file",
+      "index.html",
+      "file-split",
+      "lazy-load",
+      "AccentOS"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "adr-004-inline-onclick"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/adrs/adr-001-module-architecture.md",
+    "excerpt": "ADR-001 — Single-File HTML with External JS Modules Status Accepted — shipped v6.10.12 (2026-05-04) Context AccentOS started as a single index.html file with all JavaScript inlined. As modules grew (Track 1–5), file size reached 829KB. The file was approaching a point where edits were risky (large o"
+  },
+  {
+    "id": "commercial-hospitality",
+    "title": "Commercial & Hospitality Lighting Cluster",
+    "type": "cluster",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "commercial",
+      "hospitality",
+      "hotel",
+      "restaurant",
+      "retail",
+      "office",
+      "spec",
+      "project",
+      "DLC",
+      "EM",
+      "emergency",
+      "luminaire",
+      "fixture",
+      "light-fitting",
+      "recessed",
+      "track",
+      "linear",
+      "downlight",
+      "troffer",
+      "panel",
+      "canopy",
+      "soffit",
+      "bistro"
+    ],
+    "related": [
+      "indoor-decorative",
+      "outdoor-architectural",
+      "sop-002-quote-to-close",
+      "sop-001-vendor-onboarding"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/clusters/commercial-hospitality.md",
+    "excerpt": "Commercial & Hospitality Lighting Cluster Overview Commercial and hospitality projects: hotels, restaurants, retail buildouts, office fit-outs, and multi-family residential. Highest average deal value. Longer spec cycle — often involves lighting designer, architect, and GC in addition to the end cli"
+  },
+  {
+    "id": "indoor-decorative",
+    "title": "Indoor Decorative Lighting Cluster",
+    "type": "cluster",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "indoor",
+      "decorative",
+      "pendant",
+      "chandelier",
+      "ceiling",
+      "sconce",
+      "vanity",
+      "luminaire",
+      "fixture",
+      "light-fitting",
+      "LED",
+      "residential",
+      "staging"
+    ],
+    "related": [
+      "outdoor-architectural",
+      "commercial-hospitality",
+      "sop-002-quote-to-close"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/clusters/indoor-decorative.md",
+    "excerpt": "Indoor Decorative Lighting Cluster Overview Core residential and hospitality product family at Accent Lighting. Covers all interior decorative fixtures sold through the showroom and e-commerce channels. Highest quote frequency and showroom floor footprint. Product categories category typical SKUs pr"
+  },
+  {
+    "id": "outdoor-architectural",
+    "title": "Outdoor & Architectural Lighting Cluster",
+    "type": "cluster",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "outdoor",
+      "architectural",
+      "landscape",
+      "flood",
+      "wall-pack",
+      "post-mount",
+      "pathway",
+      "wet-rated",
+      "IP65",
+      "exterior",
+      "luminaire",
+      "fixture",
+      "light-fitting",
+      "commercial",
+      "residential"
+    ],
+    "related": [
+      "indoor-decorative",
+      "commercial-hospitality",
+      "sop-002-quote-to-close"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/clusters/outdoor-architectural.md",
+    "excerpt": "Outdoor & Architectural Lighting Cluster Overview Outdoor and architectural lighting: residential exterior, landscape, commercial façade, and site lighting. Second largest revenue cluster. Longer sales cycles than decorative — typically tied to construction and renovation projects. Product categorie"
+  },
+  {
+    "id": "supabase-source",
+    "title": "Source Summary — Supabase (AccentOS Primary DB)",
+    "type": "source_summary",
+    "status": "published",
+    "weight": 7,
+    "tags": [
+      "supabase",
+      "database",
+      "postgres",
+      "REST",
+      "RLS",
+      "auth",
+      "migrations",
+      "M-tasks",
+      "AccentOS",
+      "backend",
+      "integration",
+      "tables",
+      "schema",
+      "source-summary"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "adr-003-localstorage-personal",
+      "adr-005-append-only-observations",
+      "emp-owner"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/sources/supabase.md",
+    "excerpt": "Source Summary — Supabase (AccentOS Primary DB) What it is Supabase is AccentOS's primary backend: managed Postgres database, PostgREST REST API, Supabase Auth, and Row Level Security. All shared business data lives here. Connection All AccentOS JavaScript modules use the sbFetch(table, method, body"
+  },
+  {
+    "id": "adr-003-localstorage-personal",
+    "title": "ADR-003 — localStorage for Personal-Only Data",
+    "type": "adr",
+    "status": "published",
+    "weight": 6,
+    "tags": [
+      "localStorage",
+      "personal-data",
+      "my-tasks",
+      "session",
+      "cross-device",
+      "AccentOS",
+      "architecture",
+      "storage"
+    ],
+    "related": [
+      "adr-002-supabase-backend"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/adrs/adr-003-localstorage-personal.md",
+    "excerpt": "ADR-003 — localStorage for Personal-Only Data Status Accepted — first used v6.10.38 (My Tasks module, 2026-05-05) Context Some AccentOS features are genuinely personal: to-do lists, session UI state, module preference overrides. These don't need to sync across devices or be visible to other users. S"
+  },
+  {
+    "id": "adr-005-append-only-observations",
+    "title": "ADR-005 — Append-Only for Observation/Snapshot Data",
+    "type": "adr",
+    "status": "published",
+    "weight": 6,
+    "tags": [
+      "database",
+      "append-only",
+      "time-series",
+      "observations",
+      "snapshots",
+      "kpi",
+      "employee-scores",
+      "competitor-prices",
+      "AccentOS",
+      "architecture",
+      "postgres"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "supabase-source"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/adrs/adr-005-append-only-observations.md",
+    "excerpt": "ADR-005 — Append-Only for Observation/Snapshot Data Status Accepted — applied to kpisnapshots, employeescores, competitorprices, probabilitymodellog Context Several AccentOS tables represent observations over time rather than current state. For KPI snapshots, employee scores, and competitor prices, "
+  },
+  {
+    "id": "adr-006-csv-import-standard",
+    "title": "ADR-006 — CSV Import Flow Standardization",
+    "type": "adr",
+    "status": "published",
+    "weight": 6,
+    "tags": [
+      "csv",
+      "import",
+      "bulk-import",
+      "csvImportFlow",
+      "alias-map",
+      "normalization",
+      "AccentOS",
+      "architecture",
+      "pattern"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "sop-003-inventory-reorder"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/adrs/adr-006-csv-import-standard.md",
+    "excerpt": "ADR-006 — CSV Import Flow Standardization Status Accepted — csvImportFlow() helper shipped v6.10.45 (2026-05-05) Context By v6.10.40, four modules (Inventory, Customers, Trade Partners, Jobs) each had an inline CSV import flow of ~150 LOC. All four followed the same pattern: 1. Download CSV template"
+  },
+  {
+    "id": "emp-owner",
+    "title": "Employee Entity — Owner Role",
+    "type": "entity",
+    "status": "published",
+    "weight": 6,
+    "tags": [
+      "owner",
+      "role",
+      "admin",
+      "AccentOS",
+      "access",
+      "permissions",
+      "management",
+      "KPI",
+      "goals",
+      "users",
+      "module-modes"
+    ],
+    "related": [
+      "emp-sales",
+      "emp-warehouse",
+      "sop-001-vendor-onboarding",
+      "adr-002-supabase-backend"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/entities/emp-owner.md",
+    "excerpt": "Employee Entity — Owner Role Role summary Full system access. Responsible for business strategy, vendor relationships, financial oversight, and system configuration. The Owner role in AccentOS is the only role with access to all modules, all data, and all administrative functions. AccentOS access le"
+  },
+  {
+    "id": "emp-sales",
+    "title": "Employee Entity — Sales Role",
+    "type": "entity",
+    "status": "published",
+    "weight": 6,
+    "tags": [
+      "sales",
+      "role",
+      "employee",
+      "AccentOS",
+      "access",
+      "pipeline",
+      "quotes",
+      "customers",
+      "trade-partners",
+      "deals"
+    ],
+    "related": [
+      "emp-owner",
+      "emp-warehouse",
+      "sop-002-quote-to-close",
+      "indoor-decorative"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/entities/emp-sales.md",
+    "excerpt": "Employee Entity — Sales Role Role summary Customer-facing revenue generation. Manages the full quote-to-close cycle, maintains customer relationships, and coordinates with trade partners (designers, architects, contractors). The Sales role has access to all customer-facing and revenue modules. Accen"
+  },
+  {
+    "id": "emp-warehouse",
+    "title": "Employee Entity — Warehouse Role",
+    "type": "entity",
+    "status": "published",
+    "weight": 6,
+    "tags": [
+      "warehouse",
+      "role",
+      "employee",
+      "AccentOS",
+      "access",
+      "inventory",
+      "deliveries",
+      "labels",
+      "receiving",
+      "PO"
+    ],
+    "related": [
+      "emp-owner",
+      "emp-sales",
+      "sop-003-inventory-reorder"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/entities/emp-warehouse.md",
+    "excerpt": "Employee Entity — Warehouse Role Role summary Physical operations: inventory management, receiving purchase orders, preparing deliveries, and printing labels. The Warehouse role has a minimal, operations-focused interface — no financial data, no vendor scoring, no management modules. AccentOS access"
+  },
+  {
+    "id": "adr-004-inline-onclick",
+    "title": "ADR-004 — Inline onclick=\"\" Handlers",
+    "type": "adr",
+    "status": "published",
+    "weight": 5,
+    "tags": [
+      "javascript",
+      "onclick",
+      "handlers",
+      "events",
+      "inline",
+      "architecture",
+      "AccentOS",
+      "pattern"
+    ],
+    "related": [
+      "adr-001-module-architecture",
+      "adr-003-localstorage-personal"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/adrs/adr-004-inline-onclick.md",
+    "excerpt": "ADR-004 — Inline onclick=\"\" Handlers Status Accepted — used throughout AccentOS since initial build Context AccentOS renders UI via el.innerHTML = ... string templates. Adding event listeners via addEventListener after each innerHTML write requires tracking which elements exist after each render, ma"
+  },
+  {
+    "id": "bigcommerce",
+    "title": "Source Summary — BigCommerce",
+    "type": "source_summary",
+    "status": "published",
+    "weight": 5,
+    "tags": [
+      "bigcommerce",
+      "ecommerce",
+      "store",
+      "orders",
+      "products",
+      "GMC",
+      "API",
+      "integration",
+      "M04",
+      "M05",
+      "Track-5-13",
+      "Track-6-3",
+      "AccentOS"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "windward-erp",
+      "emp-sales"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/sources/bigcommerce.md",
+    "excerpt": "Source Summary — BigCommerce What it is Accent Lighting's e-commerce platform at accentlightinginc.com. Hosts the full product catalog and handles online orders. The source of GMC (Google Merchant Center) feed data and e-commerce order metrics. Integration status BLOCKED — pending M04 (BigCommerce A"
+  },
+  {
+    "id": "windward-erp",
+    "title": "Source Summary — Windward ERP",
+    "type": "source_summary",
+    "status": "published",
+    "weight": 5,
+    "tags": [
+      "windward",
+      "ERP",
+      "S5WebAPI",
+      "inventory",
+      "sales",
+      "purchase-orders",
+      "integration",
+      "M03",
+      "M10",
+      "Track-6-11",
+      "AccentOS"
+    ],
+    "related": [
+      "adr-002-supabase-backend",
+      "sop-003-inventory-reorder",
+      "emp-warehouse",
+      "bigcommerce"
+    ],
+    "created": "2026-05-06",
+    "updated": "2026-05-06",
+    "path": "wiki/sources/windward-erp.md",
+    "excerpt": "Source Summary — Windward ERP What it is Windward System Five is Accent Lighting's primary ERP / point-of-sale system. Manages all in-store transactions, purchase orders, inventory, customer records, and vendor data. AccentOS is a companion intelligence layer built on top of the data that Windward g"
+  }
+]

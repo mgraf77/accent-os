@@ -14,6 +14,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 
 ## Skills
 
+### accent-rag
+- summary: File-based RAG skill — searches the AccentOS wiki corpus (flat .md files) and injects relevant context (SOPs, ADRs, clusters, entities, sources) into responses without an embedding API or vector DB.
+- triggers: "check the wiki", "wiki search", "look it up in the wiki", "what does the wiki say about", "accent-rag"
+- when_to_use: any question about AccentOS workflows, product knowledge, architectural decisions, or employee roles — auto-triggered when confidence > 0.6
+- when_NOT: live data queries (use supabase-sql-magic), external research (use repo-scout)
+- companion: vibe-speak, supabase-sql-magic, decision-log
+
 ### analysis-snapshot
 - summary: Capture an ad-hoc analysis (vendor query, deal investigation, GMC audit) as a named, re-runnable artifact.
 - triggers: "save this analysis", "snapshot this query", "make this re-runnable"

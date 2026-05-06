@@ -334,3 +334,49 @@
 **Decisions:** MASTER.md updated every session. SESSION_LOG.md append-only.
 **Open loops:** Track 0.2 Auth not started. Supabase MCP broken. Parent company grouping UI not built.
 **Next prompt:** Start Track 0.2 — Auth and role-based access.
+
+---
+
+## 2026-05-06 — v6.11.1 Wiki Pivot + accent-rag Skill
+
+**Branch:** claude/custom-rag-system-rIT34-Yl1By
+**Prompted by:** "Resume v6.11.1 wiki pivot."
+
+### Deliverables
+
+**wiki/ corpus (19 pages, built from scratch):**
+- clusters: indoor-decorative, outdoor-architectural, commercial-hospitality
+- sops: vendor-onboarding (w9), quote-to-close (w9), inventory-reorder (w9)
+- adrs: 001-module-architecture, 002-supabase-backend (w8), 003-localstorage, 004-inline-onclick, 005-append-only, 006-csv-import, 007-wiki-rag-vs-pgvector (w8)
+- entities: emp-owner, emp-sales, emp-warehouse
+- sources: windward-erp, bigcommerce, supabase-source (w7)
+
+**Tooling:**
+- scripts/wiki_lint.py — YAML frontmatter validator (19 pages, lint OK)
+- scripts/wiki_seed.py — index generator + 8-query self-test (8/8 passing post-Ralph loops)
+- wiki/_index.md + wiki/_index.json — generated index
+
+**Skill:**
+- skills/accent-rag/SKILL.md v1.0.0 — file-based RAG, keyword TF-IDF + weight boost, K=5 retrieval
+- skills/accent-rag/weighting.md — full weight table, audit protocol
+- skills/accent-rag/eval-matrix.md — wiki-pattern 47/60 vs pgvector 34/60 (+13)
+
+**Integration:**
+- .claude/CLAUDE.md — wiki AUTO-EXECUTE step 1 (hot.md + _index.md + log.md on session start)
+- js/wiki.js — AccentOS Wiki browser module (two-pane: list + viewer, search, filter, related links)
+- index.html — sidebar entry, PAGE_META, pages dispatcher, loadWikiIndex() hydrate call, <script src>
+- skills/_index.md — accent-rag entry (27 skills total)
+
+### Ralph Loop results
+
+| loop | changes | recall | score |
+|---|---|---|---|
+| 1 | lint fix (related IDs), supabase-source weight 6→7, tag enrichment | 4/5 (baseline) | 38/60 est |
+| 2 | test suite 5→8 queries, synonym tags, query specificity | 7/8 | 44/60 |
+| 3 | adr-002 weight 7→8, "why/chose/firebase" tags | 8/8 | 47/60 ✓ |
+
+### BUILD_INTELLIGENCE additions
+
+- Wiki-pattern RAG is viable at 19-page scale with keyword TF-IDF + weight boost. Synonym tags close ~80% of the semantic gap vs pgvector for this use case.
+- Weight-tier discipline matters: SOPs at 9, key ADRs at 8, source summaries at 7, entities at 6. At each tier level, pages with higher body term frequency can still win — use tags to boost signal on underrepresented pages.
+- Self-test query suite in wiki_seed.py is the fast-feedback loop for weight tuning. Design queries that are specific to what each page type uniquely covers (operational queries for source summaries, intent-flavored queries for ADRs).

@@ -2,7 +2,12 @@
 > This file is read automatically by Claude Code on every session start.
 
 ## AUTO-EXECUTE ON START
-1. **Activate vibe-speak in default mode** (per SKILL.md Step 0):
+1. **Load AccentOS Wiki context** (accent-rag warm-up):
+   a. Read `wiki/hot.md` — last-session live context + key decisions.
+   b. Read `wiki/_index.md` — page table (cached for session; ~3k tokens). This powers accent-rag skill router lookups.
+   c. If a user query matches any `auto_trigger_domain` in `skills/accent-rag/SKILL.md` with confidence > 0.6, run accent-rag search BEFORE answering.
+   d. Read `wiki/log.md` last 5 entries — track what's been recently added or changed.
+2. **Activate vibe-speak in default mode** (per SKILL.md Step 0):
    a. Detect active user — read `skills/vibe-speak/profiles/_active.md` if it exists; else run detection chain (git config user.name → user.email → `_default.md`).
    b. Read `skills/vibe-speak/profiles/[active-user].md` for default mode + calibration. (For Michael: `profiles/michael.md`, default mode `vibe`.)
    c. Read `skills/vibe-speak/session-handoff.md` for cross-session continuity.
@@ -12,12 +17,12 @@
    g. Read `skills/vibe-speak/modes/[default-mode].md` and apply its voice rules.
    h. Read `skills/_index.md` for the AccentOS skill registry — used by Step 23 (skill router) to detect when a task could be handled by an existing skill instead of brute-forcing.
    i. SKILL.md Step 7 expanded auto-disengage rules + Step 12 pre-send accuracy gate + Step 23 skill discovery apply to every response.
-2. Log session start to PROMPT_LOG.md: `### [date] — Auto-session start`
-3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
-4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
-5. Read BUILD_INTELLIGENCE.md — apply all lessons before touching any code
-6. Run bash /workspaces/accent-os/scripts/status.sh
-7. Begin building without waiting for Michael input
+3. Log session start to PROMPT_LOG.md: `### [date] — Auto-session start`
+4. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
+5. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
+6. Read BUILD_INTELLIGENCE.md — apply all lessons before touching any code
+7. Run bash /workspaces/accent-os/scripts/status.sh
+8. Begin building without waiting for Michael input
 
 ## DEFAULT COMMUNICATION STYLE
 - vibe-speak is **always-on** in the default mode (`vibe`).

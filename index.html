@@ -363,6 +363,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('changelog')"><span class="ni-icon">◑</span><span class="ni-label">Change Log</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('calendar')"><span class="ni-icon">▦</span><span class="ni-label">Calendar</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('wiki')"><span class="ni-icon">📚</span><span class="ni-label">Wiki</span></div>
       <div class="sb-sect" data-roles="Owner,Admin,Manager">ADMIN</div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('activity')"><span class="ni-icon">◷</span><span class="ni-label">Activity Feed</span></div>
@@ -623,6 +624,7 @@ async function hydrateFromSupabase(){
     try { await sbLoadMarketingCampaigns(); } catch(e){ console.warn(e); }
     try { await sbLoadMarketingAssets(); } catch(e){ console.warn(e); }
     try { await sbLoadAlerts(); } catch(e){ console.warn(e); }
+    try { await loadWikiIndex(); } catch(e){ console.log('wiki: index load skipped', e.message); }
     try { await sbLoadPipeline(); } catch(e){ console.warn(e); }
     try { await sbLoadKPIs(); } catch(e){ console.warn(e); }
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
@@ -742,6 +744,7 @@ const PAGE_META={
   mgmt:      {t:'Management Dashboard',s:'Owner View'},
   settings:  {t:'Settings',s:''},
   modulemodes: {t:'Module Modes',s:'Rollout state · per-user overrides'},
+  wiki:       {t:'AccentOS Wiki',s:'SOPs · ADRs · Clusters · Entities'},
 };
 let curPage='';
 function goTo(page){
@@ -754,7 +757,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,wiki,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6622,5 +6625,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/saved_filters.js?v=6.10.61"></script>
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
+<script src="js/wiki.js?v=6.11.1"></script>
 </body>
 </html>
