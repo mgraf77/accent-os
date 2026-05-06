@@ -21,6 +21,8 @@ let IM_PREP_OPEN   = {};         // sectionId → bool (collapsible state)
 let IM_LOADED      = {};         // meetingId → bool
 let IM_BUBBLE_OPEN = false;
 let IM_BUBBLE_TYPE = 'note';
+let IM_RT_CHANNEL  = null;       // active Supabase Realtime channel (one meeting at a time)
+let IM_RT_MEETING  = null;       // meetingId currently subscribed to
 
 // ── SEED: DAD & PAT MEETING (id "_dadpat", uses local ids prefixed "_") ──────
 const IM_SEED_MEETING = {
@@ -1058,7 +1060,7 @@ function imRender(){
   }
 }
 
-function imGoAll(){ IM_CUR_ID = null; imRender(); }
+function imGoAll(){ IM_CUR_ID = null; imRtUnsubscribe(); imRender(); }
 async function imGoMeeting(id){
   IM_CUR_ID = id;
   IM_CUR_SUB = 'prep';
@@ -1067,6 +1069,74 @@ async function imGoMeeting(id){
     await imLoadMeetingData(id);
     if(IM_CUR_ID === id) imRender();
   }
+  imRtSubscribe(id);
+}
+
+// ── REALTIME SUBSCRIPTIONS ───────────────────────────────────────────────────
+// Subscribes to postgres_changes on the four collaborative tables, filtered
+// by the active meeting_id, so edits made on another device stream in live.
+function imRtSubscribe(meetingId){
+  if(!meetingId || (typeof meetingId === 'string' && meetingId.startsWith('_'))) return;
+  if(IM_RT_MEETING === meetingId && IM_RT_CHANNEL) return; // already subscribed
+  imRtUnsubscribe();
+  if(typeof sbConfigured !== 'function' || !sbConfigured()) return;
+  const rt = (typeof sbRealtime === 'function') ? sbRealtime() : null;
+  if(!rt || !rt.channel){ console.warn('[meetings] realtime client unavailable'); return; }
+
+  const filter = `meeting_id=eq.${meetingId}`;
+  try{
+    IM_RT_CHANNEL = rt.channel(`im-meeting-${meetingId}`)
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_transcripts', filter}, p => imRtApply('transcripts', meetingId, p))
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_notes',       filter}, p => imRtApply('notes',       meetingId, p))
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_todos',       filter}, p => imRtApply('todos',       meetingId, p))
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_followups',   filter}, p => imRtApply('followups',   meetingId, p))
+      .subscribe(status => {
+        if(status === 'SUBSCRIBED') console.log('[meetings] realtime live for', meetingId);
+        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') console.warn('[meetings] realtime status:', status);
+      });
+    IM_RT_MEETING = meetingId;
+  }catch(e){ console.warn('[meetings] realtime subscribe failed:', e.message); IM_RT_CHANNEL = null; IM_RT_MEETING = null; }
+}
+
+function imRtUnsubscribe(){
+  if(!IM_RT_CHANNEL) { IM_RT_MEETING = null; return; }
+  try{
+    const rt = (typeof sbRealtime === 'function') ? sbRealtime() : null;
+    if(rt && rt.removeChannel) rt.removeChannel(IM_RT_CHANNEL);
+  }catch(e){}
+  IM_RT_CHANNEL = null;
+  IM_RT_MEETING = null;
+}
+
+// Apply a postgres_changes payload to the in-memory cache and re-render if visible.
+// Dedupes by id, and reconciles temp-id placeholders by content key (raw_text /
+// content / task / title) for the brief race window before a local POST resolves.
+function imRtApply(kind, meetingId, payload){
+  const caches = {transcripts:IM_TRANSCRIPTS, notes:IM_NOTES, todos:IM_TODOS, followups:IM_FOLLOWUPS};
+  const tmpKeys = {transcripts:'raw_text', notes:'content', todos:'task', followups:'title'};
+  const cache = caches[kind]; if(!cache) return;
+  if(!cache[meetingId]) cache[meetingId] = [];
+  const arr = cache[meetingId];
+  const evt = payload.eventType;
+  const row = payload.new;
+  const old = payload.old;
+
+  if(evt === 'INSERT' && row){
+    if(arr.find(x => x.id === row.id)) return; // already have it
+    const key = tmpKeys[kind];
+    const tmp = key ? arr.find(x => typeof x.id === 'string' && x.id.startsWith('_') && x[key] === row[key]) : null;
+    if(tmp){ Object.assign(tmp, row); }
+    else { kind === 'transcripts' ? arr.unshift(row) : arr.push(row); }
+  } else if(evt === 'UPDATE' && row){
+    const i = arr.findIndex(x => x.id === row.id);
+    if(i >= 0) arr[i] = {...arr[i], ...row};
+    else arr.push(row);
+  } else if(evt === 'DELETE' && old){
+    const i = arr.findIndex(x => x.id === old.id);
+    if(i >= 0) arr.splice(i, 1);
+  }
+
+  if(IM_CUR_ID === meetingId) imRenderSub(meetingId);
 }
 
 // ── ALL MEETINGS VIEW ────────────────────────────────────────────────────────

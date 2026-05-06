@@ -514,6 +514,10 @@ tbody tr:hover td{background:var(--bg);}
 
 <div id="toasts"></div>
 
+<!-- Supabase JS client — loaded only for Realtime (REST stays on sbFetch).
+     Used by the internal meetings module for cross-device live sync. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
 <script>
 'use strict';
 
@@ -1087,6 +1091,25 @@ async function sbFetch(path, opts={}){
   if(!text) return null;
   try { return JSON.parse(text); }
   catch(e){ return null; }
+}
+
+// ── SUPABASE REALTIME CLIENT (lazy) ─────────────────────────
+// REST goes through sbFetch; this client exists only to open WebSocket
+// channels for postgres_changes (Realtime). Initialized on first use.
+let _sbRT = null;
+function sbRealtime(){
+  if(_sbRT) return _sbRT;
+  if(typeof supabase === 'undefined' || !supabase.createClient) return null;
+  const key = sbKey(); if(!key) return null;
+  try{
+    _sbRT = supabase.createClient(SUPABASE_URL, key, {
+      auth: { persistSession:false, autoRefreshToken:false },
+      realtime: { params: { eventsPerSecond: 10 } }
+    });
+    const jwt = (typeof jwtKey==='function' ? jwtKey() : '');
+    if(jwt && _sbRT.realtime?.setAuth) _sbRT.realtime.setAuth(jwt);
+  }catch(e){ console.warn('[realtime] init failed:', e.message); _sbRT = null; }
+  return _sbRT;
 }
 
 // Load all vendor categories from Supabase into vendorProductCats.
@@ -6735,6 +6758,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/saved_filters.js?v=6.10.61"></script>
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
-<script src="js/internal_meetings.js?v=6.10.67"></script>
+<script src="js/internal_meetings.js?v=6.10.68"></script>
 </body>
 </html>
