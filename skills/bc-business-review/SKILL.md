@@ -31,6 +31,14 @@ Run when Michael says:
 - "what happened this week" / "Accent Lighting weekly"
 - "weekly digest" / "WoW delta"
 - "anomaly check on revenue"
+- "how did we do this week"
+- "revenue summary"
+- "show me the week" / "business health check"
+- "pull the weekly numbers"
+- "any anomalies in the data"
+- "top vendors this week"
+- "what moved this week"
+- "concentration risk check"
 
 ---
 
@@ -43,6 +51,10 @@ Defaults:
 Overrides: "last week", "last 30 days", "Q4 to date", explicit date range. If Michael specifies a custom window, also pick a comparison window of equal length.
 
 ---
+
+## Steps 2 + 3 — Pull headline KPIs and breakdowns (run in parallel)
+
+**Do in parallel:** Step 2 (headline KPIs) and Step 3 (vendor/category breakdowns) — both query `deals` independently over the same window.
 
 ## Step 2 — Pull the headline KPIs
 
@@ -73,7 +85,10 @@ SELECT
 FROM this_week tw, last_week lw;
 ```
 
-If the deals table doesn't exist or has different column names in `/home/user/accent-os/sql/M*.sql`, flag and adapt.
+Edge cases:
+- If deals table doesn't exist or columns differ from `/home/user/accent-os/sql/M*.sql`, flag the exact mismatch and adapt using the live schema.
+- If `completed_at` returns 0 rows, check whether `status = 'completed'` is the correct filter for this environment — query `SELECT DISTINCT status FROM deals LIMIT 10` to inspect.
+- If both `this_week` and `last_week` are empty, output "No completed deals in window — check status filter or date range" and stop.
 
 ---
 
@@ -93,7 +108,19 @@ LIMIT 10;
 ```
 
 **Top 10 categories by revenue:**
-Similar query against `products.category` joined through deals.
+```sql
+SELECT p.category, SUM(d.unit_price * d.quantity) AS revenue,
+       COUNT(DISTINCT d.order_id) AS orders
+FROM deals d
+JOIN products p ON p.id = d.product_id
+WHERE d.status = 'completed'
+  AND d.completed_at BETWEEN $1 AND $2
+GROUP BY p.category
+ORDER BY revenue DESC
+LIMIT 10;
+```
+
+If `products.category` doesn't exist in the schema (check `/home/user/accent-os/sql/M*.sql`), substitute `d.vendor_id` grouping and note the schema gap.
 
 **Concentration risk callout:** if top 3 vendors > 50% of weekly revenue, flag.
 
@@ -175,7 +202,9 @@ For each anomaly:
 ## Anti-patterns
 
 - **Never** report KPIs without WoW comparison — point-in-time numbers without trend are noise.
-- **Never** flag an anomaly with <4 weeks of historical baseline — std deviation is unreliable.
-- **Never** include forecasting in this skill — backward-looking only. Forecasting lives in js/demand_forecast.js.
-- **Never** use `SELECT *` against deals — large table with PII; only pull needed columns.
-- **Never** auto-snapshot the digest. Output the suggested filename in BLOCK 4; Michael invokes analysis-snapshot if he wants to preserve it.
+- **Never** flag an anomaly with <4 weeks of historical baseline — std deviation is unreliable below that threshold.
+- **Never** include forecasting in this skill — backward-looking only. Forecasting lives in `/home/user/accent-os/js/demand_forecast.js`.
+- **Never** use `SELECT *` against deals — large table with PII-adjacent fields; only pull the columns the query needs.
+- **Never** auto-snapshot the digest. Output the suggested filename in BLOCK 4; Michael invokes analysis-snapshot explicitly.
+- **Never** run Steps 2 and 3 sequentially — they target the same `deals` table over the same date window and can run in parallel.
+- **Never** silently omit the concentration risk callout — if top 3 vendors > 50% of weekly revenue, it must appear in BLOCK 1 even if Michael didn't ask for it.
