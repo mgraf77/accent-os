@@ -310,3 +310,5 @@ Do not auto-snapshot — Michael decides which audits are worth preserving.
 - **Never** count derived KPIs (e.g. F11 = F8 + F10 − F9) as MISSING just because their upstream KPIs are MISSING. Mark them as DERIVED-DEPENDENT and compute their status transitively.
 - **Never** output the full audit on every run if Michael asked about a single KPI. Step 0 parses the invocation; honor the scoped mode for the entire run.
 - **Never** treat the `--full` keyword as the default. Default is top-10 by leverage to keep output scannable; `--full` is opt-in.
+- **Never** report BigCommerce store-cwqiwcjxes as "available" for KPI computation unless M04 is confirmed `[x]` in BUILD_PLAN_MICHAEL.md — the BC REST API requires active credentials.
+- **Never** flag a SCHEMA_PARSE_UNCERTAIN variable as MISSING in Block 3. These require Michael spot-check before being categorized — surfacing them as blockers creates false urgency.
