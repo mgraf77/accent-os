@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-06 — v6.11.1 Karpathy LLM Wiki pivot (accent-rag skill full build)
+**Prompt:** "Resume the v6.11.1 Karpathy LLM Wiki pivot of the accent-rag skill. Branch: claude/custom-rag-system-rIT34. Last commit: 6ad9058. [Full resume prompt with 22-step build plan across 6 phases: wiki content, tooling, AccentOS wiring, BUILD-RAG re-weight, eval + Ralph loops, close out.]"
+**Context:** Resuming a fresh environment — commit 6ad9058 doesn't exist in the local tree (new Codespace). Building everything from scratch: accent-rag skill spec + 9 slash commands, wiki/ infrastructure (CLAUDE.md + operational pages + 25+ concept/decision/entity/source pages), 5 Python tooling scripts, js/wiki.js AccentOS module, index.html wiring, sendChat wiki-grounding, rag_build_index BM25 boost, eval matrix (30+ Q&A pairs, 6-dim scoring), 3-4 Ralph loops, full close-out. Target: v6.11.1 on branch claude/custom-rag-system-rIT34-KoMaP.
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"
