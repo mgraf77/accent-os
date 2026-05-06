@@ -55,11 +55,17 @@ Run when Michael says:
 Do in parallel:
 
 1. **Identify target.** Accept: skill name (`vibe-speak`), path (`skills/vibe-speak/SKILL.md`), or description ("the vendor cascade skill"). If ambiguous, pick the highest-likelihood match given context — do not ask.
-2. **Confirm target exists.** `ls /home/user/accent-os/skills/[skill-name]/SKILL.md`. If missing, output "Skill not found" + nearest matches from `ls /home/user/accent-os/skills/` and stop.
+2. **Detect scope.** Check both locations:
+   - Global: `~/.claude/skills/[skill-name]/SKILL.md`
+   - Project: `/home/user/accent-os/skills/[skill-name]/SKILL.md`
+   - Found in both → **scope = BOTH** (optimize both; universal changes apply to both, project-specific to project only)
+   - Found only in `~/.claude/skills/` → **scope = GLOBAL**
+   - Found only in project → **scope = PROJECT**
+   - Found in neither → "Skill not found" + list candidates from both locations, then stop.
 3. **Record branch.** `git -C /home/user/accent-os branch --show-current`. If on main, Step 6 will create `claude/optimize-[skill-name]-[8-char-rand]` before committing.
 4. **Check recent history.** `git -C /home/user/accent-os log --oneline -5 -- skills/[skill-name]/` — note whether skill has been recently modified.
 
-Output: one-line preflight block: target path confirmed, branch, last-touch commit.
+Output: one-line preflight block: target path(s), scope (GLOBAL/PROJECT/BOTH), branch, last-touch commit.
 
 ---
 
@@ -180,19 +186,21 @@ Present the consolidated plan. Output exactly:
 ```
 ═══ OPTIMIZATION PLAN ═══
 Target skill: [skill-name]
-Path: /home/user/accent-os/skills/[skill-name]/SKILL.md
+Scope: GLOBAL | PROJECT | BOTH
+  GLOBAL:  ~/.claude/skills/[skill-name]/SKILL.md
+  PROJECT: /home/user/accent-os/skills/[skill-name]/SKILL.md
+  BOTH:    both paths above (universal changes → both; project-specific → project only)
 
 Baseline: [X.X / 100]  →  Estimated post-change: [Y.Y / 100]  →  Threshold: [Z.Z / 100]
 
 Planned changes:
-  1. [Change — what, where in the file, why it improves score]
-  2. [Change — what, where in the file, why it improves score]
+  1. [Change — what, where in the file, applies to: GLOBAL | PROJECT | BOTH]
+  2. [Change — what, where in the file, applies to: GLOBAL | PROJECT | BOTH]
   3. [Change — ...]
   ...
 
 Files to edit:
-  skills/[skill-name]/SKILL.md
-  skills/[skill-name]/references/[file]  (if any)
+  [list each file path explicitly — global and/or project, references if any]
 
 ═══ AWAITING APPROVAL ═══
 Reply with one of:
@@ -214,12 +222,22 @@ Parse Michael's reply. Apply edits to the plan. Ask one targeted clarifying ques
 
 Apply each approved change using the Edit tool for surgical edits. Use Write (full file rewrite) only when ≥60% of the file changes.
 
-After writing all changes, run validation (matches skill-forge Step 7.5):
+**Write to the correct location(s) per scope:**
+- **GLOBAL**: edit `~/.claude/skills/[skill-name]/SKILL.md` — no project-specific hardcoding allowed.
+- **PROJECT**: edit `/home/user/accent-os/skills/[skill-name]/SKILL.md` — AccentOS refs required.
+- **BOTH**: apply universal changes to both files; apply project-specific changes to project file only. Run validation on each file independently.
 
-1. YAML frontmatter parses — `name` and `description` present; description is multi-line `>` block; ≥250 chars; contains "AccentOS" or "Accent Lighting"; no unfilled `[bracketed]` placeholders outside fenced code blocks.
-2. ≥3 AccentOS-stack substitutions present (from: AccentOS, Accent Lighting, store-cwqiwcjxes, hsyjcrrazrzqngwkqsqa, vendor scoring, GMC, BigCommerce, Supabase, Cloudflare Pages, /home/user/accent-os).
-3. ≥3 anti-pattern entries.
-4. No prose walls — every section is a list, table, or ≤4-sentence block.
+After writing all changes, run validation per scope:
+
+**PROJECT or BOTH (project file):**
+1. YAML parses — `name` + `description` present; ≥250 chars; contains "AccentOS" or "Accent Lighting"; no unfilled `[bracketed]` placeholders outside fenced blocks.
+2. ≥3 AccentOS-stack substitutions (AccentOS, Accent Lighting, store-cwqiwcjxes, hsyjcrrazrzqngwkqsqa, vendor scoring, GMC, BigCommerce, Supabase, /home/user/accent-os).
+3. ≥3 anti-pattern entries. No prose walls.
+
+**GLOBAL or BOTH (global file):**
+1. YAML parses — `name` + `description` present; ≥250 chars; no project-specific hardcoding.
+2. No AccentOS/Accent Lighting hardcoding — uses `[project-root]/`, generic language.
+3. ≥3 anti-pattern entries. No prose walls.
 
 If any check fails → fix in place before committing.
 
@@ -227,7 +245,7 @@ If any check fails → fix in place before committing.
 - If NOT on main → commit to current branch.
 - If on main → create `claude/optimize-[skill-name]-[8-char-rand]` first.
 
-Commit message: `optimize: [skill-name] — [one-line summary of top change]`
+Commit message: `optimize: [skill-name] ([scope]) — [one-line summary of top change]`
 
 ---
 
@@ -274,7 +292,8 @@ Each refinement pass:
 ═══ SKILL OPTIMIZER — FINAL REPORT ═══
 
 Skill:  [skill-name]
-Path:   /home/user/accent-os/skills/[skill-name]/SKILL.md
+Scope:  GLOBAL | PROJECT | BOTH
+Files:  [list all files that were edited — global and/or project]
 Branch: [branch-name]   Commit: [SHA short]
 
 SCORE SUMMARY

@@ -183,10 +183,22 @@ PROPOSAL: [skill-name]
   What it does: [one sentence]
   Gap it closes: [specific AccentOS gap or named-pattern improvement]
   Effort: LOW | MEDIUM | HIGH
+  Scope: GLOBAL | PROJECT | BOTH
+    Reason: [one sentence — why this scope; see references/scope-decision.md]
   Pairs with: [other approved/existing skills it composes with, if any]
   Recommendation: BUILD | DEFER | SKIP
     Reason: [one sentence]
 ```
+
+**Scope decision (apply before writing the proposal — default is GLOBAL):**
+
+| Scope | When to use | Write location |
+|---|---|---|
+| **GLOBAL** | Skill works for any project without project-specific data. No AccentOS/Accent Lighting refs needed. | `~/.claude/skills/[skill-name]/` only |
+| **PROJECT** | Skill requires project-specific data (Supabase tables, BC store, vendor logic) and has no value outside this project. | `/home/user/accent-os/skills/[skill-name]/` only |
+| **BOTH** | Skill has a useful generic form AND meaningful project-specific enhancements that add >30% more value. | Both locations — global version first, project version forks and layers project refs on top |
+
+**Default is GLOBAL.** Use BOTH sparingly — two files = two maintenance burdens. Only use BOTH when the project-specific version is genuinely materially better, not just slightly more tailored. If unsure, ship GLOBAL and add a project version later if the gap becomes obvious.
 
 Recommendation values:
 - **BUILD** — high signal, AccentOS-shaped, low-friction. The skill should ship now.
@@ -235,8 +247,9 @@ For **each APPROVED concept** from Step 5, run this design pass independently. S
 
 Decide before writing:
 
-- **Skill name** — kebab-case, action-oriented, ≤3 words. Names describe what it does for AccentOS, not where concepts came from. Verify uniqueness: `ls /home/user/accent-os/skills/` must not contain a directory of the same name.
-- **Description block** — ≥250 chars, multi-line via `>`. Must include "AccentOS" or "Accent Lighting" by name. Trigger phrases in the description are sourced from Step 0's mining of `PROMPT_LOG.md` when available — match Michael's phrasing, not hypothetical phrasing. Always include a "do not use when" pair.
+- **Skill name** — kebab-case, action-oriented, ≤3 words. Names describe what it does for AccentOS, not where concepts came from. Verify uniqueness against both `ls /home/user/accent-os/skills/` and `ls ~/.claude/skills/`.
+- **Install location** — determined by Step 5 scope: GLOBAL (`~/.claude/skills/`), PROJECT (`/home/user/accent-os/skills/`), or BOTH. See scope table in Step 5.
+- **Description block** — ≥250 chars, multi-line via `>`. Must include "AccentOS" or "Accent Lighting" by name for PROJECT/BOTH scope; generic project references for GLOBAL scope. Trigger phrases sourced from Step 0's mining of `PROMPT_LOG.md`. Always include a "do not use when" pair.
 - **Workflow** — 4–7 numbered steps. Each step has a concrete output. Imperatives only.
 - **Output format** — paste-ready blocks. Tables when scanning is the use case.
 - **References** — split overflow into `references/*.md`. Keep SKILL.md under ~5000 tokens.
@@ -245,17 +258,28 @@ Decide before writing:
 
 ## Step 7 — Forge the skill files
 
-Write to `/home/user/accent-os/skills/[skill-name]/`:
+Write location and substitution rules depend on Step 5 scope:
+
+**GLOBAL scope** → write to `~/.claude/skills/[skill-name]/`:
+- No AccentOS/Accent Lighting hardcoding — use `[project-root]/`, `[your-supabase-project-id]`, etc.
+- Description uses "your project" or generic language
+- No project-specific table names, store IDs, or vendor logic
+
+**PROJECT scope** → write to `/home/user/accent-os/skills/[skill-name]/`:
+- Full AccentOS-mandatory substitutions: paths → `/home/user/accent-os/`, Supabase → `hsyjcrrazrzqngwkqsqa`, BC → `store-cwqiwcjxes`
+- "your project" → AccentOS or Accent Lighting (specific)
+- At least one concrete example referencing vendor scoring, vendor ranking, GMC feed, or Klaviyo
+
+**BOTH scope** → write global version first, then fork for project:
+1. Write generic version to `~/.claude/skills/[skill-name]/` (no project refs)
+2. Write project-tailored version to `/home/user/accent-os/skills/[skill-name]/` (full AccentOS refs)
+3. Project version description notes: "Extends the global [skill-name] skill with AccentOS-specific…"
+4. Project version overrides global at runtime (project skills take precedence over global)
+
+All versions:
 - `SKILL.md` — frontmatter + workflow, following `references/skill-template.md`
 - `references/*.md` — extracted templates, checklists, lookup tables
-
-AccentOS-mandatory substitutions everywhere:
-- Paths → `/home/user/accent-os/` (note Codespace alt `/workspaces/accent-os/` only when relevant)
-- "your project" → AccentOS or Accent Lighting (specific)
-- Generic store → BigCommerce store-cwqiwcjxes
-- Generic DB → Supabase hsyjcrrazrzqngwkqsqa
-- At least one concrete example referencing vendor scoring, vendor ranking, GMC feed, or Klaviyo
-- Anthropic API key via `ANTHROPIC_API_KEY` env var
+- Anthropic API key via `ANTHROPIC_API_KEY` env var when relevant
 
 Use the Write tool. Never use bash heredocs for skill files.
 
@@ -306,12 +330,14 @@ After every skill in this run has passed Step 7.5 and Step 8:
 SKILL FORGED — [skill-name]
 
 Source: [target name + URL]
+Scope: GLOBAL | PROJECT | BOTH
 Sources mined: [count]
 Concepts harvested: [count]  →  KEEP: X  DROP: Y  ADD: Z
 
 Files written:
-  skills/[skill-name]/SKILL.md
-  skills/[skill-name]/references/...
+  [~/.claude/skills OR /home/user/accent-os/skills]/[skill-name]/SKILL.md
+  [same base]/[skill-name]/references/...
+  [if BOTH: second location listed separately]
 
 Trigger phrases (one of these auto-invokes it):
   - "[phrase 1]"
