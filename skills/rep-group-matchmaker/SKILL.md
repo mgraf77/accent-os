@@ -31,6 +31,12 @@ Run when Michael says:
 - "rep group matchmaker" / "assign rep groups"
 - "find rep group for [vendor name]"
 - "257 vendors" (or current unassigned count)
+- "close M19"
+- "which rep group for [vendor]"
+- "batch assign rep groups"
+- "rep group suggestions"
+- "who reps [vendor]"
+- "rep assignment queue"
 
 ---
 
@@ -64,7 +70,7 @@ This is the labeled training set. The matching uses these patterns to suggest as
 
 ---
 
-## Step 3 — Build the rep_group profile
+## Step 3 — Build the rep_group profile (Steps 1, 2, and 3 read in parallel)
 
 For each rep_group, compute its "fingerprint" from assigned vendors:
 
@@ -114,6 +120,13 @@ Per top-1 match per vendor:
 
 ---
 
+## Edge Cases
+
+- **No assigned vendors exist yet:** if `JOIN rep_groups rg ON rg.id = v.rep_group_id` returns zero rows, abort Step 4 and output: "No assigned vendor ground-truth in `hsyjcrrazrzqngwkqsqa` yet — matchmaker needs at least 1 assigned vendor to learn from. Manually assign one vendor → rep_group pair, then re-run."
+- **Single rep_group only:** if only 1 rep_group exists in the system, all vendors score the same on category/region/tier match — flag ALL results as LOW confidence and recommend creating additional rep_group records in Supabase first.
+- **All vendors already assigned:** if `rep_group_id IS NULL` returns zero rows, output: "All AccentOS vendors in `hsyjcrrazrzqngwkqsqa` have rep_group_id assigned. M19 appears complete. Verify via vendor-onboard-checklist."
+- **vendor_id is a UUID but M19 references string names:** if vendor IDs in the prompt are names not UUIDs, resolve via `SELECT id FROM vendors WHERE name ILIKE '%[input]%'` before scoring.
+
 ## Step 6 — Output
 
 ```
@@ -155,3 +168,5 @@ For each vendor missing both brand_category AND region:
 - **Never** suggest a rep_group with confidence < 0.50 — flag as LOW for manual review.
 - **Never** ignore the state_proximity dimension — geography matters in B2B distribution.
 - **Never** invent rep_groups. If LOW confidence, suggest "consider creating new group" rather than picking a wrong one.
+- **Never** include `AND rep_group_id IS NULL` guard in the bulk-update SQL only as a comment — it must be in the actual WHERE clause to prevent accidental overwrites if a vendor was assigned between skill invocation and SQL execution.
+- **Never** treat a HIGH-confidence match as pre-approved. The bulk-update SQL always waits for Michael's explicit spot-check confirmation.
