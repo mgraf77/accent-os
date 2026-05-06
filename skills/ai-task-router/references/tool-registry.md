@@ -51,68 +51,74 @@
 
 ---
 
-### ChatGPT (GPT-4o / o3)
+### ChatGPT (GPT-4o / o1 / o3-mini)
 - **Access:** chatgpt.com or via OPENAI_API_KEY env var
-- **Cost class:** subscription + token-charged API
-- **Context window:** 128K tokens (GPT-4o), 200K (o3)
+- **Tier:** Plus ($20/mo) — GPT-4o ✓, o1 ✓, o3-mini ✓, DALL-E 3 ✓, browsing ✓ | o3 full NOT included (Pro only)
+- **Cost class:** subscription (TC override: 7 from tier-config.md)
+- **Context window:** 128K tokens (GPT-4o), 200K (o3-mini/o1)
 - **Action capability:** code interpreter (sandboxed), DALL-E image gen, browsing, voice — no file system access
-- **Freshness:** live web browsing via search tool
+- **Freshness:** live web browsing via Bing search tool
+- **Rate limit:** 40 GPT-4o messages per 3 hours on Plus — switch to o3-mini when near limit
 - **Best for:** brainstorm, cross-check, image-gen, doc-write, research, cross-model second opinion
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
 |---|---|---|---|---|---|---|---|---|
-| code-build | 7 | 7 | 8 | 4 | 2 | 6 | 6 | 7 |
-| code-review | 7.5 | 7 | 8 | 4 | 2 | 6 | 6 | 6 |
-| debug | 7 | 7 | 8 | 4 | 2 | 6 | 6 | 6 |
-| brainstorm | 9.5 | 8 | 8 | 4 | 2 | 6 | 7 | 9.5 |
-| cross-check | 9 | 8 | 8 | 4 | 2 | 6 | 7 | 8 |
-| research | 8.5 | 7 | 8 | 4 | 2 | 6 | 8 | 7 |
-| quick-lookup | 8 | 8 | 8 | 5 | 1 | 5 | 8 | 6 |
-| design-visual | 7 | 7 | 7 | 4 | 2 | 5 | 6 | 8 |
-| doc-write | 9 | 8 | 8 | 4 | 2 | 6 | 7 | 8.5 |
-| data-analysis | 7 | 7 | 7 | 4 | 3 | 6 | 6 | 6 |
-| automation | 4 | 7 | 6 | 4 | 2 | 5 | 6 | 5 |
-| long-context | 6 | 6 | 7 | 3 | 2 | 6 | 6 | 6 |
-| real-time-data | 8 | 8 | 8 | 4 | 1 | 5 | 9 | 6 |
-| image-gen | 9 | 7 | 8 | 4 | 1 | 3 | 7 | 9 |
-| planning | 8 | 8 | 8 | 4 | 2 | 6 | 7 | 8 |
+| code-build | 7 | 7 | 8 | 7 | 2 | 6 | 6 | 7 |
+| code-review | 7.5 | 7 | 8 | 7 | 2 | 6 | 6 | 6 |
+| debug | 7 | 7 | 8 | 7 | 2 | 6 | 6 | 6 |
+| brainstorm | 9.5 | 8 | 8 | 7 | 2 | 6 | 7 | 9.5 |
+| cross-check | 9 | 8 | 8 | 7 | 2 | 6 | 7 | 8 |
+| research | 8.5 | 7 | 8 | 7 | 2 | 6 | 8 | 7 |
+| quick-lookup | 8 | 8 | 8 | 7 | 1 | 5 | 8 | 6 |
+| design-visual | 7 | 7 | 7 | 7 | 2 | 5 | 6 | 8 |
+| doc-write | 9 | 8 | 8 | 7 | 2 | 6 | 7 | 8.5 |
+| data-analysis | 7 | 7 | 7 | 7 | 3 | 6 | 6 | 6 |
+| automation | 4 | 7 | 6 | 7 | 2 | 5 | 6 | 5 |
+| long-context | 6 | 6 | 7 | 7 | 2 | 6 | 6 | 6 |
+| real-time-data | 8 | 8 | 8 | 7 | 1 | 5 | 9 | 6 |
+| image-gen | 9 | 7 | 8 | 7 | 1 | 3 | 7 | 9 |
+| planning | 8 | 8 | 8 | 7 | 2 | 6 | 7 | 8 |
 
 ---
 
 ### Gemini (2.0 Flash / 1.5 Pro)
 - **Access:** gemini.google.com or via GEMINI_API_KEY / GOOGLE_API_KEY
-- **Cost class:** free tier available (Flash), token-charged for Pro
-- **Context window:** 1M tokens (Pro), 128K (Flash) — industry-best for long docs
+- **Tier:** Free — 2.0 Flash ✓, 1.5 Pro ✓ (15 RPM limit), 1M token context ✓ | Gemini Advanced NOT included
+- **Cost class:** free (TC override: 10 from tier-config.md — zero cost)
+- **Context window:** 1M tokens (1.5 Pro), 128K (2.0 Flash) — best free long-context option
 - **Action capability:** minimal — code execution sandboxed, no file system
-- **Freshness:** Google Search integration, near real-time
-- **Best for:** quick-lookup (speed + free), long-context ingestion, real-time-data, research
+- **Freshness:** Google Search grounding, near real-time
+- **Rate limit:** 1.5 Pro = 15 RPM on free tier — use 2.0 Flash for speed-sensitive or batch tasks
+- **Best for:** quick-lookup (fastest + free), long-context ingestion, real-time-data, research
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
 |---|---|---|---|---|---|---|---|---|
-| code-build | 6 | 9 | 7 | 8 | 1 | 9 | 7 | 6 |
-| code-review | 6 | 9 | 7 | 8 | 1 | 9 | 7 | 5 |
-| debug | 5.5 | 9 | 7 | 8 | 1 | 9 | 7 | 5 |
-| brainstorm | 7 | 9 | 7 | 8 | 1 | 8 | 8 | 7.5 |
-| cross-check | 7 | 9 | 7 | 8 | 1 | 8 | 8 | 6 |
-| research | 8 | 9 | 8 | 8 | 1 | 9 | 9 | 6 |
-| quick-lookup | 9 | 10 | 8 | 9 | 1 | 7 | 9 | 5 |
-| design-visual | 4 | 8 | 6 | 8 | 1 | 8 | 7 | 6 |
-| doc-write | 7 | 9 | 7 | 8 | 1 | 8 | 7 | 7 |
-| data-analysis | 6 | 8 | 7 | 8 | 2 | 9 | 7 | 5 |
-| automation | 3 | 8 | 5 | 8 | 1 | 8 | 7 | 4 |
-| long-context | 9.5 | 7 | 8 | 7 | 1 | 10 | 7 | 6 |
-| real-time-data | 9 | 9 | 8 | 9 | 1 | 8 | 10 | 5 |
-| image-gen | 5 | 8 | 6 | 7 | 1 | 4 | 7 | 6 |
-| planning | 6 | 9 | 7 | 8 | 1 | 9 | 7 | 6 |
+| code-build | 6 | 9 | 7 | 10 | 1 | 9 | 7 | 6 |
+| code-review | 6 | 9 | 7 | 10 | 1 | 9 | 7 | 5 |
+| debug | 5.5 | 9 | 7 | 10 | 1 | 9 | 7 | 5 |
+| brainstorm | 7 | 9 | 7 | 10 | 1 | 8 | 8 | 7.5 |
+| cross-check | 7 | 9 | 7 | 10 | 1 | 8 | 8 | 6 |
+| research | 8 | 9 | 8 | 10 | 1 | 9 | 9 | 6 |
+| quick-lookup | 9 | 10 | 8 | 10 | 1 | 7 | 9 | 5 |
+| design-visual | 4 | 8 | 6 | 10 | 1 | 8 | 7 | 6 |
+| doc-write | 7 | 9 | 7 | 10 | 1 | 8 | 7 | 7 |
+| data-analysis | 6 | 8 | 7 | 10 | 2 | 9 | 7 | 5 |
+| automation | 3 | 8 | 5 | 10 | 1 | 8 | 7 | 4 |
+| long-context | 9.5 | 7 | 8 | 10 | 1 | 10 | 7 | 6 |
+| real-time-data | 9 | 9 | 8 | 10 | 1 | 8 | 10 | 5 |
+| image-gen | 5 | 8 | 6 | 10 | 1 | 4 | 7 | 6 |
+| planning | 6 | 9 | 7 | 10 | 1 | 9 | 7 | 6 |
 
 ---
 
 ### OpenAI Codex
 - **Access:** `codex` CLI (npm i -g @openai/codex) or OPENAI_API_KEY
-- **Cost class:** token-charged (OpenAI API)
+- **Tier:** API-billed (separate from ChatGPT Plus — own token charges)
+- **Cost class:** token-charged (TC override: 3 from tier-config.md)
 - **Context window:** 200K tokens
 - **Action capability:** code execution in sandbox, limited file access via CLI
 - **Freshness:** training cutoff only
+- **Availability:** requires OPENAI_API_KEY env var — run `printenv OPENAI_API_KEY` to confirm
 - **Best for:** code-review (cross-model audit), debug (second opinion), code-build (supplemental)
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
@@ -137,11 +143,12 @@
 
 ### Claude.ai (web — cowork / canvas)
 - **Access:** claude.ai in browser — no CLI
-- **Cost class:** subscription (Pro plan)
-- **Context window:** 200K tokens
+- **Tier:** unknown — assumed Pro (TC override: 7); confirm at claude.ai/settings
+- **Cost class:** subscription assumed (TC override: 7 from tier-config.md)
+- **Context window:** 200K tokens (Pro); 45K on Free — scores assume Pro
 - **Action capability:** NONE — no file system, no git, no DB; artifacts (HTML/React previews)
 - **Freshness:** web search tool available
-- **Best for:** brainstorm (fresh Claude instance), cross-check, document drafting, design artifacts
+- **Best for:** brainstorm (fresh Claude instance, no project context bias), cross-check, document drafting, design artifacts
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
 |---|---|---|---|---|---|---|---|---|
@@ -165,35 +172,38 @@
 
 ### Canva AI (via MCP `31dc75b2`)
 - **Access:** Canva MCP server (active in this session)
-- **Cost class:** subscription
+- **Tier:** Free — basic AI credits ✓, templates ✓ | Brand Kit ✗, Magic Resize ✗, unlimited AI gen ✗
+- **Cost class:** free (TC override: 8 from tier-config.md — limited credits cap heavy use)
 - **Context window:** N/A — design-focused, not conversational
 - **Action capability:** generate, edit, export designs — no code
 - **Freshness:** N/A
-- **Best for:** design-visual, image-gen, branded content, presentations
+- **Tier impact:** design-visual -1.5 AB (no Brand Kit for Accent Lighting branding); image-gen -2.0 AB (monthly credit cap)
+- **Best for:** design-visual (one-off pieces), image-gen (within credit budget), presentations
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
 |---|---|---|---|---|---|---|---|---|
-| code-build | 1 | 5 | 2 | 6 | 1 | 1 | 3 | 2 |
-| code-review | 1 | 5 | 1 | 6 | 1 | 1 | 3 | 2 |
-| debug | 1 | 5 | 1 | 6 | 1 | 1 | 3 | 2 |
-| brainstorm | 4 | 6 | 4 | 6 | 1 | 3 | 4 | 7 |
-| cross-check | 2 | 5 | 3 | 6 | 1 | 2 | 3 | 4 |
-| research | 2 | 5 | 3 | 6 | 1 | 2 | 4 | 3 |
-| quick-lookup | 2 | 6 | 3 | 6 | 1 | 2 | 4 | 3 |
-| design-visual | 10 | 7 | 8 | 6 | 8 | 3 | 6 | 9 |
-| doc-write | 6 | 6 | 6 | 6 | 5 | 3 | 4 | 7 |
-| data-analysis | 1 | 4 | 2 | 6 | 1 | 1 | 3 | 2 |
-| automation | 2 | 5 | 3 | 6 | 2 | 2 | 4 | 3 |
-| long-context | 1 | 4 | 2 | 5 | 1 | 1 | 3 | 2 |
-| real-time-data | 1 | 5 | 2 | 6 | 1 | 1 | 4 | 2 |
-| image-gen | 9 | 7 | 7 | 6 | 7 | 2 | 5 | 9 |
-| planning | 3 | 5 | 4 | 6 | 2 | 3 | 4 | 6 |
+| code-build | 1 | 5 | 2 | 8 | 1 | 1 | 3 | 2 |
+| code-review | 1 | 5 | 1 | 8 | 1 | 1 | 3 | 2 |
+| debug | 1 | 5 | 1 | 8 | 1 | 1 | 3 | 2 |
+| brainstorm | 4 | 6 | 4 | 8 | 1 | 3 | 4 | 7 |
+| cross-check | 2 | 5 | 3 | 8 | 1 | 2 | 3 | 4 |
+| research | 2 | 5 | 3 | 8 | 1 | 2 | 4 | 3 |
+| quick-lookup | 2 | 6 | 3 | 8 | 1 | 2 | 4 | 3 |
+| design-visual | 8.5 | 7 | 7 | 8 | 8 | 3 | 6 | 9 |
+| doc-write | 6 | 6 | 6 | 8 | 5 | 3 | 4 | 7 |
+| data-analysis | 1 | 4 | 2 | 8 | 1 | 1 | 3 | 2 |
+| automation | 2 | 5 | 3 | 8 | 2 | 2 | 4 | 3 |
+| long-context | 1 | 4 | 2 | 7 | 1 | 1 | 3 | 2 |
+| real-time-data | 1 | 5 | 2 | 8 | 1 | 1 | 4 | 2 |
+| image-gen | 7 | 7 | 6 | 8 | 7 | 2 | 5 | 9 |
+| planning | 3 | 5 | 4 | 8 | 2 | 3 | 4 | 6 |
 
 ---
 
 ### Dispatch
 - **Access:** Dispatch app (see MASTER.md for configuration)
-- **Cost class:** subscription
+- **Tier:** unknown — confirm in Dispatch account settings (TC override: 5 placeholder)
+- **Cost class:** subscription (tier unconfirmed)
 - **Context window:** task-level only
 - **Action capability:** task delegation, workflow triggers, external service routing
 - **Freshness:** live (event-driven)
@@ -221,7 +231,8 @@
 
 ### Routines
 - **Access:** Routines app (see MASTER.md for configuration)
-- **Cost class:** subscription
+- **Tier:** unknown — confirm in Routines account settings (TC override: 5 placeholder)
+- **Cost class:** subscription (tier unconfirmed)
 - **Context window:** task-level only
 - **Action capability:** scheduled automation, recurring triggers, multi-step sequences
 - **Freshness:** live (schedule-driven)
@@ -253,3 +264,5 @@ When a tool gains new capabilities (e.g. Gemini gets file system access, Claude 
 
 ### Changelog
 - 2026-05-06: initial registry — 9 tools × 15 task types × 8 dimensions
+- 2026-05-06: removed Perplexity (not in Michael's toolkit)
+- 2026-05-06: applied tier overrides — ChatGPT Plus (TC→7), Gemini Free (TC→10), Canva Free (AB adjustments), Codex API (TC→3)

@@ -64,19 +64,29 @@ Always active. No explicit trigger needed.
 
 On session start (via AUTO-EXECUTE 1j), read in this order:
 
-1. `skills/ai-task-router/references/tool-registry.md` — tool profiles + base scores per task type
+1. `skills/ai-task-router/references/tool-registry.md` — base scores per tool per task type
 2. `skills/ai-task-router/references/scoring-matrix.md` — dimension weights + threshold rules
 3. `skills/ai-task-router/references/task-taxonomy.md` — classification signals
+4. `skills/ai-task-router/references/tier-config.md` — Michael's account tiers + TC score overrides
+5. `skills/ai-task-router/references/model-versions.md` — current model versions + staleness check
+
+**Apply tier overrides (immediately after reading tier-config.md):**
+For each tool, replace the registry's `TC` base score with `tc_score_override` from tier-config.md.
+Apply any `score_adjustment` notes (e.g. Canva Free: design-visual -1.5, image-gen -2.0).
+Flag tools with `action_needed` as "(tier unconfirmed)" in routing output.
+
+**Staleness check (immediately after reading model-versions.md):**
+Compare `last_checked` date against today. If `last_checked` < today → schedule Step 7 to run after the first user task completes (not at session start — don't block the session). Surface a one-line note: `→ router: model-versions stale — running background check after this response.`
 
 Then probe tool availability (run once, cache for session):
 
 | Tool | Availability check |
 |---|---|
 | Claude Code | always available (this session) |
-| ChatGPT / OpenAI | `printenv OPENAI_API_KEY` — non-empty = available |
-| Gemini | `printenv GEMINI_API_KEY` or `GOOGLE_API_KEY` — non-empty = available |
+| ChatGPT / OpenAI | `printenv OPENAI_API_KEY` — non-empty = available (API); Plus subscription = always assume browser available |
+| Gemini | `printenv GEMINI_API_KEY` or `GOOGLE_API_KEY` — non-empty = available (API); free tier = always assume browser available |
 | Codex CLI | `which codex` — found = available |
-| Claude.ai | assume available (browser access) |
+| Claude.ai | always assume browser available |
 | Canva AI | assume available if MCP server `31dc75b2` is active |
 | Dispatch | assume available if referenced in MASTER.md or BUILD_PLAN_CLAUDE.md |
 | Routines | same as Dispatch |
@@ -242,6 +252,68 @@ NNN is sequential. Outcome starts as `pending`; if Michael says "continue" or pr
 
 ---
 
+## Step 7 — Daily model-update check
+
+Fires when `model-versions.md` `last_checked` < today. Runs after the first task of the session completes — never blocks the session.
+
+### Check sequence (run in ~45 seconds, ~3K tokens)
+
+For each tool in model-versions.md, run one WebSearch targeting its `release_feed`:
+
+```
+search queries (run in parallel):
+  - "OpenAI new model release 2026" site:openai.com/news
+  - "Google Gemini new model release 2026" site:blog.google
+  - "Anthropic Claude new model 2026" site:anthropic.com/news
+  - "Canva AI new features 2026" site:canva.com/newsroom
+  - "openai/codex release" site:github.com
+```
+
+### Parse rules
+
+For each result, look for:
+- New model name not in model-versions.md (e.g. "GPT-5", "Gemini 3.0 Flash", "Claude Sonnet 5")
+- Capability change at Michael's current tier (e.g. "o3 now available on Plus")
+- Model deprecation notice
+- Context window expansion
+- Major new feature (image gen, file handling, tool use, etc.)
+
+### Update actions
+
+| Finding | Action |
+|---|---|
+| New model name detected | Update version field in model-versions.md + append changelog entry |
+| Same model, no change | Update `last_checked` date only |
+| Tier unlock detected (e.g. Plus gets o3) | Update tier-config.md `unlocked:` + flag affected tool-registry.md rows with `# REVIEW [date]` comment |
+| Model deprecated | Add deprecation note + flag affected registry rows |
+| Capability change (context, speed, accuracy) | Flag affected dimension rows in tool-registry.md with `# REVIEW [date] — [what changed]` |
+
+**`REVIEW` flags are not auto-applied to scores.** They surface as a one-line note at end of session:
+```
+→ router: [N] score rows flagged for review in tool-registry.md — run `/route review scores` to inspect
+```
+
+`/route review scores` shows each flagged row with the change that triggered the flag and a suggested new score. Michael approves each change.
+
+### Commit after check
+
+Always commit after a successful check, even if nothing changed:
+```
+chore: router model-check [YYYY-MM-DD] — [no changes | N updates: tool1 model-x, tool2 feature-y]
+```
+
+This keeps the last_checked date current so the check doesn't re-fire mid-session.
+
+### Manual trigger
+
+`/route check models` — runs Step 7 immediately regardless of staleness. Use after a known major release.
+
+### Failure handling
+
+If WebSearch returns no results or network error for a tool → skip that tool, log `check_failed: [tool] [reason]` in model-versions.md, still update `last_checked`. Don't fail the whole check because one source was unreachable.
+
+---
+
 ## Override commands
 
 | Command | Action |
@@ -257,6 +329,9 @@ NNN is sequential. Outcome starts as `pending`; if Michael says "continue" or pr
 | `/route status` | Show current passive gate state: on/off, ctx_bonus, tools configured |
 | `/route reset` | Clear session-only tuning, restore registry defaults |
 | `/route why` | Explain the most recent routing decision (re-surface scores that led to last nudge) |
+| `/route check models` | Run Step 7 model-update check immediately |
+| `/route review scores` | Show all `# REVIEW`-flagged rows in tool-registry.md with suggested score changes |
+| `/route tiers` | Print active tier summary from tier-config.md (which tools have confirmed tiers, which need action) |
 
 ---
 
