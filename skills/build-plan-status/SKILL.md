@@ -103,6 +103,11 @@ Edit /home/user/accent-os/BUILD_PLAN_MICHAEL.md:
 
 Group commands by file so Michael can apply them in one pass.
 
+**Edge cases:**
+- If `git log` returns no commits since the last BUILD_PLAN edit (plan was just updated), output: "No new commits since last BUILD_PLAN_CLAUDE.md edit ([date]). No drift to process."
+- If the track/M-task identifier in a commit subject doesn't match any line in BUILD_PLAN_CLAUDE.md, note it as `UNMATCHED_IDENTIFIER` in BLOCK 4 — don't silently discard. Michael may need to add a new BUILD_PLAN entry.
+- If BUILD_PLAN_MICHAEL.md doesn't exist at `/home/user/accent-os/BUILD_PLAN_MICHAEL.md`, skip that file and note: "BUILD_PLAN_MICHAEL.md not found — checking CLAUDE plan only."
+
 ---
 
 ## Step 5 — Output
