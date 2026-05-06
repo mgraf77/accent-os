@@ -7,11 +7,35 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md / MODULE_MODES.md. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean as of v6.10.59 (Module Modes — rollout registry + per-user overrides).** Use the slash protocol to toggle modes: `/mode <key> <state>` for module mode flips, `/override allow|deny|clear <user> <module>` for per-user grants. New M-task candidate: **M30 — Supabase `user_module_overrides` table** (server-side persistence so per-user grants work cross-device, not just Owner's localStorage). Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor** (declarative module shell — collapse 4 touchpoints to 1), **Saved Filter Sets** (cross-cutting persisted filter combos on every list page), **Bulk action bars** (multi-select + bulk delete/status on list pages). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 schema runs still pending but UIs already ship working.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md / MODULE_MODES.md / `skills/efficiency-monitor/session-end-summary.md`. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean on `claude/always-on-efficiency-monitor-2LiuS` after efficiency-monitor v1 ship.** New always-on skill: `efficiency-monitor` — silent observer, surfaces flags only at session boundaries (boot replay + Stop-hook wrap-up). During the session, journal observations to `skills/efficiency-monitor/_session-scratch.md` per signal types in SKILL.md. Use the slash protocol to toggle modes: `/mode <key> <state>` for module mode flips, `/override allow|deny|clear <user> <module>` for per-user grants. New M-task candidate: **M30 — Supabase `user_module_overrides` table** (server-side persistence so per-user grants work cross-device, not just Owner's localStorage). Next pickable WITHOUT new permissions: **MODULE_REGISTRY refactor** (declarative module shell — collapse 4 touchpoints to 1), **Saved Filter Sets** (cross-cutting persisted filter combos on every list page), **Bulk action bars** (multi-select + bulk delete/status on list pages). Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 schema runs still pending but UIs already ship working.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-06 — efficiency-monitor v1 (always-on session observer) — SHIPPED
+**Skill:** `skills/efficiency-monitor/` — silent during work, surfaces only at session boundaries.
+**Built/Changed:**
+- **SKILL.md** — 6-signal tracker (retry-loops, redundant reads, recurring multi-step sequences, skill-bypass, clarification loops, redone WIP) with hard rule: never interrupt mid-flow. Path A in-flight observation via gitignored `_session-scratch.md` (crash-safe), Path B post-hoc aggregation via Stop hook. Boot step 0 replays last session's summary; wrap-up step 2 compiles + appends + clears scratch.
+- **`_thresholds.md`** — tunable promotion ladder OBSERVED (1×) → CANDIDATE (3× in session OR 2+ sessions) → PROMOTE (3+ sessions OR > 10 min cumulative) → BUILT. Time-saved heuristic: steps × 0.5 min × occurrences.
+- **`efficiency-log.md`** — append-only ledger, one block per session.
+- **`skill-candidates.md`** — auto-rebuilt by aggregator; semantic-diff suppression so timestamp-only changes don't churn the working tree.
+- **`session-end-summary.md`** — overwritten each session, consumed by next boot.
+- **`scripts/efficiency-aggregate.sh`** — parses log cross-session, computes distinct-session counts + total occurrences (sums in-session multipliers), assigns status, preserves `Built / archived` block, only writes when semantic content changes. Smoke-tested with 3-session synthetic log: pattern correctly hit PROMPT at 9 occurrences × 4 steps × 0.5 = 18 min savings.
+- **`.claude/settings.json`** — Stop hook runs aggregator, output to gitignored `_aggregator.log`.
+- **`.claude/CLAUDE.md`** — step 1.j (boot replay) + step 8 (wrap-up + batch-doc-update); startupPrompt also reads session-end-summary.
+- **`skills/_index.md`** — efficiency-monitor registered (companion: skill-forge, vibe-speak).
+- **`.gitignore`** — `_aggregator.log` and `_session-scratch.md`.
+
+**Decisions:**
+- Hybrid Path A + Path B (both in-flight self-observation AND hook-driven post-hoc aggregation). Either alone is fragile.
+- Boundaries-only surfacing (Michael's hard constraint — no mid-flow interruption).
+- Crash-safe via gitignored scratch file, not pure mental ledger.
+- Semantic-diff suppression to keep git clean across sessions with no real signal change.
+
+**Commit chain:** 508a27c (build) → db533b2 (gitignore + first aggregator output) → 74adbb5 (semantic-diff suppression) → final (crash-safe scratch + project-hygiene docs).
+**Branch:** `claude/always-on-efficiency-monitor-2LiuS` pushed; awaiting Michael's merge call.
+**Watchlist for first real session:** does in-flight scratch journaling actually happen reliably; do skill-bypass flags fire correctly; first PROMOTE → handoff to skill-forge.
 
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9) — SHIPPED
 **Version:** vibe-speak v0 → v9 (23-dim matrix at 97.1% / 709 of 730)

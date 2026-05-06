@@ -1,35 +1,37 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-05 — session end · vibe-speak v9 shipped + corpus calibration applied
+**Last updated:** 2026-05-06 — session end · efficiency-monitor v1 shipped (always-on observer)
 **Current task:** —
-**Step:** Tree clean on main. Latest AccentOS module: v6.10.65 (Customer→Deal preset + Module Modes bulk retag). Latest meta-skill: vibe-speak v9 (corpus learning + trend awareness + 13 new commands + dim 23, expanded matrix at 97.1% / 709 / 730).
+**Step:** Tree clean on `claude/always-on-efficiency-monitor-2LiuS`. New always-on skill `efficiency-monitor` shipped — silent in-session observer, surfaces flags only at session boundaries. Awaiting first real session to populate `efficiency-log.md`.
 
-**Recent shipped (last 7 turns of this session):**
-- vibe-speak v6 → v7 → v8 → v9 (multi-user profiles + benchmarks + KPI + scoring matrix + Step numbering cleanup + lazy-load contract + sessions/ + skill router + corpus learning)
-- profiles/michael.md v2.2.0 (corpus calibration applied — 6 proposals from PROMPT_LOG backtest baked in: `knock out` autonomy verb, time-budgeted recognition, +inline-edit/Module Modes/vibe-speak/extract/pivot to hard-keep)
-- skills/_index.md registry (26 skills) + skills/vibe-speak/skill-router.md
-- skills/vibe-speak/corpus/ directory (vocabulary, trends, topics + claude.ai import path)
+**Recent shipped (this session):**
+- `skills/efficiency-monitor/` — SKILL.md, `_thresholds.md` (tunable), `efficiency-log.md` (append-only ledger), `skill-candidates.md` (auto-rebuilt with semantic-diff suppression), `session-end-summary.md` (next-boot consumer)
+- `scripts/efficiency-aggregate.sh` — Stop-hook aggregator with cross-session counts + promotion ladder + timestamp-only-diff suppression
+- `.claude/settings.json` — Stop hook wired (runs aggregator → `_aggregator.log`, gitignored)
+- `.claude/CLAUDE.md` — boot step 1.j (replay last summary) + wrap-up step 8 (write findings, batched into session-end commit)
+- `skills/_index.md` — efficiency-monitor entry registered (companion: skill-forge, vibe-speak)
+- Reliability hardening: `_session-scratch.md` (gitignored mid-session journal) makes tracking crash-safe
+- Project hygiene: PROMPT_LOG entry, WIP refresh, SESSION_LOG entry
 
-**Files touched (recent):** skills/vibe-speak/{SKILL.md, profiles/michael.md, scoring-matrix.md, skill-router.md, corpus/*}, skills/_index.md, .claude/CLAUDE.md.
+**Files touched:** `skills/efficiency-monitor/*`, `scripts/efficiency-aggregate.sh`, `.claude/{CLAUDE.md, settings.json}`, `.gitignore`, `skills/_index.md`, `PROMPT_LOG.md`, `WORK_IN_PROGRESS.md`, `SESSION_LOG.md`.
 
-**Commit status:** All committed + pushed. Branch `claude/caveman-conversational-english-jr6Vy` and `main` both at `6641a1f` baseline + new corpus-calibration commit pending in this WIP refresh.
+**Commit chain:** 508a27c (build) → db533b2 (gitignore + aggregator output committed) → 74adbb5 (semantic-diff suppression) → final (project hygiene + crash-safe scratch journal).
+
+**Branch status:** `claude/always-on-efficiency-monitor-2LiuS` pushed to origin. NOT merged to main.
 
 **Next step if interrupted:**
+1. Verify tree clean: `git status`
+2. Open PR or merge `claude/always-on-efficiency-monitor-2LiuS` → main when Michael approves
+3. First "real" session will exercise: scratch journaling during work → wrap-up read+clear → aggregator on Stop → boot replay next session
 
-1. `git add -A`
-2. Commit `vibe-speak: apply v9 corpus calibration to michael.md + refresh WIP`
-3. `git pull --rebase origin main && git push origin main`
-4. Pause. Next session targets:
+**Watchlist (will fill as the skill runs in real sessions):**
+- Does Claude reliably journal to `_session-scratch.md` mid-session? (the Path A reliability question)
+- Do skill-bypass flags actually catch real bypasses, or fire false positives?
+- First PROMOTE-status candidate → handoff to `skill-forge`
 
-**AccentOS module backlog (all genuinely unblocked items shipped — remaining are Michael-blocked or polish):**
-- Polish backlog: MODULE_REGISTRY refactor, Saved Filter Sets surface (js/saved_filters.js exists but verify wiring), Bulk action bars (js/bulk_select.js exists), Compact-view toggle, Column visibility toggles
+**Other backlog (unchanged from prior WIP):**
+- AccentOS module: MODULE_REGISTRY refactor, Saved Filter Sets verify, Bulk action bars wiring, Compact-view toggle
 - M30 SQL: `user_module_overrides` table — when Michael wants real cross-device per-user Module Modes gating
-- 6.5/6.6 portal phase 2: needs Michael scoping
-- All 6.x integrations: blocked on M03/M04/M05/M06/M09/M10/M18
-
-**vibe-speak skill backlog:**
-- Once Michael exports claude.ai history → drop in `skills/vibe-speak/corpus/imports/` → run `/vibe import` → corpus expands from 18 prompts to thousands → richer calibration
-- Real-session KPI accumulation: dim 19 will rise from 9 → 10 after 7 wraps with KPI-log entries
-- First brute-force-pattern → forged skill flow: dim 22 will rise from 9 → 10 once that organic event happens
-- Optional: claude.ai JSON parser implementation (currently spec'd, not coded)
+- 6.x integrations: blocked on M03/M04/M05/M06/M09/M10/M18
+- vibe-speak: claude.ai history export → corpus import expansion

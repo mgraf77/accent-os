@@ -7,3 +7,5 @@ skills/vibe-speak/profiles/_active.md
 
 # efficiency-monitor — runtime stop-hook output, regenerated every session
 skills/efficiency-monitor/_aggregator.log
+# efficiency-monitor — mid-session journal, cleared at wrap-up
+skills/efficiency-monitor/_session-scratch.md

@@ -63,22 +63,25 @@ Skip section entirely if empty. Do NOT show INFO-level flags at boot.
 
 ---
 
-## Step 1 — During session (silent observation)
+## Step 1 — During session (silent observation, crash-safe)
 
-Maintain a mental ledger of signal hits. Do **not** narrate. Track:
+Maintain observations in `skills/efficiency-monitor/_session-scratch.md` (gitignored, runtime-only). Append as you go — do **not** narrate to Michael. Format per line:
 
 ```
-session_id: [date-time-shortsha]
-flags:
-  - signal: [type]
-    occurrences: [count]
-    detail: [one-line]
-sequences:
-  - steps: [step1 → step2 → step3]
-    occurrences: [count]
+[HH:MM] [signal-type] | [one-line detail]
 ```
 
-Do not write to disk during the session — only at end (Step 2). Reason: avoids interleaving doc commits with build commits (per CLAUDE.md OPERATING RULES).
+Example entries:
+```
+[14:22] retry-loop | npm install failed 3× before noticing missing node_modules
+[14:35] redundant-read | re-read js/csv_import.js (already read at 14:08)
+[14:51] recurring-sequence | read→grep→edit→test (3rd time this session)
+[15:02] skill-bypass | did weekly review by hand; bc-business-review would have done it
+```
+
+**Why scratch file vs. mental ledger:** if the session ends abruptly (Codespace stop, crash, manual kill), mental observations evaporate. The scratch file persists. Step 2 reads + clears it.
+
+Append-only during the session. Only Step 2 (wrap-up) reads/clears it. Do not show its contents to Michael unless asked.
 
 ---
 
@@ -92,7 +95,7 @@ Triggered by:
 When triggered:
 
 ### 2a. Compile findings
-For each signal type, total count + worst-offender one-liner.
+Read `_session-scratch.md`. Group entries by signal type, total count per type, worst-offender one-liner. If scratch is empty, fall back to mental ledger (for sessions where Claude forgot to journal).
 
 ### 2b. Append to `efficiency-log.md`
 
@@ -118,11 +121,13 @@ For each signal type, total count + worst-offender one-liner.
 ### 2c. Overwrite `session-end-summary.md`
 Same content as 2b but ONLY this session's data, formatted for next-session boot consumption.
 
-### 2d. Run aggregator
+### 2d. Run aggregator + clear scratch
 Invoke `bash /home/user/accent-os/scripts/efficiency-aggregate.sh`. This:
 - Parses `efficiency-log.md` cross-session
-- Updates `skill-candidates.md` running counts
+- Updates `skill-candidates.md` running counts (no rewrite if no semantic change)
 - Promotes candidates per thresholds in `_thresholds.md`
+
+Then truncate `_session-scratch.md` (it's already been folded into the log). The file is gitignored — no commit churn.
 
 ### 2e. Surface summary
 In current vibe-speak mode, one block:
@@ -174,9 +179,10 @@ This is the single most-valuable signal — catching when we're brute-forcing wo
 - `SKILL.md` — this file
 - `_thresholds.md` — tunable detection knobs
 - `efficiency-log.md` — append-only ledger of all session flags
-- `skill-candidates.md` — running tally + promotion status
+- `skill-candidates.md` — running tally + promotion status (auto-rebuilt, semantic-diff suppressed)
 - `session-end-summary.md` — overwritten each session; consumed by next boot
-- `_history/` — (optional) per-session snapshots if Michael wants forensic detail
+- `_session-scratch.md` — gitignored runtime journal during session (Step 1); cleared at wrap-up (Step 2d)
+- `_aggregator.log` — gitignored Stop-hook stdout
 
 ---
 
