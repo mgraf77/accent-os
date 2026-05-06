@@ -31,6 +31,12 @@ Run when Michael says:
 - "URL audit" / "404 check"
 - "GMC re-index pending" / "M16 batch"
 - "P053-077" (or any product batch identifier)
+- "check for broken links"
+- "product URL health check"
+- "fix broken canonicals"
+- "GMC disapproved URLs"
+- "find 404s on the store"
+- "store URL audit" / "BC URL check"
 
 ---
 
@@ -88,19 +94,27 @@ Pair each with the BC admin path or the relevant Feedenomics rule when applicabl
 
 ---
 
+## Edge Cases
+
+- **URL set resolves to zero:** if the Supabase query or input list yields no URLs (e.g. `gmc_status = 'pending'` returns nothing), output: "No URLs matched the scope — `hsyjcrrazrzqngwkqsqa marketing.feed_status` has no pending rows older than 14 days. Try 'all products' or provide a direct list."
+- **WebFetch blocked by Cloudflare/bot protection on store-cwqiwcjxes.mybigcommerce.com:** if status = 403 or CAPTCHA is returned, classify as `ACCESS_BLOCKED` (not HARD_404), and note: "BC may require authenticated requests — use BC admin export + manual check."
+- **Batch > 500 URLs:** cap automatic scope at 500 and warn: "Large scope detected — capped at 500. For full audit, run Firecrawl batch externally with the payload in BLOCK 3."
+- **feed_status table missing:** if `marketing.feed_status` doesn't exist in `/home/user/accent-os/sql/M*.sql`, note it and fall back to pulling product URLs from `products.bc_url` or `products.canonical_url` if present.
+
 ## Step 5 — Output
 
 ```
 ═══ BLOCK 1: CRAWL SUMMARY ═══
-URLs crawled: [N]
+URLs crawled: [N]   Scope: [chosen scope — batch / pending / top-500]
 OK: [count]   HARD_404: [count]   REDIRECT_CHAIN: [count]
 CANONICAL_MISMATCH: [count]   GMC_NOINDEX: [count]
 PENDING_REINDEX: [count]   MISSING_CANONICAL: [count]   5XX: [count]
+ACCESS_BLOCKED: [count]
 
 ═══ BLOCK 2: PER-URL FIX QUEUE (CSV) ═══
 url,status,severity,action,bc_admin_path
-/products/acme-pendant-001,HARD_404,HIGH,"Retire OR 301 → /category/pendants",/manage/products/12345
-/products/old-sconce-fixture,REDIRECT_CHAIN,MEDIUM,"Direct 301 → /products/new-sconce",/manage/redirects
+/products/acme-pendant-001,HARD_404,HIGH,"Retire OR 301 → /category/pendants",https://store-cwqiwcjxes.mybigcommerce.com/manage/products/12345
+/products/old-sconce-fixture,REDIRECT_CHAIN,MEDIUM,"Direct 301 → /products/new-sconce",https://store-cwqiwcjxes.mybigcommerce.com/manage/redirects
 ...
 
 ═══ BLOCK 3: FIRECRAWL BATCH PAYLOAD ═══ (only if URL set > 50)
@@ -121,3 +135,5 @@ For PENDING_REINDEX rows that were P053-077:
 - **Never** flag a redirect chain of length 1 (single 301) as broken — that's intentional.
 - **Never** classify a URL as HARD_404 on a single failed probe. Retry once after 60s.
 - **Never** silently ignore the canonical tag — it's the single most common GMC issue after missing images.
+- **Never** output a bc_admin_path without the full `https://store-cwqiwcjxes.mybigcommerce.com` prefix — relative paths in BLOCK 2 require Michael to mentally reconstruct the URL, which causes errors.
+- **Never** default to "top 500 by revenue" without stating that scope explicitly in BLOCK 1 — an audit result without a stated scope cannot be reproduced or compared over time.

@@ -136,6 +136,8 @@ FRAMEWORK + EXTENSIBILITY
 
 Before producing any output, read in this order:
 
+**Do in parallel (reads 3–6 are independent once active user is known):** After confirming the active user (reads 1–2), reads 3, 4, 5, and 6 can be issued concurrently — each is a separate file with no dependency on the others.
+
 1. **Profile detection** — read `skills/vibe-speak/profiles/_active.md` (if exists) for the cached active user. If missing, run detection chain (Step 20): git config user.name → user.email → `_default.md`. Write result to `_active.md`.
 2. **`skills/vibe-speak/profiles/[active-user].md`** — the calibrated user profile (for Michael: `profiles/michael.md`).
 3. **`skills/vibe-speak/session-handoff.md`** — single-block snapshot of state from the last session (mid-task flag, session-only overrides, modified files).
@@ -207,6 +209,10 @@ Activate when Michael says any of:
 - "explain like I'm vibing" / "vibe coder mode"
 - "less words" / "tighten up" / "shorter"
 - "/vibe" (slash-style)
+- "quiet mode" / "brief me" / "keep it brief"
+- "TLDR" / "tl;dr" / "short version"
+- "keep it short" / "just the highlights" / "cut to the chase"
+- "compress this" / "summarize that"
 
 **Fuzzy matching.** Match on **whole-word edit-distance ≤ 2** for any single trigger word, OR exact substring match for multi-word triggers. Examples that match:
 

@@ -35,12 +35,20 @@ Run this skill when Michael says anything like:
 - "supabase query for [X]"
 - "ad-hoc query for [X]"
 - "give me the SQL for [X]"
+- "pull [X] from supabase"
+- "write me a query"
+- "check the database for [X]"
+- "what does the data say about [X]"
+- "run a query against [table]"
+- "count [X]" / "list all [X]" / "filter [X] by"
 
 Do **not** trigger for: vendor score traces ("why is vendor X ranked there" → vendor-cascade) or rule design ("how do I score for X" → priority-articulation).
 
 ---
 
 ## Step 1 — Load the live schema
+
+**Do in parallel:** Read all M-schema files simultaneously — they are independent reads.
 
 Read every `M*_*.sql` file in `/home/user/accent-os/sql/` (currently M01, M02, M21, M22, M23, M24, M25, M26, M27, M28, M29). Build a working table inventory:
 
@@ -50,7 +58,10 @@ TABLE → primary key, foreign keys, columns relevant to the question
 
 Cache table names in working memory for this run. Do not rely on guesses about column names — every column referenced in the output SQL must exist in one of the loaded files.
 
-If a referenced table or column does not exist, output "Schema gap: table/column [X] not found in /home/user/accent-os/sql/" and stop. Do not invent fields.
+Edge cases:
+- If a referenced table or column does not exist in any M-file, output "Schema gap: table/column [X] not found in /home/user/accent-os/sql/ — cannot generate query." and stop. Do not invent fields.
+- If the question references a BigCommerce store-cwqiwcjxes concept (e.g. "product variants", "order line items") that has no direct Supabase equivalent, note the mapping: "BC [concept] maps to Supabase [table].[column] via M[N]" — or flag if no mapping exists.
+- If M-files on disk conflict with each other (e.g. same table defined twice with different columns), prefer the higher-numbered M-file as the canonical version.
 
 ---
 
