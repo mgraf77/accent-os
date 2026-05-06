@@ -1114,32 +1114,31 @@ async function imGoMeeting(id){
 // Subscribes to postgres_changes on the four collaborative tables, filtered
 // by the active meeting_id, so edits made on another device stream in live.
 function imRtSubscribe(meetingId){
-  console.log('[meetings] imRtSubscribe called with id=', meetingId);
-  if(!meetingId){ console.warn('[meetings] rt skip: no meeting id'); return; }
-  if(typeof meetingId === 'string' && meetingId.startsWith('_')){
-    console.warn('[meetings] rt skip: meeting id "'+meetingId+'" is a local-only seed (not a Supabase row). Realtime needs a real DB-backed meeting. Create a NEW meeting via the + button, then test.');
-    return;
-  }
-  if(IM_RT_MEETING === meetingId && IM_RT_CHANNEL){ console.log('[meetings] rt already subscribed to', meetingId); return; }
+  if(!meetingId) return;
+  // Local seed meetings (id starts with '_') aren't in Supabase, so there's
+  // nothing for the realtime channel to broadcast. Silent skip — the
+  // imParseTranscript path already warns when a save is local-only.
+  if(typeof meetingId === 'string' && meetingId.startsWith('_')) return;
+  if(IM_RT_MEETING === meetingId && IM_RT_CHANNEL) return;
   imRtUnsubscribe();
-  if(typeof sbConfigured !== 'function' || !sbConfigured()){ console.warn('[meetings] rt skip: Supabase not configured'); return; }
-  if(typeof supabase === 'undefined'){ console.warn('[meetings] rt skip: supabase-js CDN did not load (window.supabase is undefined)'); return; }
+  if(typeof sbConfigured !== 'function' || !sbConfigured()) return;
+  if(typeof supabase === 'undefined'){ console.warn('[meetings] realtime: supabase-js CDN did not load'); return; }
   const rt = (typeof sbRealtime === 'function') ? sbRealtime() : null;
-  if(!rt || !rt.channel){ console.warn('[meetings] rt skip: realtime client unavailable'); return; }
+  if(!rt || !rt.channel){ console.warn('[meetings] realtime client unavailable'); return; }
 
-  console.log('[meetings] rt opening channel for', meetingId);
   const filter = `meeting_id=eq.${meetingId}`;
   try{
     IM_RT_CHANNEL = rt.channel(`im-meeting-${meetingId}`)
-      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_transcripts', filter}, p => { console.log('[meetings] rt event transcripts:', p.eventType, p.new?.id||p.old?.id); imRtApply('transcripts', meetingId, p); })
-      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_notes',       filter}, p => { console.log('[meetings] rt event notes:',       p.eventType, p.new?.id||p.old?.id); imRtApply('notes',       meetingId, p); })
-      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_todos',       filter}, p => { console.log('[meetings] rt event todos:',       p.eventType, p.new?.id||p.old?.id); imRtApply('todos',       meetingId, p); })
-      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_followups',   filter}, p => { console.log('[meetings] rt event followups:',   p.eventType, p.new?.id||p.old?.id); imRtApply('followups',   meetingId, p); })
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_transcripts', filter}, p => imRtApply('transcripts', meetingId, p))
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_notes',       filter}, p => imRtApply('notes',       meetingId, p))
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_todos',       filter}, p => imRtApply('todos',       meetingId, p))
+      .on('postgres_changes', {event:'*', schema:'public', table:'meeting_followups',   filter}, p => imRtApply('followups',   meetingId, p))
       .subscribe(status => {
-        console.log('[meetings] rt status:', status, 'for', meetingId);
+        if(status === 'SUBSCRIBED') console.log('[meetings] realtime live for', meetingId);
+        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') console.warn('[meetings] realtime status:', status);
       });
     IM_RT_MEETING = meetingId;
-  }catch(e){ console.warn('[meetings] rt subscribe failed:', e.message); IM_RT_CHANNEL = null; IM_RT_MEETING = null; }
+  }catch(e){ console.warn('[meetings] realtime subscribe failed:', e.message); IM_RT_CHANNEL = null; IM_RT_MEETING = null; }
 }
 
 function imRtUnsubscribe(){
@@ -2174,10 +2173,9 @@ function imParseTranscript(id){
 
   // Persist if Supabase configured — reconcile temp id with real DB UUID so same-session delete works
   if(id.startsWith('_')){
-    console.warn('[meetings] transcript saved LOCALLY ONLY — meeting id "'+id+'" is a seed/local meeting, not in Supabase. Other devices will not see it. Create a fresh meeting via the + button to enable cross-device sync.');
+    console.warn('[meetings] transcript saved locally only — meeting "'+id+'" is not a Supabase row, other devices will not see it.');
   }
   if(sbConfigured() && !id.startsWith('_')){
-    console.log('[meetings] saving transcript to Supabase for meeting', id);
     const {id:_, ...body} = transcript;
     sbFetch('/meeting_transcripts', {method:'POST', headers:{'Prefer':'return=representation'}, body: JSON.stringify(body)})
       .then(res => {
