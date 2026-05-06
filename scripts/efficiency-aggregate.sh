@@ -138,6 +138,14 @@ awk '
 
   echo ""
   echo "$ARCHIVE_BLOCK"
-} > "$CAND"
+} > "$TMPDIR/candidates.new"
 
-echo "efficiency-aggregate: rebuilt $CAND ($SESSION_COUNT session(s) processed)"
+# Only overwrite if there's a semantic change (ignore the timestamp line).
+# Keeps git working tree clean when nothing meaningful changed.
+strip_ts() { grep -v '^_Last aggregated:' "$1" 2>/dev/null || true; }
+if [[ -f "$CAND" ]] && diff -q <(strip_ts "$CAND") <(strip_ts "$TMPDIR/candidates.new") >/dev/null 2>&1; then
+  echo "efficiency-aggregate: no semantic change ($SESSION_COUNT session(s) in log) — skipping rewrite"
+else
+  mv "$TMPDIR/candidates.new" "$CAND"
+  echo "efficiency-aggregate: rebuilt $CAND ($SESSION_COUNT session(s) processed)"
+fi
