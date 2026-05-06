@@ -123,21 +123,21 @@
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
 |---|---|---|---|---|---|---|---|---|
-| code-build | 8.5 | 7 | 9 | 4 | 5 | 7 | 4 | 5 |
-| code-review | 9.5 | 7 | 9.5 | 4 | 5 | 8 | 4 | 5 |
-| debug | 9 | 7 | 9 | 4 | 5 | 8 | 4 | 5 |
-| brainstorm | 3 | 7 | 6 | 4 | 1 | 6 | 4 | 4 |
-| cross-check | 8 | 7 | 9 | 4 | 1 | 7 | 4 | 4 |
-| research | 3 | 6 | 6 | 4 | 1 | 6 | 4 | 4 |
-| quick-lookup | 5 | 7 | 7 | 4 | 1 | 5 | 4 | 3 |
-| design-visual | 2 | 5 | 4 | 4 | 1 | 4 | 3 | 3 |
-| doc-write | 4 | 6 | 6 | 4 | 2 | 6 | 4 | 4 |
-| data-analysis | 7 | 7 | 8 | 4 | 4 | 7 | 4 | 4 |
-| automation | 5 | 6 | 7 | 4 | 4 | 6 | 4 | 4 |
+| code-build | 8.5 | 7 | 9 | 3 | 5 | 7 | 4 | 5 |
+| code-review | 9.5 | 7 | 9.5 | 3 | 5 | 8 | 4 | 5 |
+| debug | 9 | 7 | 9 | 3 | 5 | 8 | 4 | 5 |
+| brainstorm | 3 | 7 | 6 | 3 | 1 | 6 | 4 | 4 |
+| cross-check | 8 | 7 | 9 | 3 | 1 | 7 | 4 | 4 |
+| research | 3 | 6 | 6 | 3 | 1 | 6 | 4 | 4 |
+| quick-lookup | 5 | 7 | 7 | 3 | 1 | 5 | 4 | 3 |
+| design-visual | 2 | 5 | 4 | 3 | 1 | 4 | 3 | 3 |
+| doc-write | 4 | 6 | 6 | 3 | 2 | 6 | 4 | 4 |
+| data-analysis | 7 | 7 | 8 | 3 | 4 | 7 | 4 | 4 |
+| automation | 5 | 6 | 7 | 3 | 4 | 6 | 4 | 4 |
 | long-context | 7 | 6 | 8 | 3 | 4 | 7 | 4 | 4 |
-| real-time-data | 2 | 6 | 4 | 4 | 1 | 5 | 2 | 3 |
-| image-gen | 1 | 4 | 2 | 4 | 1 | 2 | 2 | 2 |
-| planning | 5 | 6 | 7 | 4 | 3 | 6 | 4 | 5 |
+| real-time-data | 2 | 6 | 4 | 3 | 1 | 5 | 2 | 3 |
+| image-gen | 1 | 4 | 2 | 3 | 1 | 2 | 2 | 2 |
+| planning | 5 | 6 | 7 | 3 | 3 | 6 | 4 | 5 |
 
 ---
 
@@ -163,7 +163,7 @@
 | doc-write | 9.5 | 8 | 9 | 7 | 1 | 8 | 6 | 9 |
 | data-analysis | 4 | 7 | 7 | 7 | 1 | 7 | 5 | 5 |
 | automation | 2 | 6 | 5 | 7 | 1 | 6 | 5 | 4 |
-| long-context | 8 | 6 | 8 | 6 | 1 | 8 | 5 | 7 |
+| long-context | 8 | 6 | 8 | 7 | 1 | 8 | 5 | 7 |
 | real-time-data | 4 | 7 | 6 | 7 | 1 | 6 | 6 | 5 |
 | image-gen | 3 | 6 | 5 | 7 | 1 | 4 | 5 | 7 |
 | planning | 8.5 | 8 | 9 | 7 | 1 | 8 | 6 | 8.5 |
@@ -211,21 +211,21 @@
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
 |---|---|---|---|---|---|---|---|---|
-| code-build | 3 | 7 | 4 | 6 | 4 | 2 | 6 | 3 |
-| code-review | 2 | 7 | 3 | 6 | 3 | 2 | 5 | 2 |
-| debug | 2 | 7 | 3 | 6 | 3 | 2 | 5 | 2 |
-| brainstorm | 3 | 7 | 4 | 6 | 2 | 2 | 5 | 4 |
-| cross-check | 3 | 7 | 4 | 6 | 2 | 2 | 6 | 3 |
-| research | 3 | 7 | 4 | 6 | 3 | 2 | 6 | 3 |
-| quick-lookup | 3 | 8 | 4 | 7 | 2 | 2 | 6 | 3 |
-| design-visual | 2 | 6 | 3 | 6 | 2 | 2 | 5 | 3 |
-| doc-write | 3 | 7 | 4 | 6 | 3 | 2 | 5 | 4 |
-| data-analysis | 4 | 7 | 5 | 6 | 4 | 3 | 6 | 3 |
-| automation | 9 | 8 | 8 | 7 | 8 | 3 | 8 | 5 |
+| code-build | 3 | 7 | 4 | 5 | 4 | 2 | 6 | 3 |
+| code-review | 2 | 7 | 3 | 5 | 3 | 2 | 5 | 2 |
+| debug | 2 | 7 | 3 | 5 | 3 | 2 | 5 | 2 |
+| brainstorm | 3 | 7 | 4 | 5 | 2 | 2 | 5 | 4 |
+| cross-check | 3 | 7 | 4 | 5 | 2 | 2 | 6 | 3 |
+| research | 3 | 7 | 4 | 5 | 3 | 2 | 6 | 3 |
+| quick-lookup | 3 | 8 | 4 | 5 | 2 | 2 | 6 | 3 |
+| design-visual | 2 | 6 | 3 | 5 | 2 | 2 | 5 | 3 |
+| doc-write | 3 | 7 | 4 | 5 | 3 | 2 | 5 | 4 |
+| data-analysis | 4 | 7 | 5 | 5 | 4 | 3 | 6 | 3 |
+| automation | 9 | 8 | 8 | 5 | 8 | 3 | 8 | 5 |
 | long-context | 2 | 6 | 3 | 5 | 2 | 2 | 5 | 2 |
-| real-time-data | 5 | 8 | 6 | 7 | 5 | 2 | 8 | 3 |
-| image-gen | 2 | 6 | 3 | 6 | 2 | 1 | 5 | 3 |
-| planning | 5 | 7 | 6 | 6 | 4 | 3 | 6 | 5 |
+| real-time-data | 5 | 8 | 6 | 5 | 5 | 2 | 8 | 3 |
+| image-gen | 2 | 6 | 3 | 5 | 2 | 1 | 5 | 3 |
+| planning | 5 | 7 | 6 | 5 | 4 | 3 | 6 | 5 |
 
 ---
 
@@ -240,21 +240,21 @@
 
 | Task type | AB | SP | AC | TC | AX | CX | FR | CR |
 |---|---|---|---|---|---|---|---|---|
-| code-build | 2 | 6 | 3 | 6 | 3 | 2 | 5 | 2 |
-| code-review | 2 | 6 | 3 | 6 | 2 | 2 | 5 | 2 |
-| debug | 2 | 6 | 3 | 6 | 2 | 2 | 5 | 2 |
-| brainstorm | 2 | 6 | 3 | 6 | 1 | 2 | 5 | 3 |
-| cross-check | 2 | 6 | 3 | 6 | 1 | 2 | 5 | 2 |
-| research | 2 | 6 | 3 | 6 | 2 | 2 | 6 | 2 |
-| quick-lookup | 2 | 7 | 3 | 7 | 1 | 2 | 6 | 2 |
-| design-visual | 2 | 5 | 2 | 6 | 2 | 2 | 5 | 3 |
-| doc-write | 2 | 6 | 3 | 6 | 2 | 2 | 5 | 3 |
-| data-analysis | 3 | 7 | 5 | 6 | 3 | 3 | 6 | 2 |
-| automation | 9.5 | 8 | 8 | 7 | 9 | 3 | 8 | 4 |
+| code-build | 2 | 6 | 3 | 5 | 3 | 2 | 5 | 2 |
+| code-review | 2 | 6 | 3 | 5 | 2 | 2 | 5 | 2 |
+| debug | 2 | 6 | 3 | 5 | 2 | 2 | 5 | 2 |
+| brainstorm | 2 | 6 | 3 | 5 | 1 | 2 | 5 | 3 |
+| cross-check | 2 | 6 | 3 | 5 | 1 | 2 | 5 | 2 |
+| research | 2 | 6 | 3 | 5 | 2 | 2 | 6 | 2 |
+| quick-lookup | 2 | 7 | 3 | 5 | 1 | 2 | 6 | 2 |
+| design-visual | 2 | 5 | 2 | 5 | 2 | 2 | 5 | 3 |
+| doc-write | 2 | 6 | 3 | 5 | 2 | 2 | 5 | 3 |
+| data-analysis | 3 | 7 | 5 | 5 | 3 | 3 | 6 | 2 |
+| automation | 9.5 | 8 | 8 | 5 | 9 | 3 | 8 | 4 |
 | long-context | 2 | 5 | 3 | 5 | 2 | 2 | 5 | 2 |
-| real-time-data | 4 | 8 | 5 | 7 | 4 | 2 | 8 | 2 |
-| image-gen | 2 | 5 | 2 | 6 | 2 | 1 | 5 | 2 |
-| planning | 4 | 6 | 5 | 6 | 4 | 3 | 6 | 4 |
+| real-time-data | 4 | 8 | 5 | 5 | 4 | 2 | 8 | 2 |
+| image-gen | 2 | 5 | 2 | 5 | 2 | 1 | 5 | 2 |
+| planning | 4 | 6 | 5 | 5 | 4 | 3 | 6 | 4 |
 
 ---
 

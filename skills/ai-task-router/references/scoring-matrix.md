@@ -68,10 +68,10 @@ claude_code.context  += 2.0   (capped at 10)
 |---|---|---|
 | ≤0 | any | Silent — Claude Code wins |
 | 0–0.25 | any | Silent — gap too small to justify switching |
-| 0.25–0.50 | winner TC score ≤3 lower than CC | Suppress — cost not worth it |
-| 0.25–0.50 | winner TC score ≥ CC | Surface low-priority nudge |
-| 0.50+ | winner TC score ≤3 lower than CC | Surface with cost warning |
-| 0.50+ | winner TC score ≥ CC | Surface strong nudge |
+| 0.25–0.50 | winner TC score is 3+ pts below Claude Code TC (winner more expensive) | Suppress — cost not worth it |
+| 0.25–0.50 | winner TC score ≥ Claude Code TC (winner same cost or cheaper) | Surface low-priority nudge |
+| 0.50+ | winner TC score is 3+ pts below Claude Code TC (winner more expensive) | Surface with explicit cost warning |
+| 0.50+ | winner TC score ≥ Claude Code TC (winner same cost or cheaper) | Surface strong nudge |
 | active mode | any | Always surface full table |
 
 **Gap formula:**
@@ -79,12 +79,14 @@ claude_code.context  += 2.0   (capped at 10)
 gap = (winner_composite - claude_composite) / claude_composite
 ```
 
-**Switching cost multiplier:** add to Claude Code's effective score before gap calc:
+**Switching cost multiplier:** applied to Claude Code's composite score only (raises the bar for routing away). Never applied to the winner's score.
 - `+0.3` if Claude Code already has the relevant file open this session
 - `+0.2` if the task is a continuation of a Claude Code task from the last 5 minutes
-- `+0.1` if the recommended tool requires account setup not yet confirmed
+- `+0.1` if the recommended tool requires account setup not yet confirmed (tier unconfirmed)
 
-These multipliers reflect real switching friction, not capability. They make routing more conservative when you'd have to context-switch mid-flow.
+Apply before computing `gap`. Multipliers stack: opening file (+0.3) + continuation (+0.2) = effective Claude Code composite +0.5 before gap calc.
+
+These reflect real switching friction, not capability. They make the router more conservative when you're already mid-flow.
 
 ---
 

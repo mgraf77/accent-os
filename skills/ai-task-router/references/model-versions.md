@@ -10,7 +10,6 @@
 ```
 last_checked: 2026-05-06
 checked_by: initial setup
-next_check: 2026-05-07
 check_duration_avg: ~45s, ~3K tokens
 ```
 

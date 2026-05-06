@@ -22,6 +22,7 @@
 Strong signals: "build", "implement", "add feature", "create a", "write the code", "make X work", file path + edit intent, "refactor", "migrate"
 Weak signals: "update", "change", "modify", "add to", code block in message
 AccentOS boosts: reference to BUILD_PLAN M-task, AccentOS module name, Supabase table edit intent
+"fix" disambiguation: "fix [file/feature]" with NO error trace → code-build. "fix" WITH stack trace or error message → debug.
 
 ### `code-review`
 Strong signals: "review", "audit the code", "check this code", "is this right", "what do you think of this code"
@@ -29,9 +30,9 @@ Weak signals: pasting code without clear build intent, "look over", "any issues 
 AccentOS boosts: "review the skill", "review the commit", "review this SKILL.md"
 
 ### `debug`
-Strong signals: "broken", "not working", "error:", "exception", "it crashed", "why is X failing", "bug in"
-Weak signals: "weird behavior", "unexpected", "something off", paste of stack trace or error message
-Note: if stack trace present, always classify as debug regardless of other signals
+Strong signals: "broken", "not working", "error:", "exception", "it crashed", "why is X failing", "bug in", stack trace pasted in message
+Weak signals: "weird behavior", "unexpected", "something off"
+Note: stack trace present → always debug, highest priority, overrides all other signals.
 
 ### `brainstorm`
 Strong signals: "ideas for", "brainstorm", "what if", "how might we", "options for", "explore", "generate ideas", "blue-sky"
@@ -80,8 +81,9 @@ Weak signals: "the entire", "all the pages", "full document"
 Note: Gemini Pro (1M token window) wins here unless AccentOS context bonus applies
 
 ### `real-time-data`
-Strong signals: "today's", "current price", "latest news", "right now", "as of today", "live", "this week's", stock tickers, "has X happened"
-Weak signals: "recent", "latest", "new"
+Strong signals: "current price", "latest news", "right now", "as of today", "live data", "this week's numbers", stock tickers, "has X happened yet"
+Weak signals: "recent", "latest", "new" (these are weak — don't classify as real-time without corroborating signals)
+"today" disambiguation: "today" in scheduling/planning context ("what should I work on today", "today's tasks") → planning, NOT real-time-data. "today" in news/price/data context ("what's the bitcoin price today") → real-time-data. Disambiguate by what noun follows "today".
 Note: Gemini is strongest for real-time data via Google Search integration
 
 ### `image-gen`
@@ -102,6 +104,7 @@ Tasks that **never route away from Claude Code**, regardless of scores:
 
 | Exclusion | Reason |
 |---|---|
+| Any response to a routing nudge ("continue", "yes", "no", "keep going", "ignore that") | Not a task — it's a nudge response. Pass-through silently. |
 | Any task referencing open AccentOS files by path | Context is already loaded — switching loses it |
 | `data-analysis` against Supabase hsyjcrrazrzqngwkqsqa | supabase-sql-magic skill + active Supabase MCP = best possible setup |
 | `code-build` on BUILD_PLAN M-tasks | AccentOS project context is irreplaceable |
@@ -123,7 +126,7 @@ Tasks that **never route away from Claude Code**, regardless of scores:
 | "build a mockup for X" | primary=design-visual, secondary=code-build |
 | "quick question: what is X" | primary=quick-lookup (override everything else) |
 | "automate the weekly report" | primary=automation, secondary=doc-write |
-| "plan and schedule the next 3 M-tasks" | primary=planning, secondary=automation |
+| "plan and schedule the next 3 M-tasks" | exclusion zone — AccentOS BUILD_PLAN context, stays with Claude Code |
 
 When "quick question" framing is present → always classify as quick-lookup regardless of content length. The "quick" signal overrides the content signal because Michael is signaling he wants fast, not thorough.
 

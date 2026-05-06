@@ -2,7 +2,7 @@
 > Michael adds prompts here when Claude Code is busy. Claude Code reads and executes them top to bottom at the start of each session, then clears completed ones.
 
 ### QUEUED
-(empty)
+- [ ] **2026-05-06** — Confirm account tiers for ai-task-router: (1) Claude.ai plan → check claude.ai/settings → Billing, (2) Dispatch plan, (3) Routines plan. Then update `skills/ai-task-router/references/tier-config.md` for each.
 
 ### COMPLETED
 - [x] **2026-05-04** — M21, M22, M23 SQL ran clean. Mark all three [x] in BUILD_PLAN_MICHAEL.md. Execute file split now — index.html is at 809KB, split before adding any more modules. Follow Track 0.1 pattern. After split confirmed clean, continue: 5.5 Trade Partner Network → 5.11 Warranty Tracker.
