@@ -32,6 +32,10 @@ Run when Michael says:
 - "document this choice"
 - "record this call"
 - "decided" (when followed by a decision statement)
+- "write this up as a decision"
+- "capture this choice"
+- "we're going with [X]" (when architectural or vendor context is present)
+- "lock in [choice]"
 
 Also fire automatically (with confirmation) after any conversation where Claude observed Michael making a non-trivial architectural / vendor / process choice.
 
@@ -72,7 +76,10 @@ If the class is HIGH, also capture:
 
 ## Step 3 — Name and write the decision file
 
-If `/home/user/accent-os/decisions/` does not exist, create it (`mkdir -p`). If `decisions/INDEX.md` does not exist, create it with the standard header before appending.
+Do in parallel before writing:
+1. Check `/home/user/accent-os/decisions/` exists (`mkdir -p` if not).
+2. Read `decisions/INDEX.md` to find the current max NNN (create with standard header if missing).
+3. Scan INDEX.md for a duplicate — if a prior decision covers the same question, surface it in Step 5 output as "See also: decision-NNN" rather than writing a redundant entry. Still write the new entry if the choice or context differs materially.
 
 Filename: `decision-NNN-[kebab-name].md` in `/home/user/accent-os/decisions/`.
 
@@ -153,3 +160,5 @@ Cite as: "per decision-NNN" in future PROMPT_LOG entries or commit messages.
 - **Never** skip the INDEX.md update. Un-indexed decisions are findable only by accident.
 - **Never** classify reversal cost optimistically. When in doubt, bump up — HIGH that turns out to be MEDIUM is fine; MEDIUM that turns out to be HIGH is a problem.
 - **Never** edit a prior decision file's question / options / choice / reasoning. The single allowed Edit on a prior decision is to add a `## Superseded by decision-NNN — YYYY-MM-DD` line at the bottom when a later decision overrides it. Always make that back-link Edit when superseding so the old file points forward.
+- **Never** write a decision file without first checking INDEX.md for a near-duplicate — same question logged twice dilutes the log and creates conflicting records.
+- **Never** omit the `## Related` section. Even if no related decisions exist, link to the BUILD_PLAN_CLAUDE.md track or the skill affected — orphaned decisions lose context on resume.
