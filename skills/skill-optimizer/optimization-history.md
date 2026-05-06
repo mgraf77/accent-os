@@ -197,3 +197,70 @@ NEXT PASS PREVIEW
 ═════════════════════════
 
 <!-- New entries appended below this line by Step 13 -->
+
+---
+
+## 2026-05-06 skill-optimizer — Pass 4 (Session: 1 pass — post-major-rewrite baseline)
+
+**Skill:** skill-optimizer
+**Scope:** BOTH
+**Pass:** 4 (first pass on fully rewritten v4 — variable dims, OODA workflow, methodologies, Perspective Sweeps)
+**Weight profile:** balanced | **Rubric drift:** NO (v1 baseline for new architecture)
+**Plateau triggered:** NO
+
+### Score Matrix
+
+| Dimension | Weight | Session Start | Pass End | Session Delta | Momentum |
+|---|---|---|---|---|---|
+| Output Quality | 25% | 9.5 | 9.8 | +0.3 | ↑ |
+| Methodology Fitness | 20% | 9.5 | 10.0 | +0.5 | ↑ |
+| Trigger Coverage | 15% | 10.0 | 10.0 | 0 | → |
+| Accuracy | 15% | 9.5 | 10.0 | +0.5 | ↑ |
+| Speed / Efficiency | 10% | 9.0 | 9.2 | +0.2 | ↑ |
+| AccentOS Fit | 10% | 8.0 | 8.0 | 0 | → |
+| Anti-pattern | 5% | 10.0 | 10.0 | 0 | → |
+| **TOTAL** | | **94.0** | **96.7** | **+2.7** | |
+
+**Threshold:** 95.0 | **Status:** MET ✓
+
+### Dimension Registry at Session End
+
+| Dimension | Final Weight | Status | Added | Retired |
+|---|---|---|---|---|
+| Output Quality | 25% | active | default | — |
+| Methodology Fitness | 20% | active | default | — |
+| Trigger Coverage | 15% | active | default | — |
+| Accuracy | 15% | active | default | — |
+| Speed / Efficiency | 10% | active | default | — |
+| AccentOS Fit | 10% | active | default | — |
+| Anti-pattern | 5% | active | default | — |
+
+### Changes Applied
+1. First Principles Reset: 4 substeps + REGISTRY RESET block template — Accuracy +0.5, OQ +0.3
+2. Step 1b re-read note for Pass N+1: "re-read post-execution file" — MF +0.5
+3. Step 0 PREFLIGHT block: structured output + session time/token estimate — OQ +0.1, Speed +0.2
+4. Step 5 Perspective Sweep placement: labeled block between final loop and Red Team — OQ +0.1
+
+### What Moved Most
+Methodology Fitness (+0.5) and Accuracy (+0.5) — both reached 10/10. Step 1b re-read and First Principles spec were the two clearest remaining gaps.
+
+### What Resisted
+AccentOS Fit (0) — structural ceiling for a meta-skill. Supabase/BC refs not applicable. **Next session:** keep weight at 10%; do not target further unless skill scope changes.
+Speed/Efficiency (+0.2) — Perspective Sweep overhead is real but acceptable given value. **Next session:** explore sweep frequency reduction on thin-pass scenarios.
+
+### Next-Session Proposals
+1. Reduce sweep frequency on projected-thin passes — Speed +0.3 → estimated gain tiny (next pass likely thin)
+2. Add per-pass token budget estimate to session state — Speed +0.2
+3. Consider First Principles reset on AccentOS Fit ceiling — might reframe what the dimension measures
+
+### Patterns Confirmed Effective (cross-skill reusable)
+- "Add explicit process substeps for named options" → Accuracy +0.5 — applies to: any skill with named commands (e.g., "reset", "rebuild") that lack defined procedures
+- "Add re-read note for iterative loops" → Methodology +0.5 — applies to: any multi-pass skill with self-editing steps
+
+### Prediction Calibration
+- Session accuracy: 2/4   MF changes under-estimated (got +0.5, predicted +0.3); OQ over-estimated (+0.2 error)
+- Future adjustment: MF re-read changes → predict +0.5 (not +0.3); OQ spec changes → predict +0.3 (not +0.5)
+
+**Branch:** claude/skill-optimizer-rOdjA | **Commits:** 5402d7b
+
+<!-- New entries appended below this line by Step 13 -->
