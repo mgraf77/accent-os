@@ -66,7 +66,14 @@ Before any search, do these in parallel:
 3. **Mine Michael's phrasing** — read the last ~50 entries of `/home/user/accent-os/PROMPT_LOG.md` and tail of `/home/user/accent-os/SESSION_LOG.md`. Note recurring phrases for use as trigger candidates in Step 5. If either file is absent or empty, skip silently and fall back to phrases from existing `skills/*/SKILL.md` description blocks for tone.
 4. **Capture branch state** — `git -C /home/user/accent-os branch --show-current`. Note the current branch for Step 7. If on `main`, Step 7 will auto-create a `claude/forge-[skill-name]-[short-hash]` branch before committing — do not push to main without explicit permission.
 
-Output of Step 0: a short pre-run note: gotcha rules applied, profile source used, branch.
+Output of Step 0 (paste exactly before Step 1):
+```
+PREFLIGHT — [target slug]
+  Gotcha rules applied: [N rules from gotcha-log, or "none — file empty"]
+  AccentOS profile source: [project-profiles.md | BUILD_PLAN_CLAUDE.md fallback]
+  Phrases mined from PROMPT_LOG: [N candidate trigger phrases]
+  Branch: [branch-name] — [safe-to-commit | will-create-new-branch-in-Step-9]
+```
 
 ---
 
@@ -87,7 +94,7 @@ The target Michael named may be the *wrapper* around a pattern, not the pattern 
 
 ## Step 2 — Multi-source extraction
 
-Run parallel searches across **all five source classes**. See `references/extraction-sources.md` for the full checklist. Minimum coverage:
+Run parallel searches across **all five source classes** simultaneously — GitHub layer, official-site layer, social layer, review/blog layer, and pricing/access layer can all be fetched in parallel; do not sequence them. See `references/extraction-sources.md` for the full checklist. Minimum coverage:
 
 **GitHub layer**
 - Primary repo: README, SKILL.md(s), folder structure, top-level docs/
@@ -393,3 +400,5 @@ NNN is sequential. Same `prevention_rule` wording across entries is what lets th
 - **Never** ask Michael which trigger phrases to use — mine PROMPT_LOG.md, infer from his actual phrasing.
 - **Never** auto-edit this SKILL.md from the gotcha-log without surfacing the proposed Edit in the report first.
 - **Never** push to main without explicit permission.
+- **Never** default to BOTH scope when PROJECT or GLOBAL alone would suffice — two files means two maintenance burdens; use BOTH only when the project-specific version adds >30% more value over the generic form.
+- **Never** sequence Step 2 source layers when they can be fetched in parallel — sequential fetching wastes wall-clock time on every forge run.
