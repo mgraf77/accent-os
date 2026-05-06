@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accent Lighting — Partner Portal</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh;}
+a{color:#e65100;text-decoration:none;}
+a:hover{text-decoration:underline;}
+.hidden{display:none!important;}
+
+/* ── Layout ── */
+.portal-header{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;}
+.portal-logo{display:flex;align-items:center;gap:10px;}
+.portal-logo-mark{width:32px;height:32px;background:#e65100;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;}
+.portal-logo-text{font-size:16px;font-weight:700;color:#1a1a1a;}
+.portal-logo-sub{font-size:11px;color:#6b7280;display:block;}
+.portal-user-pill{font-size:12px;color:#6b7280;background:#f3f4f6;padding:6px 12px;border-radius:20px;cursor:pointer;border:none;}
+.portal-user-pill:hover{background:#e5e7eb;}
+.portal-main{max-width:960px;margin:0 auto;padding:28px 20px;}
+.portal-footer{text-align:center;font-size:11px;color:#9ca3af;padding:28px;border-top:1px solid #e5e7eb;margin-top:40px;}
+
+/* ── Auth screen ── */
+.auth-card{max-width:420px;margin:80px auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+.auth-logo{text-align:center;margin-bottom:28px;}
+.auth-logo-mark{width:56px;height:56px;background:#e65100;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:24px;margin-bottom:10px;}
+.auth-title{font-size:22px;font-weight:700;text-align:center;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:#6b7280;text-align:center;margin-bottom:28px;}
+.auth-input{width:100%;padding:11px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;transition:border .15s;}
+.auth-input:focus{border-color:#e65100;box-shadow:0 0 0 3px rgba(230,81,0,.1);}
+.auth-btn{width:100%;padding:12px;background:#e65100;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:14px;transition:background .15s;}
+.auth-btn:hover{background:#d14800;}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed;}
+.auth-msg{font-size:13px;text-align:center;margin-top:14px;padding:10px;border-radius:8px;}
+.auth-msg.ok{background:#dcfce7;color:#166534;}
+.auth-msg.err{background:#fee2e2;color:#991b1b;}
+.auth-divider{text-align:center;font-size:12px;color:#9ca3af;margin:20px 0;}
+
+/* ── Stat cards ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;}
+.stat-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;margin-bottom:6px;}
+.stat-value{font-size:26px;font-weight:700;color:#1a1a1a;}
+.stat-sub{font-size:11px;color:#9ca3af;margin-top:2px;}
+
+/* ── Welcome header ── */
+.welcome-card{background:linear-gradient(135deg,#fff7ed 0%,#fff 100%);border:1px solid #fed7aa;border-radius:12px;padding:24px;margin-bottom:20px;}
+.welcome-name{font-size:26px;font-weight:700;}
+.welcome-sub{font-size:13px;color:#6b7280;margin-top:4px;}
+.welcome-badge{display:inline-block;background:#e65100;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+
+/* ── Data panels ── */
+.panel{background:#fff;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:16px;overflow:hidden;}
+.panel-head{padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-size:13px;font-weight:700;}
+.panel-count{font-size:12px;color:#6b7280;}
+.panel-body{max-height:280px;overflow-y:auto;}
+.panel-row{padding:10px 18px;border-bottom:1px solid #f3f4f6;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.panel-row:last-child{border-bottom:none;}
+.panel-row:hover{background:#fafafa;}
+.panel-empty{padding:24px 18px;font-size:12.5px;color:#9ca3af;text-align:center;}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;text-transform:uppercase;}
+.badge-green{background:#dcfce7;color:#166534;}
+.badge-blue{background:#dbeafe;color:#1d4ed8;}
+.badge-amber{background:#fef3c7;color:#92400e;}
+.badge-gray{background:#f3f4f6;color:#6b7280;}
+.badge-red{background:#fee2e2;color:#991b1b;}
+.mono{font-family:'DM Mono',Menlo,Monaco,monospace;font-size:11.5px;}
+.fw6{font-weight:600;}
+
+/* ── Score meter (rep portal) ── */
+.score-bar-wrap{height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden;margin-top:4px;}
+.score-bar{height:6px;border-radius:3px;background:#e65100;}
+
+/* ── Coming-soon notice ── */
+.coming-soon{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px 18px;font-size:12.5px;color:#0369a1;margin-top:10px;}
+.coming-soon strong{display:block;margin-bottom:4px;}
+
+/* ── Provision pending ── */
+.provision-notice{text-align:center;padding:40px 20px;}
+.provision-notice .icon{font-size:40px;margin-bottom:12px;}
+.provision-notice h3{font-size:17px;font-weight:700;margin-bottom:8px;}
+.provision-notice p{font-size:13px;color:#6b7280;max-width:360px;margin:0 auto;}
+
+/* ── Two-col layout ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:640px){.two-col{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div style="padding:80px;text-align:center;color:#9ca3af;font-size:14px;">Loading…</div>
+</div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────────
+const SB_URL  = 'https://hsyjcrrazrzqngwkqsqa.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzeWpjcnJhenJ6cW5nd2txc3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDE5NzAsImV4cCI6MjA4ODM3Nzk3MH0.KRsvN3BoNBd7JU4oKn-Cul8aX8bmFv6lyu3cLx1Us3E';
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let PT = { jwt: null, userId: null, email: null, profile: null };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function $(id){ return document.getElementById(id); }
+function app(){ return $('app'); }
+
+async function portalAuthFetch(path, opts={}){
+  const r = await fetch(SB_URL+'/auth/v1'+path, Object.assign({method:'POST'}, opts, {
+    headers: Object.assign({'apikey':SB_ANON,'Content-Type':'application/json'}, opts.headers||{})
+  }));
+  const text = await r.text();
+  if(!r.ok) throw new Error(text);
+  return text ? JSON.parse(text) : null;
+}
+
+async function portalFetch(path, opts={}){
+  const headers = Object.assign({'apikey':SB_ANON,'Content-Type':'application/json'}, opts.headers||{});
+  if(PT.jwt) headers['Authorization'] = 'Bearer '+PT.jwt;
+  const r = await fetch(SB_URL+'/rest/v1'+path, Object.assign({}, opts, {headers}));
+  const text = await r.text();
+  if(!r.ok) throw new Error(text);
+  return text ? JSON.parse(text) : null;
+}
+
+function statusBadge(status){
+  const map = {
+    active:'badge-green', complete:'badge-green', delivered:'badge-green',
+    open:'badge-blue', scheduled:'badge-blue', qualified:'badge-blue',
+    expiring:'badge-amber', pending:'badge-amber', 'out_for_delivery':'badge-amber',
+    overdue:'badge-red', failed:'badge-red',
+  };
+  const cls = map[status] || 'badge-gray';
+  return `<span class="badge ${cls}">${esc(status||'—')}</span>`;
+}
+
+// ── Magic-link auth flow ───────────────────────────────────────────────────────
+
+async function sendMagicLink(email){
+  const btn = $('ml-btn'); const msg = $('ml-msg');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  msg.className = 'auth-msg hidden';
+  try {
+    // redirect_to must be the portal URL (Supabase appends the token as hash)
+    const redirectTo = location.origin + location.pathname;
+    await portalAuthFetch('/otp', {
+      body: JSON.stringify({ email: email.trim().toLowerCase(), create_user: false })
+    });
+    msg.textContent = '✓ Magic link sent. Check your inbox and click the link.';
+    msg.className = 'auth-msg ok';
+    btn.textContent = 'Resend link';
+  } catch(e){
+    const detail = (() => { try { return JSON.parse(e.message).msg || e.message; } catch{ return e.message; } })();
+    if(detail.includes('not found') || detail.includes('signup is disabled')){
+      msg.textContent = 'No portal account found for that email. Contact Accent Lighting to request access.';
+    } else {
+      msg.textContent = 'Error: ' + detail;
+    }
+    msg.className = 'auth-msg err';
+    btn.textContent = 'Try again';
+  }
+  btn.disabled = false;
+}
+
+function parseHashToken(){
+  const hash = location.hash.replace(/^#/, '');
+  if(!hash) return null;
+  const params = {};
+  hash.split('&').forEach(pair => {
+    const [k,...vs] = pair.split('=');
+    params[decodeURIComponent(k)] = decodeURIComponent(vs.join('='));
+  });
+  return params.access_token ? params : null;
+}
+
+// ── Profile load ───────────────────────────────────────────────────────────────
+
+async function loadProfile(){
+  try {
+    const rows = await portalFetch('/external_user_profiles?user_id=eq.'+encodeURIComponent(PT.userId)+'&select=*&limit=1');
+    if(rows && rows.length) return rows[0];
+  } catch(e){
+    // Table might not exist yet (M41 pending)
+    console.warn('[portal] external_user_profiles not found — M41 not yet run');
+  }
+  return null;
+}
+
+// ── Trade Partner portal ───────────────────────────────────────────────────────
+
+async function renderTradePortal(profile){
+  app().innerHTML = `
+    ${renderHeader(profile)}
+    <div class="portal-main">
+      <div class="welcome-card">
+        <span class="welcome-badge">Trade Partner</span>
+        <div class="welcome-name" id="tp-name">Loading…</div>
+        <div class="welcome-sub" id="tp-sub"></div>
+      </div>
+      <div class="stat-grid" id="tp-stats"></div>
+      <div class="two-col" id="tp-data">
+        <div class="panel"><div class="panel-head"><span class="panel-title">My Projects</span></div><div class="panel-body"><div class="panel-empty">Loading…</div></div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-title">My Quotes</span></div><div class="panel-body"><div class="panel-empty">Loading…</div></div></div>
+      </div>
+      <div class="panel" id="tp-deliveries"><div class="panel-head"><span class="panel-title">Upcoming Deliveries</span></div><div class="panel-body"><div class="panel-empty">Loading…</div></div></div>
+      <div class="coming-soon">
+        <strong>Coming in Phase 2</strong>
+        Request a quote inline · Message your account rep · Download spec sheets · Designer pricing tier applied automatically.
+      </div>
+    </div>
+    ${renderFooter()}
+  `;
+
+  try {
+    // Fetch trade partner record
+    let tp = null;
+    if(profile.linked_trade_partner_id){
+      const tpRows = await portalFetch('/trade_partners?id=eq.'+encodeURIComponent(profile.linked_trade_partner_id)+'&select=*&limit=1');
+      if(tpRows && tpRows.length) tp = tpRows[0];
+    }
+
+    const name = tp ? (tp.name || tp.company || 'Partner') : (PT.email || 'Partner');
+    const sub = tp ? [tp.partner_type, tp.company].filter(Boolean).join(' · ') : 'Trade Partner';
+    $('tp-name').textContent = name;
+    $('tp-sub').textContent = sub;
+
+    // Fetch data (name-match; requires M41 RLS + trade_partners row)
+    const company = tp?.company || name;
+    const enc = encodeURIComponent(company.toLowerCase());
+
+    const [jobs, quotes, deliveries] = await Promise.all([
+      portalFetch(`/jobs?select=job_number,project_name,status,priority,due_date&order=created_at.desc&limit=20`).catch(()=>[]),
+      portalFetch(`/quotes?select=id,customer,project,total,created_at&order=created_at.desc&limit=20`).catch(()=>[]),
+      portalFetch(`/deliveries?select=delivery_number,customer_name,status,scheduled_date,items_summary&order=scheduled_date.asc&limit=20`).catch(()=>[]),
+    ]);
+
+    // Client-side name filter (fallback until RLS policies apply the join)
+    const myJobs = (jobs||[]).filter(j => (j.customer_name||'').toLowerCase() === company.toLowerCase() || !company);
+    const myQuotes = (quotes||[]).filter(q => (q.customer||'').toLowerCase() === company.toLowerCase() || !company);
+    const myDeliveries = (deliveries||[]).filter(d => (d.customer_name||'').toLowerCase() === company.toLowerCase() || !company);
+    const activeJobs = myJobs.filter(j => !['complete','cancelled'].includes(j.status));
+
+    $('tp-stats').innerHTML = [
+      ['Active Projects', activeJobs.length, ''],
+      ['Total Quotes', myQuotes.length, ''],
+      ['Pipeline Value', '$'+Math.round(myQuotes.reduce((s,q)=>s+(Number(q.total)||0),0)/1000)+'K', ''],
+      ['Upcoming Deliveries', myDeliveries.filter(d=>!['delivered','cancelled'].includes(d.status)).length, ''],
+    ].map(([label,val,sub]) => `
+      <div class="stat-card">
+        <div class="stat-label">${esc(label)}</div>
+        <div class="stat-value">${esc(String(val))}</div>
+        ${sub ? `<div class="stat-sub">${esc(sub)}</div>` : ''}
+      </div>
+    `).join('');
+
+    $('tp-data').innerHTML = `
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">My Projects</span><span class="panel-count">${myJobs.length}</span></div>
+        <div class="panel-body">
+          ${myJobs.length === 0 ? '<div class="panel-empty">No projects yet.</div>' : myJobs.slice(0,12).map(j=>`
+            <div class="panel-row">
+              <span><span class="mono fw6">${esc(j.job_number||'')}</span>&nbsp;${esc(j.project_name||'')}</span>
+              ${statusBadge(j.status)}
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">My Quotes</span><span class="panel-count">${myQuotes.length}</span></div>
+        <div class="panel-body">
+          ${myQuotes.length === 0 ? '<div class="panel-empty">No quotes yet.</div>' : myQuotes.slice(0,12).map(q=>`
+            <div class="panel-row">
+              <span><span class="mono fw6">${esc(q.id||'')}</span>&nbsp;${esc(q.project||q.customer||'')}</span>
+              <span class="mono fw6">$${Math.round(q.total||0).toLocaleString()}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    `;
+
+    const upcomingDeliveries = myDeliveries.filter(d => !['delivered','cancelled'].includes(d.status));
+    $('tp-deliveries').innerHTML = `
+      <div class="panel-head"><span class="panel-title">Upcoming Deliveries</span><span class="panel-count">${upcomingDeliveries.length}</span></div>
+      <div class="panel-body">
+        ${upcomingDeliveries.length === 0
+          ? '<div class="panel-empty">No upcoming deliveries.</div>'
+          : upcomingDeliveries.slice(0,8).map(d=>`
+            <div class="panel-row">
+              <span><span class="mono fw6">${esc(d.delivery_number||'')}</span>&nbsp;${esc(d.items_summary||'')}</span>
+              <span style="display:flex;align-items:center;gap:8px;">${esc(d.scheduled_date||'TBD')}${statusBadge(d.status)}</span>
+            </div>`).join('')}
+      </div>
+    `;
+
+  } catch(e){
+    console.warn('[portal] trade data load error:', e.message);
+  }
+}
+
+// ── Vendor Rep portal ──────────────────────────────────────────────────────────
+
+async function renderRepPortal(profile){
+  const repName = profile.linked_rep_name || PT.email;
+
+  app().innerHTML = `
+    ${renderHeader(profile)}
+    <div class="portal-main">
+      <div class="welcome-card">
+        <span class="welcome-badge">Vendor Rep</span>
+        <div class="welcome-name">${esc(repName)}</div>
+        <div class="welcome-sub" id="rep-sub">Loading vendor data…</div>
+      </div>
+      <div class="stat-grid" id="rep-stats"></div>
+      <div id="rep-vendors" class="panel"><div class="panel-head"><span class="panel-title">Your Vendors</span></div><div class="panel-body"><div class="panel-empty">Loading…</div></div></div>
+      <div class="two-col">
+        <div id="rep-coop" class="panel"><div class="panel-head"><span class="panel-title">Open Co-op Funds</span></div><div class="panel-body"><div class="panel-empty">Loading…</div></div></div>
+        <div id="rep-warranty" class="panel"><div class="panel-head"><span class="panel-title">Open Warranty Claims</span></div><div class="panel-body"><div class="panel-empty">Loading…</div></div></div>
+      </div>
+      <div class="coming-soon">
+        <strong>Coming in Phase 2</strong>
+        Message Accent staff inline · Submit co-op claims · Upload spec sheets and new product launches · See peer-rep benchmark.
+      </div>
+    </div>
+    ${renderFooter()}
+  `;
+
+  try {
+    // Rep data comes through the external_user_profiles.linked_rep_name (VD.rg match)
+    // The portal reads vendor_scores for their vendors — public enough for reps to see
+    const enc = encodeURIComponent(repName);
+    const [coopFunds, warrantyClaims] = await Promise.all([
+      portalFetch('/coop_tracker?select=id,vendor_id,fund_type,amount,deadline,status&status=eq.open&order=deadline.asc.nullslast&limit=20').catch(()=>[]),
+      portalFetch('/warranty_claims?select=claim_number,product_description,status,severity&order=created_at.desc&limit=20').catch(()=>[]),
+    ]);
+
+    $('rep-sub').textContent = 'Vendor rep group: '+repName;
+
+    $('rep-stats').innerHTML = [
+      ['Open Co-op Funds', (coopFunds||[]).length, ''],
+      ['Open Warranty', (warrantyClaims||[]).filter(w=>!['closed','denied','replaced','refunded'].includes(w.status)).length, ''],
+      ['', '', ''],
+      ['', '', ''],
+    ].map(([label,val]) => label ? `
+      <div class="stat-card">
+        <div class="stat-label">${esc(label)}</div>
+        <div class="stat-value">${esc(String(val))}</div>
+      </div>` : '<div></div>'
+    ).join('');
+
+    const openCoop = (coopFunds||[]).filter(c => c.status === 'open');
+    $('rep-coop').innerHTML = `
+      <div class="panel-head"><span class="panel-title">Open Co-op Funds</span><span class="panel-count">${openCoop.length}</span></div>
+      <div class="panel-body">
+        ${openCoop.length === 0 ? '<div class="panel-empty">No open co-op funds.</div>' : openCoop.slice(0,8).map(f=>`
+          <div class="panel-row">
+            <span>${esc(f.fund_type||'Fund')}</span>
+            <span class="mono fw6">$${Number(f.amount||0).toLocaleString()}${f.deadline?' · by '+f.deadline:''}</span>
+          </div>`).join('')}
+      </div>
+    `;
+
+    const openWarranty = (warrantyClaims||[]).filter(w => !['closed','denied','replaced','refunded'].includes(w.status));
+    $('rep-warranty').innerHTML = `
+      <div class="panel-head"><span class="panel-title">Open Warranty Claims</span><span class="panel-count">${openWarranty.length}</span></div>
+      <div class="panel-body">
+        ${openWarranty.length === 0 ? '<div class="panel-empty">No open claims.</div>' : openWarranty.slice(0,8).map(w=>`
+          <div class="panel-row">
+            <span><span class="mono fw6">${esc(w.claim_number||'')}</span>&nbsp;${esc(w.product_description||'')}</span>
+            <span style="display:flex;gap:6px;align-items:center;">${statusBadge(w.severity)}${statusBadge(w.status)}</span>
+          </div>`).join('')}
+      </div>
+    `;
+
+    $('rep-vendors').innerHTML = `
+      <div class="panel-head"><span class="panel-title">Your Vendors</span><span class="panel-count">See AccentOS → Vendor Ranking for full score detail</span></div>
+      <div class="panel-body">
+        <div class="panel-empty" style="text-align:left;padding:18px;">
+          Vendor scoring detail is managed by your Accent Lighting rep. Contact your rep to review category scores and improvement opportunities.
+        </div>
+      </div>
+    `;
+
+  } catch(e){
+    console.warn('[portal] rep data load error:', e.message);
+  }
+}
+
+// ── Shell helpers ──────────────────────────────────────────────────────────────
+
+function renderHeader(profile){
+  const type = profile?.portal_type === 'trade_partner' ? 'Trade Partner Portal' : 'Rep Portal';
+  return `
+    <header class="portal-header">
+      <div class="portal-logo">
+        <div class="portal-logo-mark">A</div>
+        <div>
+          <div class="portal-logo-text">Accent Lighting</div>
+          <span class="portal-logo-sub">${esc(type)}</span>
+        </div>
+      </div>
+      <button class="portal-user-pill" onclick="doSignOut()">${esc(PT.email||'')} · Sign out</button>
+    </header>
+  `;
+}
+
+function renderFooter(){
+  return `<footer class="portal-footer">Accent Lighting · Wichita, KS · Partner Portal · Questions? Email <a href="mailto:info@accentlightinginc.com">info@accentlightinginc.com</a></footer>`;
+}
+
+function renderProvisionPending(){
+  app().innerHTML = `
+    ${renderHeader(null)}
+    <div class="portal-main">
+      <div class="provision-notice">
+        <div class="icon">🔐</div>
+        <h3>Account Not Yet Provisioned</h3>
+        <p>Your login was successful but your portal access hasn't been set up yet. Contact your Accent Lighting representative and provide your email address (${esc(PT.email||'')}) to request access.</p>
+      </div>
+    </div>
+    ${renderFooter()}
+  `;
+}
+
+function renderLoginScreen(msg=''){
+  app().innerHTML = `
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-mark">A</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:2px;">Accent Lighting</div>
+        <div style="font-size:12px;color:#6b7280;">Partner Portal</div>
+      </div>
+      <h1 class="auth-title">Sign in</h1>
+      <p class="auth-sub">Enter your email to receive a one-time login link.</p>
+      <input id="ml-email" class="auth-input" type="email" placeholder="you@company.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter') sendLink()">
+      <button id="ml-btn" class="auth-btn" onclick="sendLink()">Send me a login link</button>
+      <div id="ml-msg" class="auth-msg hidden">${esc(msg)}</div>
+      <div class="auth-divider">— or —</div>
+      <p style="font-size:12px;color:#6b7280;text-align:center;">Don't have an account? Contact your Accent Lighting rep to request access.</p>
+    </div>
+  `;
+  const em = $('ml-email'); if(em) em.focus();
+}
+
+function sendLink(){
+  const em = $('ml-email'); if(!em) return;
+  const email = em.value.trim();
+  if(!email || !email.includes('@')){ $('ml-msg').textContent='Enter a valid email.'; $('ml-msg').className='auth-msg err'; return; }
+  sendMagicLink(email);
+}
+
+async function doSignOut(){
+  try {
+    if(PT.jwt){
+      await portalAuthFetch('/logout', {method:'POST', headers:{'Authorization':'Bearer '+PT.jwt}});
+    }
+  } catch(e){}
+  sessionStorage.removeItem('portal-jwt');
+  sessionStorage.removeItem('portal-uid');
+  sessionStorage.removeItem('portal-email');
+  PT = {jwt:null, userId:null, email:null, profile:null};
+  history.replaceState(null,'',location.pathname);
+  renderLoginScreen('You have been signed out.');
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+async function initPortal(){
+  // 1. Check URL hash for magic-link token
+  const hashParams = parseHashToken();
+  if(hashParams && hashParams.access_token){
+    PT.jwt = hashParams.access_token;
+    PT.userId = null;
+    // Clear hash from URL
+    history.replaceState(null, '', location.pathname);
+    // Verify token and get user
+    try {
+      const user = await portalAuthFetch('/user', {method:'GET', headers:{'Authorization':'Bearer '+PT.jwt}});
+      PT.userId = user.id;
+      PT.email = user.email;
+      sessionStorage.setItem('portal-jwt', PT.jwt);
+      sessionStorage.setItem('portal-uid', PT.userId);
+      sessionStorage.setItem('portal-email', PT.email);
+    } catch(e){
+      renderLoginScreen('Login link expired or invalid. Please request a new one.');
+      return;
+    }
+  } else {
+    // 2. Check sessionStorage for existing session
+    const storedJwt = sessionStorage.getItem('portal-jwt');
+    if(storedJwt){
+      PT.jwt = storedJwt;
+      PT.userId = sessionStorage.getItem('portal-uid');
+      PT.email = sessionStorage.getItem('portal-email');
+      // Light re-verify
+      try {
+        const user = await portalAuthFetch('/user', {method:'GET', headers:{'Authorization':'Bearer '+PT.jwt}});
+        PT.userId = user.id;
+        PT.email = user.email;
+      } catch(e){
+        sessionStorage.removeItem('portal-jwt');
+        renderLoginScreen();
+        return;
+      }
+    } else {
+      renderLoginScreen();
+      return;
+    }
+  }
+
+  // 3. Load profile
+  const profile = await loadProfile();
+  PT.profile = profile;
+
+  if(!profile || !profile.is_active){
+    renderProvisionPending();
+    return;
+  }
+
+  // 4. Render appropriate portal
+  if(profile.portal_type === 'trade_partner'){
+    await renderTradePortal(profile);
+  } else if(profile.portal_type === 'vendor_rep'){
+    await renderRepPortal(profile);
+  } else {
+    renderProvisionPending();
+  }
+}
+
+window.addEventListener('load', initPortal);
+</script>
+</body>
+</html>

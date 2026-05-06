@@ -1,16 +1,21 @@
-// ── PORTAL PREVIEW (Tracks 6.5 + 6.6 phase 1) ──
-// Staff-side internal preview of what external Trade Partners and Vendor
-// Reps will see when phase 2 ships with their own Supabase Auth role
-// (TradePartner / VendorRep). Pure-compute over already-loaded data.
-// Lets Michael validate the external view before scoping the auth + branding
-// work. No new schema, no API.
+// ── PORTAL PREVIEW (Tracks 6.5 + 6.6) ──
+// Phase 1: Staff-side internal preview of external partner views (this file).
+// Phase 2: portal.html — standalone external app with Supabase magic-link auth.
+//
+// Provision flow (requires M41 SQL to be run):
+//   Staff picks partner/rep → clicks "Provision Access" → enters their email →
+//   AccentOS writes to external_user_profiles → partner visits portal.html,
+//   enters email, receives magic link, logs in → sees their data.
 
 let portalPreview = {mode:'trade', selectedId:''};
 
 function portalpreview(c, actions){
   if(!c) return;
   if(actions){
-    actions.innerHTML = `<button class="btn btn-outline btn-sm" onclick="_ppCopySummary()" title="Copy a plain-text summary of this preview">Copy summary</button>`;
+    actions.innerHTML = `
+      <button class="btn btn-outline btn-sm" onclick="_ppCopySummary()" title="Copy a plain-text summary of this preview">Copy summary</button>
+      <button class="btn btn-outline btn-sm" onclick="_ppOpenProvision()" title="Provision portal access for this partner or rep" style="margin-left:6px;">🔗 Provision Access</button>
+    `;
   }
 
   c.innerHTML = `
@@ -282,4 +287,68 @@ function _ppCopySummary(){
     summary = `Portal preview: Rep ${portalPreview.selectedId} — ${myVendors.length} vendors, $${Math.round(myVendors.reduce((s,v)=>s+(v.sales?.t||0),0)/1000).toLocaleString()}K lifetime sales\nGenerated ${new Date().toLocaleString()}`;
   }
   navigator.clipboard.writeText(summary).then(() => toast('Summary copied','ok'));
+}
+
+// ── Provision Access modal ─────────────────────────────────────────────────────
+// Writes to external_user_profiles (M41 must be run first).
+
+function _ppOpenProvision(){
+  if(!portalPreview.selectedId){ toast('Pick a partner or rep first','err'); return; }
+  const mode = portalPreview.mode;
+  let label = '', defaultEmail = '';
+  if(mode === 'trade'){
+    const p = (typeof TRADE_PARTNERS !== 'undefined' ? TRADE_PARTNERS : []).find(x => x.id === portalPreview.selectedId);
+    label = p ? (p.name || p.company || 'Trade Partner') : 'Trade Partner';
+    defaultEmail = p?.email || '';
+  } else {
+    label = portalPreview.selectedId + ' (Vendor Rep)';
+  }
+
+  openModal(
+    'Provision Portal Access',
+    `<p style="font-size:13px;margin-bottom:14px;">Creates an <code>external_user_profiles</code> row so <strong>${esc(label)}</strong> can log in at <code>portal.html</code>. Requires M41 SQL to be run first.</p>
+    <div class="form-row">
+      <label class="form-label">Partner email address *</label>
+      <input id="pp-prov-email" class="form-input" type="email" placeholder="partner@company.com" value="${esc(defaultEmail)}">
+    </div>
+    <div style="font-size:12px;color:var(--text-3);margin-top:8px;">After provisioning, email them the portal link: <strong>${location.origin}/portal.html</strong></div>
+    <div id="pp-prov-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none;"></div>`,
+    `<button class="btn btn-primary" onclick="_ppDoProvision()">Provision</button>
+     <button class="btn" onclick="closeModal()">Cancel</button>`
+  );
+}
+
+async function _ppDoProvision(){
+  const email = (document.getElementById('pp-prov-email')?.value||'').trim().toLowerCase();
+  const errEl = document.getElementById('pp-prov-err');
+  if(!email || !email.includes('@')){ if(errEl){ errEl.textContent='Enter a valid email.'; errEl.style.display='block'; } return; }
+
+  const mode = portalPreview.mode;
+  const payload = {
+    email,
+    portal_type: mode === 'trade' ? 'trade_partner' : 'vendor_rep',
+    provisioned_by: CU?.user_id || null,
+  };
+  if(mode === 'trade') payload.linked_trade_partner_id = portalPreview.selectedId;
+  if(mode === 'rep') payload.linked_rep_name = portalPreview.selectedId;
+
+  try {
+    await sbFetch('/external_user_profiles', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal', 'on-conflict': 'email' },
+      body: JSON.stringify(payload)
+    });
+    closeModal();
+    toast('Portal access provisioned. Send them the portal.html link.','ok');
+  } catch(e){
+    if(errEl){
+      const detail = (() => { try { return JSON.parse(e.message).message || e.message; } catch { return e.message; } })();
+      if(detail.includes('does not exist')){
+        errEl.textContent = 'Table not found — run M41_external_portals.sql in Supabase first.';
+      } else {
+        errEl.textContent = 'Error: ' + detail;
+      }
+      errEl.style.display = 'block';
+    }
+  }
 }
