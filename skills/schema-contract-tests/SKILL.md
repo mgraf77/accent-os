@@ -223,3 +223,5 @@ These need either: (a) the schema file updated, or (b) the test removed.
 - **Never** generate a test that depends on data volume (test must work on empty tables — failures = 0 means PASS).
 - **Never** assert business rules without surfacing them as singular tests; never bury them in the schema as silent CHECK constraints.
 - **Never** auto-run the test SQL. Output the artifact; Michael executes when ready.
+- **Never** generate an accepted_values test from only the original `CREATE TYPE` statement if `ALTER TYPE ... ADD VALUE` statements exist in any later `M*.sql` — omitting added enum values produces false FAILs after schema evolution.
+- **Never** write a drill-down query that SELECTs `*` from a wide table — always specify the minimum columns (PK + offending column) to keep drill-down output readable in the Supabase SQL editor at `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`.
