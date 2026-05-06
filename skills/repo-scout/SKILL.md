@@ -29,6 +29,9 @@ Run this skill when Michael says anything like:
 - "update my stack"
 - "what am I missing"
 - "find me tools for [project]"
+- "any good CLIs for [task]"
+- "check if there's a better MCP for [use case]"
+- "scan for new AccentOS-relevant tools"
 
 ---
 
@@ -78,13 +81,18 @@ Use web_fetch on high-signal pages when snippets are insufficient.
 
 For each candidate, run in order. First FAIL stops evaluation.
 
-Filter | Condition | Action
-Already installed | In current MCP/skill list | SKIP silently
-Overlap | Solves problem already solved | SKIP
-Project fit | Applies to AccentOS or Accent Lighting ecommerce | KEEP
-Attention test | Reduces Michael's decision/review load | KEEP
-Attention fail | Adds overhead without ROI | FLAG LOW PRIORITY
-Complexity | >2 min setup = HIGH FRICTION | KEEP but label
+| Filter | Condition | Action |
+|---|---|---|
+| Already installed | In current MCP/skill list | SKIP silently |
+| Overlap | Solves problem already solved | SKIP |
+| Project fit | Applies to AccentOS or Accent Lighting ecommerce | KEEP |
+| Attention test | Reduces Michael's decision/review load | KEEP |
+| Attention fail | Adds overhead without ROI | FLAG LOW PRIORITY |
+| Complexity | >2 min setup = HIGH FRICTION | KEEP but label |
+
+**Zero-results edge case:** if all candidates are filtered out, output: "All candidates matched existing stack or failed project-fit check. Try narrowing the search domain: `scout repos for [specific gap]`." Do not return empty output silently.
+
+**Stale MCP list:** if the already-installed list was last read >24h ago (check git log on any MCP config file), flag it: "WARNING: MCP list may be stale — verify current connections at /home/user/accent-os/references/project-profiles.md before trusting SKIP decisions."
 
 ---
 
@@ -105,7 +113,14 @@ Searched: [sources]
 Candidates: X | Filtered to: Y | INSTALL: Z | EVALUATE: W
 
 #### INSTALL
-[Name] — what it does, which gap it closes, friction level, paste-ready install block
+```
+[Name] | Gap: [which AccentOS/Accent Lighting gap this closes]
+Friction: LOW/MEDIUM/HIGH FRICTION
+Why now: [one sentence ROI]
+Install:
+  [paste-ready block — no README handoffs]
+AccentOS path: /home/user/accent-os/skills/[name]/ OR mcp config path
+```
 
 #### EVALUATE
 [Name] — what it does, what is blocking
@@ -132,9 +147,10 @@ For every INSTALL item:
 
 ## Anti-patterns
 
-- Never return a raw list without verdicts
-- Never suggest installing something that overlaps current MCP stack
-- Never rate INSTALL without a customized snippet
-- Never surface a tool requiring more than 5 min of Michael's attention — pre-chew it
-- Never skip filtering because a repo has high stars
-- Never ask Michael to read the README
+- **Never** return a raw list without verdicts — every candidate gets INSTALL / EVALUATE / WATCH / SKIP.
+- **Never** suggest installing something that overlaps the current MCP stack — check the already-installed list first.
+- **Never** rate INSTALL without a paste-ready customized snippet referencing AccentOS paths or Accent Lighting IDs (store-cwqiwcjxes / hsyjcrrazrzqngwkqsqa).
+- **Never** surface a tool requiring >5 min of Michael's attention without pre-chewing it to a single decision: install or skip.
+- **Never** skip filtering because a repo has high stars — star count is not a fit signal for AccentOS.
+- **Never** ask Michael to read the README — extract the relevant parts and present them inline.
+- **Never** return empty output silently when all candidates are filtered — always explain why and suggest a narrower query.
