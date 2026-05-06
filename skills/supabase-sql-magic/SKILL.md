@@ -161,9 +161,10 @@ Defaults applied:
 
 ## Anti-patterns
 
-- **Never** use `SELECT *` against vendors, deals, inventory, or any table likely to be wide.
-- **Never** invent column names. Every column must trace to an `M*.sql` file.
-- **Never** skip the LIMIT clause unless the question is explicitly an aggregation.
-- **Never** return query results inline — Michael runs the SQL himself; the skill's job ends at the query.
-- **Never** modify data (no INSERT, UPDATE, DELETE). This skill is read-only. Mutations route through priority-articulation, vendor-cascade, or AccentOS modules.
-- **Never** ask Michael to clarify ambiguity. Pick a default, run with it, list the default chosen.
+- **Never** use `SELECT *` against vendors, deals, inventory, competitor_prices, or any table likely to be wide — only pull columns the question needs.
+- **Never** invent column names. Every column must trace to a `/home/user/accent-os/sql/M*.sql` file.
+- **Never** skip the LIMIT clause unless the question is explicitly a full aggregation (COUNT, SUM across all rows).
+- **Never** return query results inline — Michael runs the SQL in the Supabase SQL editor at `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`; the skill's job ends at the query.
+- **Never** emit INSERT, UPDATE, DELETE, or DDL. This skill is read-only. Mutations route through priority-articulation, vendor-cascade, or AccentOS M-task modules.
+- **Never** ask Michael to clarify ambiguity. Pick a defensible default, run with it, list the default chosen in BLOCK 1 under "Defaults applied".
+- **Never** read M-schema files sequentially when all M-files are independent — parallel reads cut schema-load latency significantly on an 11-file schema set.
