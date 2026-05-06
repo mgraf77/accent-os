@@ -264,3 +264,131 @@ Speed/Efficiency (+0.2) — Perspective Sweep overhead is real but acceptable gi
 **Branch:** claude/skill-optimizer-rOdjA | **Commits:** 5402d7b
 
 <!-- New entries appended below this line by Step 13 -->
+
+---
+
+## 2026-05-06 skill-optimizer — Pass 5 (Session total: 1 pass so far — calibrated rubric v1)
+
+**Skill:** skill-optimizer
+**Scope:** PROJECT
+**Pass:** 5 (first pass on calibrated rubric — prior passes 1-4 used inflated anchors, not comparable)
+**Weight profile:** balanced → v2 for next pass | **Rubric drift:** NO (v1 baseline)
+**Plateau triggered:** NO
+
+### Score Matrix
+
+| Dimension | Weight (v1) | Session Start | Pass End | Delta | Momentum |
+|---|---|---|---|---|---|
+| Output Quality | 25% | 7.0 | 7.5 | +0.5 | ↑ |
+| Methodology Fitness | 20% | 7.0 | 7.5 | +0.5 | ↑ |
+| Trigger Coverage | 15% | 7.0 | 7.5 | +0.5 | ↑ |
+| Accuracy | 15% | 7.0 | 7.5 | +0.5 | ↑ |
+| Speed / Efficiency | 10% | 6.5 | 7.0 | +0.5 | ↑ |
+| AccentOS Fit | 10% | 5.5 | 6.5 | +1.0 | ↑ |
+| Anti-pattern | 5% | 7.5 | 7.5 | 0.0 | → |
+| **TOTAL** | | **68.25** | **73.50** | **+5.25** | |
+
+**Threshold:** 73.0 | **Status:** MET ✓
+**Note:** v2 re-expressed baseline = 71.20 (AccOS weight shift from 10%→31%)
+
+### Dimension Registry at Session End
+
+| Dimension | v1 Weight | v2 Weight | Status | Notes |
+|---|---|---|---|---|
+| Output Quality | 25% | 11% | active | ↓ weight — high EI but lower than AccOS |
+| Methodology Fitness | 20% | 11% | active | ↓ |
+| Trigger Coverage | 15% | 11% | active | ↓ |
+| Accuracy | 15% | 11% | active | ↓ |
+| Speed / Efficiency | 10% | 14% | active | ↑ larger gap, untargeted default |
+| AccentOS Fit | 10% | 31% | active | ↑↑ highest momentum (+1.0 raw) |
+| Anti-pattern | 5% | 11% | active | ↑ untargeted, has room |
+
+### Changes Applied
+1. Batch mode priority list output block (BATCH PRIORITY LIST) — OQ +0.5
+2. Scope-not-found explicit output + missing-history-file handler — OQ, Acc
+3. BOTH scope divergence check output block — OQ
+4. Step 11 sub-step labels 11a/11b — MF +0.5
+5. Parallel notes in Steps 3 and 9 — MF, Spd
+6. Already-tried printout with succeeded/failed/deferred distinction — MF
+7. Trigger misspellings (optomize, optimise) + 5 variants — TC +0.5
+8. Validation failure procedure + score-decrease revert logic — Acc +0.5
+9. References/*.md conditional re-read + gotcha-log guard (Pass 1 only) — Spd +0.5
+10. AccentOS profile guidance by skill type (store-cwqiwcjxes, hsyjcrrazrzqngwkqsqa) — AccOS +1.0
+
+### What Moved Most
+AccentOS Fit (+1.0) — profile guidance + real tool names filled the 6.0 anchor gap cleanly.
+
+### What Resisted
+Anti-pattern (0) — already at 7.5. 8.0 requires validated evidence. Deferred; need 1+ more sessions before claiming 8.0.
+
+### Next-Session Proposals
+1. Step 1b named output block (Profile table) — OQ toward 8.0
+2. Step 5 parallel hypothesis generation note — Spd toward 7.5
+3. Step 5 sort disambiguation ("gap contribution pts, not raw") — MF toward 8.0
+4. AccOS: verify 7.0 anchor fully met — push to 7.0 (design ceiling)
+5. OQ/MF/AP → 8.0 via evidence citation from this session
+
+### Patterns Confirmed Effective (cross-skill reusable)
+- "Add output blocks for all edge-case paths" → OQ +0.5 — applies to: any multi-path workflow skill
+- "Add misspellings to trigger list" → TC +0.5 — applies to: any skill missing 7.0 anchor misspelling requirement
+- "Add AccentOS profile guidance by skill type with real tool IDs" → AccOS +1.0 — applies to: any AccentOS meta/workflow skill
+
+### Prediction Calibration
+- Session accuracy: 6/6   Note: +0.5 per targeted dim is reliable at 7.0-7.5 range; AccOS +1.0 confirmed when structural gap is identified
+
+**Branch:** claude/skill-optimizer-rOdjA | **Commits:** 9bb374a
+
+---
+
+## 2026-05-06 skill-optimizer — Pass 6 (Session total: 2 passes — calibrated rubric)
+
+**Skill:** skill-optimizer
+**Scope:** PROJECT
+**Pass:** 6 | **Session passes:** 2 (calibrated rubric passes 5–6)
+**Weight profile:** balanced → v2 applied | **Rubric drift:** YES (AccOS 10%→31%)
+**Plateau triggered:** NO (consecutive thin: 1)
+
+### Score Matrix
+
+| Dimension | Weight (v2) | Pass 5 End | Pass 6 End | Delta | Momentum |
+|---|---|---|---|---|---|
+| Output Quality | 11% | 7.5 | 8.0 | +0.5 | ↑ |
+| Methodology Fitness | 11% | 7.5 | 8.0 | +0.5 | ↑ |
+| Trigger Coverage | 11% | 7.5 | 7.5 | 0 | → |
+| Accuracy | 11% | 7.5 | 7.5 | 0 | → |
+| Speed / Efficiency | 14% | 7.0 | 7.5 | +0.5 | ↑ |
+| AccentOS Fit | 31% | 7.0* | 7.0 | 0 | → |
+| Anti-pattern | 11% | 7.5 | 7.5 | 0 | → |
+| **TOTAL** | | **72.75** | **74.55** | **+1.80** | |
+
+*AccOS corrected from 6.5 (Pass 5 record) to 7.0 — all 7.0 anchor criteria already met; scoring error in Pass 5, not a structural improvement.
+
+**Threshold:** 74.0 | **Status:** MET ✓
+**Pass delta:** +1.80 pts (THIN — below 2.0 threshold; consecutive thin count: 1)
+
+### Changes Applied
+1. Step 1b SKILL PROFILE named output block — all profile fields now have an explicit, named output table → OQ +0.5
+2. Step 5 sort disambiguation ("gap contribution pts, not raw gap score") — eliminates ranking ambiguity under variable weights → MF +0.5
+3. Step 5 parallel hypothesis generation note — when top-2 dims have independent root causes → Spd +0.5
+
+### What Moved Most
+OQ and MF (+0.5 each) — SKILL PROFILE block closed the last "no explicit output" gap in Step 1b; sort disambiguation closed a reproducibility ambiguity.
+
+### What Resisted
+AccOS (0) — design ceiling at 7.0 confirmed. TC, Acc, AP (0) — all blocked by evidence requirement for 8.0 (need validated real-use sessions, not structural changes). Anti-pattern (0) — inflation-prevention anti-patterns added in prior session; count at 22, no new failure modes to cover.
+
+### Next-Session Proposals
+1. Add PROMPT_LOG-validated trigger phrases ("gap analysis [skill]", "push [skill] further") — TC 8.0 (evidence now available)
+2. Fix duplicate validation procedure sentence in Step 7 — Acc cleanup
+3. Add "targeted" definition to Step 9 Expected Impact formula — Acc/MF precision
+4. Claim Spd 8.0 with session evidence (conditional re-reads verified working, no redundant tokens identified)
+5. Claim AP 8.0 with session evidence (OQ 8.5 inflation caught and prevented by Perspective Sweep anti-pattern)
+
+### Patterns Confirmed Effective (cross-skill reusable)
+- "Add explicit named output block for steps with implicit output" → OQ +0.5 — applies to: any skill where any step lacks an explicit output format
+- "Add sort disambiguation to dimension-targeting steps" → MF +0.5 — applies to: any skill with a weighted scoring step that targets by rank
+
+### Prediction Calibration
+- Session accuracy: 3/3   OQ +0.5, MF +0.5, Spd +0.5 — all predicted accurately at 7.0-8.0 range
+
+**Branch:** claude/skill-optimizer-rOdjA | **Commits:** 0422db2
