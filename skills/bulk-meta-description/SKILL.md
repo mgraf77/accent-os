@@ -34,6 +34,11 @@ Run when Michael says:
 - "Eugene's CSV is ready" / "M15 batch"
 - "do meta descriptions for [vendor name]"
 - "fill in meta descriptions"
+- "meta descriptions are missing"
+- "SEO meta for [vendor/batch]"
+- "bulk import meta for BC"
+- "products need metas"
+- "gmc-feed-audit showed missing metas"
 
 ---
 
@@ -49,7 +54,7 @@ If the input is ambiguous, ask once: "Source — paste IDs, /path/to/csv, or ven
 
 ---
 
-## Step 2 — Load product attributes per ID
+## Step 2 — Load product attributes per ID (Step 1 parse + Step 2 Supabase query run in parallel)
 
 Pull from Supabase hsyjcrrazrzqngwkqsqa (preferred) or BC export:
 
@@ -101,16 +106,25 @@ Per generated description, check:
 
 ---
 
+## Edge Cases
+
+- **Input CSV has no header row:** if Eugene's CSV lacks a `product_id` header, treat the first column as product_id and flag: "CSV header absent — assumed column 1 = product_id. Verify before import."
+- **Product ID not found in Supabase:** if a BC SKU from the input has no matching row in `hsyjcrrazrzqngwkqsqa products`, flag as `SKU_NOT_FOUND` and skip — don't attempt to generate from zero attributes.
+- **All products in batch are `NO_CHANGE`:** output: "All [N] products already have compliant meta descriptions. No import needed." and stop.
+- **Batch > 200 products:** warn before generating: "Large batch ([N] products) — generation may produce token-heavy output. Confirm to proceed or split into chunks of ≤200."
+
 ## Step 5 — Output
 
 ```
 ═══ BLOCK 1: SUMMARY ═══
-Input source: [source from Step 1]
+Input source: [source from Step 1 — CSV path / vendor name / product IDs / gmc-feed-audit]
 Products processed: [N]
 Generated: [count]   Skipped (insufficient data): [count]   Unchanged: [count]
+SKU_NOT_FOUND: [count]
 
-═══ BLOCK 2: BC BULK IMPORT CSV (canonical format) ═══
+═══ BLOCK 2: BC BULK IMPORT CSV (canonical format for store-cwqiwcjxes) ═══
 # BC bulk import expects exactly: product_id,meta_description
+# Import at: https://store-cwqiwcjxes.mybigcommerce.com/manage/products/import
 product_id,meta_description
 12345,"Shop the Acme Pendant — Antique Brass Pendant with 9.5W LED. UL listed. Free shipping over $99."
 67890,"Discover Bright Co's Sconce. 12in W, 1200lm, 3000K. Same-day shipping."
@@ -124,7 +138,10 @@ product_id,sku,current_meta,new_meta,char_count,status
 
 ═══ BLOCK 3: FLAGGED ROWS ═══
 For each INSUFFICIENT_DATA row:
-  - sku, what attribute is missing, what to add upstream
+  - sku, what attribute is missing, what to add upstream in hsyjcrrazrzqngwkqsqa products table
+
+For each SKU_NOT_FOUND row:
+  - sku/product_id from input, "not found in hsyjcrrazrzqngwkqsqa — add product record first"
 
 ═══ BLOCK 4: PASTE TARGET ═══
 BC bulk product import:
@@ -140,3 +157,5 @@ https://store-cwqiwcjxes.mybigcommerce.com/manage/products/import
 - **Never** confuse vendor with brand — they're different fields.
 - **Never** overwrite a meta that's already within length AND mentions brand — skip it as `NO_CHANGE`.
 - **Never** invent product attributes. If a finish/lumens isn't in the data, leave it out of the description.
+- **Never** include both BLOCK 2 (import CSV) and BLOCK 2b (review log) as one combined CSV — BC bulk import will reject extra columns; keep them strictly separate.
+- **Never** silently truncate the action verb to fit character count — instead switch to the next shorter template variant and re-validate. Truncated verbs produce grammatically broken metas.
