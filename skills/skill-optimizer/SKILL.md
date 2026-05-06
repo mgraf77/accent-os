@@ -47,6 +47,8 @@ Run when Michael says:
 - "how can [skill] be better"
 - "batch optimize" / "optimize all skills"
 
+**Batch mode:** When Michael says "optimize all skills" or "batch optimize", run Steps 0–2 (profile + score) for all target skills in parallel, then present a priority-ranked list (lowest score first) with estimated effort. Run the full 9-phase loop on each skill in sequence. Commit each skill independently before moving to the next — never bundle multiple skills in one commit.
+
 **Do NOT trigger for:**
 - Building a new skill from scratch → use skill-forge
 - Automated promptfoo regression tests → use skill-eval-suite
@@ -106,6 +108,11 @@ Score the current skill against the weighted rubric. See `references/rubric-weig
 | **Anti-pattern Compliance** | 5% | | | (10−raw)×0.05 | ≥3 anti-patterns; specific and enforceable |
 
 **Baseline Score** = Σ (Weight × Raw / 10) × 100. Range: 0–100.
+
+**Edge cases:**
+- If all dimensions score 10/10 → baseline is 100; threshold is capped at 95; output "Already at maximum. Threshold set to 95 — optimization will improve enforceability, not raw score."
+- If a dimension cannot be scored (missing content) → score it 0 and flag: "Cannot score [Dimension] — no relevant content found."
+- If two versions (BOTH scope) produce identical scores → note "No divergence detected" and treat as a single optimization target.
 
 **Gap Contribution** = (10 − raw) × weight for each dimension. Higher gap contribution = higher improvement potential per unit of effort. This drives Step 2.5 calibration and Step 4 brainstorm targeting.
 
