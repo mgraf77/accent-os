@@ -1027,10 +1027,14 @@ async function internalmeetings(el, act){
   imInitBubble();
   imShowBubble(true);
   imRender();
-  // Subscribe to the meetings list channel as soon as the page mounts so
-  // new/updated/deleted meetings stream in even before the user clicks
-  // into a specific one. Per-meeting subscriptions take over when they do.
-  if(IM_CUR_ID === null) imRtSubscribeList();
+  // Re-establish realtime channels on every page mount. Both subscribe
+  // helpers are idempotent (early-return if already subscribed). This
+  // covers the case where the user resumes mid-meeting — IM_CUR_ID is
+  // retained but channels may have timed out while away.
+  imRtSubscribeList();
+  if(IM_CUR_ID && !(typeof IM_CUR_ID === 'string' && IM_CUR_ID.startsWith('_'))){
+    imRtSubscribe(IM_CUR_ID);
+  }
 }
 
 // Hide bubble when navigating away (called by goTo via window.curPage check on render)
@@ -1045,6 +1049,11 @@ window.addEventListener('click', (e) => {
 // ── RENDER ROOT ──────────────────────────────────────────────────────────────
 function imRender(){
   if(!IM_EL) return;
+  // Bail if the user has navigated to a different page — IM_EL still points
+  // at #pg-content but that container now holds another module's UI.
+  // Without this guard, a stray realtime event could overwrite e.g. the
+  // Dashboard with the meetings list.
+  if(typeof curPage !== 'undefined' && curPage && curPage !== 'internalmeetings') return;
   const tabs = [`<button class="im-tab ${IM_CUR_ID===null?'on':''}" onclick="imGoAll()">📋 All Meetings <span class="badge bg-gray" style="margin-left:6px;font-size:10px;">${IM_MEETINGS.length}</span></button>`]
     .concat(IM_MEETINGS.map(m => `
       <button class="im-tab ${IM_CUR_ID===m.id?'on':''}" onclick="imGoMeeting('${esc(m.id)}')" title="${esc(m.description||'')}">
