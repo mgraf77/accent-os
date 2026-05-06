@@ -1,154 +1,269 @@
 # Rubric Weights — skill-optimizer
 
 > Reference for Step 3 (Score on Active Rubric) and Step 8 (Score Test).
-> Default 7 dimensions are a starter set — not a mandate. The Dimension Registry (Step 2) can add, retire, or rename dimensions each pass. This file provides scoring guides for the defaults and most common alternatives.
+> Calibration: **50 = average functional skill. 75 = genuinely good. 85+ = exceptional. 90+ requires formal validation. 100 = practically unachievable.**
+> These anchors are non-negotiable — they prevent score inflation. Read the calibration reference (bottom of this file) before scoring any skill for the first time.
 
 ---
 
-## Default Starter Set
+## Score Interpretation
 
-| Dimension | Default Weight | Applies To | Rationale |
-|---|---|---|---|
-| Output Quality | 25% | all | A skill that produces undefined or inconsistent output is useless regardless of step quality |
-| Methodology Fitness | 20% | all | Workflow clarity drives reproducibility — vague steps produce vague results |
-| Trigger Coverage | 15% | all | Trigger phrases are the invocation surface; a skill not found can't be used |
-| Accuracy | 15% | all | Explicit constraints and edge cases prevent silent failures |
-| Speed / Efficiency | 10% | all | Token waste and redundant steps slow every session that uses the skill |
-| AccentOS Fit | 10% | PROJECT / BOTH | Generic output is lower-value than AccentOS-specific output for Accent Lighting workflows |
-| Anti-pattern Compliance | 5% | all | Listed prohibitions prevent known failure modes from recurring |
+| Total Score | What it means |
+|---|---|
+| < 40 | Not production-ready. One or more critical dimensions missing or broken. |
+| 40–54 | Functional but rough. Happy path only, significant gaps. |
+| 55–64 | Competent. Works in standard cases. Production-ready with known caveats. |
+| 65–74 | Good. Handles most edge cases. Well-documented. Reliable in practice. |
+| 75–84 | Excellent. Comprehensive, robust, minimal gaps. Would satisfy a thorough review. |
+| 85–91 | Outstanding. Near-complete. Hard to improve without formal testing infrastructure. |
+| 92–99 | Exceptional. Requires formal automated validation (test suite) to substantiate. |
+| 100 | Theoretically perfect. Unreachable without exhaustive formal verification. |
 
 ---
 
-## Scoring Guide — Default Dimensions
+## Evidence Burden Rules
 
-### Output Quality (25%)
-| Raw | What it means |
-|---|---|
-| 10 | Every step names a specific, paste-ready output. Blocks/tables defined with exact field names. No ambiguity about what you receive. |
-| 8–9 | Most steps have named outputs. One or two describe process without naming the artifact. |
-| 6–7 | Output format exists but loosely defined ("a summary", "some notes"). |
-| 4–5 | Output described at skill level only, not per step. |
-| 0–3 | No output format. Skill reads like a process description, not a deliverable spec. |
+**All scores above 7.5 on any dimension require explicit evidence citation.** "It has output blocks" is not evidence. You must quote or reference the specific section.
 
-### Methodology Fitness (20%)
-| Raw | What it means |
-|---|---|
-| 10 | Steps numbered, ordered, imperative-voiced, non-overlapping. Each has a single purpose and a stop condition. |
-| 8–9 | Steps clear and ordered. Minor overlap or one ambiguous step. |
-| 6–7 | Steps can be followed but some are multi-purpose or could be reordered without consequence. |
-| 4–5 | Steps read as bullet notes rather than a workflow. Order matters but isn't enforced. |
-| 0–3 | Workflow is not a workflow — a description of desired behavior without actionable steps. |
+**Scores above 8.0:** Must run Contrarian + Methodologist Perspective Sweep to confirm. Both must agree. If either raises an objection that can't be resolved, cap at 8.0.
 
-### Trigger Coverage (15%)
-| Raw | What it means |
-|---|---|
-| 10 | ≥6 trigger phrases; match Michael's documented phrasing; include common variants; explicit do-not-trigger list. |
-| 8–9 | 4–5 triggers; reasonable match to real phrasing; no do-not-trigger list. |
-| 6–7 | 3–4 triggers; generic / hypothetical rather than observed. |
-| 4–5 | 1–2 triggers. Likely to be missed in practice. |
-| 0–3 | No trigger list or a single vague phrase. |
+**Scores above 9.0:** Must cite formal validation: passing promptfoo test suite OR documented real-use record from 3+ independent sessions showing correct behavior. Label as **PROVISIONAL 9.0** if citing informal use only. Provisional scores do not count toward threshold.
 
-### Accuracy (15%)
-| Raw | What it means |
-|---|---|
-| 10 | Edge cases listed and handled. Validation steps explicit. Failure modes name what to do. Constraints referenced directly (cap values, required reads, must-exist checks). |
-| 8–9 | Most constraints explicit. One or two edge cases implied but not handled. |
-| 6–7 | Happy-path only. Edge cases exist but skill silently fails on them. |
-| 4–5 | Constraints present but expressed as "should" rather than "must." |
-| 0–3 | No constraints or validation. Skill assumes best-case input always. |
+**Floor Penalty:** Any dimension scoring below 3.0 applies a **−5 pt deduction** to the total score. Multiple broken dims stack. This prevents a skill from hiding a completely missing section behind high scores elsewhere.
 
-### Speed / Efficiency (10%)
-| Raw | What it means |
-|---|---|
-| 10 | No redundant reads. Steps do one thing. Parallel work is batched. No unnecessary approval gates. Token footprint minimal for the task. |
-| 8–9 | One redundant read or one step that could be collapsed. |
-| 6–7 | Two or three efficiency gaps. Some steps redo earlier work. |
-| 4–5 | Repeated context reads. Steps not batched when parallel work is obvious. |
-| 0–3 | Structured in a way that guarantees redundant work on every invocation. |
+---
 
-### AccentOS Fit (10%)
-| Raw | What it means |
-|---|---|
-| 10 | ≥5 AccentOS-stack substitutions; references actual paths (`/home/user/accent-os/`); names real tools (Supabase hsyjcrrazrzqngwkqsqa, BigCommerce store-cwqiwcjxes, GMC, Klaviyo, Anthropic API); examples reference Accent Lighting workflows. |
-| 8–9 | 3–4 substitutions; paths correct; one concrete Accent Lighting example. |
-| 6–7 | 2–3 substitutions; mostly generic with AccentOS labels pasted on. |
-| 4–5 | 1–2 substitutions; could apply to any project with a name swap. |
-| 0–3 | No AccentOS-specific content. Fully generic skill. |
+## Dimension Scoring — Default Dimensions
 
-### Anti-pattern Compliance (5%)
-| Raw | What it means |
+Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below describes the MINIMUM behavior required to achieve that score. Scoring between anchors (e.g., 6.5) is valid when behavior is between two described levels.
+
+---
+
+### Output Quality (default weight: 25%)
+
+*What is the user guaranteed to receive, and how specifically is it defined?*
+
+| Score | Anchor — minimum behavior at this level |
 |---|---|
-| 10 | ≥5 anti-patterns; each is specific and enforceable (binary pass/fail); includes do-not-trigger case. |
-| 8–9 | 3–4 anti-patterns; most specific; one or two could be tighter. |
-| 6–7 | 3 anti-patterns; at least one generic ("Never produce bad output"). |
-| 4–5 | 1–2 anti-patterns or all are generic. |
-| 0–3 | No anti-patterns section. |
+| **0** | No output defined. Skill is a behavioral description or process goal, not a deliverable spec. |
+| **2** | Output vaguely mentioned at skill level ("produces a report", "returns analysis"). No structure. |
+| **4** | Output format exists at skill level. Steps loosely describe outputs ("some analysis", "a summary"). |
+| **5 — AVERAGE** | Most steps name a specific output. Format documented at skill level. 1-2 steps are vague or just name a process phase, not a deliverable. |
+| **6** | All steps name a specific output. Format and field names documented. A reader can predict what they'll receive. |
+| **7 — GOOD** | Every step has a concrete, paste-ready output. Named blocks with exact field names. No ambiguity. Output shape is defined for all steps including loops and gates. |
+| **8** | Everything at 7 + cited evidence that outputs match the documented shape in real use. Edge case outputs (empty data, errors) documented. Evidence required. |
+| **9** | Everything at 8 + promptfoo or equivalent tests confirm output shape across all documented cases. Zero deviations in testing. PROVISIONAL label required without test evidence. |
+| **10** | Formally verified across all edge cases and input variations by automated test suite. Zero exceptions. Unreachable without complete test coverage. |
+
+---
+
+### Methodology Fitness (default weight: 20%)
+
+*Can this skill be followed consistently to produce the same result every time?*
+
+| Score | Anchor |
+|---|---|
+| **0** | No workflow. A list of goals or behaviors, not executable steps. |
+| **2** | Steps exist but are unordered, heavily overlapping, or cannot be reliably followed. |
+| **4** | Steps are ordered. Some are multi-purpose or could be reordered without obvious consequence. Implicit stop conditions. |
+| **5 — AVERAGE** | Steps can be followed. Single-purpose for most steps. Minor overlap or one ambiguous step. An experienced practitioner could complete the skill. |
+| **6** | Steps numbered, ordered, imperative-voiced. Single-purpose. Stop conditions present but not always explicit. Parallel batching implied but not documented. |
+| **7 — GOOD** | Steps numbered, ordered, imperative-voiced, non-overlapping. Each has one purpose and an explicit stop condition. Parallel and sequential dependencies documented. Caps and limits on loops. |
+| **8** | Everything at 7 + verified to produce consistent, reproducible outputs across multiple independent runs (cited evidence). No identified ambiguities after real use. |
+| **9** | Formally verified: an independent practitioner can follow the workflow and arrive at equivalent outputs without coaching. Evidence required. |
+| **10** | Proven reproducible by automated test suite across all input variations. Unreachable without test infrastructure. |
+
+---
+
+### Trigger Coverage (default weight: 15%)
+
+*Would a user who needs this skill find it and invoke it correctly?*
+
+| Score | Anchor |
+|---|---|
+| **0** | No trigger list or a single vague phrase. Skill would not be found in practice. |
+| **2** | 1-2 generic triggers. No do-not-trigger case. Phrasing is hypothetical, not observed. |
+| **4** | 2-3 triggers. Reasonable but not validated against real use. Do-not-trigger absent. |
+| **5 — AVERAGE** | 3-4 triggers covering the main invocation surface. Phrasing is plausible. Do-not-trigger absent or minimal. |
+| **6** | 4-5 triggers. Include common variants (verb swaps, rephrases). Do-not-trigger present. |
+| **7 — GOOD** | 6+ triggers; match documented real phrasing (observed, not hypothetical); include verb variants and common misspellings; explicit do-not-trigger list with at least 2 entries. |
+| **8** | Everything at 7 + validated against PROMPT_LOG.md or equivalent real invocation records. No missed phrasings from recorded use in last 30 days. Evidence required. |
+| **9** | Near-comprehensive coverage validated with evidence. Near-zero miss rate on real inputs. |
+| **10** | Formally proven complete via automated trigger-detection testing. Unreachable without test infrastructure. |
+
+---
+
+### Accuracy (default weight: 15%)
+
+*Does the skill handle what it says it handles, and fail gracefully on everything else?*
+
+| Score | Anchor |
+|---|---|
+| **0** | No constraints or validation. Assumes best-case input always. Silent failures on bad input. |
+| **2** | 1-2 constraints mentioned but not enforced. No edge case handling. Fails silently. |
+| **4** | Happy path constrained. One main failure mode handled. Edge cases implied but not processed. Constraints use "should" not "must." |
+| **5 — AVERAGE** | Happy path + 2-3 edge cases handled. Most constraints are explicit. One or two gaps in coverage. |
+| **6** | Most constraints explicit ("must"). Most foreseeable edge cases handled. Failure modes name what to do. One or two gaps remain. |
+| **7 — GOOD** | All listed edge cases handled explicitly. All validation steps named. All failure modes specify exactly what to do. All constraints are binary (pass/fail). Cap values, required-file checks, and boundary conditions present. |
+| **8** | Everything at 7 + verified correct handling of all listed cases in real use (cited evidence). No silent failures discovered in practice. |
+| **9** | Formally verified: automated tests exercise every listed edge case, constraint, and failure mode. Evidence required. |
+| **10** | Proven correct by exhaustive formal verification or complete test coverage. Unreachable without test infrastructure. |
+
+---
+
+### Speed / Efficiency (default weight: 10%)
+
+*Does the skill waste tokens or force unnecessary work?*
+
+| Score | Anchor |
+|---|---|
+| **0** | Guaranteed redundant work on every invocation. Structural inefficiency. |
+| **2** | Multiple redundant reads. Steps not batched. Significant unnecessary work for the task. |
+| **4** | Some redundancy. Parallel work not documented. A few steps do multiple things. |
+| **5 — AVERAGE** | No obvious redundancies. Steps do approximately one thing. Some batching present. Works but not lean. |
+| **6** | No redundant reads. Steps are single-purpose. Parallel work batched where obvious. Approval gates minimal. |
+| **7 — GOOD** | No redundant reads. Every step does one thing. All parallelizable work explicitly batched with documentation. Approval gates minimal and justified. Token footprint appropriate for the task. |
+| **8** | Everything at 7 + profiled (cited evidence that no redundant tokens are spent in practice). No unnecessary context reads identified in real use. |
+| **9** | Token-optimal for the task class. Benchmarked against a simpler alternative. Improvement headroom < 5%. |
+| **10** | Formally proven minimal. Theoretical lower bound on token usage established and achieved. |
+
+---
+
+### AccentOS Fit (default weight: 10%)
+
+*Is this skill actually wired for the AccentOS/Accent Lighting stack, or is it generic?*
+
+**Ceiling note:** For GLOBAL-scope meta-skills (like skill-optimizer), the design ceiling is ~6-7 by nature. Supabase and BigCommerce refs are not applicable to fully generic meta-skills. Do not force refs that don't belong. The ceiling is a design fact, not a gap.
+
+| Score | Anchor |
+|---|---|
+| **0** | No AccentOS-specific content. Fully generic. Any project could use this with a name swap. |
+| **2** | "AccentOS" mentioned once. No stack-specific content, paths, or tool names. |
+| **4** | 2-3 AccentOS refs. One correct path present. Mostly generic with AccentOS labels. |
+| **5 — AVERAGE** | 3 AccentOS refs. Correct paths. Basic stack context. Stack tool names mentioned. |
+| **6** | 3-4 refs. Correct paths (/home/user/accent-os/). Stack tools named. One Accent Lighting workflow example. |
+| **7 — GOOD** | 4-5 AccentOS substitutions; correct paths; real tool names (Supabase hsyjcrrazrzqngwkqsqa, BC store-cwqiwcjxes, GMC, Klaviyo, Anthropic API); at least one workflow example from Accent Lighting operations. |
+| **8** | Everything at 7 + examples drawn from documented real Accent Lighting use cases. Stack integration validated in practice. Evidence required. |
+| **9** | Fully integrated into AccentOS stack with tested behavior against the real environment. Evidence required. |
+| **10** | Formally integration-tested with CI against AccentOS stack. Unreachable without test infrastructure. |
+
+---
+
+### Anti-pattern Compliance (default weight: 5%)
+
+*Does the skill prevent known failure modes, and are those prohibitions enforceable?*
+
+| Score | Anchor |
+|---|---|
+| **0** | No anti-patterns section. |
+| **2** | 1-2 generic anti-patterns ("Never produce bad output"). Not enforceable. |
+| **4** | 3 anti-patterns. Mix of specific and generic. No do-not-trigger anti-pattern. |
+| **5 — AVERAGE** | 3-4 anti-patterns. Most specific and enforceable. At least one covers a real documented failure mode. |
+| **6** | 4-5 anti-patterns. Specific and binary (pass/fail). Includes do-not-trigger case. |
+| **7 — GOOD** | 5+ anti-patterns. All specific ("Never run more than 5 loops"), all binary pass/fail. Covers do-not-trigger, mutation guard, and at least 2 methodology failure modes. |
+| **8** | Everything at 7 + all anti-patterns validated (no known violation in real use, cited evidence). Each maps to a real failure mode that was observed and prevented. |
+| **9** | Formally non-violating: adversarial test inputs exercising each anti-pattern produce the correct refusal behavior. |
+| **10** | Proven non-violating by formal verification or exhaustive adversarial test coverage. |
+
+---
+
+## Calibration Reference Skill (scores 50/100)
+
+Use this as your anchor. A skill that does everything below — and nothing more — should score 50. If you're scoring a skill higher than 50 and it doesn't clearly exceed ALL of these, your scores are inflated.
+
+**What a 50/100 skill looks like:**
+- Has 3-4 trigger phrases, phrasing is plausible but not validated against real use
+- Has numbered, ordered steps that can be followed; some minor overlap
+- Outputs described at skill level; most steps name a deliverable loosely
+- Handles the happy path; 2 edge cases mentioned but not explicitly handled
+- 3 anti-patterns, mix of specific and generic
+- 3 AccentOS refs, correct paths, no workflow examples
+- No formal testing, no real-use validation cited
+
+This reference skill scores approximately:
+| Dim | Score | Contribution |
+|---|---|---|
+| Output Quality | 5.0 | 1.25 |
+| Methodology | 5.0 | 1.00 |
+| Trigger Coverage | 5.0 | 0.75 |
+| Accuracy | 5.0 | 0.75 |
+| Speed | 5.0 | 0.50 |
+| AccentOS Fit | 5.0 | 0.50 |
+| Anti-pattern | 5.0 | 0.25 |
+| **TOTAL** | | **5.00 × 10 = 50.0** |
+
+---
+
+## Weight Optimization — Expected Impact Method
+
+Used in Step 9 (Rubric Evolution). Distributes weights toward dimensions with the highest expected improvement potential next pass.
+
+**Formula:**
+
+For each active dimension i:
+1. `gap_i = 10 − score_i` (remaining raw headroom)
+2. `potential_i` = estimated improvement rate:
+   - Dimension moved this pass: use actual delta as baseline
+   - Dimension targeted but resisted (<0.5 delta): use `actual_delta × 0.5` (penalize resistance)
+   - Dimension not targeted: use cross-skill average or default 0.5 pts/pass
+   - Structural ceiling (same score ±0.5 for 3+ consecutive passes): `potential = 0`
+3. `expected_impact_i = gap_i × potential_i`
+4. `new_weight_i = (expected_impact_i / Σ expected_impact_j) × 100`
+5. Clamp: minimum 3% per dim, maximum 35% per dim
+6. Renormalize after clamping to sum = 100%
+
+**Structural ceiling detection:** If a dimension has been within ±0.5 of the same score for 3+ consecutive passes despite being targeted, flag it as a structural ceiling. Set `potential = 0` and floor weight at 3% (don't zero — it still matters, just deprioritized).
+
+**Dead-weight detection:** If a dimension's expected_impact rounds to 0 (either at raw 10 or structural ceiling), its weight floors at 3%. All other dims absorb the freed weight proportionally.
 
 ---
 
 ## Common Alternative Dimensions
 
-When the Dimension Registry adds or replaces a dimension, define a scoring guide before scoring. Most common alternatives:
+When Step 2 (Dimension Registry Review) adds a custom dimension, define anchors before scoring.
 
-### Route Accuracy (for routing / trigger-detection skills)
-| Raw | What it means |
+### Route Accuracy (routing / trigger-detection skills)
+| Score | Anchor |
 |---|---|
-| 10 | Routes to the correct downstream skill in ≥95% of realistic inputs; handles ambiguous inputs with a tie-break rule; explicit fallback for no-match. |
-| 7–9 | Routes correctly for common cases; one or two edge inputs route incorrectly. |
-| 4–6 | Routing is best-effort with no explicit tie-break. Ambiguous inputs often misrouted. |
-| 0–3 | No routing logic; delegates to guesswork or produces arbitrary output. |
+| 5 | Routes correctly for obvious inputs. Ambiguous inputs produce inconsistent results. |
+| 7 | Routes correctly across all documented inputs; explicit tie-break rule for ambiguous cases; fallback for no-match. |
+| 9 | Validated: no misroutes in real session history (evidence required). |
 
-### Reasoning Transparency (for analysis / recommendation skills)
-| Raw | What it means |
+### Reasoning Transparency (analysis / recommendation skills)
+| Score | Anchor |
 |---|---|
-| 10 | Every recommendation shows the chain of reasoning: data → interpretation → conclusion. Reader can trace and challenge each step. |
-| 7–9 | Most recommendations have visible reasoning. One or two conclusions are asserted without supporting chain. |
-| 4–6 | Conclusions present but reasoning mostly implicit. |
-| 0–3 | Outputs assertions with no visible reasoning. |
+| 5 | Conclusions present but reasoning mostly implicit. |
+| 7 | Every recommendation shows: data → interpretation → conclusion. Reader can trace and challenge each step. |
+| 9 | Independently verified: a skeptic reviewing the reasoning chains can reproduce the conclusions (evidence required). |
 
-### Format Correctness (for artifact-generation skills)
-| Raw | What it means |
+### Format Correctness (artifact-generation skills)
+| Score | Anchor |
 |---|---|
-| 10 | Every output block is in the exact required format (YAML / JSON / markdown table / etc.) with all required fields present and no extras. Passes schema validation. |
-| 7–9 | Format correct; one or two optional fields missing or slightly malformed. |
-| 4–6 | Output structure is approximately right but would require manual cleanup. |
-| 0–3 | Output format is ad hoc; cannot be parsed or used directly. |
+| 5 | Output structure is approximately correct but requires manual cleanup. |
+| 7 | Every output block is in exact required format; all required fields present; could pass schema validation. |
+| 9 | Passes automated schema validation on all documented inputs (evidence required). |
 
-### Edge Case Coverage (specific split from Accuracy when needed)
-| Raw | What it means |
+### Edge Case Coverage (when split from Accuracy)
+| Score | Anchor |
 |---|---|
-| 10 | Every step that could fail on atypical input has an explicit handler (empty data, missing prereq, ambiguous input, boundary value). Handlers name what to do, not just "handle it." |
-| 7–9 | Most edge cases handled. One or two implied but not explicit. |
-| 4–6 | Handles the obvious empty-input case; misses boundary and malformed cases. |
-| 0–3 | No edge case handling. Assumes all inputs are well-formed. |
+| 5 | Handles the obvious empty-input case. Misses boundary and malformed cases. |
+| 7 | Every potentially-failing step has an explicit handler naming what to do (not just "handle it"). Boundary values, missing prereqs, malformed inputs all covered. |
+| 9 | All listed edge cases tested with automated inputs (evidence required). |
 
 ---
 
 ## Dimension Registry Protocol
 
-When the Dimension Registry (Step 2) adds, retires, or renames a dimension:
-
-**Adding a new dimension:**
-1. Name the dimension (kebab-case or title case — consistent with existing names).
-2. Define the 0–10 scoring guide (add it to this file or define inline in Step 2 output).
-3. Assign initial weight — default 10%; Michael-specified if requested.
-4. Reduce all other weights proportionally: `new_wt = old_wt × (100 − new_dim_wt) / 100`. Round to nearest 1%. Verify sum = 100%.
+**Adding a dimension:**
+1. Name it (title case, consistent with existing names)
+2. Define anchors at 0, 5, 7, 9, 10 before scoring
+3. Assign initial weight; default 10% unless specified
+4. Reduce all other weights proportionally: `new_wt = old_wt × (100 − new_dim_wt) / 100`
+5. Round to nearest 1%. Verify sum = 100%
 
 **Retiring a dimension:**
-1. Record retirement reason in the history log (Step 12).
-2. Redistribute its weight proportionally to remaining active dimensions.
-3. Keep the dimension visible in score tables marked `[retired v[N]]` so longitudinal comparisons remain readable.
+1. Record reason in history log (Step 12)
+2. Redistribute weight proportionally to remaining active dims
+3. Keep visible in score tables as `[retired v[N]]` for longitudinal readability
 
-**Renaming a dimension:**
-1. Carry all historical scores forward under the new name.
-2. Note the rename in the history log and rubric evolution output.
-
-**Weight Override Examples:**
-
-| Override phrase | Result |
-|---|---|
-| "+10%" | Threshold = Baseline × 1.10 (threshold change, not weight change) |
-| "just fix the triggers" | Scope to Trigger Coverage only; all other dims frozen at baseline score |
-| "add ability to auto-log sessions, weight it 15%" | Add new dim at 15%; reduce others proportionally to sum to 100% |
-| "minimum 85" | Threshold = 85; weights unchanged |
-| "accuracy is critical" | Apply accuracy-heavy profile |
+**Anti-inflation guard:** Never increase any single dimension's weight above 35% — it would allow one dim to dominate and mask a broken dimension with floor penalty.

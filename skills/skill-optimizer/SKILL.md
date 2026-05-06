@@ -10,10 +10,13 @@ description: >
   Devil's Advocate challenges and Scientific Method predictions on every
   hypothesis, Red Team pass on every assembled plan, Occam's Razor tie-breaking;
   plan gate; execute; score test with prediction-vs-actual tracking; rubric
-  evolution for the next pass; optimization report; pass gate with plateau
-  detection (stops after 2 consecutive thin passes below 2.0 pts). Supports
-  auto-continue mode and a First Principles reset for plateau breakthroughs.
-  Every session logged to optimization-history.md — each run compounds the last.
+  evolution via Expected Impact weight formula; optimization report; pass gate
+  with plateau detection (stops after 2 consecutive thin passes below 2.0 pts).
+  Supports auto-continue mode, Perspective Sweeps (6 named roles deployed in
+  parallel), and a First Principles reset for plateau breakthroughs. Scoring
+  is calibrated: 50 = average functional skill, 75 = genuinely good, 85+
+  = exceptional (formal validation required to substantiate), 100 = practically
+  unachievable. Every session logged to optimization-history.md.
   Use this skill when Michael says: "optimize [skill]", "tune [skill]",
   "make [skill] better", "level up [skill]", "score this skill",
   "skill optimizer", "run skill optimizer on [skill]", "upgrade [skill]",
@@ -260,45 +263,61 @@ This registry is the scoring authority for Steps 3 and 8 in this pass. Do not ch
 
 ## Step 3 — Score on Active Rubric
 
-Score the current skill against the dimension registry from Step 2. Scoring guidance: `references/rubric-weights.md`.
+Score the current skill against the dimension registry from Step 2. **Read `references/rubric-weights.md` before scoring.** Scoring is calibrated: 5.0 = average, 7.5 = good, 9.0+ requires formal validation evidence. Do not score from intuition — match behavior to the anchors in rubric-weights.md.
 
-| Dimension | Weight | Raw (0–10) | Weighted | Gap Contribution | Momentum | Evidence |
+| Dimension | Weight | Score (0–10) | Weighted | Gap Contrib (pts) | Momentum | Evidence cited |
 |---|---|---|---|---|---|---|
 [one row per active dimension from Step 2 registry]
 
-**Momentum key:** ↑ improved last pass, ↓ stalled or declined, → first pass or unchanged.
+**Score**: match to rubric-weights.md anchors. 5.0 = average. Do not round up without evidence.
 
-**Baseline** = Σ(Weight × Raw / 10) × 100. Range: 0–100.
+**Weighted** = Weight × Score / 10 × 100 = Weight_pct × Score / 10
 
-**Gap Contribution** = (10 − raw) × weight. Higher = more improvement potential per unit effort.
+**Gap Contribution (pts)** = (10 − Score) × Weight_pct / 100. This is the points this dimension can still add to the total. Sort by this to find highest-leverage targets.
+
+**Momentum:** ↑ improved last pass, ↓ stalled or declined, → first pass or unchanged.
+
+**Baseline** = Σ(Weight_pct × Score / 10). Range: 0–100.
+
+**Evidence requirements:**
+- Score > 7.5: must cite specific evidence from the SKILL.md. Quote the section, don't describe it.
+- Score > 8.0: Contrarian + Methodologist Perspective Sweep required. Both must confirm. Cap at 8.0 if either raises an unresolved objection.
+- Score > 9.0: must cite formal validation (passing test suite or 3+ documented real sessions). Label "PROVISIONAL 9.X" if informal only. Provisional scores do not count toward threshold.
+
+**Floor penalty:** Any dimension at Score < 3.0 → apply −5 pts to total. Multiple dims below 3.0 stack.
 
 **Edge cases:**
-- All dimensions at 10/10 → output "Already at maximum. Further optimization improves enforceability."
-- Dimension cannot be scored (missing content) → score 0, flag "Cannot score [Dim] — no relevant content."
-- BOTH scope: score project version as primary. Divergence between global and project versions in triggers, anti-patterns, or AccentOS Fit counts as an Accuracy penalty.
+- All dimensions at 10/10 → output "Already at maximum. Optimization would improve formal validation coverage, not behavior."
+- Dimension cannot be scored (missing content) → score 0, flag "Cannot score [Dim] — no relevant content found."
+- BOTH scope: score project version as primary. Divergence between global and project versions counts as an Accuracy penalty.
 
-**Socratic root-cause drilling** — for each dimension at raw < 7:
+**Socratic root-cause drilling** — for each dimension at Score < 7.0:
 
 ```
-[SOCRATIC ROOT — DimName at X/10]
+[SOCRATIC ROOT — DimName at X.X/10]
   Why is it at [X]?     →  [surface observation]
   Why does that happen? →  [underlying cause]
-  Root cause:           →  [specific, actionable finding — becomes a brainstorm target]
+  Root cause:           →  [specific, actionable finding — becomes brainstorm target]
 ```
 
-Cap at 3 levels per dimension. Skip drilling if dim ≥7.
+Cap at 3 levels per dimension. Skip if dim ≥7.0.
 
 Output:
 ```
 PASS [N] BASELINE: [X.X / 100]   (Session start: [Y.Y] | Session delta: [±Z])
-Socratic roots identified: [N]   (seeds for Step 5)
+Floor penalties: [none | −5 pts × N dims below 3.0]
+Adjusted baseline: [X.X / 100]
+Socratic roots: [N]   (seeds for Step 5)
+
+Score interpretation: [<40 broken | 40-54 functional | 55-64 competent | 65-74 good | 75-84 excellent | 85-91 outstanding | 92+ requires formal validation]
+
 Gap contribution ranking (descending):
-  1. [Dim]: [gap value] ([momentum]) — [why still has room]
-  2. [Dim]: [gap value]
+  1. [Dim]: [gap contrib pts] ([momentum]) — [why still has room]
+  2. [Dim]: [gap contrib pts]
   3. ...
 ```
 
-**Perspective Sweep (optional — when a score seems off):** Run Contrarian + Methodologist on the surprising dimension before proceeding. "Why is [Dim] at [X] and not higher/lower?" — their independent takes often catch scoring blind spots.
+**Perspective Sweep (auto when any score > 8.0; optional when a score seems off):** Run Contrarian + Methodologist. "Why is [Dim] at [X] and not lower?" Inflation is the expected failure mode. Their challenge must be resolved before finalizing the score.
 
 ---
 
@@ -518,14 +537,26 @@ PREDICTION vs. ACTUAL
 
 Runs AFTER Step 8 (uses actual results). Builds Rubric v[N+1] for the next pass. Does NOT affect current pass scores.
 
-**Evaluate each active dimension:**
-- Retirement candidate: raw ≥9 this pass AND raw ≥9 last pass → propose retirement
-- Weight reduction: ↑ dim at raw ≥8 (diminishing returns); OR targeted but moved <0.5 pts (resisted)
-- Weight increase: untargeted dim at raw <5; OR feedback entries still unaddressed for this dim
+**Dimension changes — evaluate:**
+- Retirement candidate: Score ≥9.0 this pass AND ≥9.0 last pass (real ceiling reached) → propose retirement
+- Addition candidate: prediction misses, emerging patterns, unaddressed root causes pointing to an unmeasured quality axis
+- Rename: dimension name is misleading vs. what it actually measured in practice
+
+**Weight optimization — Expected Impact Method** (full formula in `references/rubric-weights.md`):
+
+For each active dimension i, compute:
+1. `gap_i = 10 − score_i`
+2. `potential_i`: actual delta if targeted, halved if resisted (<0.5 delta while targeted), 0 if structural ceiling (±0.5 for 3+ passes), 0.5 default if not targeted
+3. `expected_impact_i = gap_i × potential_i`
+4. `new_weight_i ∝ expected_impact_i` — renormalize; clamp min 3%, max 35%
+
+This replaces simple momentum heuristics. Weight flows toward dimensions with the highest combination of remaining gap AND realistic improvement potential. Ceilings — structural or design — receive floor weight (3%) and are no longer targeted.
+
+**Structural ceiling detection:** Flag any dim with identical score ±0.5 for 3+ consecutive passes despite targeting. Set `potential_i = 0`. Note in rubric output.
 
 **Check for new dimension additions** based on prediction misses, emerging patterns, or unaddressed root causes.
 
-**Perspective Sweep (auto when changes proposed):** When any dimension addition, retirement, or rename is being considered, run Domain Expert + Contrarian + User Advocate on the proposal before finalizing. Their synthesis answers: "Does this dimension actually measure what matters for this skill?"
+**Perspective Sweep (auto when changes proposed):** Domain Expert + Contrarian + User Advocate on any proposed addition, retirement, or rename. Their synthesis answers: "Does this dimension actually measure what matters for this skill?"
 
 ```
 RUBRIC EVOLUTION — v[N] → v[N+1]  (effective next pass)
@@ -806,6 +837,9 @@ Output: `HISTORY LOGGED — [skill-name] Pass [N] appended to optimization-histo
 - **Never** use First Principles reset mid-pass — only between passes (Step 11 option) or at confirmed plateau; resetting mid-pass discards baseline comparability.
 - **Never** skip the Perspective Sweep in the final brainstorm loop — it is the mechanism for surfacing hypotheses that single-lens reasoning misses; bypassing it produces plans with preventable blind spots.
 - **Never** deploy all 6 perspectives at every trigger point — use only the recommended subset per step (see Perspective Sweep Framework); over-sweeping adds noise without incremental insight.
+- **Never** score a dimension above 7.5 without citing specific evidence from the SKILL.md — "it has output blocks" is not evidence; quote the specific section that earns the score.
+- **Never** score a dimension above 8.0 without running the Contrarian + Methodologist Perspective Sweep and resolving all objections; if either raises an unresolvable objection, cap the score at 8.0.
+- **Never** report a total score above 90 without formal validation (passing promptfoo test suite or 3+ documented real sessions showing correct behavior); label as **PROVISIONAL** if citing informal evidence only — provisional scores do not count toward threshold.
 
 ## Outcome Signal
 
