@@ -695,12 +695,12 @@ async function imLoad(){
   try{
     const rows = await sbFetch('/meetings?select=*&order=meeting_date.desc.nullslast&limit=200');
     IM_MEETINGS = Array.isArray(rows) ? rows : [];
-    if(!IM_MEETINGS.find(m => m.id==='_dadpat' || m.title?.includes('Paul & Patrick'))){
-      // Seed Dad&Pat meeting locally so it always shows even without Supabase tables for prep
-      imSeedLocal(true);
-    } else {
-      // Hydrate prep sections from Supabase if a Dad&Pat-like meeting exists in Supabase
-      // (skipped for now — done lazily in imLoadMeetingData)
+    if(!IM_MEETINGS.find(m => m.title?.includes('Paul & Patrick'))){
+      // No Paul & Patrick meeting exists in Supabase yet — promote the seed
+      // to a real DB row so cross-device sync (incl. realtime transcripts)
+      // works on it. Falls back to local-only seed if the insert fails.
+      const promoted = await imPromoteSeedMeeting();
+      if(!promoted) imSeedLocal(true);
     }
   }catch(e){
     if(/relation .* does not exist|404|42P01/i.test(e.message||'')){
@@ -709,6 +709,44 @@ async function imLoad(){
       console.warn('[meetings] load failed:', e.message);
     }
     imSeedLocal();
+  }
+}
+
+// Insert the seeded Paul & Patrick meeting into Supabase the first time the
+// app is loaded against a fresh DB. Returns the saved row, or null on failure.
+async function imPromoteSeedMeeting(){
+  try{
+    const seed = IM_SEED_MEETING;
+    const body = {
+      title:        seed.title,
+      meeting_date: seed.meeting_date || null,
+      meeting_type: seed.meeting_type || 'general',
+      attendees:    seed.attendees || [],
+      status:       seed.status || 'prep',
+      description:  seed.description || null
+    };
+    const res = await sbFetch('/meetings', {
+      method:'POST',
+      headers:{'Prefer':'return=representation'},
+      body: JSON.stringify(body)
+    });
+    const saved = Array.isArray(res) ? res[0] : res;
+    if(!saved?.id) return null;
+    // Insert into in-memory list at the front so it shows up first.
+    IM_MEETINGS.unshift(saved);
+    // Pre-populate side caches under the real UUID. Prep sections stay
+    // in memory only (template content); user-added prep saves to DB
+    // on edit via the existing meeting_prep_sections path.
+    IM_PREP[saved.id]      = IM_SEED_PREP.slice();
+    IM_NOTES[saved.id]     = [];
+    IM_TODOS[saved.id]     = [];
+    IM_FOLLOWUPS[saved.id] = [];
+    IM_AGENDA[saved.id]    = [];
+    console.log('[meetings] promoted Paul & Patrick seed to Supabase as', saved.id);
+    return saved;
+  }catch(e){
+    console.warn('[meetings] promote seed failed:', e.message);
+    return null;
   }
 }
 
