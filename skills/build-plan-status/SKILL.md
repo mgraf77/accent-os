@@ -30,10 +30,16 @@ Run when Michael says:
 - "what's actually shipped"
 - "build plan status" / "audit the build plan"
 - "update [x]/[ ] from git"
+- "how far are we"
+- "what's done vs what's left"
+- "mark [module] done in the plan"
+- "plan markers are stale"
+- "reconcile the build plan"
+- "catch up the plan markers"
 
 ---
 
-## Step 1 — Pull recent shipped signals
+## Step 1 — Pull recent shipped signals (read all three sources in parallel)
 
 Read three sources:
 
