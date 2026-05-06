@@ -21,10 +21,12 @@ let IM_PREP_OPEN   = {};         // sectionId → bool (collapsible state)
 let IM_LOADED      = {};         // meetingId → bool
 let IM_BUBBLE_OPEN = false;
 let IM_BUBBLE_TYPE = 'note';
-let IM_RT_CHANNEL  = null;       // per-meeting Realtime channel (4 collab tables + prep)
-let IM_RT_MEETING  = null;       // meetingId currently subscribed to
-let IM_RT_LIST     = null;       // list-level channel: meetings table itself
-let IM_RT_LIVE     = false;      // true when at least one channel is SUBSCRIBED
+let IM_RT_CHANNEL    = null;     // per-meeting Realtime channel (4 collab tables + prep)
+let IM_RT_MEETING    = null;     // meetingId currently subscribed to
+let IM_RT_LIST       = null;     // list-level channel: meetings table itself
+let IM_RT_LIVE_CHAN  = false;    // SUBSCRIBED state of per-meeting channel
+let IM_RT_LIVE_LIST  = false;    // SUBSCRIBED state of list channel
+let IM_RT_LIVE       = false;    // derived: true if either channel is SUBSCRIBED
 
 // ── SEED: DAD & PAT MEETING (id "_dadpat", uses local ids prefixed "_") ──────
 const IM_SEED_MEETING = {
@@ -1132,8 +1134,10 @@ function imRtSubscribe(meetingId){
   if(typeof meetingId === 'string' && meetingId.startsWith('_')) return;
   if(IM_RT_MEETING === meetingId && IM_RT_CHANNEL) return;
   imRtUnsubscribe();
-  // While inside a specific meeting we don't need the broad list channel.
-  imRtUnsubscribeList();
+  // Keep the list channel subscribed in parallel — it's how we hear about
+  // updates/deletes to the *meetings* row itself (title, status, date)
+  // while the user is inside it. Two channels per active tab is cheap.
+  imRtSubscribeList();
   if(typeof sbConfigured !== 'function' || !sbConfigured()) return;
   if(typeof supabase === 'undefined'){ console.warn('[meetings] realtime: supabase-js CDN did not load'); return; }
   const rt = (typeof sbRealtime === 'function') ? sbRealtime() : null;
@@ -1148,11 +1152,11 @@ function imRtSubscribe(meetingId){
       .on('postgres_changes', {event:'*', schema:'public', table:'meeting_followups',      filter}, p => imRtApply('followups',   meetingId, p))
       .on('postgres_changes', {event:'*', schema:'public', table:'meeting_prep_sections',  filter}, p => imRtApply('prep',        meetingId, p))
       .subscribe(status => {
-        if(status === 'SUBSCRIBED'){ console.log('[meetings] realtime live for', meetingId); imRtSetLive(true); }
-        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){ console.warn('[meetings] realtime status:', status); imRtSetLive(false); }
+        if(status === 'SUBSCRIBED'){ console.log('[meetings] realtime live for', meetingId); imRtSetLive('chan', true); }
+        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){ console.warn('[meetings] realtime status:', status); imRtSetLive('chan', false); }
       });
     IM_RT_MEETING = meetingId;
-  }catch(e){ console.warn('[meetings] realtime subscribe failed:', e.message); IM_RT_CHANNEL = null; IM_RT_MEETING = null; imRtSetLive(false); }
+  }catch(e){ console.warn('[meetings] realtime subscribe failed:', e.message); IM_RT_CHANNEL = null; IM_RT_MEETING = null; imRtSetLive('chan', false); }
 }
 
 // List-level channel: streams INSERT/UPDATE/DELETE on the `meetings` table
@@ -1168,59 +1172,73 @@ function imRtSubscribeList(){
     IM_RT_LIST = rt.channel('im-meetings-list')
       .on('postgres_changes', {event:'*', schema:'public', table:'meetings'}, p => imRtApplyList(p))
       .subscribe(status => {
-        if(status === 'SUBSCRIBED'){ console.log('[meetings] realtime list live'); imRtSetLive(true); }
-        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){ imRtSetLive(false); }
+        if(status === 'SUBSCRIBED'){ console.log('[meetings] realtime list live'); imRtSetLive('list', true); }
+        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){ imRtSetLive('list', false); }
       });
-  }catch(e){ console.warn('[meetings] realtime list subscribe failed:', e.message); IM_RT_LIST = null; }
+  }catch(e){ console.warn('[meetings] realtime list subscribe failed:', e.message); IM_RT_LIST = null; imRtSetLive('list', false); }
 }
 
 function imRtUnsubscribeList(){
-  if(!IM_RT_LIST) return;
+  if(!IM_RT_LIST){ imRtSetLive('list', false); return; }
   try{
     const rt = (typeof sbRealtime === 'function') ? sbRealtime() : null;
     if(rt && rt.removeChannel) rt.removeChannel(IM_RT_LIST);
   }catch(e){}
   IM_RT_LIST = null;
+  imRtSetLive('list', false);
 }
 
 function imRtApplyList(payload){
   const evt = payload.eventType;
   const row = payload.new;
   const old = payload.old;
+  let touchedCurrent = false;
   if(evt === 'INSERT' && row){
     if(!IM_MEETINGS.find(m => m.id === row.id)) IM_MEETINGS.unshift(row);
   } else if(evt === 'UPDATE' && row){
     const i = IM_MEETINGS.findIndex(m => m.id === row.id);
     if(i >= 0) IM_MEETINGS[i] = {...IM_MEETINGS[i], ...row};
     else IM_MEETINGS.unshift(row);
+    if(IM_CUR_ID === row.id) touchedCurrent = true;
   } else if(evt === 'DELETE' && old){
     const i = IM_MEETINGS.findIndex(m => m.id === old.id);
     if(i >= 0) IM_MEETINGS.splice(i, 1);
-    if(IM_CUR_ID === old.id){ IM_CUR_ID = null; imRtUnsubscribe(); }
+    if(IM_CUR_ID === old.id){
+      // Meeting we're viewing was deleted elsewhere — bounce to list.
+      IM_CUR_ID = null;
+      imRtUnsubscribe();
+      try{ toast && toast('This meeting was deleted on another device','err'); }catch(_){ }
+    }
   }
-  if(IM_CUR_ID === null) imRender();
+  // Re-render whenever the currently-displayed view depends on the change:
+  // list view (always), or meeting view when the current meeting was updated.
+  if(IM_CUR_ID === null || touchedCurrent) imRender();
 }
 
 // Update the live badge in the meeting header when subscription state changes.
-function imRtSetLive(on){
-  IM_RT_LIVE = !!on;
+// Tracks the per-meeting and list channels separately so the badge stays
+// "Live" as long as at least one channel is SUBSCRIBED.
+function imRtSetLive(which, on){
+  if(which === 'chan') IM_RT_LIVE_CHAN = !!on;
+  else if(which === 'list') IM_RT_LIVE_LIST = !!on;
+  IM_RT_LIVE = IM_RT_LIVE_CHAN || IM_RT_LIVE_LIST;
   const el = document.getElementById('im-rt-badge');
   if(el){
-    el.textContent = on ? '● Live' : '○ Offline';
-    el.style.color = on ? 'var(--grn, #22c55e)' : 'var(--text-3, #888)';
-    el.title = on ? 'Live cross-device sync is active' : 'Sync offline — refresh to reconnect';
+    el.textContent = IM_RT_LIVE ? '● Live' : '○ Offline';
+    el.style.color = IM_RT_LIVE ? 'var(--grn, #22c55e)' : 'var(--text-3, #888)';
+    el.title = IM_RT_LIVE ? 'Live cross-device sync is active' : 'Sync offline — refresh to reconnect';
   }
 }
 
 function imRtUnsubscribe(){
-  if(!IM_RT_CHANNEL) { IM_RT_MEETING = null; return; }
+  if(!IM_RT_CHANNEL) { IM_RT_MEETING = null; imRtSetLive('chan', false); return; }
   try{
     const rt = (typeof sbRealtime === 'function') ? sbRealtime() : null;
     if(rt && rt.removeChannel) rt.removeChannel(IM_RT_CHANNEL);
   }catch(e){}
   IM_RT_CHANNEL = null;
   IM_RT_MEETING = null;
-  if(!IM_RT_LIST) imRtSetLive(false);
+  imRtSetLive('chan', false);
 }
 
 // Apply a postgres_changes payload to the in-memory cache and re-render if visible.
