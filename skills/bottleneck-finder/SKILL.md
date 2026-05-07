@@ -128,13 +128,18 @@ CONSTRAINT: M04 (BigCommerce API credentials)
 
 ```
 ═══ BLOCK 1: BUILD STATE ═══
-Open tracks: [N]   Open M-tasks: [N]   WIP: [from WORK_IN_PROGRESS]
+Open tracks: 12   Open M-tasks: 8   WIP: "building Track 5.7 — vendor cascade"
+Cycle warnings: none  (or: "cycle_warning: M04 ↔ 6.3 — leverage computed from partial graph")
 
 ═══ BLOCK 2: TOP 5 CONSTRAINTS BY LEVERAGE ═══
-[Step 4 table]
+| Rank | Task | Direct unblocks | Cascading leverage | Type |
+|---|---|---|---|---|
+| 1 | M04 (BC API credentials) | 6.3 + bc-product-sync-audit | 5 | external |
+| 2 | M05 (GMC service account) | 6.1 + gmc-feed-audit live | 4 | external |
+| 3 | M11 (Supabase MCP perms) | 0.3 auth + audit_log | 3 | external |
 
 ═══ BLOCK 3: PRIMARY CONSTRAINT — EXPLOIT BEFORE ELEVATE ═══
-[Step 5 block for the rank-1 constraint]
+(Step 5 full exploit-before-elevate block for the rank-1 item — see Step 5 for exact format)
 
 ═══ BLOCK 4: NEXT-SESSION RECOMMENDATION ═══
 - If M-tasks (external) dominate the top 5: Michael focus, Claude pick

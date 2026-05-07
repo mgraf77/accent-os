@@ -87,3 +87,33 @@ No new changes — all Ralph findings addressed in Cycle 2
 **Stuck dimensions:** none
 
 ---
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten to single tight verb sentence | Three sentences building to "This skill is the gate" — delayed the action and omitted the output artifact | Single sentence: "Gate every community skill before it lands in `/home/user/accent-os/skills/`... INSTALL / HOLD / REJECT verdict with one-paragraph evidence before any copy command runs" | Purpose must lead with the action and the output shape; three-sentence wind-up obscures both |
+| Trigger "is [skill name] trustworthy" replaced with "does [skill name] have any hidden permissions" | Semantically overlapped "is this skill safe" — same intent, different wording | "does [skill name] have any hidden permissions" targets a distinct inspection request (permissions scope, not general safety) | Overlapping triggers reduce routing confidence; the new phrase routes a permission-audit intent specifically |
+| "Never auto-install" expanded with AccentOS-specific consequence | Generic prohibition with no named consequence | Names the specific risk: unaudited code in the same directory tree as `hsyjcrrazrzqngwkqsqa` credentials and session hooks | Anti-patterns must name a specific AccentOS failure mode; "auto-install" without a consequence is advisory, not preventive |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was ambiguous | What it became | Reasoning |
+|---|---|---|---|
+| Step 1 plugin manifest fetch method made explicit | "If the source is a plugin, fetch the plugin manifest" — no URL, no tool, no fallback | WebFetch on `https://claude-code-skills.com/plugins/[identifier]/manifest.json` specified as the fetch mechanism | A new Claude session reading Step 1 had no executable instruction for plugin manifests; ambiguous precondition |
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: three-sentence rationale → single action-and-output-shape sentence
+- Trigger list: semantically overlapping "is [skill name] trustworthy" → distinct "does [skill name] have any hidden permissions"
+- Anti-pattern "Never auto-install": generic prohibition → AccentOS-specific consequence naming credentials directory
+- Step 1: plugin manifest fetch was an unexecutable precondition → explicit WebFetch URL pattern added
+
+---
