@@ -14,13 +14,15 @@ description: >
   prioritization (that's vendor-cascade) or for code-level performance
   bottlenecks (different concern). Always produces a named bottleneck +
   exploit options + rank table — never returns prose-only.
+  Always names the constraint before proposing exploits — never
+  returns "wait for Michael" as the only option.
 ---
 
 # bottleneck-finder
 
 **Purpose:** AccentOS has 22 pending M-tasks and 10 open tracks. "Build the lowest [ ]" is not a strategy. This skill applies Theory of Constraints to identify which single thing, if unblocked, opens the most downstream work — and proposes how to exploit the constraint before investing in elevation.
 
-Stolen from: Factory-Floor (TOC: identify, exploit, subordinate, elevate, repeat).
+Origin: Factory-Floor TOC (identify, exploit, subordinate, elevate, repeat).
 
 ---
 

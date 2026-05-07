@@ -48,7 +48,7 @@ Read every `M*_*.sql` file in `/home/user/accent-os/sql/` (currently M01, M02, M
 TABLE → primary key, foreign keys, columns relevant to the question
 ```
 
-Cache table names in working memory for this run. Do not rely on guesses about column names — every column referenced in the output SQL must exist in one of the loaded files.
+Cache table names in working memory for this run. Never rely on guesses about column names — every column referenced in the output SQL must exist in one of the loaded files.
 
 If a referenced table or column does not exist, output "Schema gap: table/column [X] not found in /home/user/accent-os/sql/" and stop. Do not invent fields.
 
@@ -67,13 +67,13 @@ ORDERING:  [column + direction]
 LIMIT:     [explicit or default 100]
 ```
 
-If the question is ambiguous on any dimension, pick the most defensible default and note it in the output. Do not ask Michael to clarify — he wrote the question fast; clarifying defeats the point.
+If the question is ambiguous on any dimension, pick the most defensible default and note it in the output. Never ask Michael to clarify — he wrote the question fast; clarifying defeats the point.
 
 ---
 
 ## Step 3 — Build the SQL
 
-Compose the query in this order:
+Compose the query in this order, always:
 1. SELECT list (only columns Michael needs, never `SELECT *` for large tables)
 2. FROM + JOINs (use schema FK relationships from Step 1)
 3. WHERE clauses (from filters)
@@ -101,7 +101,7 @@ LIMIT 100;
 
 ## Step 4 — Cost note
 
-Estimate the query cost based on:
+Estimate query cost based on:
 - Number of tables joined
 - Whether filters use indexed columns (PKs, FKs)
 - Whether `LIMIT` short-circuits the scan

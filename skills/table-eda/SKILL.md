@@ -39,7 +39,7 @@ Run when Michael says:
 
 ## Step 0 — Column-count guardrail
 
-If the target table has more than 30 columns, do not profile every column. Output the column list and ask Michael for a subset (e.g. "which columns matter for this profile?"). Then proceed with only those.
+If the target table has more than 30 columns, skip full profiling. Output the column list and ask Michael for a subset (e.g. "which columns matter for this profile?"). Proceed with only those.
 
 If Michael says "all columns" explicitly, proceed with all but warn that the output will be wide.
 
@@ -113,7 +113,7 @@ If the target is a query result (not a table), generate the same probes against 
 
 ## Step 3 — Build the profile table
 
-After Michael runs the SQL (or if results are inline-able from a prior run), format:
+After Michael runs the SQL (or if results are available from a prior run), format:
 
 | Column | Type | Null % | Distinct | Min | Max | Top value | Top % |
 |---|---|---|---|---|---|---|---|
@@ -185,3 +185,5 @@ For each fired flag, suggest a follow-up:
 - **Never** report Top values for columns where every row is unique (UUIDs, timestamps) — meaningless and noisy.
 - **Never** silently skip a column. If profiling fails on a specific column (e.g. JSON type with awkward shape), flag it and continue with the others.
 - **Never** run the profile SQL automatically — output it as paste-ready blocks. Michael runs the queries.
+- **Never** invoke WIDTH_BUCKET on a column before confirming it has at least one non-NULL value — use the per-column probe results to gate histogram generation.
+- **Never** use this skill for vendor scoring questions (that's vendor-cascade) or for filtered ad-hoc data retrieval (that's supabase-sql-magic) — redirect when the trigger is ambiguous.

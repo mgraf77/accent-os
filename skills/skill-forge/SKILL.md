@@ -13,7 +13,8 @@ description: >
   version is the wrong fit and builds the right-fit version. End deliverable is a working
   skill committed to skills/, not a recommendation. Always produces the file — never stops
   at "here's what it would look like." Reads gotcha-log.md before each run and writes new
-  gotchas after, so the skill self-optimizes over time.
+  gotchas after, so the skill self-optimizes over time. Always commits
+  forged skills to the active branch — never leaves work uncommitted.
 ---
 
 # skill-forge

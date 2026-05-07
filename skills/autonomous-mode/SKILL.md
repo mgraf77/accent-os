@@ -47,7 +47,7 @@ Run when Michael says any of:
 - "drain the prompt queue"
 - "work through the build plan"
 
-If the trigger is ambiguous about scope OR exit criteria, ask one question and wait — don't guess.
+If the trigger is ambiguous about scope OR exit criteria, ask one clarifying question and wait — never guess.
 
 ---
 
@@ -128,7 +128,7 @@ Create `/home/user/accent-os/.claude/autonomous_mode.json`:
 }
 ```
 
-Set perms 644 (readable for any session). Don't gitignore — this file is signal across sessions.
+Set perms 644 (readable for any session). Do not gitignore — this file is signal across sessions.
 
 ---
 

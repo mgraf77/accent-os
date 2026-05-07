@@ -32,9 +32,9 @@ Run this skill when Michael says anything like:
 
 ---
 
-## Step 1 — Load Context
+## Step 1 — Load AccentOS context
 
-Before searching, internalize the active stack from references/project-profiles.md.
+Before searching, internalize the active stack from `/home/user/accent-os/skills/repo-scout/references/project-profiles.md`.
 
 Key constraints as filters:
 - Stack: BigCommerce, Supabase, Cloudflare Pages, vanilla JS, Anthropic API
@@ -45,7 +45,7 @@ Key constraints as filters:
 
 ---
 
-## Step 2 — Search
+## Step 2 — Search for candidates
 
 Run parallel web_search calls:
 
@@ -74,21 +74,22 @@ Use web_fetch on high-signal pages when snippets are insufficient.
 
 ---
 
-## Step 3 — Filter
+## Step 3 — Filter candidates
 
 For each candidate, run in order. First FAIL stops evaluation.
 
-Filter | Condition | Action
-Already installed | In current MCP/skill list | SKIP silently
-Overlap | Solves problem already solved | SKIP
-Project fit | Applies to AccentOS or Accent Lighting ecommerce | KEEP
-Attention test | Reduces Michael's decision/review load | KEEP
-Attention fail | Adds overhead without ROI | FLAG LOW PRIORITY
-Complexity | >2 min setup = HIGH FRICTION | KEEP but label
+| Filter | Condition | Action |
+|---|---|---|
+| Already installed | In current MCP/skill list | SKIP silently |
+| Overlap | Solves problem already solved | SKIP |
+| Project fit | Applies to AccentOS or Accent Lighting ecommerce | KEEP |
+| Attention test | Reduces Michael's decision/review load | KEEP |
+| Attention fail | Adds overhead without ROI | FLAG LOW PRIORITY |
+| Complexity | >2 min setup = HIGH FRICTION | KEEP but label |
 
 ---
 
-## Step 4 — Verdict
+## Step 4 — Assign verdicts
 
 INSTALL — Real gap, fits stack, clear ROI. Include customized install snippet.
 EVALUATE — Promising but needs credential/cost check.
@@ -97,7 +98,7 @@ SKIP — Redundant or irrelevant. One-line reason only.
 
 ---
 
-## Step 5 — Output Format
+## Step 5 — Format output
 
 ### REPO SCOUT — [Date]
 
@@ -118,10 +119,10 @@ Brief list — name + one-line reason.
 
 ---
 
-## Step 6 — Customizations
+## Step 6 — Customize for AccentOS
 
 For every INSTALL item:
-- Replace generic paths with Codespace paths: /workspaces/accent-os/
+- Replace generic paths with AccentOS paths: /home/user/accent-os/
 - Reference AccentOS by name (not "your project")
 - Replace generic examples with AccentOS/Accent Lighting use cases
 - Install snippets = single paste-ready block, no "read the README" handoffs
@@ -132,9 +133,9 @@ For every INSTALL item:
 
 ## Anti-patterns
 
-- Never return a raw list without verdicts
-- Never suggest installing something that overlaps current MCP stack
-- Never rate INSTALL without a customized snippet
-- Never surface a tool requiring more than 5 min of Michael's attention — pre-chew it
-- Never skip filtering because a repo has high stars
-- Never ask Michael to read the README
+- **Never** return a raw list without verdicts
+- **Never** suggest installing something that overlaps current MCP stack
+- **Never** rate INSTALL without a customized snippet
+- **Never** surface a tool requiring more than 5 min of Michael's attention — pre-chew it
+- **Never** skip filtering because a repo has high stars
+- **Never** ask Michael to read the README

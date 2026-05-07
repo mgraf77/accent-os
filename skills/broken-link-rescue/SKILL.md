@@ -55,7 +55,7 @@ For each URL, capture:
 - Meta robots directive (noindex/nofollow flags)
 - Page title (for redirect-target sanity check)
 
-Use `WebFetch` for direct probes when the URL set is small (≤20). Above 20, generate a Firecrawl batch payload as paste-ready output and have Michael run the batch externally — Claude Code rate-limits sequential WebFetch calls and the cost compounds quickly.
+Use `WebFetch` for direct probes when the URL set is ≤20. Above 20, generate a Firecrawl batch payload as paste-ready output for Michael to run externally — sequential WebFetch calls hit rate limits fast and cost compounds.
 
 ---
 

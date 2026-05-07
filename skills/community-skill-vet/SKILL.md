@@ -141,7 +141,7 @@ For REJECT, propose an alternative: "Re-forge this concept yourself via skill-fo
 
 ═══ BLOCK 4: ACTION ═══
 For INSTALL:
-  # Paste in Codespace terminal:
+  # Paste in terminal:
   cp -r [source_path] /home/user/accent-os/skills/[name]/
   # OR for plugin:
   /plugin install [plugin-id]

@@ -19,7 +19,7 @@ description: >
 
 # schema-contract-tests
 
-**Purpose:** AccentOS has 11 schema files (M01–M29) but no contract tests against the live data. table-eda surfaces ad-hoc issues; this skill makes contracts explicit and re-runnable so a bad insert can't quietly ship.
+**Purpose:** AccentOS has multiple schema files (M01–M29) but no contract tests against the live data. table-eda surfaces ad-hoc issues; this skill makes contracts explicit and re-runnable so a bad insert can't quietly ship.
 
 Stolen from: dbt (generic tests: `not_null`, `unique`, `accepted_values`, `relationships`; singular tests for cross-model validation).
 
@@ -39,7 +39,7 @@ Run when Michael says:
 
 Input: table name (e.g. `vendor_scores`) or file (e.g. `M02_core_schema.sql` → all tables in that file) or "all" (every table in `/home/user/accent-os/sql/M*.sql`).
 
-Read the relevant `M*.sql` file(s). Extract:
+Read the relevant `M*.sql` file(s) and extract:
 - Table name and primary key
 - All columns with types
 - Explicit FK constraints (REFERENCES clauses)
@@ -59,7 +59,7 @@ FROM vendors WHERE id IS NULL;
 -- Expected: 0
 ```
 
-Mark which columns are critical from the schema (PK + any column annotated NOT NULL).
+Identify critical columns from the schema: PK + any column annotated NOT NULL.
 
 **B. UNIQUE on natural keys:**
 ```sql
@@ -67,7 +67,7 @@ SELECT 'unique:vendors.name' AS test_name, COUNT(*) AS failures
 FROM (SELECT name, COUNT(*) AS c FROM vendors GROUP BY name HAVING COUNT(*) > 1) dup;
 ```
 
-Generate for each natural key — typically `name` for vendors, `(vendor_id, computed_at)` for vendor_scores.
+Generate for each natural key — typically `name` for vendors, `(vendor_id, computed_at)` for vendor_scores in Supabase `hsyjcrrazrzqngwkqsqa`.
 
 **C. Relationships (FK existence — referential integrity):**
 ```sql
@@ -92,7 +92,7 @@ Pull enum values from `CREATE TYPE` statements in the schema files.
 
 ## Step 3 — Generate singular cross-model tests
 
-These are AccentOS-specific invariants that require multi-table joins. Generate based on observed business rules:
+These are AccentOS-specific invariants that require multi-table joins against `hsyjcrrazrzqngwkqsqa`. Generate based on observed business rules:
 
 ```sql
 -- vendor_scores per priority must sum weights to 1.0 (within 0.001)
@@ -123,13 +123,13 @@ LEFT JOIN vendors v ON v.id = d.vendor_id
 WHERE d.vendor_id IS NOT NULL AND v.id IS NULL;
 ```
 
-Generate 3–5 cross-model tests per table set, focused on AccentOS-specific business rules.
+Generate 3–5 cross-model tests per table set, focused on AccentOS Accent Lighting business rules — never generic database-level checks that belong in schema constraints instead.
 
 ---
 
 ## Step 4 — Compose the test runner artifact
 
-Write to `/home/user/accent-os/sql/tests/[table]_contracts.sql` (create dir if missing).
+Write to `/home/user/accent-os/sql/tests/[table]_contracts.sql` (create the `tests/` dir if missing).
 
 Structure:
 

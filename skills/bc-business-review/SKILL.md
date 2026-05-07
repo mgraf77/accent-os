@@ -93,7 +93,7 @@ LIMIT 10;
 ```
 
 **Top 10 categories by revenue:**
-Similar query against `products.category` joined through deals.
+Run the same query structure against `products.category` joined through deals.
 
 **Concentration risk callout:** if top 3 vendors > 50% of weekly revenue, flag.
 

@@ -71,7 +71,7 @@ Required fields for a complete AccentOS vendor record:
 | `hq_state` | vendors.hq_state | DESIRED | 2-char state code |
 | `revenue_tier` | vendors.revenue_tier | DESIRED | enum (top/mid/long-tail) |
 
-If the actual schema in `/home/user/accent-os/sql/M02_core_schema.sql` doesn't match, adapt to the live shape and flag the discrepancy.
+If the actual schema in `/home/user/accent-os/sql/M02_core_schema.sql` does not match, adapt to the live shape and flag the discrepancy.
 
 ---
 
@@ -122,9 +122,9 @@ WHERE v.id IN ($1, ...)
   );
 ```
 
-Flag outliers — e.g. "Acme Lighting has Net60 but every other Pendant-category vendor has Net30; verify."
+Flag outliers — e.g. "Acme Lighting has Net60; every other Pendant-category vendor has Net30 — verify."
 
-**When sibling check is skipped:** if the vendor's `brand_category` has fewer than 3 sibling vendors with complete records, output explicitly per affected vendor: "Cross-vendor consistency check skipped — `brand_category` [name] has only [N] siblings (need ≥3)." Do NOT silently produce zero outliers.
+**When sibling check is skipped:** if the vendor's `brand_category` has fewer than 3 sibling vendors with complete records, output explicitly per affected vendor: "Cross-vendor consistency check skipped — `brand_category` [name] has only [N] siblings (need ≥3)." Do not silently produce zero outliers.
 
 ---
 

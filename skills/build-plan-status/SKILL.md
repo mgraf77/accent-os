@@ -11,15 +11,16 @@ description: >
   the build plan", or any phrasing that asks to reconcile planning
   doc state against shipped reality. Do not use for cross-doc drift
   (use doc-drift) or for vendor scoring drift (use vendor-clarity-
-  test). Always produces a paste-ready Edit command list — never
-  returns prose-only.
+  test). Always produces a paste-ready Edit command list — never returns
+  prose-only. Always cites exact commit SHAs and source lines —
+  never invents evidence or marks [x] from LOW-confidence signals.
 ---
 
 # build-plan-status
 
 **Purpose:** During autonomous AccentOS builds, modules ship and commits land but BUILD_PLAN_CLAUDE markers don't always update — especially when Michael completes things outside the Claude session (M-tasks). This skill closes the gap between git history and plan state.
 
-Stolen from: AccentOS-internal recurring drift pattern (not from external concept theft). Pairs with doc-drift but scoped specifically to plan markers.
+Origin: AccentOS-internal recurring drift pattern. Pairs with doc-drift but scoped specifically to plan markers.
 
 ---
 

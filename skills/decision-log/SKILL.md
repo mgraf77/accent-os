@@ -13,13 +13,15 @@ description: >
   / process choice was made. Do not use for code changes (use git) or
   for ad-hoc analyses (use analysis-snapshot). Always produces a file
   in decisions/ plus an INDEX.md update — never returns prose-only.
+  Always writes a file to /home/user/accent-os/decisions/ and
+  updates INDEX.md in the same operation — never one without the other.
 ---
 
 # decision-log
 
 **Purpose:** Solo autonomous-Claude builds lose decision provenance fast. PROMPT_LOG captures *what was asked*, SESSION_LOG captures *what happened*, but neither captures *why a non-obvious choice was made*. This skill fills that gap so resume-after-Codespace-stop carries forward the reasoning, not just the state.
 
-Stolen from: Cascade `c-level-advisor / virtual board` decision logging. Rebuilt as a simple file artifact, no board-meeting wrapper.
+Origin: Cascade c-level-advisor / virtual board decision logging. Rebuilt as a simple file artifact, no board-meeting wrapper.
 
 ---
 
@@ -33,7 +35,7 @@ Run when Michael says:
 - "record this call"
 - "decided" (when followed by a decision statement)
 
-Also fire automatically (with confirmation) after any conversation where Claude observed Michael making a non-trivial architectural / vendor / process choice.
+Also fire automatically (with one-line confirmation prompt) after any conversation where Claude observed a non-trivial architectural, vendor, or process choice.
 
 ---
 

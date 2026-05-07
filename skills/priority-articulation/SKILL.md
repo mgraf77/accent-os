@@ -27,7 +27,7 @@ Stolen from: the strategy-articulation concept in `alirezarezvani/claude-skills`
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
+Run when Michael says:
 - "articulate [priority]"
 - "make [X] measurable"
 - "turn this into a rule"

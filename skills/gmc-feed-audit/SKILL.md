@@ -65,7 +65,7 @@ WHERE last_checked_at > NOW() - INTERVAL '7 days'
 ORDER BY last_checked_at DESC, bc_sku;
 ```
 
-No LIMIT — the M14 problem is 20K+ rows. If the dataset exceeds 50K, paginate by `last_checked_at` cutoff and run twice. If the result count equals the previous run, flag possible truncation.
+Omit LIMIT — M14 has 20K+ rows and needs a full scan. If the result set exceeds 50K rows, paginate by `last_checked_at` cutoff and run twice. If the result count matches the previous run exactly, flag possible truncation.
 
 If any column is missing from the live schema, flag the gap and proceed with what's available.
 

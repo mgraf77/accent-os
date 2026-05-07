@@ -119,7 +119,7 @@ Parsing rules:
 - Detect `CREATE TYPE ... AS ENUM (...)` and bind to the columns that reference it
 - Skip SQL comments (`--` to end of line, `/* ... */` blocks)
 
-**Parser limitations.** Pure regex/awk parsing handles the common cases but can miss: columns inside multi-line generated/computed expressions, columns added via complex `ALTER`s with conditionals, columns inside `IF NOT EXISTS` blocks that depend on runtime checks. If a KPI's expected table appears in the schema but the specific column isn't found, output a `SCHEMA_PARSE_UNCERTAIN` flag for that variable rather than declaring MISSING — Michael spot-checks.
+**Parser limitations.** Pure regex/awk parsing handles the common cases but can miss: columns inside multi-line generated/computed expressions, columns added via complex `ALTER`s with conditionals, columns inside `IF NOT EXISTS` blocks that depend on runtime checks. If a KPI's expected table appears in the schema but the specific column isn't found, output a `SCHEMA_PARSE_UNCERTAIN` flag for that variable rather than declaring MISSING — Michael spot-checks these manually.
 
 Output: a flat HAVE-set like `{(vendors, id), (vendors, name), (deals, vendor_id), ...}`.
 
@@ -168,7 +168,7 @@ Per-KPI status:
 
 ## Step 6 — Generate remediation guide per MISSING variable
 
-**Cross-reference catalog first.** The KPI catalog documents schema gaps in a section whose heading typically contains "Schema gaps" or "schema additions" or "M-task". Locate the section by case-insensitive match on any H2/H3 heading containing those terms; if no such section exists, treat all MISSING variables as NEW_GAPs and recommend Michael add a gap section to the catalog. Read the located section. For every MISSING variable in Step 5, classify it as:
+**Cross-reference catalog first.** The KPI catalog documents schema gaps in a section whose heading typically contains "Schema gaps" or "schema additions" or "M-task". Locate the section by case-insensitive match on any H2/H3 heading containing those terms; if no such section exists, treat all MISSING variables as NEW_GAPs and recommend Michael add a gap section to the catalog. Read the located section and classify every MISSING variable from Step 5 as one of:
 
 - **CONFIRMED_GAP** — appears in catalog's gap section AND audit confirms it's still missing → reuse catalog's remediation guidance, don't regenerate
 - **NEW_GAP** — audit found a missing variable NOT documented in the catalog → generate fresh remediation guide AND recommend Michael update the catalog to add it
@@ -292,11 +292,11 @@ If everything is HAVE (catalog fully covered), output: "All 152 KPIs are computa
 
 ## Step 8 — Optional: log a run snapshot
 
-If Michael runs this skill periodically, the audit results form a trend: "% of catalog computable today" should rise over time as M-tasks land.
+When Michael runs this skill periodically, the audit results form a trend: "% of catalog computable today" should rise over time as M-tasks land.
 
 If `/home/user/accent-os/analyses/` exists, suggest in BLOCK 6: "Run `analysis-snapshot` on this audit to track coverage trend over time. **Use `audit data --full` first** so the snapshot captures the complete remediation list, not just the top-10 — top-10 is for human-scan, full is for trend tracking."
 
-Do not auto-snapshot — Michael decides which audits are worth preserving.
+Never auto-snapshot — Michael decides which audits are worth preserving.
 
 ---
 

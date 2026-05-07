@@ -14,13 +14,15 @@ description: >
   skill for code consistency (use the repo's own type-check / lint) or
   vendor-scoring math (that's vendor-cascade). Always produces a delta
   table plus paste-in suggested edits — never returns prose-only.
+  Always recommends a source-of-truth doc for each drift row —
+  never flags a disagreement without a resolution path.
 ---
 
 # doc-drift
 
 **Purpose:** Solo autonomous-Claude builds drift between planning docs as sessions accumulate. This skill catches when MASTER says one thing, BUILD_PLAN says another, and project-profiles says a third — before that drift turns into a wrong-priority build session.
 
-Stolen from: Cascade `strategic-alignment` "communication gap analysis." Rebuilt: instead of cross-team alignment, this is cross-doc alignment for a solo build.
+Origin: Cascade strategic-alignment communication gap analysis. Rebuilt for cross-doc alignment in a solo build rather than cross-team alignment.
 
 ---
 

@@ -128,6 +128,11 @@ Overall verdict:
 For each ⚠ or ✗ row:
   - Suggested next skill to run (priority-articulation if math/priority drift,
     vendor-cascade for full trace, or write-an-override for missing notes)
+
+═══ BLOCK 4: SCHEMA GAPS (if any) ═══
+List any fields referenced in View B (vendor_overrides) that are absent from
+/home/user/accent-os/sql/M*.sql — one line per missing column.
+If no gaps, omit this block.
 ```
 
 ---

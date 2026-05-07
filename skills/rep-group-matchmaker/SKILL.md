@@ -44,7 +44,7 @@ WHERE rep_group_id IS NULL
 ORDER BY revenue_tier DESC NULLS LAST, name;
 ```
 
-If the schema differs in `/home/user/accent-os/sql/M02_core_schema.sql`, adapt to actual column names. Flag any missing fields.
+If the schema differs in `/home/user/accent-os/sql/M02_core_schema.sql`, adapt to actual column names and flag any missing fields.
 
 Confirm count vs. M19's stated 257 — if the count drifted, note it.
 
@@ -60,7 +60,7 @@ FROM vendors v
 JOIN rep_groups rg ON rg.id = v.rep_group_id;
 ```
 
-This is the labeled training set. The matching uses these patterns to suggest assignments.
+This is the labeled ground-truth set. Use these patterns to suggest assignments for unassigned vendors.
 
 ---
 

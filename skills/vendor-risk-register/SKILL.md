@@ -43,7 +43,7 @@ Defaults (override if Michael specifies):
 - **Lookback window:** 90 days
 - **Concentration metric:** % of Accent Lighting revenue (sum of completed deals)
 
-If Michael says "top 5" or "top 20", use that. If he says "this quarter," use 90 days. If he says "this year," use 365.
+If Michael says "top 5" or "top 20", use that N. If he says "this quarter," use 90 days. If he says "this year," use 365.
 
 ---
 
@@ -70,7 +70,7 @@ CROSS JOIN total
 WHERE total.t IS NOT NULL
 ORDER BY pct_of_revenue DESC;
 ```
-If `total.t` is NULL (no completed deals in the window), output: "No deals completed in [window]; concentration cannot be computed. Re-run after the next deal-batch lands or extend the window."
+If `total.t` is NULL (no completed deals in the window), output: "No deals completed in [window]; concentration cannot be computed. Re-run after the next deal-batch lands or extend the window." Do not proceed with dimension A.
 
 **Dimension B — Score volatility:**
 ```sql
@@ -105,7 +105,7 @@ WHERE checked_at > NOW() - INTERVAL '90 days'
 GROUP BY vendor_id;
 ```
 
-If any of the underlying tables/columns don't exist in `/home/user/accent-os/sql/M*.sql`, flag the missing source and proceed with the dimensions that are available.
+If any of the underlying tables/columns do not exist in `/home/user/accent-os/sql/M*.sql`, flag the missing source and proceed with the dimensions that are available.
 
 ---
 
