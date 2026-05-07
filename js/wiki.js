@@ -1,8 +1,9 @@
-// ── ACCENTOS WIKI MODULE (v6.11.1) ──────────────────────────────────────────
+// ── ACCENTOS WIKI MODULE (v6.11.2) ──────────────────────────────────────────
 // Karpathy LLM Wiki pattern: fetch wiki/*.md files, render two-pane layout.
 // Primary grounding layer for Ask the Engine (sendChat).
 
 let wikiIndex = null;       // Parsed wiki/index.md → [{slug, title, type, confidence, updated}]
+let _ragIndex = null;       // Compact BM25 index (loaded once, used by wikiGroundQuery)
 let wikiPage = null;        // Currently displayed page content
 let wikiQuery = '';         // Current search query
 let wikiCurrentSlug = '';   // Currently displayed slug
@@ -39,6 +40,16 @@ async function loadWikiIndex() {
     wikiIndex = [];
     return wikiIndex;
   }
+}
+
+async function _loadRagIndex() {
+  if (_ragIndex) return _ragIndex;
+  try {
+    const r = await fetch('skills/accent-rag/index/rag_index_compact.json');
+    if (!r.ok) return null;
+    _ragIndex = await r.json();
+    return _ragIndex;
+  } catch { return null; }
 }
 
 // ── MARKDOWN RENDERER ───────────────────────────────────────────────────────
@@ -164,86 +175,153 @@ function searchWikiIndex(query, entries) {
 // Also emits slug-component forms: "footcandle" matches "lumen-output-commercial"
 // only if the page body is fetched; but slug components ("lumen","output","commercial")
 // provide a secondary title-level signal.
-function _groundTokenize(text) {
-  return text.toLowerCase()
-    .split(/[\s\-\/]+/)
-    .map(t => t.replace(/[^a-z0-9]/g, ''))
-    .filter(t => t.length > 2);
+// ── BM25 GROUNDING ENGINE ────────────────────────────────────────────────────
+// Mirrors rag_search.py: same stemmer, stop words, graph re-ranking, slug dedup.
+
+const _GROUND_STOP = new Set(["what","how","why","when","where","who","which","is","are","was","were","be","been","the","a","an","to","for","in","of","and","or","but","do","does","did","will","would","should","could","may","might","must","shall","can","with","this","that","it","its","by","at","as","from","if"]);
+
+const _STEM_RULES = [["ations",""],["ation",""],["ings",""],["ing",""],["ments",""],["ment",""],["ances",""],["ance",""],["ences",""],["ence",""],["ities",""],["ity",""],["ness",""],["ers",""],["er",""],["ies","y"],["ed",""],["es",""],["s",""]];
+
+function _stem(w) {
+  for (const [s, r] of _STEM_RULES) {
+    if (w.endsWith(s) && (w.length - s.length + r.length) >= 4) return w.slice(0, w.length - s.length) + r;
+  }
+  return w;
 }
 
-// Score a slug+title against query terms. Slug components (hyphen-split) are
-// treated as individual title words so "lumen-output-commercial" matches "commercial".
-function _titleScore(entry, terms) {
-  const slugWords = entry.slug.split('-');
-  const text = (entry.title + ' ' + slugWords.join(' ')).toLowerCase();
-  return terms.filter(t => text.includes(t)).length;
+function _bm25Tokenize(text) {
+  const lower = text.toLowerCase();
+  const raw = [...lower.matchAll(/\b[a-z][a-z0-9\-]{1,}\b/g)].map(m => m[0]);
+  raw.push(...[...lower.matchAll(/\b[0-9][a-z0-9\-]+[a-z]\b/g)].map(m => m[0]));
+  const expanded = [], seen = new Set();
+  for (const tok of raw) {
+    if (!seen.has(tok)) { seen.add(tok); expanded.push(tok); }
+    const s = _stem(tok);
+    if (s !== tok && !seen.has(s)) { seen.add(s); expanded.push(s); }
+  }
+  return expanded;
 }
 
-// Score fetched page body text against query terms. More thorough than title-only.
-function _bodyScore(bodyText, terms) {
-  const lower = bodyText.toLowerCase();
-  return terms.reduce((sum, t) => {
-    // Count occurrences (capped at 5 to prevent density flooding)
-    let count = 0, pos = 0;
-    while (count < 5 && (pos = lower.indexOf(t, pos)) !== -1) { count++; pos++; }
-    return sum + count;
-  }, 0);
+function _bm25Search(query, ragIndex, topK, chatMode) {
+  const GRAPH_N = 10, GRAPH_BOOST = 0.2;
+  const EXCL = new Set(["synthesis"]);
+  const terms = _bm25Tokenize(query).filter(t => !_GROUND_STOP.has(t));
+  if (!terms.length) return [];
+
+  const { inverted, doc_store } = ragIndex;
+  const scores = {};
+
+  for (const term of terms) {
+    for (const p of (inverted[term] || [])) {
+      const doc = doc_store[p.id];
+      if (chatMode === 'customer' && doc.type === 'entity') continue;
+      if (EXCL.has(doc.type)) continue;
+      scores[p.id] = (scores[p.id] || 0) + p.score;
+    }
+  }
+  if (!Object.keys(scores).length) return [];
+
+  // Build slug → chunk-ids map
+  const slugMap = {};
+  for (const doc of doc_store) {
+    (slugMap[doc.slug] = slugMap[doc.slug] || []).push(doc.id);
+  }
+
+  // Graph re-ranking: max boost per chunk (not sum) to prevent hub-page runaway
+  const initialTop = Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, GRAPH_N);
+  const topScore = initialTop[0]?.[1] || 0;
+  const graphBoosts = {};
+  for (const [docId, docScore] of initialTop) {
+    const lw = docScore / topScore;
+    for (const relSlug of (doc_store[docId].related || [])) {
+      const ba = lw * GRAPH_BOOST * topScore;
+      for (const cid of (slugMap[relSlug] || [])) {
+        if (EXCL.has(doc_store[cid].type)) continue;
+        if (ba > (graphBoosts[cid] || 0)) graphBoosts[cid] = ba;
+      }
+    }
+  }
+  for (const [cid, boost] of Object.entries(graphBoosts)) {
+    scores[cid] = (scores[cid] || 0) + boost;
+  }
+
+  // Rank with unique-slug dedup
+  const seen = new Set(), results = [];
+  for (const [id, score] of Object.entries(scores).sort((a, b) => b[1] - a[1])) {
+    const doc = doc_store[id];
+    if (seen.has(doc.slug)) continue;
+    seen.add(doc.slug);
+    results.push({ slug: doc.slug, title: doc.title, score });
+    if (results.length >= topK) break;
+  }
+  return results;
 }
 
 async function wikiGroundQuery(query, chatMode) {
   // Returns { context: string, sources: [{slug, title}] } or null
   try {
+    // BM25 path: load compact index (cached after first call), run full BM25 + graph re-rank
+    const ragIndex = await _loadRagIndex();
+    if (ragIndex) {
+      const hits = _bm25Search(query, ragIndex, 3, chatMode);
+      if (!hits.length) return null;
+
+      const fetched = await Promise.all(hits.map(async h => {
+        const raw = await fetchWikiPage(h.slug);
+        if (!raw) return null;
+        const body = raw.replace(/^---[\s\S]*?---\n/, '').trim();
+        return { slug: h.slug, title: h.title, body };
+      }));
+
+      const valid = fetched.filter(Boolean);
+      if (!valid.length) return null;
+
+      const context = valid.map(p => `[Wiki: ${p.title}]\n${p.body.slice(0, 500)}`).join('\n\n---\n\n');
+      return { context, sources: valid.map(p => ({ slug: p.slug, title: p.title })) };
+    }
+
+    // Fallback: title+body text search (used when compact index unavailable)
     const index = await loadWikiIndex();
     if (!index || !index.length) return null;
 
-    const terms = _groundTokenize(query);
+    const terms = _bm25Tokenize(query).filter(t => !_GROUND_STOP.has(t) && t.length > 2);
     if (!terms.length) return null;
 
     const allowed = index.filter(e => {
       if (chatMode === 'customer' && (e.type === 'entity' || e.confidence === 'low')) return false;
-      // Synthesis pages are meta-content; exclude from grounding
       if (e.type === 'synthesis') return false;
       return true;
     });
 
-    // Pass 1: score all entries by title + slug-component overlap
-    const pass1 = allowed
-      .map(e => ({ ...e, titleHits: _titleScore(e, terms) }))
-      .filter(e => e.titleHits > 0)
-      .sort((a, b) => b.titleHits - a.titleHits)
-      .slice(0, 6);  // Fetch up to 6 candidates for body re-ranking
+    const slugWords = e => e.slug.split('-');
+    const titleScore = e => {
+      const text = (e.title + ' ' + slugWords(e).join(' ')).toLowerCase();
+      return terms.filter(t => text.includes(t)).length;
+    };
 
-    // If no title matches, widen to all allowed pages and take top-2 by title score
-    // (even 0-score ones might have body hits for domain-specific terms)
-    const candidates = pass1.length >= 2 ? pass1
-      : allowed.slice(0, 6);  // fallback: first 6 entries (concept-heavy area)
+    const candidates = allowed
+      .map(e => ({ ...e, ts: titleScore(e) }))
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 6);
 
-    // Pass 2: fetch pages and re-rank by body text score
     const fetched = await Promise.all(candidates.map(async e => {
       const raw = await fetchWikiPage(e.slug);
       if (!raw) return null;
       const body = raw.replace(/^---[\s\S]*?---\n/, '').trim();
-      const bodyHits = _bodyScore(body, terms);
-      const totalScore = e.titleHits * 3 + bodyHits;  // title match weighted 3×
-      return { slug: e.slug, title: e.title, body, bodyHits, totalScore };
+      const lower = body.toLowerCase();
+      const bodyHits = terms.reduce((s, t) => {
+        let c = 0, pos = 0;
+        while (c < 5 && (pos = lower.indexOf(t, pos)) !== -1) { c++; pos++; }
+        return s + c;
+      }, 0);
+      return { slug: e.slug, title: e.title, body, score: e.ts * 3 + bodyHits };
     }));
 
-    const ranked = fetched
-      .filter(Boolean)
-      .filter(p => p.totalScore > 0)
-      .sort((a, b) => b.totalScore - a.totalScore)
-      .slice(0, 3);
-
+    const ranked = fetched.filter(Boolean).filter(p => p.score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
     if (!ranked.length) return null;
 
-    const context = ranked.map(p =>
-      `[Wiki: ${p.title}]\n${p.body.slice(0, 500)}`
-    ).join('\n\n---\n\n');
-
-    return {
-      context,
-      sources: ranked.map(p => ({ slug: p.slug, title: p.title }))
-    };
+    const context = ranked.map(p => `[Wiki: ${p.title}]\n${p.body.slice(0, 500)}`).join('\n\n---\n\n');
+    return { context, sources: ranked.map(p => ({ slug: p.slug, title: p.title })) };
   } catch (e) {
     console.log('[wiki] grounding failed:', e.message);
     return null;

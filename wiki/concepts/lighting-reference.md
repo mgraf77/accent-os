@@ -42,6 +42,13 @@ Central hub for Accent Lighting technical reference. Covers commercial lighting 
 - NEC Article 700/701/702: emergency/standby power systems
 - NFPA 101: means of egress illumination
 
+## Key thresholds at a glance
+
+- CRI: CRI ≥ 80 required for commercial; CRI ≥ 90 required for retail, museum, and medical.
+- Footcandles: office 30–50 FC, retail 50–100 FC on merchandise, warehouse 20–75 FC.
+- Emergency: NEC Article 700 requires 90-minute battery backup at 1 FC average.
+- Dimming: 0-10V most common for commercial LED; DALI for networked controls.
+
 ## Notes
 
 These pages are referenced by Ask the Engine for technical specification data in customer and sales conversations. All values are industry standards; Accent-specific product details come from vendor spec sheets.

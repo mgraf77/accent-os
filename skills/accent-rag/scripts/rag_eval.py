@@ -61,7 +61,7 @@ GOLDEN_QA = [
     {"query": "How do I handle a rep score that drops below 4?", "expected": ["sop-rep-outreach", "rubric-rep-score"], "cluster": "sop"},
 
     # Module patterns (4 queries)
-    {"query": "What is the file size trigger for splitting AccentOS?", "expected": ["ADR-004", "source-build-intelligence"], "cluster": "module_pattern"},
+    {"query": "What is the file size trigger for splitting AccentOS?", "expected": ["ADR-004"], "cluster": "module_pattern"},
     {"query": "How does the CSV import flow work in AccentOS?", "expected": ["source-build-intelligence"], "cluster": "module_pattern"},
     {"query": "Why does AccentOS use vanilla JS instead of React?", "expected": ["ADR-002"], "cluster": "module_pattern"},
     {"query": "How does the goTo dispatcher work?", "expected": ["ADR-004", "ADR-002"], "cluster": "module_pattern"},
@@ -148,24 +148,27 @@ def _tokenize(text, filter_stopwords=False):
 
 def simple_search(query, index, top_k=TOP_K, wiki_only=False,
                   exclude_types=None):
-    """Run BM25 search over the index. Returns list of {slug, score}.
+    """Run BM25 + graph re-ranking over the index. Returns list of {slug, score}.
 
-    Synthesis pages excluded by default — they contain meta-content (eval
-    matrices, analysis docs) that contaminates retrieval for most queries.
+    Mirrors rag_search.py pipeline exactly: stop-word filter → BM25 → graph
+    re-rank using related-slug backlinks from top-GRAPH_N results.
     """
     if exclude_types is None:
         exclude_types = {"synthesis"}
 
     from collections import defaultdict
 
+    GRAPH_N = 10
+    GRAPH_BOOST = 0.2
+
     inverted = index["inverted"]
     doc_store = index["doc_store"]
     terms = _tokenize(query, filter_stopwords=True)
 
+    # BM25
     scores = defaultdict(float)
     for term in terms:
-        postings = inverted.get(term, [])
-        for posting in postings:
+        for posting in inverted.get(term, []):
             doc_id = posting["id"]
             doc = doc_store[doc_id]
             if wiki_only and not doc["is_wiki"]:
@@ -174,42 +177,86 @@ def simple_search(query, index, top_k=TOP_K, wiki_only=False,
                 continue
             scores[doc_id] += posting["score"]
 
-    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
-    return [{"slug": doc_store[d]["slug"], "score": s, "is_wiki": doc_store[d]["is_wiki"]} for d, s in ranked]
+    # Graph re-rank: boost pages in top-N's related lists
+    slug_map = defaultdict(list)
+    for d in doc_store:
+        slug_map[d["slug"]].append(d["id"])
+
+    initial_top = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:GRAPH_N]
+    if initial_top:
+        top_score = initial_top[0][1]
+        graph_boosts = {}
+        for doc_id, doc_score in initial_top:
+            doc = doc_store[doc_id]
+            link_weight = doc_score / top_score
+            for rel_slug in doc.get("related", []):
+                boost_amount = link_weight * GRAPH_BOOST * top_score
+                for chunk_id in slug_map.get(rel_slug, []):
+                    chunk = doc_store[chunk_id]
+                    if exclude_types and chunk.get("type") in exclude_types:
+                        continue
+                    if boost_amount > graph_boosts.get(chunk_id, 0.0):
+                        graph_boosts[chunk_id] = boost_amount
+        for chunk_id, boost in graph_boosts.items():
+            scores[chunk_id] = scores.get(chunk_id, 0.0) + boost
+
+    seen_slugs = set()
+    results = []
+    for doc_id, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
+        slug = doc_store[doc_id]["slug"]
+        if slug in seen_slugs:
+            continue
+        seen_slugs.add(slug)
+        results.append({"slug": slug, "score": score, "is_wiki": doc_store[doc_id]["is_wiki"]})
+        if len(results) >= top_k:
+            break
+    return results
 
 
 def score_query(result_slugs, expected_slugs, all_wiki_slugs):
-    """Score a single query result on 6 dimensions (0-1 scale each)."""
+    """Score a single query result on 6 dimensions (0-1 scale each).
+
+    Dimensions:
+      recall      - did any expected slug surface in top-K?
+      rank_quality- MRR: 1/rank of first expected hit (rank 1=1.0, 2=0.5, 3=0.33)
+      precision   - fraction of result_set that are expected
+      coverage    - expected slugs exist in wiki at all?
+      diversity   - unique slugs in results / top_K (penalises duplicate chunks)
+      maintenance - lint passes (assumed 1.0 unless errors reported)
+
+    Replaced latency + cost (trivially 1.0 on wiki path) with rank_quality and
+    diversity to expose actual retrieval quality dimensions.
+    """
     result_set = set(result_slugs)
     expected_set = set(expected_slugs)
 
-    # Recall: did any expected slug appear in results?
     recall = 1.0 if result_set & expected_set else 0.0
 
-    # Precision: fraction of top-K that are in expected
+    # MRR: reciprocal rank of first expected hit
+    rank_quality = 0.0
+    for rank, slug in enumerate(result_slugs, 1):
+        if slug in expected_set:
+            rank_quality = 1.0 / rank
+            break
+
     precision = len(result_set & expected_set) / len(result_set) if result_set else 0.0
 
-    # Coverage: is the answer findable at all (expected slug exists in wiki)?
     coverage = 1.0 if expected_set & all_wiki_slugs else 0.0
 
-    # Latency: wiki fetch estimated 50ms, pgvector 200ms (normalized: wiki=1.0, pgvector=0.25)
-    latency_score = 1.0  # wiki path assumed for this eval
+    diversity = len(result_set) / len(result_slugs) if result_slugs else 0.0
 
-    # Cost: wiki path = just fetch + prompt tokens; pgvector = + embed call
-    # Rough estimate: wiki saves ~$0.001/query vs pgvector
-    cost_score = 1.0  # wiki path
-
-    # Maintenance: lint passes (assumed 1.0 if no errors reported)
     maintenance_score = 1.0
+
+    composite = (recall + rank_quality + precision + coverage + diversity + maintenance_score) / 6
 
     return {
         "recall": recall,
+        "rank_quality": round(rank_quality, 3),
         "precision": round(precision, 2),
         "coverage": coverage,
-        "latency": latency_score,
-        "cost": cost_score,
+        "diversity": round(diversity, 3),
         "maintenance": maintenance_score,
-        "composite": round((recall + precision + coverage + latency_score + cost_score + maintenance_score) / 6, 3),
+        "composite": round(composite, 3),
     }
 
 
@@ -249,7 +296,7 @@ def run_eval(index, wiki_only=False):
     avg_composite = sum(all_composites) / len(all_composites) if all_composites else 0
 
     dim_avgs = {}
-    for dim in ["recall", "precision", "coverage", "latency", "cost", "maintenance"]:
+    for dim in ["recall", "rank_quality", "precision", "coverage", "diversity", "maintenance"]:
         vals = [r["scores"][dim] for r in results]
         dim_avgs[dim] = round(sum(vals) / len(vals), 3)
 

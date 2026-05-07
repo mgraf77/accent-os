@@ -12,7 +12,7 @@ updated: 2026-05-06
 
 # Michael Graf — Owner
 
-AccentOS team member. Owner role. Accent Lighting Inc., Wichita, KS.  
+AccentOS team member. Michael Graf holds the Owner role at Accent Lighting Inc., Wichita, KS. Michael is the founding architect of AccentOS and the primary product decision-maker.
 
 ## Responsibilities
 

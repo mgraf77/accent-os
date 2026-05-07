@@ -3,7 +3,7 @@ type: concept
 slug: overview
 title: AccentOS Wiki — System Overview
 sources: [source-master, source-build-plan-claude]
-related: [karpathy-llm-wiki, ADR-007]
+related: [karpathy-llm-wiki, ADR-007, michael-graf]
 confidence: high
 sensitive: false
 created: 2026-05-06

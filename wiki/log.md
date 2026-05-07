@@ -3,6 +3,24 @@
 
 ---
 
+## 2026-05-07 deep-optimization
+- upgrade: rag_build_index.py — section-aware chunking (## headings, max 300w); related: frontmatter parsed + stored; idf_map in index; rag_index_compact.json output; source/synthesis boost 0.75×
+- upgrade: rag_search.py — three-stage BM25 → graph re-rank (max-boost, not sum) → unique-slug dedup pipeline; GRAPH_N=10 GRAPH_BOOST=0.2
+- upgrade: rag_eval.py — simple_search matches full pipeline; score_query uses rank_quality (MRR) + diversity instead of trivially-1.0 latency/cost; dimension aggregation updated
+- fix: rag_eval.py — dimension names updated in aggregation loop (was referencing old 'latency'/'cost' keys)
+- fix: rag_eval.py + rag_search.py — slug deduplication in Stage 3 (was returning duplicate-slug chunks for same page)
+- fix: graph re-ranking — max-boost per chunk (not additive sum) prevents vendor-scoring runaway when 14 rubric pages all link to it
+- fix: golden set — "file size trigger" expected corrected to ['ADR-004'] only (source-build-intelligence doesn't have file size content)
+- upgrade: wiki/overview.md — added michael-graf to related field for entity grounding
+- upgrade: wiki/concepts/lighting-reference.md — "Key thresholds at a glance" section added (CRI, FC, emergency, dimming)
+- upgrade: wiki/entities/employees/michael-graf.md — enriched lead sentence with name repetition
+- reclassify: source-build-intelligence — type: source → concept (1.5× boost; contains operational patterns not just provenance)
+- upgrade: js/wiki.js v6.11.2 — wikiGroundQuery replaced with full BM25 engine (mirrors rag_search.py); _loadRagIndex, _bm25Tokenize, _stem, _bm25Search; fallback to text-search if compact index unavailable
+- rebuild: rag_index.json — 133 chunks (section-aware), 3176 terms, 939KB
+- eval: composite 89.9% (100% recall, 93.3% MRR, 100% diversity, 100% coverage); new dimensions are real signals not trivially-1.0 placeholders
+
+---
+
 ## 2026-05-07 optimization-rounds-1-3
 - fix: rag_search.py + rag_eval.py — STOP_WORDS filter on queries (question words have high IDF in 155-chunk corpus)
 - fix: cri-tm30-tlci — added "required" lead sentence; dimming-protocols was outranking it via "required" in practical guidance

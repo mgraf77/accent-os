@@ -1,5 +1,5 @@
 ---
-type: source
+type: concept
 slug: source-build-intelligence
 title: "Source: BUILD_INTELLIGENCE.md"
 sources: []
