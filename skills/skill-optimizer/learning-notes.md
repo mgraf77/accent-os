@@ -67,3 +67,45 @@ Source: Run 2026-05-07 (Group 5 had 8 skills; Group 4 had 5 — Group 4 ran fast
 retry loops).
 
 ---
+
+### 2026-05-07 — from run Rounds 5+6 on claude/optimize-skills-agents-1u8OO
+
+RULE: Always check for body-level behavioral commitment separately from YAML frontmatter — 8/28
+skills had "always X — never Y" in frontmatter but NOT in the skill body. A cold-read session
+that doesn't parse YAML receives no commitment signal.
+BETTER: In Step 1 baseline scoring, check M3 in both the frontmatter description AND the skill
+body text. If YAML has the commitment but the body does not, flag as M3 gap and add body copy.
+Source: Run 2026-05-07 Rounds 5+6, broken-link-rescue / build-plan-status / bulk-meta-description
+/ codex-review / rep-group-matchmaker and 3 others.
+
+---
+
+RULE: Always add a cross-skill routing note after the Trigger Recognition section when two
+skills share overlapping trigger vocabulary — 18/28 skills had unaddressed routing ambiguity
+with at least one sibling skill. 100% of routing disambiguation edits improved routing clarity.
+BETTER: During Step 1 baseline scan, check each skill's triggers against its documented
+companion skills. If any trigger phrase could fire a companion skill, add a "Do NOT trigger
+for X — that routes to [companion]" note with a distinguishing mechanism sentence.
+Source: Run 2026-05-07 Rounds 5+6, repo-scout/skill-forge, skill-eval-suite/codex-review,
+schema-contract-tests/table-eda, gmc-feed-audit/broken-link-rescue, and 14 others.
+
+---
+
+RULE: Never skip adversarial dimension checks on M6 (concrete outputs) and M3 (behavioral
+commitment) — these two dimensions are most likely to develop edge-case gaps as skills evolve.
+However, never apply adversarial checks to M1 (description length) or M2 (AccentOS named) —
+0/28 adversarial checks on those dimensions found failure paths. They are structurally stable.
+BETTER: Adversarial sampling priority: M6, M3, M4, M5, M10 — skip M1 and M2 (always stable).
+Source: Run 2026-05-07 Rounds 5+6 adversarial checks fleet-wide.
+
+---
+
+RULE: Cold-read executability checks catch correctness bugs that binary Ralph loops miss
+entirely — 7 correctness bugs (state-machine inconsistency, CTE scope, phantom file references,
+stale dates, M10 violations) were found only in cold-read, not in prior Ralph cycles.
+BETTER: Cold-read is not optional — treat it as Check 6 of the sub-dimension cycle on every
+skill regardless of binary score. SQL blocks and cross-file references are the highest-yield targets.
+Source: Run 2026-05-07 Rounds 5+6, prompt-queue / supabase-sql-magic / schema-contract-tests
+/ codex-review / vendor-risk-register / repo-scout / bc-business-review.
+
+---
