@@ -116,6 +116,10 @@ Tasks that **never route away from Claude Code**, regardless of scores:
 
 ---
 
+**Exclusion zone + secondary type:** if a task's secondary type falls inside an exclusion zone, the exclusion wins — the task stays with Claude Code regardless of primary type scores. Example: "brainstorm + code-build on M-task" → exclusion zone fires on code-build secondary, whole task stays with Claude Code.
+
+---
+
 ## Multi-type disambiguation rules
 
 | Pattern | Classification |

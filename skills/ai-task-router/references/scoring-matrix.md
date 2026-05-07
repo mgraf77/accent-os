@@ -76,8 +76,9 @@ claude_code.context  += 2.0   (capped at 10)
 
 **Gap formula:**
 ```
-gap = (winner_composite - claude_composite) / claude_composite
+gap = (winner_composite - claude_composite) / max(claude_composite, 0.1)
 ```
+The `max(..., 0.1)` floor prevents div-by-zero if Claude Code scores extremely low on a task type.
 
 **Switching cost multiplier:** applied to Claude Code's composite score only (raises the bar for routing away). Never applied to the winner's score.
 - `+0.3` if Claude Code already has the relevant file open this session

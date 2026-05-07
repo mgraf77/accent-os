@@ -193,7 +193,7 @@
 | doc-write | 6 | 6 | 6 | 8 | 5 | 3 | 4 | 7 |
 | data-analysis | 1 | 4 | 2 | 8 | 1 | 1 | 3 | 2 |
 | automation | 2 | 5 | 3 | 8 | 2 | 2 | 4 | 3 |
-| long-context | 1 | 4 | 2 | 7 | 1 | 1 | 3 | 2 |
+| long-context | 1 | 4 | 2 | 8 | 1 | 1 | 3 | 2 |
 | real-time-data | 1 | 5 | 2 | 8 | 1 | 1 | 4 | 2 |
 | image-gen | 7 | 7 | 6 | 8 | 7 | 2 | 5 | 9 |
 | planning | 3 | 5 | 4 | 8 | 2 | 3 | 4 | 6 |
@@ -266,3 +266,5 @@ When a tool gains new capabilities (e.g. Gemini gets file system access, Claude 
 - 2026-05-06: initial registry — 9 tools × 15 task types × 8 dimensions
 - 2026-05-06: removed Perplexity (not in Michael's toolkit)
 - 2026-05-06: applied tier overrides — ChatGPT Plus (TC→7), Gemini Free (TC→10), Canva Free (AB adjustments), Codex API (TC→3)
+- 2026-05-06: Loop 1 corrections — Dispatch all rows TC 6/7→5, Routines all rows TC 6/7→5, Codex all rows TC 4→3, Claude.ai long-context TC 6→7
+- 2026-05-07: Loop 4 correction — Canva long-context TC 7→8 (aligns with tier-config tc_score_override: 8)

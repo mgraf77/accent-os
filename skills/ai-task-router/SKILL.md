@@ -27,7 +27,7 @@ Not a replacement for Michael's judgment. Advisory only. Michael overrides at wi
 
 ## Always-on contract
 
-Loaded at session start via `.claude/CLAUDE.md` AUTO-EXECUTE step 1j. Session-start cost: ~12K tokens (SKILL.md + 5 reference files read once, cached for session). Step 7 (model-update check) fires deferred — never at session start, never mid-tool-loop. Steps 2–5 run as a silent pipeline before every non-pass-through response (~50 token overhead per turn, scoring only when a gap crosses the threshold).
+Loaded at session start via `.claude/CLAUDE.md` AUTO-EXECUTE step 1j. Session-start cost: ~12K tokens (SKILL.md + 5 reference files read once, cached for session). Step 7 (model-update check) fires deferred — never at session start, never mid-tool-loop. Steps 2–5 run as a silent pipeline before every non-pass-through response (~50 token overhead per turn for classification + scoring; nudge only surfaces when gap crosses threshold).
 
 **What "always-on" means in practice:**
 - Every incoming request gets a silent task classification (Step 2)
@@ -93,7 +93,7 @@ Then probe tool availability (run once, cache for session):
 
 Mark unavailable tools in working memory. They still appear in `/route` tables but are grayed as "(not configured)".
 
-**AccentOS context bonus flag:** Set `ctx_bonus = true` if the working directory is `/home/user/accent-os` AND at least one of these is referenced in the session so far: AccentOS files, Supabase, BigCommerce, vendor_scores, vendor scoring, BUILD_PLAN, M-task IDs. This flag adds +1.5 to Claude Code's composite score in Step 3.
+**AccentOS context bonus flag:** Set `ctx_bonus = true` if the working directory is `/home/user/accent-os` AND at least one of these is referenced in the session so far: AccentOS files, Supabase, BigCommerce, vendor_scores, vendor scoring, BUILD_PLAN, M-task IDs. When set, Step 3 applies: Claude Code `ability += 1.5`, `context += 2.0` before computing composite.
 
 ---
 
@@ -141,14 +141,16 @@ Dimensions: `ability`, `speed`, `accuracy`, `token_cost`, `action`, `context`, `
 
 Weights live in `references/scoring-matrix.md`.
 
-Apply bonuses:
-- **AccentOS context bonus** (`ctx_bonus = true`): Claude Code `ability += 1.5`, `context += 2.0`
-- **Switching cost multipliers** (from scoring-matrix.md): add +0.3/+0.2/+0.1 to Claude Code's composite before gap calc when applicable
-- **Tool availability penalty**: unavailable tool scores are shown as-is but flagged — Michael may still choose to set it up
+Apply in this exact order:
+
+1. **AccentOS context bonus** (if `ctx_bonus = true`): adjust Claude Code's dimension scores FIRST — `ability += 1.5`, `context += 2.0` (cap at 10). Do this before computing any composite.
+2. **Compute composite** for all tools using `Σ(score[d] × weight[d]) / Σ(weights)`.
+3. **Switching cost multipliers** (from scoring-matrix.md): add +0.3/+0.2/+0.1 to Claude Code's already-computed composite when applicable. These adjust the composite directly, not dimensions.
+4. **Tool availability**: unavailable tools are scored normally but flagged "(not configured)" in output — Michael may still choose to set them up.
 
 Then rank all tools by composite score. Identify:
 - `winner`: highest composite
-- `claude_score`: Claude Code's composite (after context bonus + switching cost multipliers)
+- `claude_score`: Claude Code's composite (after step 1+3 adjustments)
 - `gap`: `(winner_score - claude_score) / max(claude_score, 0.1)` ← floor prevents div-by-zero
 
 **Routing decision:**
@@ -190,7 +192,7 @@ Task: [task_type]  (secondary: [type if any])
 AccentOS context bonus: [applied / not applied — why]
 Available tools: [N of M configured]
 
-Tool            Score   Ability  Speed   Cost  Action  Context  Fresh  Create
+Tool            Score   Ability  Speed    TC   Action  Context  Fresh  Create
 ─────────────────────────────────────────────────────────────────────────────
 Claude Code      [X.X]    [n]     [n]    [n]    [n]     [n]     [n]    [n]    ← current
 [Winner]         [X.X]    [n]     [n]    [n]    [n]     [n]     [n]    [n]    ← best
@@ -245,7 +247,8 @@ Append to `skills/ai-task-router/routing-log.md` after any nudge fires (passive 
 NNN is sequential. Outcome tracking:
 - Starts as `pending`
 - → `ignored`: Michael's next message is a pass-through response ("continue", "keep going", "no") OR Michael sends any new task without mentioning the suggested tool
-- → `accepted`: Michael explicitly names the suggested tool ("opening ChatGPT", "switching to Gemini") OR the session ends without a new task (assumed accepted if nudge was the last exchange)
+- → `accepted`: Michael explicitly names the suggested tool ("opening ChatGPT", "switching to Gemini")
+- → `unknown`: session ends without any response to the nudge — leave outcome as `pending`; do not assume accepted
 - → `overridden-to:[tool]`: Michael names a third tool other than Claude Code or the winner
 Update outcome in routing-log.md at the moment the signal is detected — don't batch.
 
@@ -254,7 +257,11 @@ Update outcome in routing-log.md at the moment the signal is detected — don't 
 → router: you've routed [task_type] to [tool] 3× — make it your default for this task type? (/route default [task_type] [tool])
 ```
 
-**`/route default [task_type] [tool]`** writes a default override entry to `routing-log.md`. Future routing for that task type shows the default tool first.
+**`/route default [task_type] [tool]`** appends a line to `skills/ai-task-router/routing-defaults.md` (create if absent):
+```
+[task_type]: [tool]  # set YYYY-MM-DD
+```
+Future routing for that task type reads this file first — default tool appears at top of any ranking, with a `← default` marker.
 
 ---
 
@@ -267,11 +274,11 @@ Fires when `model-versions.md` `last_checked` < today. Runs after the first task
 For each tool in model-versions.md, run one WebSearch targeting its `release_feed`:
 
 ```
-search queries (run in parallel):
-  - "OpenAI new model release 2026" site:openai.com/news
-  - "Google Gemini new model release 2026" site:blog.google
-  - "Anthropic Claude new model 2026" site:anthropic.com/news
-  - "Canva AI new features 2026" site:canva.com/newsroom
+search queries (run in parallel, substitute current year for YYYY):
+  - "OpenAI new model release YYYY" site:openai.com/news
+  - "Google Gemini new model release YYYY" site:blog.google
+  - "Anthropic Claude new model YYYY" site:anthropic.com/news
+  - "Canva AI new features YYYY" site:canva.com
   - "openai/codex release" site:github.com
 ```
 
@@ -328,7 +335,7 @@ If WebSearch returns no results or network error for a tool → skip that tool, 
 | `/route off` | Disable passive gate for session |
 | `/route on` | Re-enable passive gate |
 | `/route log` | Show last 10 entries from routing-log.md |
-| `/route scores` | Show full score breakdown for current task type, all tools |
+| `/route scores` | Show full score breakdown for the last-classified task type, all tools |
 | `/route scores [tool]` | Show all dimension scores for one tool across all task types |
 | `/route tune [dim] [weight] for [task-type]` | Adjust a dimension weight for a task type (session-only) |
 | `/route default [task-type] [tool]` | Set preferred tool for a task type |
@@ -362,7 +369,7 @@ Codex CLI       API (billed)       3    ? run: printenv OPENAI_API_KEY
 
 - **Never** auto-switch tools — routing is advisory. Michael decides. The skill only nudges.
 - **Never** surface a nudge for vibe-speak commands, `/route` queries, meta-skill management, or session wrap steps — those are AccentOS tooling, not user tasks.
-- **Never** recommend a pricier tool when the score gap is <0.25 and token-cost delta is unfavorable. The marginal gain doesn't justify the friction.
+- **Never** surface a nudge when the score gap is <0.25 — always silent regardless of cost. The marginal gain never justifies switching friction at this threshold.
 - **Never** surface the passive nudge mid-tool-loop. If Claude Code is already mid-task (multiple tool calls in flight), complete the task. Route on the *next* request, not mid-execution.
 - **Never** recommend a tool that failed its availability check without flagging it as "(not configured)" — sending Michael somewhere that won't work wastes more time than any routing gain.
 - **Never** apply the AccentOS context bonus to non-AccentOS tasks. If Michael asks "what's the best coffee in Portland," context bonus does not apply.
