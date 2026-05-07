@@ -6,8 +6,8 @@
 
 **Last updated:** 2026-05-07 17:10 UTC
 **Branch:** `claude/accentos-roadmap-planning-PKRA0`
-**Last commit:** `fe079e2 fix(status): suppress timestamp-only diffs to break Stop-hook loop`
-**Working tree:** 0 uncommitted file(s)
+**Last commit:** `fix(status): suppress timestamp-only diffs to break Stop-hook loop`
+**Working tree:** 1 uncommitted file(s)
 **Roadmap version:** v3.1 (round-5 — ecom site + user-safety dimensions)
 **Threshold score:** 93% (honest matrix, see §6)   ·   **Leverage:** 8.0 / 10
 
@@ -101,11 +101,11 @@ Pre-mortem early-warning instrumentation (must be live by phase end):
 
 ## 8. Recent commits
 
-- `fe079e2` fix(status): suppress timestamp-only diffs to break Stop-hook loop
-- `c17c2f0` feat(status): live BUILD_STATUS.md dashboard + regen hooks
-- `9892f69` docs(plan): operationalize ROADMAP_2026 v3.1 into BUILD_PLAN tracks 7-14
-- `ed905b9` docs(roadmap): v3.1 — round 5 (ecom site + user-safety dimensions)
-- `b934163` docs(roadmap): v3.0 — round 4 (customer/retrofit/owner-time/pre-mortem/compounding)
+- fix(status): suppress timestamp-only diffs to break Stop-hook loop
+- feat(status): live BUILD_STATUS.md dashboard + regen hooks
+- docs(plan): operationalize ROADMAP_2026 v3.1 into BUILD_PLAN tracks 7-14
+- docs(roadmap): v3.1 — round 5 (ecom site + user-safety dimensions)
+- docs(roadmap): v3.0 — round 4 (customer/retrofit/owner-time/pre-mortem/compounding)
 
 ---
 

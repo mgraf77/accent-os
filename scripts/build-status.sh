@@ -13,8 +13,11 @@ TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 TS="$(date -u +'%Y-%m-%d %H:%M UTC')"
 BRANCH="$(git branch --show-current 2>/dev/null || echo unknown)"
-LAST_COMMIT="$(git log -1 --pretty='%h %s' 2>/dev/null || echo none)"
-DIRTY_COUNT="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+# Use commit message subject only (no SHA) — capturing SHA creates a self-reference loop
+# where every regen-amend changes the SHA which changes the file which needs amending again.
+LAST_COMMIT="$(git log -1 --pretty='%s' 2>/dev/null || echo none)"
+# Exclude BUILD_STATUS.md from the count — it self-references and creates a loop on each regen.
+DIRTY_COUNT="$(git status --porcelain 2>/dev/null | grep -v 'BUILD_STATUS.md' | wc -l | tr -d ' ')"
 
 # ---- count tasks per track in BUILD_PLAN_CLAUDE ----
 count_track() {
@@ -86,7 +89,8 @@ BLOCKED_ITEMS=$(awk '
 ' BUILD_PLAN_CLAUDE.md | head -5)
 
 # ---- last 5 commits ----
-RECENT_COMMITS=$(git log -5 --pretty='- `%h` %s' 2>/dev/null || echo '_(no git history)_')
+# Drop SHA prefix from recent commits to avoid self-reference loop on amend.
+RECENT_COMMITS=$(git log -5 --pretty='- %s' 2>/dev/null || echo '_(no git history)_')
 
 # ---- WIP snapshot ----
 WIP_TASK=$(grep -m1 '^\*\*Current task:\*\*' WORK_IN_PROGRESS.md 2>/dev/null | sed 's/\*\*Current task:\*\*//' | xargs || echo "—")
