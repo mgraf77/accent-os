@@ -15,18 +15,19 @@ Sort by Relevance descending. Drop NONE rows before moving on.
 
 ---
 
-## Three-column gap analysis
+## Three-column concept theft assessment
 
-### KEEP — Target does it, AccentOS needs it
+### STEAL — Rebuild this concept in AccentOS-native form
 
-| Concept | AccentOS gap it closes (cite project-profiles.md) | How it adapts |
-|---------|---------------------------------------------------|---------------|
-| [concept] | [specific gap, e.g. "vendor score persistence"] | [what changes for AccentOS] |
+| Concept | Type (STANDALONE / SUB-FEATURE) | How it adapts for AccentOS |
+|---------|--------------------------------|---------------------------|
+| [concept] | STANDALONE | [what changes for AccentOS] |
 
 Rules:
-- Must cite a named gap from /home/user/accent-os/skills/repo-scout/references/project-profiles.md
-- Vague gaps ("better organization") are not allowed — be specific
-- If you can't find ≥3 KEEP entries, the target is not worth forging — abort to WATCH
+- STEAL is the **default** outcome for any concept with reusable structure
+- Overlap with existing skills is NOT disqualifying — a tighter AccentOS-native version is the point
+- Community patterns found in Step 1.8 can be STEAL candidates even if the primary target doesn't use them
+- WATCH abort requires STEAL = 0 after re-frame — that is rare for non-trivial targets
 
 ### DROP — Target does it, AccentOS doesn't need it
 
@@ -58,9 +59,9 @@ Common ADD candidates for AccentOS:
 
 ## Forge decision
 
-Total KEEP entries: __
+Total STEAL entries: __
 Total ADD entries: __
 Total DROP entries: __
 
-If KEEP + ADD ≥ 5 and KEEP ≥ 3 → proceed to Step 5 (forge).
-Otherwise → output "Insufficient signal. Recommendation: WATCH [target] for now."
+If STEAL ≥ 1 → proceed to Step 5 (proposals). Most non-trivial targets produce 3–8 STEAL candidates.
+If STEAL = 0 after Step 1.5 re-frame → output WATCH and stop. Log the abort to gotcha-log.md.

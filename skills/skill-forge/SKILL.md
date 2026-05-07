@@ -24,6 +24,18 @@ Six phases in order: **preflight → extract → assess → propose-and-approve 
 
 ---
 
+## Quickstart
+
+| Michael says | Entry point |
+|---|---|
+| "look into [X]" / "build me a skill based on [X]" | Full run, Step 0 → 10 |
+| "extract concepts from [X]" / "what can we steal from [X]" | Steps 2–4 only — surface concept table, stop before Step 5 gate |
+| "build [name1] and [name2] from [X]" | Step 5 pre-approved; skip gate, use named list as approval |
+
+**Step 5 approval gate reply syntax:** `build all` · `build [name1] [name2]` · `build all except [name]` · `build with changes: [name] - [change]` · `skip all`
+
+---
+
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
@@ -81,47 +93,41 @@ If the target is ambiguous, pick the highest-likelihood match given AccentOS con
 
 ### Step 1.5 — Pattern vs. product check
 
-The target Michael named may be the *wrapper* around a pattern, not the pattern itself. If the surface framing fails Step 4 (KEEP < 3), retry exactly once with the target re-framed as the underlying pattern (e.g. Cascade-the-board-reporting-tool → cascade-the-mechanic). Document the re-frame in Step 0's preflight note. Do not retry twice — if the re-framed target still fails, abort to WATCH.
+The target Michael named may be the *wrapper* around a pattern, not the pattern itself. If the surface framing fails Step 4 (STEAL = 0), retry exactly once with the target re-framed as the underlying pattern (e.g. Cascade-the-board-reporting-tool → cascade-the-mechanic). Document the re-frame in Step 0's preflight note. Do not retry twice — if the re-framed target still fails, abort to WATCH.
+
+---
+
+## Step 1.8 — Community Inspiration Sweep
+
+After confirming the target (and re-framing if Step 1.5 fired), run a 60-second parallel GitHub sweep for existing Claude Code skills in the same domain. Fire this alongside the first Step 2 search batch — do not block on it.
+
+**Searches to run in parallel:**
+- `site:github.com "SKILL.md" [domain keyword from Step 1]`
+- `awesome-claude-skills [domain keyword]`
+- rohitg00/awesome-claude-code-toolkit index
+- ComposioHQ/awesome-claude-skills index
+
+**For each community skill found in the same domain (cap: top 3):**
+- Extract its trigger phrases, unique workflow steps, and anti-patterns section
+- Tag with `[community]` in Step 3's concept inventory
+- In Step 4: community patterns are valid STEAL candidates even when the primary target doesn't use them — the community has already stress-tested them
+
+**Output:** `Community sweep: [N] skill(s) found — [name1], [name2]` (or "Community sweep: 0 found")
+
+Do not skip. This step prevents reinventing patterns the community has battle-tested and surfaces steal candidates the primary target's docs would never reveal.
 
 ---
 
 ## Step 2 — Multi-source extraction
 
-Run parallel searches across **all five source classes**. See `references/extraction-sources.md` for the full checklist. Minimum coverage:
+Run parallel searches across all five source classes per `references/extraction-sources.md`. Aim for ≥15 concepts/features before moving on. Step 4 filters — Step 2 surfaces everything.
 
-**GitHub layer**
-- Primary repo: README, SKILL.md(s), folder structure, top-level docs/
-- **If target is a multi-skill pack** (>3 SKILL.md files): enumerate every sub-skill folder and harvest each SKILL.md frontmatter description before consolidating. The pack-level README is not enough.
-- Adjacent repos: forks, "awesome-X" lists referencing it, related-tools sections
-- Issues + Discussions: real user friction, requested features, anti-patterns
+**Special cases (read; layer details are in the checklist):**
+- **Multi-skill pack** (>3 SKILL.md files in repo): enumerate every sub-skill SKILL.md individually — the pack README is not enough.
+- **WebFetch 403/404**: fall back in order → (1) `WebSearch` quoted filename + distinctive concepts; (2) `site:` operator on blocked host; (3) search-engine snippets. Mark source empty only after all three fail.
+- **Saturation**: stop after 3 consecutive sources yield 0 new concepts.
 
-**Official-site layer**
-- Marketing site, docs site, pricing page (paid features = signal of where actual value lives)
-
-**Social layer**
-- X/Twitter, Reddit, Hacker News, LinkedIn — weight independent technical posts heavily
-
-**Review/blog layer**
-- Independent blog reviews, YouTube demos (transcripts when available), podcasts
-
-**Pricing/access layer (paid tools only)**
-- What's gated behind which tier — gates reveal core value props
-
-**WebFetch failure fallback** — When `WebFetch` returns 403, 404, or any non-200 on a planned source, do not log the source as empty. Fall back in this order: (1) `WebSearch` with the quoted SKILL.md filename or canonical doc filename plus the most distinctive concept terms; (2) `WebSearch` with a `site:` operator restricted to the blocked host; (3) cached search-engine snippets that already surface the page content. Only mark a source empty after all three fall back to nothing.
-
-For each source, harvest **concept by concept and feature by feature**. Exhaustive, not summarized:
-- Every named primitive (data shape, workflow, validation, output type) — list each individually
-- Every UI feature shown on the homepage and pricing page — list each individually
-- Every workflow step demoed in tutorials — list each individually
-- Every integration / connector — list each individually
-- Every "AI" or "automation" feature — list each individually
-- Every paid-tier-only feature — list each individually with the tier
-- Every anti-pattern or "don't use this for" — list each individually
-- Every killer-feature claim (vs. fluff)
-
-The goal is the longest possible list, not the shortest. Aim for ≥15 concepts/features for any non-trivial target. Step 4 (concept-theft) does the filtering — Step 2's job is exhaustive surfacing.
-
-Stop adding sources once 3 consecutive new sources produce 0 new concepts. That's saturation.
+Harvest concept by concept, not summarized. List every named primitive, workflow step, integration, AI/automation feature, paid-tier feature, and anti-pattern individually. The goal is the longest possible raw list.
 
 ---
 
@@ -129,9 +135,10 @@ Stop adding sources once 3 consecutive new sources produce 0 new concepts. That'
 
 Consolidate the Step 2 harvest into one structured table. Group near-duplicates only when they're literally the same thing (e.g. "Magic AI" and "AI assistant" → one row). Do not aggressively dedupe — keep concepts separate when they have distinct inputs/outputs.
 
-| # | Concept / feature | Best source | Mention frequency | AccentOS relevance |
+| # | Concept / feature | Best source | Freq | AccentOS relevance | Community? |
 
 Relevance values: **HIGH** (direct fit), **MEDIUM** (needs translation), **LOW** (interesting only), **NONE** (drop).
+`Community?` column: **Y** if found in Step 1.8 sweep, **N** otherwise. Community=Y concepts are STEAL-eligible regardless of how the primary target packages them.
 
 Aim for ≥15 rows for any non-trivial target. Step 4 will filter — Step 3's job is to make every feature visible so nothing slips through.
 
@@ -155,11 +162,12 @@ The question is **not** "does AccentOS have a gap this fills." The question is: 
 - Pure infrastructure (their auth model, billing system, hosting)
 - Concepts whose AccentOS-native version is already implemented in an existing skill AND a rebuild would only add noise
 
-**ADD** (concepts the target doesn't have but the new skill should incorporate):
+**ADD** (concepts neither the target nor the community has, but the new skill should incorporate):
 - Supabase `hsyjcrrazrzqngwkqsqa` awareness, real schema references
 - BigCommerce store-cwqiwcjxes context
 - AccentOS module paths, vendor_scores / vendor_overrides table awareness
 - Anthropic API conventions
+- Step 1.8 community patterns not already captured under STEAL (tag these `[community-ADD]`)
 
 For each STOLEN concept, classify:
 - **STANDALONE** — becomes its own SKILL.md (preferred when concept has clear named inputs and outputs)
@@ -175,23 +183,21 @@ For each STOLEN concept, classify:
 
 ## Step 5 — Skill proposals & approval gate
 
-For **each STANDALONE candidate** from Step 4, output a brief proposal block. Format every proposal identically so Michael can scan a column of them:
+For **each STANDALONE candidate** from Step 4, output one row in the proposal table. Then append a reason line for every DEFER or SKIP below it.
 
 ```
-PROPOSAL: [skill-name]
-  Stolen from: [target concept/feature]
-  What it does: [one sentence]
-  Gap it closes: [specific AccentOS gap or named-pattern improvement]
-  Effort: LOW | MEDIUM | HIGH
-  Pairs with: [other approved/existing skills it composes with, if any]
-  Recommendation: BUILD | DEFER | SKIP
-    Reason: [one sentence]
+| Skill | Stolen from | What it does | Effort | Pairs with | Rec |
+|-------|-------------|--------------|--------|------------|-----|
+| [name] | [concept / community] | [one sentence] | L/M/H | [skill, skill] | BUILD / DEFER / SKIP |
 ```
+
+Below the table, one line per DEFER or SKIP:
+- **[name]**: [one sentence — blocked by, premature for, or redundant with X]
 
 Recommendation values:
-- **BUILD** — high signal, AccentOS-shaped, low-friction. The skill should ship now.
+- **BUILD** — high signal, AccentOS-shaped, low-friction. Ship now.
 - **DEFER** — promising but blocked: missing data, premature, dependent on a future AccentOS state.
-- **SKIP** — better as a one-off than a skill (e.g. a single SQL query) OR fully redundant.
+- **SKIP** — better as a one-off than a skill (single SQL query, fully redundant with existing skill).
 
 After all proposal blocks, output the approval gate exactly:
 
@@ -229,8 +235,6 @@ NNN is sequential. The future-builds.md log is what Michael consults when pickin
 
 ## Step 6 — Skill design (per approved concept)
 
----
-
 For **each APPROVED concept** from Step 5, run this design pass independently. Skills run through Steps 6–8 in a per-skill loop, then commit together at Step 9.
 
 Decide before writing:
@@ -240,6 +244,22 @@ Decide before writing:
 - **Workflow** — 4–7 numbered steps. Each step has a concrete output. Imperatives only.
 - **Output format** — paste-ready blocks. Tables when scanning is the use case.
 - **References** — split overflow into `references/*.md`. Keep SKILL.md under ~5000 tokens.
+
+### Step 6.1 — Prereq-redirect analysis (mandatory for every skill)
+
+Answer these before writing a single workflow step:
+
+1. **Inputs** — What data or prior-skill output must exist before this skill is useful? List each dependency by name.
+2. **Outputs** — What skills or workflows consume this skill's result? List each.
+3. **Pre-check block** — For every identified input dependency, add a pre-check + redirect to the forged SKILL.md:
+
+```
+Pre-check: If [prereq condition not met]:
+  Output: "Run [prereq-skill] first — [one-line why this matters for AccentOS]."
+  Stop.
+```
+
+This fires for every approved skill without exception. "Simple" skills have dependencies too — discovering them in the Ralph loop costs more than adding them here.
 
 ---
 
@@ -323,6 +343,11 @@ First-use example:
 
 Branch: [branch-name]  |  Commit: [SHA short]  |  Pushed: yes/no
 Gotchas hit this run: [count, see gotcha-log.md]
+
+Quality score: [N/5]
+  Specificity  [0-2]: 2 = ≥5 AccentOS stack refs; 1 = ≥3; 0 = <3
+  Ralph depth  [0-2]: 2 = hit 4-iter cap on ≥1 skill; 1 = 2+ clean passes; 0 = 1 pass
+  Anti-patterns[0-1]: 1 = ≥5 entries per skill; 0 = only the 3-entry minimum
 ```
 
 ---

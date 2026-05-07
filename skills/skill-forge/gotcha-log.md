@@ -240,7 +240,7 @@ These are gotchas surfaced during the very first stress-test of skill-forge. All
 - root_cause: Step 6 (skill design) doesn't prompt the forger to consider "what if the prereq data isn't there yet." Each Ralph loop has to rediscover this pattern per skill.
 - fix_this_run: Pattern documented here. Not yet baked into Step 6.
 - prevention_rule: Skill design (Step 6) must explicitly consider "what depends on this being run first" and "what does this skill depend on" — and add a pre-check + redirect block whenever a prerequisite skill exists.
-- applied_to_skill_md: no
+- applied_to_skill_md: yes
 - outcome: success
 
 ### gotcha-028 — 2026-05-05 — prompt-queue v2 (defer_until + execution_mode + status hook)

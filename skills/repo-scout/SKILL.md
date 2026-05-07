@@ -34,43 +34,36 @@ Run this skill when Michael says anything like:
 
 ## Step 1 — Load Context
 
-Before searching, internalize the active stack from references/project-profiles.md.
+Before searching, load two sources in parallel:
 
-Key constraints as filters:
+**1. Active stack** from `references/project-profiles.md`:
 - Stack: BigCommerce, Supabase, Cloudflare Pages, vanilla JS, Anthropic API
 - AccentOS repo: mgraf77/accent-os (index.html + 4 module files)
 - Already connected MCPs: Notion, Supabase, GitHub, Gmail, Google Calendar, Make, Canva, Vercel, Google Drive, Indeed
 - Filter rule: Does this reduce Michael's attention drain on AccentOS or Accent Lighting ecommerce? If not, skip.
 - Complexity budget: Setup > 2 min = HIGH FRICTION — flag but still report.
 
+**2. Prior run memory** — load the most recent `/home/user/accent-os/skills/repo-scout/repo-scout-run-*.md` file (newest date in filename). Extract the full list of all candidates already evaluated (any verdict). Any candidate that appears in a prior run is **pre-filtered** in Step 3 unless that run is >30 days old. Skip silently — do not re-evaluate unless explicitly asked.
+
 ---
 
 ## Step 2 — Search
 
-Run parallel web_search calls:
+Generate search strings from Michael's request, then run parallel web_search calls.
 
-Skill/repo discovery:
-- awesome-claude-skills github 2026
-- rohitg00 awesome-claude-code-toolkit
-- ComposioHQ awesome-claude-skills
-- VoltAgent awesome-agent-skills
+**Ecosystem baseline (always run, regardless of topic):**
+- rohitg00/awesome-claude-code-toolkit
+- ComposioHQ/awesome-claude-skills
+- punkpeye/awesome-mcp-servers
+- `mcpbundles.com [current year]`
 
-Accent Lighting specific:
-- BigCommerce MCP server claude
-- ecommerce product description claude skill
-- google merchant center automation MCP
-- klaviyo MCP server
+**Topic-specific strings (generate from Michael's request):**
+1. Extract the core domain (e.g., "SEO", "ecommerce", "CRM", "data sync", "cost optimization")
+2. Generate these search strings: `[domain] MCP server claude`, `[domain] claude skill github`, `awesome-[domain] claude`
+3. If Michael named a specific tool: add `site:github.com [tool-name]` and `[tool-name] claude integration`
+4. If AccentOS-specific domain: add `supabase [domain] claude`, `bigcommerce [domain] MCP`
 
-AccentOS specific:
-- supabase claude skill auth
-- vanilla JS claude code skill
-- SEO MCP ahrefs google search console 2026
-
-MCP discovery:
-- mcpbundles.com best mcp servers 2026
-- punkpeye awesome-mcp-servers
-
-Use web_fetch on high-signal pages when snippets are insufficient.
+Use web_fetch on high-signal pages when search snippets are insufficient. Skip pages already fetched in the loaded prior run.
 
 ---
 
@@ -78,21 +71,56 @@ Use web_fetch on high-signal pages when snippets are insufficient.
 
 For each candidate, run in order. First FAIL stops evaluation.
 
-Filter | Condition | Action
-Already installed | In current MCP/skill list | SKIP silently
-Overlap | Solves problem already solved | SKIP
-Project fit | Applies to AccentOS or Accent Lighting ecommerce | KEEP
-Attention test | Reduces Michael's decision/review load | KEEP
-Attention fail | Adds overhead without ROI | FLAG LOW PRIORITY
-Complexity | >2 min setup = HIGH FRICTION | KEEP but label
+| Filter | Condition | Action |
+|--------|-----------|--------|
+| Already in prior run | In loaded prior-run candidate list (run ≤30 days old) | SKIP silently |
+| Already installed | In current MCP/skill list from Step 1 | SKIP silently |
+| Overlap | Solves a problem already fully solved | SKIP |
+| Project fit | Applies to AccentOS or Accent Lighting ecommerce | KEEP |
+| Attention test | Reduces Michael's decision/review load | KEEP |
+| Attention fail | Adds overhead without ROI | FLAG LOW PRIORITY |
+| Complexity | >2 min setup | KEEP but label HIGH FRICTION |
+
+---
+
+## Step 3.5 — Existing skills overlap check
+
+For each candidate that survived Step 3 filtering, check if any skill in `/home/user/accent-os/skills/` already addresses the same domain. Read `skills/_index.md` triggers/summaries for fast matching.
+
+| Overlap level | Action |
+|---|---|
+| Full (existing skill covers ≥80% of candidate's value) | Downgrade verdict by 1 tier. Add note: "Consider upgrading [existing-skill] instead." |
+| Partial (<80% overlap) | Keep verdict. Add note: "Complements [existing-skill]." |
+| None | No change. |
+
+---
+
+## Step 3.8 — GitHub community patterns sweep
+
+For the top 2–3 INSTALL and EVALUATE candidates, run a parallel GitHub sweep to find how the Claude Code community has implemented the same concept. This is the **"look into skill"** feature for repo-scout — steal workflow patterns before customizing.
+
+**Per candidate (run in parallel):**
+- `site:github.com "SKILL.md" [candidate domain keyword]`
+- `awesome-claude-skills [candidate domain]`
+
+For each community skill found (cap: 2 per candidate):
+- Extract: workflow steps, trigger phrases, unique patterns, anti-patterns
+- Add to Step 6 customization notes tagged `[community pattern]`
+
+**Output per candidate (appears in Step 5 EVALUATE block, not the install snippet):**
+`Community patterns: [N found] — [pattern name 1], [pattern name 2]`
+
+Cap this sweep at 3 minutes total. If no community patterns found, note "Community: 0 found" and move on.
 
 ---
 
 ## Step 4 — Verdict
 
-INSTALL — Real gap, fits stack, clear ROI. Include customized install snippet.
-EVALUATE — Promising but needs credential/cost check.
-WATCH — Not useful now but directionally relevant.
+INSTALL [HIGH] — Verified working, clear ROI, <2min setup, fits AccentOS stack. Include customized snippet.
+INSTALL [MEDIUM] — Promising, unverified in AccentOS context, needs validation before use.
+EVALUATE — Promising but blocked by credential, cost, or dependency. State the specific blocker.
+FORGE — Better served by a custom AccentOS skill than by installing this tool as-is. Include: what the custom skill does differently. Invoke via: `look into [target] for AccentOS`.
+WATCH — Not useful now but directionally relevant. State the revisit trigger.
 SKIP — Redundant or irrelevant. One-line reason only.
 
 ---
@@ -101,17 +129,21 @@ SKIP — Redundant or irrelevant. One-line reason only.
 
 ### REPO SCOUT — [Date]
 
-Searched: [sources]
-Candidates: X | Filtered to: Y | INSTALL: Z | EVALUATE: W
+Searched: [sources] | Prior run loaded: [date or "none"]
+Candidates: X | Filtered to: Y | INSTALL: Z | EVALUATE: W | FORGE: F | WATCH: V | SKIP: S
 
 #### INSTALL
-[Name] — what it does, which gap it closes, friction level, paste-ready install block
+[Name] [HIGH/MEDIUM] — what it does, which AccentOS gap it closes, friction level, paste-ready install block, community patterns found
 
 #### EVALUATE
-[Name] — what it does, what is blocking
+[Name] — what it does, specific blocker, community patterns found (if any)
+
+#### FORGE
+[Name] — [one sentence: what a custom AccentOS skill does better than generic install]
+Invoke: `look into [name] for AccentOS`
 
 #### WATCH
-Brief list only.
+Brief list — name + revisit trigger.
 
 #### SKIP
 Brief list — name + one-line reason.
@@ -120,21 +152,37 @@ Brief list — name + one-line reason.
 
 ## Step 6 — Customizations
 
-For every INSTALL item:
-- Replace generic paths with Codespace paths: /workspaces/accent-os/
-- Reference AccentOS by name (not "your project")
-- Replace generic examples with AccentOS/Accent Lighting use cases
-- Install snippets = single paste-ready block, no "read the README" handoffs
-- BigCommerce store hash: store-cwqiwcjxes
-- Supabase project: hsyjcrrazrzqngwkqsqa
+For every INSTALL item, apply substitutions and meet the quality bar:
+
+**Substitutions:**
+- Paths → `/workspaces/accent-os/` (Codespace) or `/home/user/accent-os/` (local)
+- "your project" → AccentOS or Accent Lighting (specific)
+- Generic store → BigCommerce store-cwqiwcjxes
+- Generic DB → Supabase hsyjcrrazrzqngwkqsqa
+
+**Quality bar — snippet is incomplete until ALL of these are present:**
+- Single paste-ready block (no "read the README" handoffs)
+- At least one AccentOS-specific use case example showing exactly what Michael would invoke
+- A verify step (`# Verify:` line) — confirms the install worked
+- For MCP installs: full `settings.json` block included, not just the install command
+- Community patterns from Step 3.8 incorporated into customization notes (tagged `[stolen from community]`)
+
+**Relevance score (add to every INSTALL and EVALUATE block):**
+`Relevance: [1-10] — [one sentence against AccentOS/Accent Lighting specific needs]`
+- 9-10: Directly closes a named gap in project-profiles.md
+- 7-8: Clear indirect value for AccentOS or Accent Lighting ops
+- 5-6: Useful but non-critical
+- <5: Consider downgrading to WATCH
 
 ---
 
 ## Anti-patterns
 
 - Never return a raw list without verdicts
-- Never suggest installing something that overlaps current MCP stack
-- Never rate INSTALL without a customized snippet
+- Never suggest installing something that overlaps the current MCP stack without noting the overlap
+- Never rate INSTALL without a customized snippet that includes a verify step and AccentOS example
 - Never surface a tool requiring more than 5 min of Michael's attention — pre-chew it
 - Never skip filtering because a repo has high stars
 - Never ask Michael to read the README
+- Never skip Step 3.8 for INSTALL candidates — community patterns improve every install snippet
+- Never rate a candidate FORGE without stating what the custom skill does differently in one sentence
