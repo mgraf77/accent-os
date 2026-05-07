@@ -31,7 +31,7 @@ Stolen from: Universal SEO Skill technical-audit pattern + Firecrawl MCP structu
 Run when Michael says:
 - "audit the GMC feed" / "GMC remediation queue"
 - "what's broken in GMC" / "GMC missing images report"
-- "scan the feed" / "GMC feed audit" / "feed audit" (only when GMC context is clear — a standalone "feed audit" about RSS/Atom or site crawl goes elsewhere)
+- "scan the feed" / "GMC feed audit" / "feed audit" (only when GMC context is clear — a standalone "feed audit" about RSS/Atom or site crawl goes elsewhere; "check broken URLs site-wide" or "404 audit" routes to broken-link-rescue, not here)
 - "what products are failing GMC"
 - "M14 sprint" / "run the feed audit" / "Feedenomics report"
 
@@ -73,7 +73,7 @@ ORDER BY last_checked_at DESC, bc_sku;
 
 Omit LIMIT — M14 has 20K+ rows and needs a full scan. If the result set exceeds 50K rows, paginate by `last_checked_at` cutoff and run twice. If the result count matches the previous run exactly, flag possible truncation.
 
-If any column is missing from the live schema, flag the gap and proceed with what's available.
+If any column is missing from the live schema, flag the gap, list which fix types become unclassifiable (e.g. `gmc_status` absent → DISAPPROVED and PENDING_REINDEX rows cannot be classified; `images_per_sku` absent → MISSING_PRIMARY and LOW_IMAGE_COUNT rows cannot be classified), and proceed using only the columns present. If fewer than 3 of the 9 expected columns are present, stop and output: `SCHEMA TOO SPARSE — marketing.feed_status is missing [N] of 9 expected columns. Re-sync or use a different source before auditing.`
 
 ---
 

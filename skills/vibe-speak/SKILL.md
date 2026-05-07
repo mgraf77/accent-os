@@ -599,6 +599,7 @@ When more than one signal fires in the same turn:
 | Closure + autonomy | Autonomy wins (more specific intent). Closure tighten is absorbed. |
 | Tighten + loosen (composite) | Net = no change for the response. Both still log. |
 | Multiple corrections in one turn | All apply. Each gets its own feedback-log entry. |
+| Revert + bump-up | Revert wins — Michael using the technical term is a correction signal regardless of whether the message also contains a question. Log revert to feedback-log; bump-up is absorbed. |
 
 ---
 
@@ -1223,3 +1224,5 @@ Token cost amortized across the system's lifetime: negligible compared to the ca
 - **Never** activate vibe-speak's logging or self-optimize loop while in `raw` mode. Raw is fully off — leave all logs untouched for that session.
 - **Never** silently drop all mansplain asides in vibesplain mode. When volume is reduced, keep at least one aside per response so the mode stays recognizable.
 - **Never** combine vibesplain with gsd in the same response. They are philosophical opposites — switching is fine, blending defeats both. Surface the contradiction and pick one.
+- **Never** stay in `gsd` or `caveman` mode when outputting a Supabase `hsyjcrrazrzqngwkqsqa` SQL migration — the exact `ALTER TABLE`, `CREATE POLICY`, column names, and migration filename must be reproduced verbatim; gsd compression silently drops wording that Michael will paste into the SQL Editor. Step 7 Rule 3 auto-disengages; treat any attempt to suppress that disengage as a critical error.
+- **Never** stay in `gsd` or `caveman` mode through a multi-step AccentOS sequence where step order matters (e.g. M-task execution, BUILD_PLAN_CLAUDE.md item with unresolved BLOCKS ON MICHAEL, rep-group-matchmaker → vendor-onboard-checklist pipeline). Compressing the order makes dependencies ambiguous. Step 7 Rule 4 auto-disengages; the mode resumes only after the ordered sequence completes.

@@ -21,6 +21,8 @@ description: >
 
 **Purpose:** Reconciles git commit history and SESSION_LOG.md against BUILD_PLAN_CLAUDE.md and BUILD_PLAN_MICHAEL.md markers — catching every `[ ]` that should be `[x]` and producing paste-ready Edit commands so Michael fixes the drift in one pass. Modules ship and commits land in the AccentOS repo faster than BUILD_PLAN_CLAUDE markers update; this skill closes that gap before it causes a wrong-priority build session.
 
+**Behavioral commitment:** Always cite the exact git SHA or SESSION_LOG line for every marker flip — never mark a `[ ]` as `[x]` in `/home/user/accent-os/BUILD_PLAN_CLAUDE.md` or `/home/user/accent-os/BUILD_PLAN_MICHAEL.md` without HIGH-confidence evidence.
+
 ---
 
 ## Trigger Recognition
@@ -31,7 +33,7 @@ Run when Michael says:
 - "build plan status" / "audit the build plan"
 - "update [x]/[ ] from git"
 - "reconcile the plan"
-- "plan drift" / "markers are stale"
+- "build plan drift" / "markers are stale"
 
 ---
 
@@ -45,10 +47,10 @@ Read three sources:
    ```
    The `%n%b` includes the commit body (multi-line). Parse both subject AND body for "feat:", "ship:", "vNN.NN.NN" version markers, "Track N.N", "M[NN]" mentions. Bodies often contain the most explicit "shipped X" / "ran clean" language.
 
-2. **SESSION_LOG.md tail** (last ~200 lines):
+2. **`/home/user/accent-os/SESSION_LOG.md` tail** (last ~200 lines):
    Search for "shipped", "v6.10.NN", "M[NN] confirmed", track numbers, "ran clean".
 
-3. **WORK_IN_PROGRESS.md current+next:**
+3. **`/home/user/accent-os/WORK_IN_PROGRESS.md` current+next:**
    The "Step:" line often names the most-recently-shipped module + next-target.
 
 ---

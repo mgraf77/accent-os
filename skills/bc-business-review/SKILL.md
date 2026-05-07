@@ -43,9 +43,10 @@ Defaults:
 
 Overrides: "last week", "last 30 days", "Q4 to date", explicit date range. If Michael specifies a custom window, also pick a comparison window of equal length.
 
-Confirm the window before running queries:
+Confirm the window before running queries (dates are illustrative — use actual current dates):
 ```
-Window: 2024-04-24 → 2024-04-30 (this week) vs 2024-04-17 → 2024-04-23 (last week)
+Window: YYYY-MM-DD → YYYY-MM-DD (this week) vs YYYY-MM-DD → YYYY-MM-DD (last week)
+Example: 2026-04-30 → 2026-05-06 (this week) vs 2026-04-23 → 2026-04-29 (last week)
 ```
 
 ---
@@ -200,9 +201,9 @@ Top categories:
 ═══ BLOCK 3: ANOMALIES (|z| > 2.0) ═══
 For each anomaly:
   ↑/↓ [vendor name]   z=+2.4   $[this_week] vs $[mean ±std] historical
-  Reason hypotheses (best-guess from vendor metadata):
-    - [hypothesis 1]
-    - [hypothesis 2]
+  Reason hypotheses (best-guess from vendor name + category pattern — no separate metadata query needed):
+    - [vendor name suggests product line; check if seasonal or promo pattern applies]
+    - [cross-reference against BLOCK 2 category breakdown for the same vendor]
 
 ═══ BLOCK 4: NEXT-STEP HINTS ═══
 - For UP anomalies: snapshot via analysis-snapshot for tracking
@@ -215,7 +216,7 @@ For each anomaly:
 
 ## Anti-patterns
 
-- **Never** report KPIs without WoW comparison — point-in-time numbers without trend are noise.
+- **Never** report KPIs without WoW comparison — point-in-time numbers without trend are noise. A bc-business-review that shows "$142,000 revenue" with no prior-period delta fails the BLOCK 1 output spec and gives Michael nothing to act on.
 - **Never** flag an anomaly with <4 weeks of historical baseline — std deviation is unreliable.
 - **Never** include forecasting in this skill — backward-looking only. Forecasting lives in js/demand_forecast.js.
 - **Never** use `SELECT *` against deals — large table with PII; only pull needed columns.

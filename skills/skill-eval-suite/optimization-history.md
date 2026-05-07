@@ -111,3 +111,35 @@ CLEAN — after Pass 1 fixes the Step 1 path ambiguity was the only cold-read ga
 - Step 1 gotcha-log path: implicit → absolute path with context note
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:** AP1 ("Never generate evals that test implementation details that could legitimately change") was abstract — gave the rule but did not name which AccentOS-specific things are implementation details vs behaviors. Rewritten to name concrete forbidden targets (SKILL.md step-boundary prose, internal reasoning paragraphs, fingerprint-block field labels) and concrete allowed targets (BLOCK headers, verdict values HIGH/MEDIUM/LOW/INSTALL/SKIP, required CSV fields, AccentOS stack substitutions hsyjcrrazrzqngwkqsqa/store-cwqiwcjxes). All other 7 anti-patterns passed L1 with AccentOS-specific artifacts already named.
+
+**L2 commitment check:** Description "always X — never Y" present. Body's Trigger Recognition section was missing "test [skill name]" which appears in the description's trigger list — routing gap. Added "test [skill name]" to Trigger Recognition with parenthetical disambiguation distinguishing it from codex-review.
+
+**Adversarial check:** Dimensions sampled: M5 (trigger routing), M4 (AP1 specificity). M5 adversarial: "test [skill name]" missing from body trigger list — fixed. Cross-skill "test this skill" vs "review this skill" boundary clarified with routing note distinguishing skill-eval-suite (automated Promptfoo regression) from codex-review (manual structured review). M4 adversarial: AP1 rewrite tested — now names 3 concrete forbidden targets and 4 concrete allowed targets. Both logged clean after fix.
+
+**Cold-read check:** Trigger Recognition now matches description trigger list. Step 1 reads SKILL.md, references/*.md, and gotcha-log.md with absolute path. Step 3 produces numbered inventory. Step 4 YAML template shows 3 explicit test cases with `# ... 4 more` comment inside fenced code block — this is a partial template but the comment is inside a fenced block (M10 exempt). Step 5 output BLOCKs are concrete. Acceptable.
+
+**Cross-skill trigger audit:** "test [skill]" (skill-eval-suite: automated Promptfoo YAML) vs "review [skill]" (codex-review: manual scoring). Routing note added with decision heuristic. Confirmed distinct.
+
+### Round 6 — Second pass
+
+**L1 re-check:** AP1 now names SKILL.md step-boundary prose, BLOCK headers, verdict value enumerations (HIGH/MEDIUM/LOW, INSTALL/SKIP), and both AccentOS stack IDs. Comprehensive and AccentOS-specific. ✓
+
+**L2 re-check:** Routing note: "test / eval / regression / automate / promptfoo → skill-eval-suite; review / audit / score / improve → codex-review." Five action words per side. ✓
+
+**Adversarial re-check:** "test vendor-cascade" trigger routes to skill-eval-suite (automated regression). The parenthetical "(automated regression — distinct from 'review [skill]', which routes to codex-review)" makes this unambiguous inline. ✓
+
+**Cold-read re-check:** New trigger entry is the second bullet in the Trigger Recognition list — immediately visible in top-to-bottom reading order. Routing note follows trigger list, before Step 1. ✓
+
+**Cross-skill re-check:** No new overlaps introduced. skill-eval-suite vs codex-review boundary is now explicit in both Trigger Recognition and routing note. ✓
+
+### Final: 3 sub-dimension edits across 2 rounds
+
+---

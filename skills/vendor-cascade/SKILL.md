@@ -197,3 +197,5 @@ This variant uses Steps 1–3 then branches; Steps 4–5 are skipped, Step 6 pro
 - **Never** skip the SQL stub. The point of this skill is paste-readiness for `vendor_scores` — prose-only output is a failed run.
 - **Never** ask Michael to disambiguate a metric — pick the highest-weight match from the AccentOS scoring formula and state which one was selected in the output header.
 - **Never** run this skill against a vendor in BC store-cwqiwcjxes whose `vendor_id` does not exist in Supabase `hsyjcrrazrzqngwkqsqa` vendors table — flag the cross-store ID mismatch instead.
+- **Never** use this skill when the goal is cross-table scoring consistency across multiple vendors — that's vendor-clarity-test (checks `vendor_scores`, `vendor_overrides`, and `project-profiles.md` against each other).
+- **Never** use this skill when the goal is a ranked portfolio risk view — that's vendor-risk-register (ranks by concentration, volatility, stockouts, and GMC failures across all vendors).

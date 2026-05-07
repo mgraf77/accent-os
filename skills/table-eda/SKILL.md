@@ -192,7 +192,7 @@ For each fired flag, suggest a follow-up:
 ## Anti-patterns
 
 - **Never** use `SELECT *` on the target table for the profile — generate per-column probes.
-- **Never** profile a table without first verifying it exists in `/home/user/accent-os/sql/M*.sql`.
+- **Never** profile a table without first verifying it exists in `/home/user/accent-os/sql/M*.sql` — if not found, output "Target not found in /home/user/accent-os/sql/" and stop; do not generate SQL for phantom tables.
 - **Never** report Top values for columns where every row is unique (UUIDs, timestamps) — meaningless and noisy.
 - **Never** silently skip a column when profiling fails — if a column's type (e.g. `jsonb`, `tsvector`, `bytea`) cannot be handled by the generic per-column probe, output `[column]: SKIPPED — type [type] requires manual probe` and continue with the remaining columns.
 - **Never** run the profile SQL automatically — output it as paste-ready blocks. Michael runs the queries.

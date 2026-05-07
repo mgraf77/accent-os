@@ -16,8 +16,8 @@ description: >
   AccentOS completeness contract. Do not use to populate missing
   data (that's manual or requires API access to Windward) or to
   match rep groups (use rep-group-matchmaker). Always produces a
-  per-vendor checklist + remediation actions — never returns
-  prose-only.
+  per-vendor checklist with ✓/✗/⚠ field rows plus paste-ready SQL
+  UPDATE stubs against hsyjcrrazrzqngwkqsqa — never returns prose-only.
 ---
 
 # vendor-onboard-checklist
@@ -36,6 +36,8 @@ Run when Michael says:
 - "audit Acme Lighting record" / "audit V123 record"
 - "verify Bright Co data" / "verify this vendor data"
 - "check rep-group-matchmaker output" / "did the M19 batch leave gaps"
+
+Do **not** trigger on "new vendor needs a rep group", "match vendor to rep group", or "assign rep_group_id" — those route to rep-group-matchmaker (which writes `vendors.rep_group_id`). This skill runs **after** rep-group-matchmaker has already assigned the `rep_group_id`; it verifies the completed record, not the assignment logic.
 
 ---
 
@@ -175,7 +177,7 @@ UPDATE vendors SET moq_dollars = [VALUE]
 ## Anti-patterns
 
 - **Never** auto-execute the UPDATE stubs — output them as paste-ready SQL against `hsyjcrrazrzqngwkqsqa`; Michael fills `[VALUE]` then runs in the SQL Editor.
-- **Never** invent default values for missing `vendors` fields (e.g. don't assume `payment_terms = 'Net30'` if NULL — only Michael or the vendor contact can confirm).
+- **Never** invent default values for missing `vendors` fields (e.g. don't assume `payment_terms = 'Net30'` or `lead_time_days = 30` if NULL — only Michael or the vendor's `primary_contact_email` can confirm). Invented values produce silent data corruption in `hsyjcrrazrzqngwkqsqa` that downstream scoring in `vendor_scores` will silently inherit.
 - **Never** flag a "DESIRED" field (`hq_city`, `hq_state`, `revenue_tier`) as a ✗ failure. The contract in Step 2 is the authority: required = ✗ if missing, desired = ⚠ only.
 - **Never** mark a vendor "complete" just because all required `vendors` columns are non-null — also run the Step 4 cross-vendor sibling consistency check against `brand_category` peers.
 - **Never** modify the contract definition (Step 2 table) from inside this skill at runtime — the authoritative contract lives in this SKILL.md; changes require editing SKILL.md directly.

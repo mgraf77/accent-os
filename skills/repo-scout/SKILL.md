@@ -34,7 +34,9 @@ Run this skill when Michael says anything like:
 - "anything new on GitHub for [topic]"
 - "update my stack"
 - "what am I missing"
-- "find me tools for [project]"
+- "find me tools for AccentOS" / "find me tools for Accent Lighting"
+
+**Routing note:** repo-scout finds and evaluates *existing* tools, repos, and MCPs. If Michael wants to *build* a new AccentOS skill from scratch or adapt an external approach into a SKILL.md, route to skill-forge instead. Decision heuristic: "find / scout / is X worth it" → repo-scout; "build / create / write a skill for" → skill-forge.
 
 ---
 

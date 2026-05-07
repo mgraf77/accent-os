@@ -33,6 +33,7 @@ Stolen from: Promptfoo (https://github.com/promptfoo/promptfoo) — Anthropic-ac
 
 Run when Michael says:
 - "eval suite for [skill name]"
+- "test [skill name]" (automated regression — distinct from "review [skill]", which routes to codex-review)
 - "promptfoo for [skill]"
 - "regression tests for [skill]"
 - "automate the Ralph loop"
@@ -40,6 +41,8 @@ Run when Michael says:
 - "make sure [skill] doesn't break"
 - "write evals for [skill]"
 - "add promptfoo tests to [skill]"
+
+**Routing note:** skill-eval-suite produces *automated Promptfoo regression tests* (promptfooconfig.yaml) that run in CI and catch future regressions. If Michael wants a *manual structured review* of a SKILL.md's quality (scoring dimensions, anti-pattern gaps, prose), route to codex-review instead. Decision heuristic: "test / eval / regression / automate / promptfoo" → skill-eval-suite; "review / audit / score / improve" → codex-review.
 
 ---
 
@@ -190,7 +193,7 @@ Add to .github/workflows/skill-eval.yml:
 
 ## Anti-patterns
 
-- **Never** generate evals that test implementation details that could legitimately change — test behaviors (output blocks, verdict values, required fields), not exact internal phrasing.
+- **Never** generate evals that test implementation details that could legitimately change — specifically, do not assert on exact SKILL.md step-boundary prose, internal reasoning paragraphs, or fingerprint-block field labels that a future AccentOS skill edit could reword without changing behavior. Test only behaviors: BLOCK headers, verdict values (HIGH/MEDIUM/LOW, INSTALL/SKIP), required CSV fields, and AccentOS stack substitutions (hsyjcrrazrzqngwkqsqa, store-cwqiwcjxes).
 - **Never** assert on exact LLM output strings — use `contains` / `regex` / `contains-any` instead. LLM outputs vary; tests must pass on equivalent outputs.
 - **Never** skip the gotcha-log edge case test — that is the regression-protection point for skill-forge Step 8 fixes.
 - **Never** generate fewer than 5 test cases — trigger coverage, output shape, edge case, anti-pattern compliance, and stack-substitution are all mandatory.

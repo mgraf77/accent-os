@@ -110,3 +110,35 @@
 - Step 5 pg-cron fallback: missing test_runs table definition added; INSERT corrected to reference CTE
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:** All 7 anti-patterns checked. All passed — each names specific AccentOS artifacts (M*.sql files, /home/user/accent-os/sql/tests/, vendor_scores weight rule, rep_group active-only FK, CREATE TYPE statements). No generic entries found.
+
+**L2 commitment check:** Description "always X — never Y" present and names `/home/user/accent-os/sql/tests/` path. Body had no additional commitment. Clean.
+
+**Adversarial check:** Dimensions sampled: M6 (pg-cron SQL correctness), M5 (cross-skill "data quality" routing). M6 adversarial: pg-cron schedule body referenced `all_tests` CTE from the outer query, which is out of scope in a standalone pg-cron string — a generated cron job would silently fail. Fixed with a note explaining the CTE must be embedded inline, plus a corrected SQL template using dollar-quoting. M5 adversarial: "data quality tests" trigger could ambiguously route requests better served by table-eda. Added routing note distinguishing schema-contract-tests (formal re-runnable contracts) vs table-eda (ad-hoc exploration). Both logged clean after fix.
+
+**Cold-read check:** The `CREATE TABLE IF NOT EXISTS test_runs` DDL is present in Step 5 (added in Pass 3+4). The pg-cron snippet now correctly notes the CTE scoping issue. All steps produce named artifacts. Clean.
+
+**Cross-skill trigger audit:** "data quality tests" routing note added: "lock in / contract / nightly / invariants → schema-contract-tests; show me / explore / what does the data look like → table-eda." Confirmed distinct from table-eda ad-hoc path.
+
+### Round 6 — Second pass
+
+**L1 re-check:** pg-cron note names `all_tests` CTE by name, explains scope restriction, names the fix (embed full CTE inline using `WITH all_tests AS (...) UNION ALL ...`). Strong L1. ✓
+
+**L2 re-check:** Routing note: "lock in / contract / nightly / invariants → schema-contract-tests; show me / explore / what does the data look like → table-eda." Four trigger words on each side. ✓
+
+**Adversarial re-check:** Dollar-quote `$$...$$` syntax is standard PostgreSQL, works in Supabase SQL editor for hsyjcrrazrzqngwkqsqa. table-eda routing note references a skill that may not exist — routing note is still useful as conceptual direction. Logged clean.
+
+**Cold-read re-check:** pg-cron note placed inline in the Run Command block — a session generating the cron schedule will read the note immediately before the SQL template. ✓
+
+**Cross-skill re-check:** Routing note added to Trigger Recognition section (not just description). Clean. ✓
+
+### Final: 2 sub-dimension edits across 2 rounds
+
+---

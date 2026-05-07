@@ -36,6 +36,8 @@ Run when Michael says:
 - "nightly test for [table]"
 - "what invariants does [table] have"
 
+**Routing note:** schema-contract-tests generates *re-runnable formal contracts* (NOT NULL, UNIQUE, FK, enum bounds, singular cross-model invariants) that live in `/home/user/accent-os/sql/tests/`. If Michael wants *ad-hoc exploration* of actual data distributions, nulls, or row counts in a specific table right now, route to table-eda instead. Decision heuristic: "lock in / contract / nightly / invariants" → schema-contract-tests; "show me / explore / what does the data look like" → table-eda.
+
 ---
 
 ## Step 1 — Identify the target table
@@ -203,8 +205,20 @@ https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new
 
 Or schedule via pg-cron nightly (requires a test_runs table — create with
   CREATE TABLE IF NOT EXISTS test_runs (run_at timestamptz, test_name text, failures int, status text)):
+
+  NOTE: the pg-cron body runs as a standalone SQL string and cannot reference the `all_tests` CTE
+  defined in the outer query. When generating the cron schedule, embed the full
+  `WITH all_tests AS (... UNION ALL ...)` CTE inline inside the cron body string rather than
+  referencing `all_tests` as if it were a table — the outer CTE is out of scope inside pg-cron.
+
 SELECT cron.schedule('contracts-nightly', '0 3 * * *',
-  'INSERT INTO test_runs SELECT NOW(), test_name, failures, CASE WHEN failures=0 THEN ''PASS'' ELSE ''FAIL'' END FROM all_tests');
+  $$INSERT INTO test_runs
+    WITH all_tests AS (
+      -- paste the full UNION ALL block from the artifact here
+    )
+    SELECT NOW(), test_name, failures,
+           CASE WHEN failures=0 THEN 'PASS' ELSE 'FAIL' END
+    FROM all_tests$$);
 
 ═══ BLOCK 4: SCHEMA-DRIFT NOTES ═══
 Columns referenced that don't exist in /home/user/accent-os/sql/M*.sql:

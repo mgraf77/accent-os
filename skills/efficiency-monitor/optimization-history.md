@@ -118,3 +118,21 @@ No additional changes needed. Step 1 scratch format has concrete examples. Step 
 - efficiency-log.md format: all generic shape labels replaced with concrete session entry example
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** All 7 anti-patterns name AccentOS-specific artifacts (efficiency-log.md, session-end-summary.md, skill-candidates.md, _session-scratch.md, scripts/efficiency-aggregate.sh, skills/_index.md). Passed. Files section had passive constructions — fixed 3: "Thresholds tunable" → "edit this to tune", "overwritten each session; consumed by next boot" → "Step 2c overwrites / Step 0 reads", "(auto-rebuilt, semantic-diff suppressed)" → "aggregator rebuilds it; suppress semantic-diff noise".
+**L2 commitment check:** M3 commitment uses no vague words. "always surfaces findings at session boundaries only" and "never flags a skill-bypass without citing the exact skills/_index.md entry" are threshold-precise. Clean.
+**Adversarial check:** Dimensions sampled: M6 (concrete outputs — Step 2b), Step 5 (vibe-speak coordination). Step 2b format used `session a3f9c12` without an instruction for how to get the shortsha — added `git rev-parse --short HEAD`. Step 5 had no rule for when vibe-speak already routed a task — added Double-flag rule to prevent same bypass appearing in both vibe-speak and efficiency-monitor output.
+**Cold-read check:** Step 3 BUILT row said "archived with reference" but didn't define reference format — added `/home/user/accent-os/skills/[skill-name]/SKILL.md` as the reference pattern.
+**Cross-skill trigger audit:** efficiency-monitor auto-active and vibe-speak always-on confirmed non-colliding per Step 5 — vibe-speak fires proactively mid-session, efficiency-monitor fires retrospectively at boundaries. Double-flag rule sharpens the boundary case.
+
+### Round 6 — Second pass
+All binary Ralph checks passed on post-Round-5 state. No new passive voice introduced. Double-flag rule is active imperative voice. BUILT row template uses bracket in table cell (not fenced code) — acceptable as template slot, not M10 missing-content placeholder. No additional L1 opportunities found. Adversarial check on Step 0: "does not exist" covers both fresh-start and deleted-file case — no gap.
+
+### Final: 6 sub-dimension edits across 2 rounds
+
+---

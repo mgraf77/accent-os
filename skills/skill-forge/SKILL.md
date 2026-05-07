@@ -41,7 +41,7 @@ Run this skill when Michael says anything like:
 
 Also trigger when repo-scout returns an EVALUATE verdict and Michael says "build it custom" or similar.
 
-**"Look into" disambiguation:** "Look into" is overloaded — Michael also uses it for repo-scout-style "is this worth installing." Default reading: when the target is a specific tool/URL/repo/concept and Michael's intent looks like build-or-adapt, run skill-forge. When the target is a category ("look into MCPs for ecommerce") or the question is install-or-skip, run repo-scout instead. If genuinely ambiguous, run repo-scout first (cheaper) and chain into skill-forge if the verdict is EVALUATE-with-customization.
+**"Look into" disambiguation:** "Look into" is overloaded — Michael also uses it for repo-scout-style "is this worth installing." Default reading: when the target is a specific tool/URL/repo/concept and any indication exists that Michael wants a SKILL.md produced (not just an install decision), run skill-forge. When the target is a category ("look into MCPs for ecommerce") or the question is install-or-skip with no customization signal, run repo-scout instead. If genuinely ambiguous, run repo-scout first and chain into skill-forge if the verdict is EVALUATE-with-customization.
 
 ---
 

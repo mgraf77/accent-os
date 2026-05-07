@@ -114,3 +114,51 @@ No additional changes needed. Step 0 parse table, Step 2 JSON shape, Step 5 exit
 - Step 6 output: all fields now show concrete example values with substitution note
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:**
+All 8 anti-patterns already name specific AccentOS artifacts: `autonomous_mode.json`, `SESSION_LOG.md`, `PROMPT_QUEUE.md`, `hsyjcrrazrzqngwkqsqa`, `store-cwqiwcjxes`. No generic anti-patterns found — L1 already strong.
+
+**L2 commitment check:**
+Commitment ("Always writes /home/user/accent-os/.claude/autonomous_mode.json with scope and exit criteria before touching any code — never executes autonomously without a disk-persisted, timestamped plan") has no vague words. Already tight.
+
+**Adversarial check:**
+Dimensions sampled: M4, M5
+- M4 AP5 ("Never auto-rebase or auto-resolve merge conflicts"): failure path — git pull during autonomous work results in conflict. Skill says "Stop, flag the conflict in SESSION_LOG.md, and await Michael." Explicit handling. No robustness gap.
+- M5 ("drain the prompt queue while I'm out"): no overlap with other AccentOS skills that claim drain-queue execution. No overlap gap.
+
+**Cold-read check:**
+Step 1 validation Step 4 ("Estimate scope: how many discrete commits? How many tokens approximately?") was implicit about where these estimates go — a cold-read session might compute them mentally without writing them into the Step 2 JSON, breaking the `estimated_commits`/`estimated_tokens` fields. Fixed: added explicit note that these values populate `estimated_commits` and `estimated_tokens` in the Step 2 JSON.
+
+**Cross-skill trigger audit:**
+- "drain the prompt queue" — owned by autonomous-mode, not claimed by another skill. Clean.
+- "go autonomous" / "unattended mode" — distinct. Clean.
+- "until 3pm" / "for the next 2 hours" — time-bound forms; no scheduler skill claims these. Clean.
+
+### Round 6 — Second pass
+
+**L1 specificity check:**
+All anti-patterns verified specific after Round 5. No changes needed.
+
+**L2 commitment check:**
+Commitment unchanged — still tight. No rewrite needed.
+
+**Adversarial check:**
+Dimensions sampled: M6, M3
+- M6: Step 1 now explicitly connects estimate values to Step 2 JSON fields. Step 2 JSON block is concrete with all fields named. Step 5 exit summary block is concrete. No failure path found.
+- M3: "Always writes ... autonomous_mode.json ... before touching any code" — failure path: what if scope parsing in Step 0 is ambiguous and the skill asks one clarifying question and never gets a response? Step 0 says "ask one clarifying question and wait — never guess." Mode does not start until clarification received. Commitment not violated. No failure path found.
+
+**Cold-read check:**
+All steps reference concrete files. Step 1 estimate-to-JSON link fixed in Round 5. Step 0 parse table has concrete defaults for all 3 fields. Step 4 work loop cross-references skills covered in Composability section. Clean.
+
+**Cross-skill trigger audit:**
+No new triggers added. No overlaps found.
+
+### Final: 1 sub-dimension edit applied across 2 rounds
+Techniques that moved quality: Cold-read fix on Step 1 estimate-to-JSON field linkage (prevents silent drop of scope size data)
+Techniques that didn't: L1 check — all APs already specific; L2 check — commitment already tight; adversarial checks on M4/M5/M6/M3 — no failure paths found

@@ -100,3 +100,24 @@ All four risk dimensions have explicit fallback handling (NULL-total abort for d
 
 ### Sub-dimension improvements:
 - Purpose line: action-verb sentence (rank) naming all four dimensions and the outcome benefit; replaced a problem-description with a skill-description
+
+---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** AP#6 contained garbled text "BC store-cwqiwcjxes score" — not a real table/column name. Replaced with `vendor_scores.score` (the actual column name used in Dim B SQL). AP#1 "underlying dimension values" was generic — tightened to name all four SQL aliases: `pct_of_revenue`, `score_volatility` σ, `stockout_count_90d`, `disapproved_count` (verified against Step 2 SQL column aliases). Description commitment "paste-ready risk register table plus mitigation list" lacked column specificity — tightened to name all 8 register columns matching Step 4 table header.
+**L2 commitment check:** Description commitment now names Rank/Vendor/Revenue %/Volatility/Stockouts/GMC fails/Composite/Severity columns — exact match to Step 4 table. Verifiable at a glance.
+**Adversarial check:** Dimensions sampled: M4 (anti-patterns), M5 (triggers). M4: AP#6 had garbled text — fixed. M5: "concentration risk" is broad enough to collide with a financial dashboard request; added NOT-trigger for "orphan metrics" / "vendor cascade" / "why did vendor X score drop" → vendor-cascade. Distinguishes portfolio-rank (this skill) from single-vendor diagnosis (vendor-cascade).
+**Cold-read check:** SQL Dim D references `marketing.feed_status` table — schema-qualified table name. AP states "flag missing source and proceed" — consistent with Step 2 fallback. ✓ Weight re-normalization formula in Step 3 is concrete with numbers (0.40/0.75 = 0.533) — cold-readable. ✓
+**Cross-skill trigger audit:** NOT-trigger block added distinguishing this skill (portfolio risk rank from `vendor_scores`, `deals`, `inventory`, `marketing.feed_status`) from vendor-cascade (single-vendor diagnosis from `vendor_scores.priority_id` weights).
+
+### Round 6 — Second pass
+**L1 re-check:** AP#1 column names verified against Step 2 SQL aliases: `pct_of_revenue` (Dim A SELECT), `score_volatility` (Dim B STDDEV alias), `stockout_count_90d` (Dim C COUNT alias), `disapproved_count` (Dim D COUNT FILTER alias). All four match exactly. ✓
+**L2 re-check:** Description commitment column list "Rank/Vendor/Revenue %/Volatility/Stockouts/GMC fails/Composite/Severity" matches Step 4 table header exactly. ✓
+**Adversarial re-check:** "orphan metrics" in NOT-trigger is a valid vendor-cascade trigger phrase. "why did vendor X score drop" is a natural diagnostic question. Both correctly route to vendor-cascade, not this skill. ✓
+**Cold-read re-check:** No new ambiguities. Garbled AP#6 text was the most visible issue; now resolved.
+
+### Final: 4 sub-dimension edits across 2 rounds

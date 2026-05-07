@@ -106,3 +106,23 @@ No additional changes needed. Step 5 stale-recovery logic is explicit with time 
 - Step 4.5 RESOLVE output: generic `[N]` / `[W]` / `[P]` / `#N "..."` replaced with full AccentOS-domain example (5 items, real prompt text, real condition states)
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** All 9 anti-patterns name specific AccentOS artifacts (`/home/user/accent-os/PROMPT_QUEUE.md`, `SCHEMA_PARSE_UNCERTAIN`, verbatim phrasing rule). PASS. Anti-pattern "Never auto-promote based on Claude's judgment" did not specify what "judgment" means — no agent can self-police a vague prohibition. Fixed to name the two specific judgment forms: inferring urgency from prompt_text content, and reordering because a related M-task landed.
+**L2 commitment check:** "Claude's judgment" was the sole vague phrase. Fixed. No other vague words in commitments or steps.
+**Adversarial check:** Dimensions sampled: M3 (halt-and-wait state consistency), M4 (anti-pattern specificity). Cold-read found correctness bug in Step 6: "halt-and-wait gate, that item moves to WAITING" — inconsistent with Step 5 which clearly defines halt-and-wait → PAUSED (not WAITING). WAITING is for deferred-condition items; PAUSED is for mid-run interruptions. Fixed to PAUSED with explicit parenthetical distinguishing the two states.
+**Cold-read check:** Step 6 WAITING→PAUSED fix resolves state-machine inconsistency. Lifecycle state summary in Step 5 now matches Step 6 language. PASS.
+**Cross-skill trigger audit:** No collision found. "queue this prompt" / "drain the queue" do not overlap with any other AccentOS skill trigger pattern. PASS.
+
+### Round 6 — Second pass
+**L1 check (re-run on edits):** Anti-pattern names `/home/user/accent-os/PROMPT_QUEUE.md` explicitly in the reordering prohibition. L1 PASS.
+**L2 check (re-run on edits):** "inferring urgency from prompt_text content" and "reordering because a related M-task just landed" are concrete examples. No vague language. PASS.
+**Adversarial (state machine):** PAUSED fix confirmed consistent with Lifecycle states summary (5 total), Step 5 halt-and-wait gate description, and Step 3 VIEW render ordering. All three references now say PAUSED for halt-and-wait. PASS.
+**Cold-read check:** Full scan clean. PASS.
+
+### Final: 2 sub-dimension edits across 2 rounds
+

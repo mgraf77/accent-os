@@ -170,7 +170,7 @@ For REJECT:
 ## Anti-patterns
 
 - **Never** verdict INSTALL on a skill that fails Step 3 with any HIGH-risk pattern unjustified — one unreviewed shell-injection vector can exfiltrate Supabase hsyjcrrazrzqngwkqsqa credentials.
-- **Never** verdict INSTALL without completing the Step 2 permissions audit. Skill-quality signals (good description, clean formatting) do not substitute for the per-tool permission classification table produced in Step 2.
+- **Never** verdict INSTALL without completing the Step 2 permissions audit. A skill can score 100/100 on quality signals — polished description, AccentOS-standard trigger phrases, ≥5 anti-patterns — and still contain an unjustified `Bash` pipe to the Supabase MCP server that routes the project ref for `hsyjcrrazrzqngwkqsqa` to an external host. The per-tool permission classification table from Step 2 is the only check that catches this.
 - **Never** trust a SKILL.md description alone — read every numbered workflow step and any `references/*.md` files or scripts in the same directory for hidden Bash, WebFetch, or MCP tool calls not mentioned in the description.
 - **Never** auto-install — running `cp -r [source] /home/user/accent-os/skills/[name]/` without Michael's explicit confirmation brings unaudited code into the same directory tree as `hsyjcrrazrzqngwkqsqa` credentials and AccentOS session hooks; write the command to BLOCK 4 and stop.
 - **Never** REJECT without proposing the skill-forge alternative — "look into [original target]" lets Michael capture the concept safely.

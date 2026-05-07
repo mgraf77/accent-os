@@ -117,3 +117,35 @@ No new changes — all Ralph findings addressed in Cycle 2
 - Step 2: hardcoded queries clarified as baseline + gap-extension set, closing the implicit Step 1→Step 2 link
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:** All 8 anti-patterns checked. All passed — each names a specific AccentOS artifact (store-cwqiwcjxes, hsyjcrrazrzqngwkqsqa, project-profiles.md path, MCP stack list) or a concrete behavior failure mode. No generic entries found.
+
+**L2 commitment check:** Description's "always X — never Y" is present and unconditional. Body trigger list had `[project]` bracket in "find me tools for [project]" — this is an M10 violation outside a fenced code block. Replaced with concrete examples: "find me tools for AccentOS" / "find me tools for Accent Lighting".
+
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases), M10 (placeholder check). M5 adversarial: "find new skills" could collide with skill-forge (build) path — added routing note distinguishing repo-scout (find existing) vs skill-forge (build new). M10 adversarial: `[project]` bracket in trigger list — fixed. Both logged clean after fix.
+
+**Cold-read check:** Step 1 loads project-profiles.md before searches. Step 2 has concrete baseline queries with gap-extension instruction. Step 3 filter table is deterministic. Step 4 verdict definitions have clear criteria. Step 5 output block is concrete and paste-ready. Clean.
+
+**Cross-skill trigger audit:** "find new skills" → repo-scout (find as-is) vs skill-forge (build/adapt). Routing note added in Trigger Recognition with decision heuristic: "find / scout / is X worth it" → repo-scout; "build / create / write a skill for" → skill-forge. Confirmed distinct.
+
+### Round 6 — Second pass
+
+**L1 re-check:** Fixed trigger "find me tools for AccentOS" / "find me tools for Accent Lighting" — both concrete AccentOS entities. ✓
+
+**L2 re-check:** Routing note heuristic: "find / scout / is X worth it → repo-scout; build / create / write a skill for → skill-forge" — four action words on each side, specific enough for deterministic routing. ✓
+
+**Adversarial re-check:** "find me a skill for vendor scoring" routes to repo-scout first (correct); if nothing exists, gap surfaces for skill-forge. No dead-end. Clean. ✓
+
+**Cold-read re-check:** Routing note placement (after trigger list, before Step 1) is the correct location for a session reading top-to-bottom. Clean. ✓
+
+**Cross-skill re-check:** No new overlaps introduced by routing note. Clean. ✓
+
+### Final: 2 sub-dimension edits across 2 rounds
+
+---

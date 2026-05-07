@@ -59,7 +59,7 @@ Fire automatically (with confirmation) after any commit that modifies `/home/use
 **Out of scope — fail fast:**
 - KPI catalog missing → "KPI_CATALOG.md not found at /home/user/accent-os/KPI_CATALOG.md. Commit it first OR pass an alternative path: 'audit data using path/to/catalog.md'"
 - Auditing against a SQL file outside `/home/user/accent-os/sql/` → "Schema files must live under /home/user/accent-os/sql/ to be audited"
-- "Query for KPI data" or "pull the KPI numbers" → use supabase-sql-magic, not this skill. This skill audits which KPIs are computable; it does not run queries to retrieve the actual values.
+- "Query for KPI data", "pull the KPI numbers", "show me today's F3" → use supabase-sql-magic, not this skill. This skill answers "which KPIs are *possible*" (schema + integration gap analysis); supabase-sql-magic answers "what are the *values*" (live query execution). If Michael asks "what can we compute today" and means the actual numbers, route to supabase-sql-magic.
 
 ---
 
@@ -322,7 +322,7 @@ Output artifact: a one-line suggestion appended to BLOCK 6 when `/home/user/acce
 - **Never** auto-add schema columns. Output recommendations as paste-ready DDL; Michael runs them via M-tasks.
 - **Never** assume a variable exists without verifying in `M*.sql` files. The ⚠ marker in the catalog is a hint, not authoritative.
 - **Never** report a variable as MISSING without providing an acquisition path. "Missing, figure it out" is not useful.
-- **Never** invent variables that aren't actually referenced by any catalog KPI. Stick to what's needed.
+- **Never** invent variables that aren't referenced by a KPI in `/home/user/accent-os/KPI_CATALOG.md`. Auditing a `products.cost_estimated` column no KPI formula mentions inflates the gap count and produces phantom M-task recommendations.
 - **Never** modify the catalog file from this skill — audit-only.
 - **Never** count derived KPIs (e.g. F11 = F8 + F10 − F9) as MISSING just because their upstream KPIs are MISSING. Mark them as DERIVED-DEPENDENT and compute their status transitively.
 - **Never** output the full audit on every run if Michael asked about a single KPI. Step 0 parses the invocation; honor the scoped mode for the entire run.

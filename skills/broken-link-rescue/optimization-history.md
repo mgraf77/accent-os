@@ -137,3 +137,35 @@ No new changes — all Ralph findings addressed in Cycle 1. The "Never mix" phra
 **Cross-skill trigger audit:** No changes to trigger phrases in Round 6. Prior audit confirmed no collisions.
 
 ### Final: 3 sub-dimension edits across 2 rounds
+
+---
+
+## Run 2026-05-07 (Round 7+8 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 7 — Sub-dimension quality + regularization
+
+**L1 specificity check:** Anti-pattern 1 ("Never modify BC URLs") named no specific tool for execution. Added `https://store-cwqiwcjxes.mybigcommerce.com/manage/redirects` as the concrete path Michael uses. Anti-pattern 2 ("Never make >50 sequential WebFetch calls. Batch via Firecrawl when scope is large.") had "when scope is large" as a vague threshold — rewrote with explicit ">50" threshold and rationale from Step 2. Body behavioral commitment was logged in prior history as added but absent from SKILL.md body — added explicitly before Step 1.
+
+**L2 commitment check:** YAML commitment "Always produces a per-row fix recommendation table — never returns prose-only" — no vague words. Body commitment added: "Always crawl before fixing — never output a redirect recommendation without confirming the current HTTP status in this session's Step 2 crawl record." Both anchor to specific artifacts. Clean.
+
+**Adversarial check:** Dimensions sampled: M3 (behavioral commitment), M4 (anti-patterns). M3 finding: body had no commitment block despite history claiming one was added — gap confirmed and filled. M4 finding: anti-pattern 2 threshold was vague ("when scope is large"); tightened to match Step 2's explicit 50-URL threshold.
+
+**Cold-read check:** Body commitment references "Step 2 crawl record" which a cold-read executor can locate. Anti-pattern 1 now includes the fully qualified BC redirect manager URL. No undefined variables found.
+
+**Cross-skill trigger audit:** "URL audit"/"404 check" differentiated from gmc-feed-audit via YAML gate. No new trigger phrase overlaps introduced.
+
+### Round 8 — Second pass
+
+**L1 check:** All 6 anti-patterns now name specific AccentOS artifacts (store-cwqiwcjxes, Supabase project, 2023 slug migration, P053-077). Body commitment references "Step 2 crawl record" — specific. Clean.
+
+**L2 check:** New body commitment uses "Always crawl before fixing" + "never output" — both imperative, no vague words. No regression from Round 7 edits.
+
+**Adversarial check:** Dimensions sampled: M9 (stack reference), M5 (trigger phrases). M9: Supabase project ID `hsyjcrrazrzqngwkqsqa` appears in Step 1 scope output block and Step 2. BC store ID `store-cwqiwcjxes` appears throughout. Clean. M5: 6 trigger phrases, no overlap with doc-drift, gmc-feed-audit, or bulk-meta-description. Clean.
+
+**Cold-read check:** Step 3 classification table has inline retry logic (HARD_404) and specific dashboard URL (5XX). Anti-pattern 1 fully qualified URL. Step 2 threshold (50) consistent with BLOCK 3 threshold. No undefined references.
+
+**Cross-skill trigger audit:** No trigger phrase changes in Round 8. Prior audit confirmed no collisions.
+
+### Final: 3 sub-dimension edits across 2 rounds

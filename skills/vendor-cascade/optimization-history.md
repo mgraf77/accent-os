@@ -106,3 +106,24 @@
 - Secondary trigger clause is now a standalone condition, not an "also" conjunction
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** All 7 existing Never anti-patterns name specific AccentOS artifacts. Cross-skill boundary gap found: no anti-patterns directed to vendor-clarity-test or vendor-risk-register, despite both being adjacent skills with overlapping surface triggers. Added two new anti-patterns naming both skills with their specific tables and dimensions.
+**L2 commitment check:** Description ends with "Always produces three paste-ready outputs: a cascade table, an orphan list, and a vendor_scores SQL stub for Supabase hsyjcrrazrzqngwkqsqa — never returns prose-only analysis." — three specific deliverables named with project ID. Passes.
+**Adversarial check:** Dimensions sampled: M6 (concrete step outputs), M10 (no placeholders). M6: Steps 3–6 all have concrete example tables and output blocks with real column names. Reverse-cascade variant has a 5-column table with actual computed values as examples. M10: `[computed total 0–1]` and `[computed]` in reverse-cascade prose are runtime instruction tokens with explicit fill-in requirement ("replace each bracketed token with the actual numeric result — never leave as-is") — not unfilled placeholders. Both pass.
+**Cold-read check:** Walked through reverse-cascade variant: Michael asks "why is Acme Lighting ranked 3rd?" → Steps 1-3, then branch, pull from BC store-cwqiwcjxes and `vendor_scores` in `hsyjcrrazrzqngwkqsqa`, multiply weights, output 5-column table. Step 4 says "replace each bracketed token" — unambiguous instruction. Clean.
+**Cross-skill trigger audit:** vendor-cascade vs. vendor-clarity-test: vendor-clarity-test already has an explicit Do-Not-Trigger naming vendor-cascade; vendor-cascade previously had no reciprocal redirect. Added. vendor-cascade vs. vendor-risk-register: vendor-risk-register description says "Do not use for individual vendor diagnosis (that's vendor-cascade)"; vendor-cascade previously had no reciprocal redirect. Added. Both gaps now closed.
+
+### Round 6 — Second pass
+**L1 re-check:** Both new anti-patterns name specific artifacts: `vendor_scores`, `vendor_overrides`, `project-profiles.md` for clarity-test; concentration/volatility/stockouts/GMC dimensions for risk-register. Passes.
+**L2 re-check:** Description commitment unchanged and specific. Passes.
+**Adversarial re-check on M5 and M3:** M5: 8 trigger phrases, all distinct — no near-duplicates. "where does this score come from" vs. "what's actually driving the ranking" ask subtly different questions (source vs. contributor); both valid. M3: commitment names three specific output artifacts. Both pass.
+**Cold-read re-check:** New anti-patterns are immediately actionable — each names the target skill and its scope. A new session encountering a "consistency across multiple vendors" request now has an explicit redirect rather than needing to reason about skill scope. Passes.
+**Cross-skill trigger audit:** All three vendor skill boundaries are now bidirectional: vendor-cascade ↔ vendor-clarity-test, vendor-cascade ↔ vendor-risk-register. No further collisions found.
+
+### Final: 2 sub-dimension edits across 2 rounds
+

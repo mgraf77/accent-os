@@ -108,3 +108,35 @@
 - Step 1 and Step 2 SQL blocks carry `-- Supabase hsyjcrrazrzqngwkqsqa` for paste-readiness
 - `state_proximity` adjacency rule is now deterministic (US contiguous-border adjacency)
 - Block 3 UPDATE SQL carries project ID — all SQL blocks now consistent
+
+---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:** AP4 ("Never ignore the state_proximity dimension") was generic — named geography as important but did not identify the AccentOS artifact or consequence. Rewritten to name `rep_groups.regions` field and AccentOS M19 as the specific artifact harmed.
+
+**L2 commitment check:** No explicit always/never behavioral commitment existed in the skill body (only in the frontmatter description). Added commitment between Step 5 and Step 6: "Always emit all five BLOCKs in Step 6 for every run — never collapse BLOCK 4 or BLOCK 5 into a footnote because the vendor count is small." Names specific BLOCKs (4 and 5), specific failure scenario (small vendor count suppression), and M19 tracking rationale.
+
+**Adversarial check:** Dimensions sampled: M4 (AP4), M3 (new commitment). AP4 adversarial: fixed by L1 rewrite. M3 adversarial: zero-INSUFFICIENT_DATA edge case — commitment "never collapse" still emits an empty BLOCK 5 correctly; no dead-end. Both logged clean after fix.
+
+**Cold-read check:** All five BLOCKs in Step 6 are fully defined. Scoring formula in Step 4 uses deterministic rules. State adjacency rule is explicit. Fingerprint output in Step 3 uses realistic values. Clean.
+
+**Cross-skill trigger audit:** "M19 batch" / "M19 fix" triggers verified distinct from vendor-onboard-checklist. vendor-onboard-checklist handles individual vendor setup; rep-group-matchmaker handles bulk unassigned-vendor scoring. No overlap. Clean.
+
+### Round 6 — Second pass
+
+**L2 re-check:** "Always emit all five BLOCKs... never collapse BLOCK 4 or BLOCK 5 into a footnote because the vendor count is small" — both artifact names (BLOCK 4, BLOCK 5) and failure scenario specified. Strong L2 commitment. ✓
+
+**L1 re-check:** AP4 now names `rep_groups.regions`, territory coverage, and AccentOS M19 as specific failure artifacts. Strong L1. ✓
+
+**Adversarial re-check:** M3 commitment zero-vendor edge case clean. No further issues found.
+
+**Cold-read re-check:** Step 5 → Step 6 transition now has explicit commitment anchoring expected output. Clean.
+
+**Cross-skill re-check:** No new overlaps introduced. Clean.
+
+### Final: 2 sub-dimension edits across 2 rounds

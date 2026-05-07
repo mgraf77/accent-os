@@ -107,3 +107,24 @@
 - Trigger list: 5th distinct entry point added (M19-batch follow-up scenario)
 - Step 4 SQL block carries `-- Supabase hsyjcrrazrzqngwkqsqa` for paste-readiness
 - Step 5 UPDATE stub header carries project ID — consistent with all other SQL blocks in the skill
+
+---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** AP#2 said "only Michael or the vendor contact can confirm" — "vendor contact" is vague. Tightened to name the specific field: "the vendor's `primary_contact_email`." Added downstream consequence: "Invented values produce silent data corruption in `hsyjcrrazrzqngwkqsqa` that downstream scoring in `vendor_scores` will silently inherit." Description commitment lacked artifact specificity — "per-vendor checklist + remediation actions" rewritten to "per-vendor checklist with ✓/✗/⚠ field rows plus paste-ready SQL UPDATE stubs against hsyjcrrazrzqngwkqsqa."
+**L2 commitment check:** Commitment now names the exact artifact format (✓/✗/⚠ rows + SQL stubs) and the target Supabase project — tight enough to be verifiable.
+**Adversarial check:** Dimensions sampled: M5 (triggers), M6 (step outputs). M5: trigger "onboard Acme Lighting record" could route here when Michael actually means rep-group-matchmaker (assign the rep_group_id first). Missing NOT-trigger for rep-group-matchmaker routing — added. M6: BLOCK 3 SQL stubs contain `[VALUE]` — inside code fence, exempt from M10. ✓
+**Cold-read check:** Step 4 HAVING COUNT(*) >= 3 condition is explicit — sibling threshold of 3 is named. Step 4 also has explicit skip-message when threshold not met. Clean.
+**Cross-skill trigger audit:** NOT-trigger block added: "new vendor needs a rep group" / "match vendor to rep group" / "assign rep_group_id" → rep-group-matchmaker. Clarification: this skill runs AFTER rep-group-matchmaker assigns `rep_group_id`; it verifies the completed record, not the assignment logic.
+
+### Round 6 — Second pass
+**L1 re-check:** AP#2 `primary_contact_email` is a real `vendors` field (confirmed in Step 2 completeness contract table) — cross-consistent. ✓
+**L2 re-check:** Description commitment ✓/✗/⚠ symbols match Step 3 status legend exactly. ✓
+**Adversarial re-check:** Cross-skill column consistency: `vendors.rep_group_id`, `vendors.payment_terms`, `vendors.lead_time_days`, `vendors.brand_category` all appear in both Step 2 contract table and Step 4 SQL — consistent. ✓
+**Cold-read re-check:** NOT-trigger paragraph placement (after trigger list, before ---) is correct — new reader will see it immediately after the DO-trigger list.
+
+### Final: 3 sub-dimension edits across 2 rounds

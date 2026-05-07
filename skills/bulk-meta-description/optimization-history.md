@@ -108,3 +108,33 @@
 - Step 1: batch_id field added for cross-run traceability
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:** Anti-pattern 6 ("Never invent product attributes. If a finish/lumens isn't in the data, leave it out.") named no specific AccentOS table column or consequence. Rewrote to name `finish`, `lumens`, `dimensions_in` columns in `products` table (Supabase `hsyjcrrazrzqngwkqsqa`) and added consequence ("fabricated specs produce false product claims that trigger GMC policy review"). Body had no behavioral commitment; added: "Always validate character count before writing a row to the BC import CSV — never emit a description outside 145–160 chars to the BC bulk import URL."
+
+**L2 commitment check:** YAML commitment "Always produces a CSV with product_id, current_meta, new_meta, char_count — never returns prose-only" — names exact CSV columns, no vague words. New body commitment names specific URL and char range. Clean.
+
+**Adversarial check:** Dimensions sampled: M3 (behavioral commitment), M9 (stack reference). M3: body commitment added with BC import URL and char range as measurable criteria. M9: Supabase project ID `hsyjcrrazrzqngwkqsqa` appears in Step 2 SQL and new anti-pattern. BC store `store-cwqiwcjxes` in Purpose and Step 5 BLOCK 4. Clean.
+
+**Cold-read check:** Step 2 SQL query is complete with parameter syntax. Fallback instruction names `/home/user/accent-os/sql/M02_core_schema.sql` and two concrete table alternatives. Step 3 templates are copy-pasteable. No undefined variables.
+
+**Cross-skill trigger audit:** "M15 batch" — unique to bulk-meta-description. "Eugene's CSV is ready" — unique. "bulk meta" — unique. No overlap with broken-link-rescue, build-plan-status, or codex-review triggers.
+
+### Round 6 — Second pass
+
+**L1 check:** All 6 anti-patterns now name specific AccentOS columns, files, or incident references. Body commitment references specific BC import URL. Clean.
+
+**L2 check:** New anti-pattern: "NULL in the `products` table (Supabase hsyjcrrazrzqngwkqsqa)" — specific table and project. New commitment: "145–160 chars" and BC URL — no vague words. No regression from Round 5 edits.
+
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases) and M6 (concrete outputs). M5: 6 trigger phrases, all distinct, no overlap with other skills in the group. M6: Step 5 output includes BLOCK 2 (BC import CSV with columns), BLOCK 2b (review log with status enum), BLOCK 3 (flagged rows with upstream actions), BLOCK 4 (paste target URL). All concrete. Clean.
+
+**Cold-read check:** Body commitment now actionable without prior context. Anti-pattern for NULL fields references specific column names. Step 1 batch ID example (`BMD-2026-05-07-001`) is concrete. No session-context-only instructions.
+
+**Cross-skill trigger audit:** No trigger phrase changes in Round 6. No collisions found.
+
+### Final: 3 sub-dimension edits across 2 rounds

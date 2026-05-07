@@ -104,3 +104,24 @@
 - Step 3 precondition: missing fallback for "no results yet" case made explicit
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** Found one L1 gap: Anti-pattern 2 ("Never profile a table without first verifying it exists in M*.sql") named the path and the verification step but omitted the stop consequence and named the failure mode. Added exact output string "Target not found in /home/user/accent-os/sql/" and the consequence "stop; do not generate SQL for phantom tables."
+**L2 commitment check:** Description ends with "Always produces a per-column table plus an outlier-flag list — never returns prose-only." — specific deliverable types named. Passes.
+**Adversarial check:** Dimensions sampled: M7 (zero passive voice), M6 (concrete step outputs). M7: "cannot be handled" in Anti-pattern 4 is a modal passive describing a column property in a conditional instruction — the instruction itself ("output [...]") is active. Acceptable. M6: All steps have concrete output artifacts anchored to hsyjcrrazrzqngwkqsqa. Both pass.
+**Cold-read check:** Walked through Step 0 → Step 5 on a 15-column vendors table. Column guardrail passes, Step 1 confirms target in M*.sql, Step 2 generates per-column probes with WIDTH_BUCKET null guard, Step 3 precondition handles no-results case, Step 4 EMPTY guard fires before per-column checks, Step 5 four blocks output. Clean.
+**Cross-skill trigger audit:** table-eda vs. supabase-sql-magic: EDA is structural profiling (what is the shape of the data?), SQL-magic is data retrieval (give me filtered rows). Distinction is present and symmetric — each skill's Anti-patterns redirect to the other. No collision. table-eda vs. kpi-data-audit: no overlap found — kpi-data-audit is KPI metric computation, not table profiling.
+
+### Round 6 — Second pass
+**L1 re-check:** Edited Anti-pattern 2 now names the path, exact output string, stop consequence, and failure mode ("phantom tables"). Fully actionable. Passes.
+**L2 re-check:** Description commitment unchanged and specific. Passes.
+**Adversarial re-check on M3 and M4:** M3: "always profile nulls before aggregating — never report a distribution over unguarded nulls" — the commitment links to the WIDTH_BUCKET null-guard anti-pattern. Consistent. M4: Anti-pattern 3 references `schema-contract-tests` — verified that skill directory exists at /home/user/accent-os/skills/schema-contract-tests/. Valid redirect. Both pass.
+**Cold-read re-check:** Edited anti-pattern 2 is now directly executable by a new session — exact error string means consistent output formatting. Passes.
+**Cross-skill trigger audit:** No new collisions found. table-eda → supabase-sql-magic and table-eda → vendor-cascade redirects both present and named.
+
+### Final: 1 sub-dimension edit across 2 rounds
+

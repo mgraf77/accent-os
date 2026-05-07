@@ -367,7 +367,7 @@ Wave-based dispatch — handles mixed `inline` + `subagent` items deterministica
 **Wave-cap rationale:** 5 concurrent subagents is Anthropic's published best-practice for parallel Agent tool dispatch. More risks rate-limiting and blast-radius problems on a single failure.
 
 **Halt-and-wait coordination during parallel drain:**
-- If any subagent hits a halt-and-wait gate, that item moves to WAITING (per Step 5 rules)
+- If any subagent hits a halt-and-wait gate, that item moves to **PAUSED** (not WAITING) — per Step 5 rules, halt-and-wait is a mid-run interruption awaiting Michael's specific reply, not a deferred condition
 - Other subagents continue
 - Final report lists: completed [N] · paused [N] · failed [N]
 
@@ -420,5 +420,5 @@ Do not auto-execute without explicit confirmation. The "I don't want to interrup
 - **Never** queue a prompt that is already IN PROGRESS or was COMPLETED within the last 24h with >80% text match — surface the duplicate and ask Michael before queuing.
 - **Never** hold queue state in memory. Every ADD, REORDER, RESOLVE, and EXECUTE operation writes back to /home/user/accent-os/PROMPT_QUEUE.md before the response is sent.
 - **Never** strip Michael's verbatim phrasing from the prompt_text field — execute the prompt exactly as he wrote it, not a paraphrase.
-- **Never** auto-promote a queued prompt to higher priority based on Claude's judgment. Priority order is Michael's call exclusively.
+- **Never** auto-promote a queued prompt to higher priority based on Claude's judgment (e.g. inferring urgency from prompt_text content, or reordering because a related M-task just landed). Priority order in `/home/user/accent-os/PROMPT_QUEUE.md` is Michael's call exclusively — reorder only on his explicit instruction.
 - **Never** auto-promote a WAITING item on `schema:` type conditions when the SQL evidence is ambiguous. Leave the item WAITING and add a `SCHEMA_PARSE_UNCERTAIN` note rather than risking a false promotion.

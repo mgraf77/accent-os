@@ -36,6 +36,8 @@ Run when Michael says:
 - "operationalize ..." (any goal)
 - "translate ... into weights" (any priority)
 
+**Do NOT fire** for: "what's the priority right now?" / "what should I work on?" / "what's blocking us?" — those route to bottleneck-finder, which diagnoses current blockers, not scoring rules. This skill requires a stated priority object (a goal, metric, or dimension) to operationalize.
+
 ---
 
 ## Step 1 — Capture the priority statement
@@ -45,7 +47,7 @@ Pull the priority from one of these in order:
 2. `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` → "Accent Lighting Ecommerce" → "Known capability gaps"
 3. `/home/user/accent-os/MASTER.md` → search for "priority" / "Q4" / "margin" / "GMC"
 
-If multiple priorities are in scope, run this skill once per priority and combine outputs at the end.
+If multiple priorities are in scope, run this skill once per priority and combine outputs at the end. Cap at 5 priorities per invocation — if Michael lists more, surface: "That's [N] priorities. Processing the first 5 by document order. Say 'continue' for the next batch."
 
 Write the priority as a one-sentence intent:
 
@@ -97,7 +99,7 @@ data freshness   : [how often this updates — daily, on order, manual]
 ```
 
 Propose 1–3 rules per priority, ranked by:
-1. **Defensibility** — would Michael agree this measures the priority?
+1. **Defensibility** — does the field directly appear in the priority's intent statement (e.g. "margin%" maps to `vendors.gross_margin_pct`)? A rule scores 5 if it measures the named concept directly; 3 if it's a proxy; 1 if it requires inferring the priority's meaning.
 2. **Computability** — can it be calculated from existing data without new joins?
 3. **Stability** — does the threshold need re-tuning every week?
 

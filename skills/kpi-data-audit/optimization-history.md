@@ -103,3 +103,23 @@ No ambiguous steps, preconditions, or missing fallbacks found — CLEAN
 - Step boundary: missing `---` divider added after Step 0 for scan-readability
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** Anti-pattern "Never invent variables" didn't name the catalog file. Fixed to name `/home/user/accent-os/KPI_CATALOG.md` and added the specific failure consequence (phantom M-task recommendations). Other anti-patterns already named specific files/tables.
+**L2 commitment check:** No vague words in step instructions or commitments. Step 6 remediation blocks contain concrete DDL examples (no "properly" / "correctly" language). PASS.
+**Adversarial check:** Dimensions sampled: M5 (cross-skill trigger overlap), Out-of-scope (supabase-sql-magic routing). "what can we compute today" trigger phrase in kpi-data-audit collides with supabase-sql-magic when user means "show me the values." Added clarifying sentence distinguishing "which KPIs are possible" (this skill) vs "what are the values" (supabase-sql-magic).
+**Cold-read check:** All steps have named output artifacts. Step 0 → mode header. Step 1 → 3-line preamble. Steps 2–6 → typed tuples, HAVE-sets, flag dicts, remediation blocks. Step 7 → 6-block report. PASS.
+**Cross-skill trigger audit:** "Query for KPI data" / "pull the KPI numbers" / "show me today's F3" clarified as supabase-sql-magic territory. The "what can we compute today" ambiguity (values vs. availability) now resolved with explicit routing note.
+
+### Round 6 — Second pass
+**L1 check (re-run on edits):** Anti-pattern now reads "...not referenced by a KPI in `/home/user/accent-os/KPI_CATALOG.md`" — artifact named. PASS.
+**L2 check (re-run on edits):** Out-of-scope routing note uses precise language ("possible" vs "values"). No vague words. PASS.
+**Adversarial (cross-skill):** supabase-sql-magic routing sentence added covers the "compute today = run the query" misfire case. No further failure path found. PASS.
+**Cold-read check:** Full scan clean. PASS.
+
+### Final: 2 sub-dimension edits across 2 rounds
+

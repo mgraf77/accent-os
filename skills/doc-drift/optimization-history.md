@@ -112,3 +112,21 @@ No additional changes needed. Step 1 fallback "flag and continue" handles missin
 - Step 5: all 3 output blocks now show literal-shaped examples with /home/user/accent-os/ absolute paths
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** AP3 "Silence is the default, not a contradiction" had no AccentOS-specific example of intentional silence. Added concrete example: PROMPT_QUEUE.md not mentioning MASTER.md priorities is intentional scope, not drift. Description file list omitted PROMPT_QUEUE.md despite Step 1 loading it — added for consistency.
+**L2 commitment check:** M3 commitment uses no vague words. Clean. "Always produces a delta table plus paste-in Edit commands with a named source-of-truth for each drift row" has no qualifying hedge.
+**Adversarial check:** Dimensions sampled: M3 (behavioral commitment), Step 4 drift scoring. Priority drift had no canonical tiebreaker — a future run would report priority drift without being able to resolve it. Added: MASTER.md wins unless SESSION_LOG.md has a more recent explicit commitment, with lookup signals ("priority: override", track-change, M-task reassignment).
+**Cold-read check:** Step 4 "Priority drift — Highest risk; can cause wrong-track builds" gave risk but no resolution rule. Fixed by adding tiebreaker. Step 1 file list was internally consistent after description fix.
+**Cross-skill trigger audit:** "cross-check the docs" does not overlap with schema-contract-tests ("check consistency" targets code schema, not planning prose). No collision.
+
+### Round 6 — Second pass
+All binary Ralph checks passed on post-Round-5 state. No passive voice introduced. Step 4 tiebreaker is active voice. AP3 new text names PROMPT_QUEUE.md specifically and ends with a positive rule ("Flag only when two docs explicitly state different values") — actionable. No additional gaps found.
+
+### Final: 3 sub-dimension edits across 2 rounds
+
+---

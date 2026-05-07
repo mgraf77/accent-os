@@ -108,3 +108,22 @@
 - "Fire also as a sanity gate" residual "also" removed — sanity-gate trigger is now unambiguously standalone
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** AP#2 used "normal post-M19" without defining M19's scope. Added clarification: "(M19 assigns `rep_group_id` to unmatched vendors but does not require an `override_reason`)". AP#5 "detected drift" was generic — tightened to "detected scoring-weight drift in `vendor_scores` or `vendor_overrides`" in the description commitment.
+**L2 commitment check:** Description commitment "never auto-fixes detected drift" was too broad — rewritten to name the specific tables (`vendor_scores`, `vendor_overrides`) and the action class (scoring-weight drift) that this skill must not perform.
+**Adversarial check:** Dimensions sampled: M5 (triggers), M4 (anti-patterns). M5: "do my vendors agree" has no collision risk with vendor-onboard-checklist triggers — safe. M4: "post-M19" failure label was underspecified — fixed via L1 improvement.
+**Cold-read check:** Step 2 View B uses `vendor_overrides.set_by` — plausible column for override authorship tracking. Cross-skill column name consistency: `vendor_scores` column names (`weight`, `computed_value`) in Step 2 differ from vendor-risk-register (`score`, `computed_at`) — both plausible; different columns, different purposes.
+**Cross-skill trigger audit:** NOT-trigger block extended to cover "vendor cascade" (unhyphenated) and "cascade check" variants. Clarification added: vendor-cascade traces `vendor_scores.priority_id` down through weights (single-vendor); this skill audits 5 random vendors cross-table.
+
+### Round 6 — Second pass
+**L1 re-check:** AP#2 M19 parenthetical consistent with vendor-onboard-checklist description ("M19 fixes assign a rep_group_id") — cross-skill consistent. ✓
+**L2 re-check:** Description commitment names `vendor_scores` and `vendor_overrides` — exact match to SQL query targets in Steps 2–3. ✓
+**Adversarial re-check:** NOT-trigger quoted phrase "vendor cascade" (space) vs. skill name "vendor-cascade" (hyphen) — acceptable; quoted form matches natural speech, hyphenated form is the skill proper noun. ✓
+**Cold-read re-check:** No new ambiguities found.
+
+### Final: 4 sub-dimension edits across 2 rounds

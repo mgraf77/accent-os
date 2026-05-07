@@ -109,3 +109,23 @@
 - Step 4: M17 rule rationale made self-explaining without external reference
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** All 6 anti-patterns name specific AccentOS artifacts (GMC merchant ID, `vendors.revenue_tier`, `gmc_status`, `images_per_sku`, Feedenomics). PASS. Step 2 "proceed with what's available" was L1-vague — no column-to-fix-type mapping given. Fixed.
+**L2 commitment check:** No vague words found in anti-patterns or step instructions. Step 2 "proceed with what's available" was underspecified — what "available" meant was undefined. Fixed with explicit fix-type-to-column mapping.
+**Adversarial check:** Dimensions sampled: M5 (trigger overlap), M6 (Step 2 sparse-schema). M5: "feed audit" trigger could misfire for broken-link-rescue "404 audit" — added explicit disambiguation. M6: Step 2 missing-column guidance had no stop condition for extreme sparsity — added SCHEMA TOO SPARSE halt when fewer than 3 of 9 expected columns present.
+**Cold-read check:** Step 2 sparse-schema path now names exactly which fix types are lost per missing column, plus a stop condition for near-zero schema. PASS.
+**Cross-skill trigger audit:** "check broken URLs site-wide" and "404 audit" now explicitly noted as broken-link-rescue routes, not gmc-feed-audit. Removes ambiguity for standalone URL-check requests.
+
+### Round 6 — Second pass
+**L1 check (re-run on edits):** Step 2 edit names 9 expected columns explicitly — `gmc_status`, `images_per_sku` called out with their dependent fix types. L1 PASS.
+**L2 check (re-run on edits):** "proceed using only the columns present" is concrete (columns as filter, not ambiguous "what's available"). L2 PASS.
+**Adversarial (M6 stop condition):** SCHEMA TOO SPARSE threshold of 3/9 columns is concrete and testable. No failure path identified. PASS.
+**Cold-read check:** Full scan clean. All steps executable without external context. PASS.
+
+### Final: 3 sub-dimension edits across 2 rounds
+

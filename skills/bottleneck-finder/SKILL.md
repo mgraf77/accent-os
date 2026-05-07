@@ -153,10 +153,10 @@ Cycle warnings: none  (or: "cycle_warning: M04 ↔ 6.3 — leverage computed fro
 
 ## Anti-patterns
 
-- **Never** suggest "elevate" before exhausting "exploit." TOC core principle — exploit the constraint with existing resources first.
-- **Never** treat low-leverage leaf tasks as valid build targets when high-leverage constrained tasks exist.
+- **Never** suggest "elevate" before exhausting "exploit." TOC core principle — exploit the constraint with existing resources first. Recommending "get the BC API credentials" (elevation) before checking if bc-business-review can run against Supabase deals only (exploit) skips the exploit step.
+- **Never** treat low-leverage leaf tasks as valid build targets when high-leverage constrained tasks exist. Building a doc-drift fix while M04 blocks 5 downstream tracks wastes the session on a leaf when leverage score of M04 = 5× higher.
 - **Never** propose a constraint without naming at least one exploit option. When no genuine exploit exists, output `elevation_only: true` and name the required external action explicitly.
-- **Never** rank by [ ] count alone — leverage (cascading unblock depth) matters more than raw blocker count.
+- **Never** rank by [ ] count alone — leverage (cascading unblock depth) matters more than raw blocker count. A task with 1 direct unblock that cascades to 4 more outranks a task with 3 direct unblocks and no cascades.
 - **Never** ignore /home/user/accent-os/PROMPT_QUEUE.md — Michael-queued items are direct signal about what he considers the constraint.
 - **Never** fabricate exploit options to fill the format. A weak exploit ("ask the vendor for their CSV again") stated as a real option poisons the analysis.
 - **Never** run leverage computation without cycle detection. Log cycle_warning entries before truncating DFS — hidden cycles produce infinite leverage scores.

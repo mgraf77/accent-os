@@ -114,3 +114,49 @@
 - Frontmatter/body consistency: trigger lists now aligned
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:**
+AP5 ("Never skip INDEX.md update") was generic — named no specific AccentOS artifact or failure consequence. Rewrote to name `/home/user/accent-os/analyses/INDEX.md` explicitly and describe the failure outcome ("Show analyses/INDEX.md" returns nothing; snapshot is lost until manual directory scan). All other anti-patterns already specific.
+
+**L2 commitment check:**
+Commitment ("Always writes a named file to analyses/ and updates INDEX.md — never returns a prose summary in lieu of the artifact") contains no vague words. Already tight — no rewrite needed.
+
+**Adversarial check:**
+Dimensions sampled: M5, M6
+- M5: trigger "save it as vendor-rank-drops (any kebab-case name)" — no failure path found; intent is covered in frontmatter and body.
+- M6: every step names a concrete output artifact; file write, INDEX update, and confirmation block all specified. No failure path found.
+
+**Cold-read check:**
+Step 3 NNN counter logic said "start at `001` if the file or directory is missing" — edge case where INDEX.md exists but has no data rows was uncovered. Fixed: added "or if INDEX.md exists but contains no data rows" to the fallback clause.
+
+**Cross-skill trigger audit:**
+No overlaps found — "save this analysis", "snapshot this analysis", "I want to re-run this later" are not claimed by other skills.
+
+### Round 6 — Second pass
+
+**L1 specificity check:**
+AP5 rewrite from Round 5 verified: names specific path, specific command, and failure outcome. All APs specific.
+
+**L2 commitment check:**
+Commitment unchanged — still tight. No vague words found.
+
+**Adversarial check:**
+Dimensions sampled: M3, M9
+- M3: SKIP path produces a one-line artifact, not prose — commitment not violated. No failure path found.
+- M9: `hsyjcrrazrzqngwkqsqa` appears in frontmatter, AP4, and auto-fire trigger. Stack references strong. No failure path found.
+
+**Cold-read check:**
+All steps have output artifact specs. INDEX.md empty-file edge case fixed in Round 5. Step 2 "ASK" marker semantics documented. Clean.
+
+**Cross-skill trigger audit:**
+No new triggers added in Round 5. No overlaps found.
+
+### Final: 2 sub-dimension edits applied across 2 rounds
+Techniques that moved quality: L1-specificity rewrite on AP5 (named path + failure consequence); cold-read edge-case fix on Step 3 INDEX.md empty-file handling
+Techniques that didn't: Adversarial checks on M5/M6/M3/M9 — no failure paths found, no edits needed

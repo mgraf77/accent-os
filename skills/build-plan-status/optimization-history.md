@@ -114,3 +114,33 @@ No additional changes needed. Step 2 evidence table has full column names and ex
 - Step 5 output: BLOCK 2 and BLOCK 3 now show full literal-shaped tables and Edit command examples
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:** Step 1 listed "SESSION_LOG.md tail" and "WORK_IN_PROGRESS.md current+next" without fully-qualified paths. A cold-read executor with a reset cwd would not know where to find these files. Fixed by prepending `/home/user/accent-os/` to both references. Trigger phrase "plan drift" overlaps with doc-drift's "drift check" — sharpened to "build plan drift" to differentiate.
+
+**L2 commitment check:** YAML commitment "Always produces a paste-ready Edit command list with exact commit SHAs and source file lines — never returns prose-only, never invents evidence, never marks [x] from LOW-confidence signals" — no vague words, names specific artifacts. Clean. Body had no behavioral commitment; added: "Always cite the exact git SHA or SESSION_LOG line for every marker flip — never mark [ ] as [x] without HIGH-confidence evidence."
+
+**Adversarial check:** Dimensions sampled: M9 (stack reference), M6 (concrete outputs). M9: `/home/user/accent-os/` paths now explicit throughout. M6: Step 5 output blocks have full literal-shaped tables with example commit SHAs and SESSION_LOG references. Clean.
+
+**Cold-read check:** SESSION_LOG.md and WORK_IN_PROGRESS.md paths now fully qualified. Git command includes explicit cd. No undefined variables in step bodies.
+
+**Cross-skill trigger audit:** "plan drift" was ambiguous with doc-drift's "drift check" — sharpened to "build plan drift". "reconcile the plan" — unique. "markers are stale" — unique. No collisions after fix.
+
+### Round 6 — Second pass
+
+**L1 check:** All 6 anti-patterns name specific AccentOS files (`/home/user/accent-os/` paths, BUILD_PLAN_CLAUDE.md, WORK_IN_PROGRESS.md, PROMPT_QUEUE.md). Body commitment now names both BUILD_PLAN files and requires HIGH-confidence evidence. Clean.
+
+**L2 check:** New body commitment: "Always cite the exact git SHA or SESSION_LOG line" and "never mark without HIGH-confidence evidence" — both specific. No vague words introduced by Round 5 edits.
+
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases), M3 (behavioral commitment). M5: 7 trigger phrases post-sharpening. "build plan drift" distinct from doc-drift triggers. Clean. M3: body commitment now present, YAML commitment present, both reference specific artifacts. Clean.
+
+**Cold-read check:** Step 1 sources all have fully qualified paths. Git command is copy-pasteable. Step 5 output BLOCK 3 shows exact Edit command format. No session-context-only instructions found.
+
+**Cross-skill trigger audit:** No trigger phrase changes in Round 6. "build plan drift" confirmed distinct. No collisions.
+
+### Final: 4 sub-dimension edits across 2 rounds

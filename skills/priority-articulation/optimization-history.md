@@ -113,3 +113,23 @@ CLEAN — all steps are executable by a new session with no prior context. Step 
 - Step 5 BLOCK 2: Supabase project ID and M-file path pattern added to data field path template
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** All 6 anti-patterns name specific AccentOS artifacts (`vendor_scores`, `vendor_overrides`, M02 schema file). PASS. Step 3 Defensibility criterion was subjective ("would Michael agree") — no measurable signal for an agent to score against. Fixed to name the direct-mapping rule (5 = field appears verbatim in intent; 3 = proxy; 1 = inferred).
+**L2 commitment check:** "Defensibility — would Michael agree" was the only vague scoring criterion. Fixed. No other vague words found.
+**Adversarial check:** Dimensions sampled: M5 (trigger collision with bottleneck-finder), Step 1 (multi-priority unbounded). "what's the priority" / "what should I work on" could misfire as priority-articulation triggers. Added explicit Do NOT fire note naming bottleneck-finder. Step 1 had no cap on number of priorities per run — could generate unbounded output. Added 5-priority cap with "continue" batching.
+**Cold-read check:** All steps executable by cold session. Step 2 names specific M-file paths. Step 4 scoring table has concrete example rows (margin-floor-38, deal-margin-q4-only). PASS.
+**Cross-skill trigger audit:** priority-articulation vs. bottleneck-finder: "what's blocking us?" and "what should I work on?" now explicitly routed to bottleneck-finder. Clear distinction: priority-articulation requires a stated goal object; bottleneck-finder diagnoses blockers without one.
+
+### Round 6 — Second pass
+**L1 check (re-run on edits):** Defensibility criterion now names `vendors.gross_margin_pct` as an example of direct-mapping. L1 PASS.
+**L2 check (re-run on edits):** No vague words in the new Do NOT fire note or Step 1 cap sentence. PASS.
+**Adversarial (multi-priority cap):** 5-priority cap with "continue" batching is concrete and testable. No failure path found. PASS.
+**Cold-read check:** Full scan clean. Do NOT fire note is unambiguous. Step 1 batching instruction is executable. PASS.
+
+### Final: 3 sub-dimension edits across 2 rounds
+

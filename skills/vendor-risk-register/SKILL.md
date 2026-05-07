@@ -12,8 +12,9 @@ description: >
   ranked top-N risk view of the vendor portfolio. Do not use for
   individual vendor diagnosis (that's vendor-cascade) or for ad-hoc
   vendor queries (that's supabase-sql-magic). Always produces a
-  paste-ready risk register table plus mitigation list — never
-  returns prose-only.
+  ranked risk register table with Rank/Vendor/Revenue %/Volatility/
+  Stockouts/GMC fails/Composite/Severity columns plus a per-HIGH-MEDIUM
+  mitigation block — never returns prose-only.
 ---
 
 # vendor-risk-register
@@ -33,6 +34,8 @@ Run when Michael says:
 - "what are my biggest vendor risks"
 - "vendor risk audit"
 - "rank by risk"
+
+Do **not** trigger on "orphan metrics", "vendor cascade", or "why did vendor X score drop" — those route to vendor-cascade (single-vendor diagnosis from `vendor_scores.priority_id` down through weights). This skill ranks the full portfolio by composite risk across four dimensions; it does not trace any one vendor's score derivation.
 
 ---
 
@@ -202,9 +205,9 @@ Next review: +90 days.
 
 ## Anti-patterns
 
-- **Never** report risk scores without showing the underlying dimension values. The composite score alone hides which lever to pull.
+- **Never** report risk scores without showing the four underlying dimension values (`pct_of_revenue`, `score_volatility` σ, `stockout_count_90d`, `disapproved_count`). The composite score alone hides which lever to pull — a vendor at composite=65 may be driven by concentration (lever: source a 2nd vendor) or by GMC failures (lever: run the feed audit), which require completely different remediations.
 - **Never** auto-apply mitigations. Output proposals; Michael executes.
 - **Never** skip the concentration cap check. >15% revenue from a single vendor is the most common AccentOS risk pattern and must always surface.
 - **Never** rank vendors that have zero data in all four dimensions — those are out-of-scope for this register, not "low risk."
 - **Never** invent normalization denominators when a dimension's data is missing — flag the missing dimension and weight the others.
-- **Never** use the composite score alone to define severity — always apply the override rule (HIGH if revenue % ≥15% regardless of composite), because a single concentrated vendor at Accent Lighting can represent existential risk even when its BC store-cwqiwcjxes score looks stable.
+- **Never** use the composite score alone to define severity — always apply the override rule (HIGH if revenue % ≥15% regardless of composite), because a single concentrated vendor at Accent Lighting can represent existential risk even when its `vendor_scores.score` looks stable.

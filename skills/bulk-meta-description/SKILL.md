@@ -22,6 +22,8 @@ description: >
 
 **Purpose:** Generate SEO meta descriptions at scale from Eugene's CSV (M15) and gmc-feed-audit output, optimized for Accent Lighting SEO and formatted for BigCommerce store-cwqiwcjxes bulk import.
 
+**Behavioral commitment:** Always validate character count before writing a row to the BC import CSV — never emit a description outside 145–160 chars to `https://store-cwqiwcjxes.mybigcommerce.com/manage/products/import`.
+
 Stolen from: Universal SEO Skill meta-tag-generation primitive + product-self-knowledge attribute-mining pattern.
 
 ---
@@ -158,4 +160,4 @@ https://store-cwqiwcjxes.mybigcommerce.com/manage/products/import
 - **Never** use superlatives or marketing filler ("best", "amazing", "must-have") — Accent Lighting product descriptions failed GMC policy review in M14 specifically because prior meta copy contained hype language that triggered disapproval.
 - **Never** use `vendor_id` as the brand field — Accent Lighting's BC product records separate `vendor_id` (fulfillment source) from `brand` (manufacturer label); conflating them produced wrong brand names in M15 batch output.
 - **Never** overwrite a meta that already passes all constraints (145–160 chars, brand name present, no hype language) — mark it `NO_CHANGE` and exclude it from the BC import CSV to prevent accidental regression.
-- **Never** invent product attributes. If a finish/lumens isn't in the data, leave it out of the description.
+- **Never** invent product attributes. If `finish`, `lumens`, or `dimensions_in` is NULL in the `products` table (Supabase hsyjcrrazrzqngwkqsqa), leave that attribute out of the generated description — fabricated specs produce false product claims that trigger GMC policy review.

@@ -111,3 +111,21 @@ No additional changes needed. Step 1 "1-option decision" handling is explicit (a
 - Step 3: INDEX.md bootstrap template added inline so new Claude session can create the header without guessing
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** AP1 "if Michael never picked between options, there is nothing to log" had no AccentOS-specific example. Added concrete example naming Supabase vs. Firebase vs. self-hosted Postgres to anchor what "no comparison" looks like.
+**L2 commitment check:** M3 commitment uses no vague words. Clean. Step 2 "bump up" heuristic uses "when in doubt" — not in the L2 vague-word list; acceptable.
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases), trigger Do-NOT-fire rule. "decided" trigger found to be ambiguous — "decided to explore vendor scoring v2" would fire incorrectly. Added clarification: "The word 'decided' alone does not qualify — 'decided to explore vendor scoring v2' is an intent statement, not a locked choice between enumerated alternatives."
+**Cold-read check:** Step 3 NNN sequencing had no "start from 001" instruction for fresh INDEX.md. Added: "if INDEX.md is new, start at 001."
+**Cross-skill trigger audit:** "log this decision" does not overlap with analysis-snapshot. "why did we choose X" is distinct from any analysis-snapshot trigger (which covers explorations, not locked choices). No collision.
+
+### Round 6 — Second pass
+All binary Ralph checks passed on post-Round-5 state. No passive voice introduced. AP1 new example text is active voice. No additional L1 opportunities. Step 3 NNN fix is precise and cold-readable. Adversarial check on Step 3 file template: all brackets are inside fenced code blocks — Rule 5 applies. No gaps.
+
+### Final: 3 sub-dimension edits across 2 rounds
+
+---

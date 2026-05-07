@@ -5,7 +5,7 @@ description: >
   /home/user/accent-os/ agree on stated priorities, active tracks,
   vendor-scoring rules, and queue items. Loads SESSION_LOG.md, MASTER.md,
   BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, PROMPT_LOG.md,
-  WORK_IN_PROGRESS.md, and skills/repo-scout/references/project-profiles.md,
+  WORK_IN_PROGRESS.md, PROMPT_QUEUE.md, and skills/repo-scout/references/project-profiles.md,
   then surfaces any disagreement as a delta table with paste-ready Edit
   commands. Use this skill when Michael says: "check for doc drift", "are
   my docs consistent", "verify priorities are aligned", "do my plans agree",
@@ -105,7 +105,7 @@ Verdict values:
 For each ✗ DRIFT row, classify:
 
 - **Stale-marker drift** — one doc says `[ ]` but another doc shows the work is done (e.g. SQL ran, commit landed). Easiest to fix.
-- **Priority drift** — different docs claim different active priorities. Highest risk; can cause wrong-track builds.
+- **Priority drift** — different docs claim different active priorities. Highest risk; can cause wrong-track builds. Source-of-truth tiebreaker for priority drift: MASTER.md wins unless SESSION_LOG.md has a more recent explicit commitment (look for "priority: override", track-change, or M-task reassignment in the last session entry).
 - **Status-label drift** — same item, different wording across docs. Cosmetic but accumulates.
 
 ---
@@ -145,7 +145,7 @@ If no drift exists, output: "All docs agree on priorities, active tracks, and st
 
 - **Never** silently auto-apply the suggested edits. Output paste-ready Edit commands targeting /home/user/accent-os/ files; Michael runs them.
 - **Never** flag drift on docs that are intentionally divergent (PROMPT_LOG captures asks, MASTER captures shipped state — they diverge by design). Flag only actual contradictions.
-- **Never** treat "silent" (one doc doesn't mention something) as drift. Silence is the default, not a contradiction.
+- **Never** treat "silent" (one doc doesn't mention something) as drift. PROMPT_QUEUE.md never mentions MASTER.md priorities — that's intentional scope, not contradiction. Flag only when two docs explicitly state different values for the same claim.
 - **Never** report drift without a recommended source-of-truth. Flagging a MASTER.md vs. BUILD_PLAN_CLAUDE.md contradiction with no named winner forces Michael to re-read both docs himself — defeating the point of the skill.
 - **Never** load files that don't exist as if they were empty — flag each missing file explicitly in BLOCK 1 before proceeding.
 - **Never** flag a `[x]` in BUILD_PLAN_MICHAEL.md that doesn't yet appear in BUILD_PLAN_CLAUDE.md as drift. Michael's plan and Claude's plan diverge by design during active M-task work; sync happens at session end.

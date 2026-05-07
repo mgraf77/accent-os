@@ -113,3 +113,54 @@ No additional changes needed. Step 2 dependency-graph rules have concrete exampl
 - Step 6 output: BLOCK 1 and BLOCK 2 now show concrete example values including cycle_warning example
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:**
+Three anti-patterns were generic:
+- AP1 ("Never suggest elevate before exploit") — no AccentOS artifact. Rewrote to include concrete example: "Recommending 'get the BC API credentials' (elevation) before checking if bc-business-review can run against Supabase deals only (exploit) skips the exploit step."
+- AP2 ("Never treat low-leverage leaf tasks as valid build targets") — no artifact. Rewrote to include: "Building a doc-drift fix while M04 blocks 5 downstream tracks wastes the session on a leaf when leverage score of M04 = 5× higher."
+- AP4 ("Never rank by [ ] count alone") — no artifact. Rewrote to include cascading-vs-direct contrast: "A task with 1 direct unblock that cascades to 4 more outranks a task with 3 direct unblocks and no cascades."
+APs 3/5/6/7 already had specific AccentOS artifacts (elevation_only token, PROMPT_QUEUE.md path, BUILD_PLAN_CLAUDE.md reference, cycle_warning token).
+
+**L2 commitment check:**
+Commitment ("Always names the constraint with a leverage score before proposing exploits — never returns 'wait for Michael' as the sole output") has no vague words. "leverage score" is defined in Step 3 formula; "constraint" is defined throughout. Already tight.
+
+**Adversarial check:**
+Dimensions sampled: M5, Step 2 dependency graph
+- M5 trigger "what's the bottleneck": could overlap with code-profiling context but description explicitly excludes "code-level performance bottlenecks." Routing is clear. No overlap gap.
+- Step 2: no explicit dependencies marked in BUILD_PLAN_CLAUDE — multiple fallback heuristics provided (track numbers, blocked-on annotations, API credential patterns, schema dependency patterns). Robust — no failure path found.
+
+**Cold-read check:**
+All steps have output artifact specs. Step 1 has fallbacks for missing files. Step 3 cycle detection is explicit with DFS visited-set and cycle_warning log instruction. Step 5 has `elevation_only: true` fallback. Clean — no issues found.
+
+**Cross-skill trigger audit:**
+- "what should I work on next" — does not overlap with CLAUDE.md session-start auto-execute (that reads BUILD_PLAN_CLAUDE directly, not via skill trigger). Clean.
+- "TOC analysis" / "leverage analysis" / "which M-task is blocking everything" — distinct to bottleneck-finder. Clean.
+
+### Round 6 — Second pass
+
+**L1 specificity check:**
+All three AP rewrites from Round 5 verified: AP1 names M04/BC API credentials/bc-business-review/Supabase deals; AP2 names doc-drift fix/M04/5 downstream tracks; AP4 names leverage score and contrasts cascading vs direct unblock counts. All specific.
+
+**L2 commitment check:**
+Commitment unchanged — still tight. No rewrite needed.
+
+**Adversarial check:**
+Dimensions sampled: M4, M6
+- M4 AP7 ("Never run leverage computation without cycle detection"): failure path — M04 → 6.3 → M04 cycle. Step 3 DFS visited-set explicitly handles this; cycle_warning logged and recursion truncated. Robust.
+- M6 Step 2 adjacency list: format spec shown with schema descriptor `[blocker] → [unblocked task1, task2, ...]` — this is an internal working artifact feeding Step 3; not user-facing. Step 4 table and Step 5 CONSTRAINT block carry the user-facing output. No failure path found.
+
+**Cold-read check:**
+AP1/AP2/AP4 edits from Round 5 verified — no new passive voice or prose walls introduced. Step 6 BLOCK 3 cross-reference to Step 5 is explicit. All anti-patterns now have concrete AccentOS examples. Clean.
+
+**Cross-skill trigger audit:**
+No new triggers added in Round 5. No overlaps found.
+
+### Final: 3 sub-dimension edits applied across 2 rounds
+Techniques that moved quality: L1-specificity rewrites on AP1/AP2/AP4 (added BC API credentials, M04, doc-drift fix, leverage score contrast as concrete examples)
+Techniques that didn't: L2 check — commitment already tight; adversarial checks on M5/Step2/M4/M6 — no failure paths found; cold-read check — no issues found

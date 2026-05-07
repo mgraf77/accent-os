@@ -24,6 +24,8 @@ description: >
 
 **Purpose:** Run recent AccentOS work through Codex to surface blind spots Claude's own Step 8 Ralph loop misses, auto-apply LOW-risk fixes, and gate HIGH-risk changes (SQL rewrites, trigger edits, step reorders) on Michael's explicit approval.
 
+**Behavioral commitment:** Always run Step 5 schema validation before applying any recommendation — never apply a Codex suggestion to `/home/user/accent-os` files without confirming `old_string` is unique in the target file and `risk` is exactly "LOW" or "HIGH".
+
 Stolen from: nothing external — this is a cross-agent collaboration pattern AccentOS-specific. Companion to `skill-eval-suite` (Promptfoo automated tests) and `skill-forge` Step 8 (mental Ralph loop).
 
 ---
@@ -32,11 +34,11 @@ Stolen from: nothing external — this is a cross-agent collaboration pattern Ac
 
 Run when Michael says:
 - "codex review" / "codex audit"
-- "have codex check this" / "second-opinion on [target]"
+- "have codex check this" / "second-opinion on this skill"
 - "peer review the last commit" / "review what we just did"
 - "cross-review" / "cross-agent review"
-- "another set of eyes on [skill/file/branch]"
-- "what did we miss in [skill/file]"
+- "another set of eyes on this" / "another set of eyes on" plus any skill or file name
+- "what did we miss in this" / "what did we miss in" plus any skill or file name
 - "sanity check the last commit"
 
 Also fire automatically (with confirmation) at the end of any skill-forge run that produced ≥3 forged skills — the cross-review payoff is highest on multi-skill batches.
@@ -75,7 +77,7 @@ Install one of:
   • API key:   export OPENAI_API_KEY=sk-...   (https://platform.openai.com/api-keys)
 ```
 
-Record which backend will be used; include in the output report.
+Record the chosen backend name; include it in the output report.
 
 ---
 
@@ -199,7 +201,7 @@ For each surviving LOW item:
 
 After all LOW items applied, re-run skill-forge Step 7.5 validation on each modified file. The check is performed inline by Claude reading the file and verifying the 6 validation points (description ≥250 chars, AccentOS named, ≥3 stack substitutions, ≥3 anti-patterns, no prose walls, no unfilled `[bracketed]` outside fenced blocks).
 
-If validation now FAILs (e.g. an applied edit dropped AccentOS substitution count below 3), revert *that file's most recent applied edit* using a counter-Edit (swap `old_string` and `new_string`), demote the corresponding recommendation to PROPOSE, and explicitly log the revert in BLOCK 2 of the output: "REVERTED: [recommendation N] — post-edit Step 7.5 failed on [validation point]."
+If validation now FAILs (e.g. an applied edit dropped AccentOS substitution count below 3), revert *that file's most recent applied edit* using a counter-Edit (swap `old_string` and `new_string`), demote the corresponding recommendation to PROPOSE, and explicitly log the revert in BLOCK 2 of the output, e.g.: "REVERTED: Rec #3 — post-edit Step 7.5 failed on AccentOS substitution count."
 
 ---
 
@@ -272,7 +274,7 @@ Re-run with same context: codex review --replay [target]
   that skill — Codex is signaling the original Claude design has structural issues
 ```
 
-If everything was clean (Codex returned 0 recommendations OR all were schema-rejected), output: "Codex produced no actionable recommendations on [target]. Either the work is in good shape or the prompt didn't give Codex enough context — try `codex review --replay` with extra context."
+If everything was clean (Codex returned 0 recommendations OR all were schema-rejected), output: "Codex produced no actionable recommendations on this target. Either the work is in good shape or the prompt didn't give Codex enough context — try `codex review --replay` with the named skill or file path as extra context."
 
 ---
 

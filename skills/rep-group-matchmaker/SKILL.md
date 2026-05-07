@@ -145,6 +145,8 @@ Per top-1 match per vendor:
 | 0.50–0.74 | **MEDIUM** | Manual review |
 | < 0.50 | **LOW** | Flag — likely needs new rep_group OR manual investigation |
 
+Always emit all five BLOCKs in Step 6 for every run — never collapse BLOCK 4 or BLOCK 5 into a footnote because the vendor count is small. BLOCK 4 next-step hints and BLOCK 5 INSUFFICIENT_DATA rows are the M19 completion signal Michael uses to track whether the gap is closing or growing.
+
 ---
 
 ## Step 6 — Output
@@ -186,6 +188,6 @@ For each vendor missing both brand_category AND region:
 - **Never** propose for vendors where `rep_group_id` is already set — read-only on populated rows.
 - **Never** auto-execute the bulk-update SQL. Always require Michael's spot-check.
 - **Never** suggest a rep_group with confidence < 0.50 as actionable — write these to BLOCK 2 of the CSV with classification=LOW and a "consider creating new group" evidence note; do not omit them from output.
-- **Never** ignore the state_proximity dimension — geography matters in B2B distribution.
+- **Never** ignore the state_proximity dimension — skipping it assigns vendors to rep groups whose `rep_groups.regions` field does not cover the vendor's territory, producing unworkable distribution coverage gaps in AccentOS M19.
 - **Never** invent rep_groups. If LOW confidence, suggest "consider creating new group" rather than picking a wrong one.
 - **Never** skip the INSUFFICIENT_DATA block (BLOCK 5) — vendors missing both `brand_category` and `region` in Supabase `hsyjcrrazrzqngwkqsqa` are silently excluded from scoring, and omitting them from the output hides the true M19 completion gap from Michael.

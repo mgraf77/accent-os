@@ -8,12 +8,13 @@ description: >
   competitor_prices, etc. as defined in /home/user/accent-os/sql/M*.sql).
   Use this skill when Michael says: "get me", "show me vendors who",
   "query for", "how many", "find rows where", "supabase query for [X]",
-  "ad-hoc query", "give me the SQL for [X]", or any phrasing that asks
-  for ad-hoc data lookup against AccentOS Supabase. Do not use for vendor
-  scoring questions (that's vendor-cascade) or for defining new
-  measurement rules (that's priority-articulation). Always produces a
-  paste-ready SQL block plus a cost note about row count and join depth
-  — never returns the result data inline.
+  "pull the data for [X]", "give me the SQL for [X]", or any phrasing
+  that asks for ad-hoc data lookup against AccentOS Supabase. Do not use
+  for vendor scoring questions (that's vendor-cascade), for defining new
+  measurement rules (that's priority-articulation), or for KPI-specific
+  metric queries (that's kpi-data-audit). Always produces a paste-ready
+  SQL block plus a cost note about row count and join depth — never
+  returns the result data inline.
 ---
 
 # supabase-sql-magic
@@ -36,13 +37,13 @@ Run this skill when Michael says anything like:
 - "pull the data for [X]"
 - "give me the SQL for [X]"
 
-Do **not** trigger for: vendor score traces ("why is vendor X ranked there" → vendor-cascade) or rule design ("how do I score for X" → priority-articulation).
+Do **not** trigger for: vendor score traces ("why is vendor X ranked there" → vendor-cascade), rule design ("how do I score for X" → priority-articulation), or KPI metric queries ("what's our CAC this quarter" / "query for conversion rate" → kpi-data-audit). When the question names a business KPI rather than a raw table column, route to kpi-data-audit first.
 
 ---
 
 ## Step 1 — Load the live schema
 
-Read every `M*_*.sql` file in `/home/user/accent-os/sql/` (currently M01, M02, M21, M22, M23, M24, M25, M26, M27, M28, M29). Build a working table inventory:
+Read every `M*_*.sql` file in `/home/user/accent-os/sql/` (glob — do not hard-code the list; the directory now extends to M40 and grows with each migration). Build a working table inventory:
 
 ```
 TABLE → primary key, foreign keys, columns relevant to the question
@@ -160,4 +161,4 @@ Defaults applied:
 - **Never** return query results inline — Michael runs the SQL himself; the skill's job ends at the query.
 - **Never** modify data (no INSERT, UPDATE, DELETE). This skill is read-only. Mutations route through priority-articulation, vendor-cascade, or AccentOS modules.
 - **Never** ask Michael to clarify ambiguity. Pick a default, run with it, list the default chosen.
-- **Never** reference tables from BigCommerce store-cwqiwcjxes REST API as if they were Supabase tables — the BC integration feeds into Supabase tables via M04; query the Supabase side only.
+- **Never** reference tables from BigCommerce store-cwqiwcjxes REST API as if they were Supabase tables — BC product/order data lands in Supabase via the AccentOS sync layer; query the Supabase side only (vendors, deals, inventory, competitor_prices, etc.).

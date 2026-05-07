@@ -36,7 +36,7 @@ Run when Michael says:
 
 Also fire automatically (with one-line confirmation prompt) after any conversation where Claude observed a non-trivial architectural, vendor, or process choice.
 
-Do NOT fire for: ad-hoc analysis outputs, data explorations, or "what if" brainstorms where no choice was locked — use analysis-snapshot for those. Decision-log requires an actual pick between ≥1 real options.
+Do NOT fire for: ad-hoc analysis outputs, data explorations, or "what if" brainstorms where no choice was locked — use analysis-snapshot for those. Decision-log requires an actual pick between ≥2 real options. The word "decided" alone does not qualify — "decided to explore vendor scoring v2" is an intent statement, not a locked choice between enumerated alternatives.
 
 ---
 
@@ -86,7 +86,7 @@ If `/home/user/accent-os/decisions/` does not exist, create it (`mkdir -p`). If 
 
 Filename: `decision-NNN-[kebab-name].md` in `/home/user/accent-os/decisions/`.
 
-- `NNN` = next sequential 3-digit (read `decisions/INDEX.md` to find max)
+- `NNN` = next sequential 3-digit (read `decisions/INDEX.md` to find max; if INDEX.md is new, start at 001)
 - `[kebab-name]` = short, action-oriented, ≤40 chars
 
 Write file:
@@ -159,7 +159,7 @@ HIGH reversal cost.
 
 ## Anti-patterns
 
-- **Never** log a "decision" that wasn't actually a decision — if Michael never picked between options, there is nothing to log.
+- **Never** log a "decision" that wasn't actually a decision — if Michael never picked between options, there is nothing to log. Example: "We should use Supabase" with no comparison to Firebase or self-hosted Postgres is a statement of direction, not a logged decision; Step 1's ≥2-option requirement would have no entries to fill.
 - **Never** invent reasoning. When the conversation context didn't capture why, ask once and wait for Michael's answer before writing the file.
 - **Never** skip the /home/user/accent-os/decisions/INDEX.md update. A decision file in `decisions/` with no INDEX.md row is invisible to `decision-log`'s own NNN sequencing — the next run picks the wrong number and creates a collision.
 - **Never** classify reversal cost optimistically. When in doubt, bump up — HIGH that turns out to be MEDIUM is fine; MEDIUM that turns out to be HIGH is a problem.

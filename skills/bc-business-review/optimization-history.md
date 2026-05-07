@@ -110,3 +110,56 @@
 - Step 4 SQL: invalid double-WITH syntax corrected to single CTE block with three named CTEs
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:**
+AP1 ("Never report KPIs without WoW comparison — point-in-time numbers without trend are noise") was generic — no AccentOS artifact or failure example named. Rewrote to include a concrete failure example ("$142,000 revenue with no prior-period delta fails the BLOCK 1 output spec and gives Michael nothing to act on"). APs 2–6 already had specific artifacts (js/demand_forecast.js, deals table, status='completed', analysis-snapshot skill, 4-week threshold).
+
+**L2 commitment check:**
+Commitment ("Always produces a 4-block paste-ready review — never returns prose-only") has no vague words. "4-block" is defined in Step 5 template; "paste-ready" is concrete. Already tight.
+
+**Adversarial check:**
+Dimensions sampled: M6, M9
+- M6: Step 2 SQL has $1/$2/$3/$4 parameterized bindings. Step 3 SQL blocks have $1/$2. Step 4 uses $1/$2. Step 5 4-block template is concrete. No failure path found.
+- M9: `hsyjcrrazrzqngwkqsqa` in frontmatter and Step 2 SQL comment; `deals`, `vendors`, `products` tables; `bc-store-cwqiwcjxes` in frontmatter. Stack references strong. No failure path found.
+
+**Cold-read check:**
+Two issues found and fixed:
+1. Step 1 window example used hardcoded 2024 dates — stale relative to current 2026 context. Replaced with `YYYY-MM-DD` format template inside fenced block plus a 2026-dated illustrative example.
+2. Step 5 BLOCK 3 "Reason hypotheses (best-guess from vendor metadata)" gave no guidance on what metadata to use — a cold-read session would guess or skip. Replaced with "best-guess from vendor name + category pattern" with two concrete hypothesis types (seasonal/promo pattern; cross-reference against BLOCK 2 category breakdown).
+
+**Cross-skill trigger audit:**
+- "weekly review" / "BC business review" — distinct to bc-business-review. Clean.
+- "anomaly check on revenue" — not claimed by analysis-snapshot or vendor-cascade. Clean.
+- "show me the numbers" — generic phrasing but scoped to bc-business-review by AccentOS context. No overlap with supabase-sql-magic (which fires on explicit SQL queries, not aggregate review requests). Clean.
+
+**SQL validation (special note):**
+Step 4 single-WITH-clause verified: `WITH weekly_rev AS (...), historical AS (...), this_week_rev AS (...)` — three CTEs all defined and all referenced in SELECT. No double-WITH. No undefined CTEs. No phantom columns. Clean.
+
+### Round 6 — Second pass
+
+**L1 specificity check:**
+AP1 rewrite from Round 5 verified: names BLOCK 1, cites "$142,000 revenue" as concrete failure example. All APs specific.
+
+**L2 commitment check:**
+Commitment unchanged — still tight. No rewrite needed.
+
+**Adversarial check:**
+Dimensions sampled: M3, M4
+- M3: "Always produces a 4-block paste-ready review" — failure path: empty anomaly section. Step 4 "Insufficient history" block handles this explicitly with a named BLOCK 3 message. 4-block structure maintained even when anomaly detection unavailable. No failure path found.
+- M4 AP6 ("Never join deals to vendors without filtering status='completed'"): verified — status filter present in Step 2, Step 3 vendor query, Step 3 category query, Step 4 all CTEs. Consistent. No failure path found.
+
+**Cold-read check:**
+Step 4 SQL USING clause (`JOIN this_week_rev tw USING (vendor_id)`) — valid PostgreSQL syntax. `HAVING COUNT(*) >= 4` counts week-rows per vendor; matches the "≥4 weeks history" threshold. Clean.
+
+**Cross-skill trigger audit:**
+No new triggers added in Round 5. No overlaps found.
+
+### Final: 3 sub-dimension edits applied across 2 rounds
+Techniques that moved quality: L1-specificity rewrite on AP1 (named BLOCK 1 + concrete failure example); cold-read fix on Step 1 window dates (stale 2024 → YYYY-MM-DD template + 2026 example); cold-read fix on Step 5 BLOCK 3 hypothesis guidance (named vendor name + category pattern as hypothesis source)
+Techniques that didn't: Adversarial checks on M6/M9/M3/M4 — no failure paths found; L2 check — commitment already tight

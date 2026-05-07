@@ -103,3 +103,24 @@ No ambiguous steps, preconditions, or missing fallbacks found — CLEAN
 - Step 3 LIMIT exception: ambiguous "unless aggregation" replaced with precise definition of when to omit
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** Found two L1 failures: (1) frontmatter description still listed "ad-hoc query" (near-duplicate of "query for" — redundant vocabulary coverage, fixed to "pull the data for [X]" to match the Trigger Recognition body); (2) Step 1 hard-coded M-file list "currently M01, M02, M21...M29" was stale — actual directory now extends to M40+ series; rewritten to a glob instruction with explicit note that the list grows.
+**L2 commitment check:** Description ends with "Always produces a paste-ready SQL block plus a cost note about row count and join depth — never returns the result data inline." — specific deliverables named. Passes.
+**Adversarial check:** Dimensions sampled: M8 (no prose walls), M9 (stack reference). M8: No prose walls — all steps are lists, code blocks, or short paragraphs. Resilient. M9: `hsyjcrrazrzqngwkqsqa` hard-coded in Step 5 paste URL — intentionally bound to this project; no failure path. Both pass.
+**Cold-read check:** Walked Michael's prompt "show me vendors whose score dropped more than 10 points in the last 7 days" through all 5 steps. Step 1 schema load, Step 2 decomposition, Step 3 window-function SQL, Step 4 cost note, Step 5 three-block output all execute without ambiguity. Clean.
+**Cross-skill trigger audit:** "query for [X]" collides with kpi-data-audit when X is a business KPI metric. Added kpi-data-audit redirect to both description frontmatter and Trigger Recognition Do-Not-Trigger clause. Also removed phantom "M04" integration reference from anti-pattern 7 — no M04 file exists in /home/user/accent-os/sql/.
+
+### Round 6 — Second pass
+**L1 re-check:** Step 1 glob instruction now avoids hard-coding any file range. Description trigger phrase updated. Anti-pattern 7 no longer references non-existent M04. All L1 specific to AccentOS artifacts. Passes.
+**L2 re-check:** Description commitment unchanged and specific. Passes.
+**Adversarial re-check on M5 and M6:** M5: Trigger Recognition now has 8 distinct phrases, none near-duplicate. M6: All 5 steps have explicit output artifacts. Both pass.
+**Cold-read re-check:** kpi-data-audit redirect now fires on "what's our CAC this quarter" and "query for conversion rate" — concrete examples anchor the routing decision for a new session. Passes.
+**Cross-skill trigger audit:** supabase-sql-magic vs. kpi-data-audit boundary is now bidirectional in description + Trigger Recognition. No other collisions found.
+
+### Final: 4 sub-dimension edits across 2 rounds
+

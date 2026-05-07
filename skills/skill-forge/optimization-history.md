@@ -115,3 +115,24 @@ No new changes — all Ralph findings addressed in Cycle 2
 - Step 9: ambiguous `[8-char-rand]` → concrete `git rev-parse --short=8 HEAD` expression
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** All 13 Never anti-patterns name specific AccentOS artifacts or file paths (gotcha-log.md, future-builds.md, PROMPT_LOG.md, hsyjcrrazrzqngwkqsqa, store-cwqiwcjxes). No L1 gaps found.
+**L2 commitment check:** Description ends with "Always commits forged skills to the active branch — never leaves work uncommitted." — "active branch" and "uncommitted" are both specific. Passes.
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases), M10 (no placeholders). M5: "look into [X]" disambiguation used vague "build-or-adapt intent" — sharpened to "any indication exists that Michael wants a SKILL.md produced (not just an install decision)" and removed the word "cheaper" from the fallback rule. M10: Step 7.5 item 1 `[bracketed]` is a prose example, not an unfilled placeholder — clean. Adversarial finding on M5 was fixed.
+**Cold-read check:** Step 0 → Step 10 walkthrough: all steps have concrete output artifacts, the approval gate halt is explicit, the branch-create instruction uses a concrete git expression. Clean.
+**Cross-skill trigger audit:** "look into X to build" vs. "look into X to install" — disambiguation sharpened from "build-or-adapt intent" to explicit SKILL.md-production signal. repo-scout chaining rule retained.
+
+### Round 6 — Second pass
+**L1 re-check:** Edited disambiguation block now names `SKILL.md` as the specific artifact decision criterion. Passes.
+**L2 re-check:** Description commitment unchanged and specific. Passes.
+**Adversarial re-check on M4 and M5:** M4: 13 Never anti-patterns all pass L1. M5: potential future gap for "clone this for AccentOS" / "port [X] to my stack" phrases not yet in trigger list — logged as advisory finding; no change made (no evidence in PROMPT_LOG.md mining).
+**Cold-read re-check:** Edited disambiguation block reads cleanly — "not just an install decision" is unambiguous. Passes.
+**Cross-skill trigger audit:** skill-forge vs. repo-scout boundary now explicitly keyed on SKILL.md-production intent. No other collisions found.
+
+### Final: 1 sub-dimension edit across 2 rounds
+

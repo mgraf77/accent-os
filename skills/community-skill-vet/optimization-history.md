@@ -117,3 +117,21 @@ No new changes — all Ralph findings addressed in Cycle 2
 - Step 1: plugin manifest fetch was an unexecutable precondition → explicit WebFetch URL pattern added
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** AP2 "Skill-quality signals (good description, clean formatting) do not substitute for the per-tool permission classification table" was generic — no AccentOS failure scenario named. Rewrote to describe a 100/100-quality-score skill that still contains an unjustified Bash pipe to the Supabase MCP server routing `hsyjcrrazrzqngwkqsqa` to an external host.
+**L2 commitment check:** M3 commitment in description uses no vague words. Clean.
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases), M4 (anti-patterns). M5: argument-slot brackets in trigger phrases are not M10 failures. M4: AP2 had a generic failure scenario — fixed. No other failure paths found.
+**Cold-read check:** Step 1 plugin manifest WebFetch URL was added in prior run — still executable. Auth-required fallback is clear. No gaps.
+**Cross-skill trigger audit:** "is this skill safe" does not collide with doc-drift or schema-contract-tests — those operate on code/planning docs, not community skill installation. No collision.
+
+### Round 6 — Second pass
+All binary Ralph checks passed on post-Round-5 state. No new passive voice introduced. AP2 new text is dense but not a prose wall (single bullet). No additional L1 opportunities found in rewritten sections. Adversarial check on AP3 (trust SKILL.md description alone): handles edge case of no numbered steps via "any `references/*.md` files or scripts" fallback.
+
+### Final: 1 sub-dimension edit across 2 rounds
+
+---

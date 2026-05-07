@@ -51,7 +51,7 @@ For mid-session manual queries ("what patterns do you see"), surface the scratch
 | 5 | clarification-loop | 3+ user messages of clarification before any code change |
 | 6 | redone-wip | Work that BUILD_PLAN_CLAUDE.md or git log shows already done |
 
-Thresholds tunable in `_thresholds.md`.
+Tune thresholds in `_thresholds.md`.
 
 ---
 
@@ -117,6 +117,8 @@ Read `_session-scratch.md`. Group entries by signal type, total count per type, 
 
 ### 2b. Append to `efficiency-log.md`
 
+Session shortsha: run `git rev-parse --short HEAD` to get the current commit hash before writing.
+
 ```markdown
 ## 2026-05-07 14:52 session a3f9c12
 
@@ -170,7 +172,7 @@ A "skill candidate" is a recurring sequence (signal #3) that meets `_thresholds.
 | OBSERVED | 1 occurrence | logged silently |
 | CANDIDATE | 3+ occurrences in one session OR 2+ separate sessions | tracked in skill-candidates.md |
 | PROMOTE | 3+ separate sessions OR cross-session est. savings > 10 min/occurrence | surfaced at next boot, recommend `skill-forge` |
-| BUILT | promoted to real skill | archived in skill-candidates.md with reference |
+| BUILT | promoted to real skill | archived in skill-candidates.md with reference to `/home/user/accent-os/skills/[skill-name]/SKILL.md` |
 
 Aggregator script handles status transitions deterministically.
 
@@ -189,17 +191,18 @@ This is the single most-valuable signal — catching when we're brute-forcing wo
 - vibe-speak Step 23 (skill router) handles **proactive** matching at request time (mid-session, can speak).
 - efficiency-monitor handles **retrospective** auditing at session boundaries (cannot speak mid-session).
 - Both read `skills/_index.md`. No duplication: vibe-speak suggests, efficiency-monitor audits what was actually done.
+- **Double-flag rule:** if vibe-speak Step 23 already routed a task to an existing skill mid-session and the user accepted, do NOT log that invocation as a `skill-bypass` in Step 2b. A skill-bypass flag means the skill was available and not used — a successfully routed invocation is the opposite.
 
 ---
 
 ## Files
 
 - `SKILL.md` — this file
-- `_thresholds.md` — tunable detection knobs
+- `_thresholds.md` — edit this to tune detection knobs
 - `efficiency-log.md` — append-only ledger of all session flags
-- `skill-candidates.md` — running tally + promotion status (auto-rebuilt, semantic-diff suppressed)
-- `session-end-summary.md` — overwritten each session; consumed by next boot
-- `_session-scratch.md` — gitignored runtime journal during session (Step 1); cleared at wrap-up (Step 2d)
+- `skill-candidates.md` — running tally + promotion status (aggregator rebuilds it; suppress semantic-diff noise in git)
+- `session-end-summary.md` — Step 2c overwrites this each session; Step 0 reads it at next boot
+- `_session-scratch.md` — gitignored runtime journal during session (Step 1); Step 2d clears it at wrap-up
 - `_aggregator.log` — gitignored Stop-hook stdout
 
 ---
