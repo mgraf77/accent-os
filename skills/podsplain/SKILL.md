@@ -183,9 +183,9 @@ The script will:
 4. Save to `podsplains/<slug>/episode.wav`
 5. Update `podsplains/INDEX.md` with the new episode
 
-**If no TTS key is set:** the script will exit with a clear error. Tell Michael to set
-`OPENAI_API_KEY` or `ELEVENLABS_API_KEY` and re-run Step 4 manually, or use `--script-only`
-flag to skip audio and deliver the script only.
+**If no TTS key is set:** the script will exit with a clear error. Tell Michael which key
+to set, and offer to deliver the script file only (skip audio) by ending your response at
+Step 3 and reporting the script path.
 
 ---
 

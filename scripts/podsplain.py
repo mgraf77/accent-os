@@ -151,27 +151,61 @@ def _make_silence(sample_rate: int, channels: int, sampwidth: int, ms: int) -> b
     return b"\x00" * (n_frames * channels * sampwidth)
 
 
+OPENAI_MAX_CHARS = 4000  # OpenAI TTS hard limit is 4096; stay safely under
+
+
+def _chunk_text(text: str, max_chars: int = OPENAI_MAX_CHARS) -> list[str]:
+    """Split text at sentence boundaries if it exceeds max_chars."""
+    if len(text) <= max_chars:
+        return [text]
+    chunks = []
+    current = ""
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        if len(current) + len(sentence) + 1 > max_chars:
+            if current:
+                chunks.append(current.strip())
+            current = sentence
+        else:
+            current = (current + " " + sentence).strip() if current else sentence
+    if current:
+        chunks.append(current.strip())
+    return chunks
+
+
 def _call_tts(text: str, speaker: str, backend: str, openai_key: str, elevenlabs_key: str) -> bytes:
-    """Route TTS call to the correct backend with 3-attempt retry."""
-    for attempt in range(3):
-        try:
-            if backend == "openai":
-                return tts_openai(text, OPENAI_VOICES[speaker], openai_key)
-            else:
-                return tts_elevenlabs(text, ELEVENLABS_VOICES[speaker], elevenlabs_key)
-        except requests.HTTPError as e:
-            if attempt == 2:
-                raise
-            wait = 2 ** attempt
-            print(f"  [retry {attempt+1}/2 in {wait}s] {e}", file=sys.stderr)
-            time.sleep(wait)
-        except requests.RequestException as e:
-            if attempt == 2:
-                raise
-            wait = 2 ** attempt
-            print(f"  [retry {attempt+1}/2 in {wait}s] {e}", file=sys.stderr)
-            time.sleep(wait)
-    raise RuntimeError("unreachable")
+    """Route TTS call to the correct backend, chunking long text, with retry."""
+    chunks = _chunk_text(text) if backend == "openai" else [text]
+    wav_parts = []
+    for chunk in chunks:
+        for attempt in range(3):
+            try:
+                if backend == "openai":
+                    part = tts_openai(chunk, OPENAI_VOICES[speaker], openai_key)
+                else:
+                    part = tts_elevenlabs(chunk, ELEVENLABS_VOICES[speaker], elevenlabs_key)
+                wav_parts.append(part)
+                break
+            except requests.RequestException as e:
+                if attempt == 2:
+                    raise
+                wait = 2 ** attempt
+                print(f"  [retry {attempt+1}/2 in {wait}s] {e}", file=sys.stderr)
+                time.sleep(wait)
+    if len(wav_parts) == 1:
+        return wav_parts[0]
+    # Merge multiple WAV chunks into one
+    buf = io.BytesIO()
+    params = None
+    for part in wav_parts:
+        r = wave.open(io.BytesIO(part))
+        if params is None:
+            params = r.getparams()
+            buf_w = wave.open(buf, "wb")
+            buf_w.setparams(params)
+        buf_w.writeframes(r.readframes(r.getnframes()))
+        r.close()
+    buf_w.close()
+    return buf.getvalue()
 
 
 # ─── WAV assembly ─────────────────────────────────────────────────────────────
@@ -187,17 +221,19 @@ def assemble_wav(segments: list[dict], backend: str, openai_key: str, elevenlabs
 
     wav_parts = []
     wav_params = None
+    speech_idx = 0
 
-    for i, seg in enumerate(segments):
+    for seg in segments:
         if seg["type"] == "pause":
             if wav_params:
                 silence = _make_silence(wav_params.framerate, wav_params.nchannels, wav_params.sampwidth, seg["ms"])
                 wav_parts.append(("raw", silence))
             continue
 
+        speech_idx += 1
         speaker = seg["speaker"]
         preview = seg["text"][:55] + ("..." if len(seg["text"]) > 55 else "")
-        print(f"  [{i+1}/{len(segments)}] {speaker}: {preview}")
+        print(f"  [{speech_idx}/{speech_count}] {speaker}: {preview}")
 
         wav_bytes = _call_tts(seg["text"], speaker, backend, openai_key, elevenlabs_key)
         wav_parts.append(("wav", wav_bytes))
@@ -312,6 +348,10 @@ def main():
         print("ERROR: No HOST_1:/HOST_2: lines found in script file.", file=sys.stderr)
         print("  Make sure the script uses the format: HOST_1: [text]", file=sys.stderr)
         sys.exit(1)
+
+    if word_count < 50:
+        print(f"WARNING: Script is very short ({word_count} words). Expected 700+ for a short episode.", file=sys.stderr)
+        print("  The script may not have generated correctly — check script.md.", file=sys.stderr)
 
     # ── Generate audio ──
     wav_bytes, duration_s = assemble_wav(segments, backend, openai_key, elevenlabs_key, args.silence_ms)
