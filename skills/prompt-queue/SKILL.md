@@ -136,7 +136,7 @@ If `defer_until` is non-`none`, the item starts in **WAITING**, not QUEUED. Reso
 
 If the prompt_text is < 10 chars or empty, ask Michael for the actual prompt before queuing.
 
-If a near-duplicate prompt already exists in QUEUED or WAITING (>80% text similarity), surface: "Similar item already in queue (#N, status [QUEUED|WAITING]). Add anyway, or update the existing?"
+If a near-duplicate prompt already exists in QUEUED or WAITING (>80% text similarity), surface: "Similar item already in queue (#3, status QUEUED). Add anyway, or update the existing?" (substitute actual item number and status.)
 
 ---
 

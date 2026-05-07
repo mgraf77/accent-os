@@ -837,7 +837,7 @@ If Claude Code's conversation auto-compaction fires mid-session, working-memory 
 
 When Michael says any of: `wrap`, `wrap session`, `session end`, `commit and push`, `commit + push final`, `final commit`, `end session`:
 
-1. Run Step 11 self-check **out loud** in one line — "session: [N] turns, [M] signals fired, intensity drift: [none|tightened by 1|loosened by 1]".
+1. Run Step 11 self-check **out loud** in one line — "session: 24 turns, 5 signals fired, intensity drift: none." (substitute actual counts and one of: `none`, `tightened by 1`, `loosened by 1`.)
 2. **Verify all signal logging is current.** Every observation-log / feedback-log write should already have happened in-turn (Step 13 logging mechanism). Step 18 is verification, not bulk-write. If any entries are still pending in working memory, write them now.
 3. **Auto-write KPI entry.** Append a new `kpi-NNNN` entry to `skills/vibe-speak/kpi-log.md` per Step 22 schema. Compute reduction by counting assistant output words across the session and comparing to estimated baseline.
 4. **Auto-write session capture.** Write a new file `skills/vibe-speak/sessions/session-YYYY-MM-DD-NNN-[mode].md` per `sessions/_index.md` schema. Include 3 representative sample turns (paraphrased, not verbatim — privacy).
@@ -1024,7 +1024,7 @@ At Step 18 wrap ritual, append to `skills/vibe-speak/kpi-log.md`:
 ### Trend alerts
 
 If trailing 3 sessions show measured reduction <50% AND active mode's target was ≥60%, surface at next session start:
-> ⚠ KPI alert: reduction trending below target. Recent sessions: [percentages]. Run `/vibe propose updates` or consider switching default mode.
+> ⚠ KPI alert: reduction trending below target. Recent sessions: 48%, 45%, 42%. Run `/vibe propose updates` or consider switching default mode.
 
 This is a soft alert — never auto-changes anything.
 
