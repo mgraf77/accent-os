@@ -1,37 +1,35 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-06 — session end · efficiency-monitor v1 shipped (always-on observer)
+**Last updated:** 2026-05-07 — session end · gap-optimizer + skill-health-monitor shipped (closed-loop skill ecosystem)
 **Current task:** —
-**Step:** Tree clean on `claude/always-on-efficiency-monitor-2LiuS`. New always-on skill `efficiency-monitor` shipped — silent in-session observer, surfaces flags only at session boundaries. Awaiting first real session to populate `efficiency-log.md`.
+**Step:** Tree clean on `claude/accentos-gap-analysis-Dcvcf`. Closed-loop skill ecosystem now wired end-to-end. The `gap-optimizer` (proposes from vision) → `skill-forge` (builds with approval) → `skill-health-monitor` (audits) → `gap-optimizer` re-runs cycle is operational. First gap-optimizer run produced a 15-row ranked queue at `skills/gap-optimizer/candidate-queue.md`.
 
 **Recent shipped (this session):**
-- `skills/efficiency-monitor/` — SKILL.md, `_thresholds.md` (tunable), `efficiency-log.md` (append-only ledger), `skill-candidates.md` (auto-rebuilt with semantic-diff suppression), `session-end-summary.md` (next-boot consumer)
-- `scripts/efficiency-aggregate.sh` — Stop-hook aggregator with cross-session counts + promotion ladder + timestamp-only-diff suppression
-- `.claude/settings.json` — Stop hook wired (runs aggregator → `_aggregator.log`, gitignored)
-- `.claude/CLAUDE.md` — boot step 1.j (replay last summary) + wrap-up step 8 (write findings, batched into session-end commit)
-- `skills/_index.md` — efficiency-monitor entry registered (companion: skill-forge, vibe-speak)
-- Reliability hardening: `_session-scratch.md` (gitignored mid-session journal) makes tracking crash-safe
-- Project hygiene: PROMPT_LOG entry, WIP refresh, SESSION_LOG entry
+- `GAP_ANALYSIS.md` — exec gap-analysis doc at repo root (HAVE vs. NEED matrix, closed-loop architecture, build plan, success criteria)
+- `skills/gap-optimizer/` — SKILL.md (7 steps + dual approval gate contract), `references/scoring-rubric.md`, `references/vision-map.md`, `candidate-queue.md` (seeded with 15 ranked gaps), `gap-log.md` (gap-run-001 logged)
+- `skills/skill-health-monitor/` — SKILL.md (9 steps: 6 audit checks + report + approval-gated apply + commit), `applied-fixes.md`, `deprecated-log.md`, `ignored.md`
+- `skills/_index.md` — two new entries (gap-optimizer + skill-health-monitor), companion-link wiring complete
+- `skills/skill-forge/SKILL.md` — Step 0 reads gap-optimizer queue; Step 9 hands back to optimizer + health-monitor after commit
+- `skills/efficiency-monitor/SKILL.md` — Step 0 surfaces gap-optimizer top-3 alongside PROMOTE candidates with de-dup contract
+- `.claude/CLAUDE.md` — boot step 1.k added (gap-optimizer queue consultation at session start)
+- `PROMPT_LOG.md`, `SESSION_LOG.md` — entries added per project hygiene
 
-**Files touched:** `skills/efficiency-monitor/*`, `scripts/efficiency-aggregate.sh`, `.claude/{CLAUDE.md, settings.json}`, `.gitignore`, `skills/_index.md`, `PROMPT_LOG.md`, `WORK_IN_PROGRESS.md`, `SESSION_LOG.md`.
+**Top-3 gap candidates awaiting Michael's forge approval:**
+1. `email-drafter` (composite 40.0) — Capability Ladder L4
+2. `daily-brief-composer` (composite 37.5) — V01, MASTER §14
+3. `next-action-recommender` (composite 30.0) — MASTER §14
 
-**Commit chain:** 508a27c (build) → db533b2 (gitignore + aggregator output committed) → 74adbb5 (semantic-diff suppression) → final (project hygiene + crash-safe scratch journal).
+**Files touched this session:**
+- NEW: `GAP_ANALYSIS.md`, `skills/gap-optimizer/{SKILL.md, references/scoring-rubric.md, references/vision-map.md, candidate-queue.md, gap-log.md}`, `skills/skill-health-monitor/{SKILL.md, applied-fixes.md, deprecated-log.md, ignored.md}`
+- EDITED: `skills/_index.md`, `skills/skill-forge/SKILL.md` (Step 0, Step 9), `skills/efficiency-monitor/SKILL.md` (Step 0), `.claude/CLAUDE.md` (boot step 1.k), `PROMPT_LOG.md`, `SESSION_LOG.md`, `WORK_IN_PROGRESS.md`
 
-**Branch status:** `claude/always-on-efficiency-monitor-2LiuS` pushed to origin. NOT merged to main.
+**Branch status:** `claude/accentos-gap-analysis-Dcvcf` — pushed to origin. NOT merged to main.
 
 **Next step if interrupted:**
 1. Verify tree clean: `git status`
-2. Open PR or merge `claude/always-on-efficiency-monitor-2LiuS` → main when Michael approves
-3. First "real" session will exercise: scratch journaling during work → wrap-up read+clear → aggregator on Stop → boot replay next session
+2. Reply to gap-optimizer's approval gate: `forge top 3` to drain top-3, `forge [name]` for specific candidates, or `forge none` to leave queue for later
+3. Run `/skill-health` for the first ecosystem audit (will detect any drift in the 30-skill registry)
+4. Open PR / merge `claude/accentos-gap-analysis-Dcvcf` → main when Michael approves
 
-**Watchlist (will fill as the skill runs in real sessions):**
-- Does Claude reliably journal to `_session-scratch.md` mid-session? (the Path A reliability question)
-- Do skill-bypass flags actually catch real bypasses, or fire false positives?
-- First PROMOTE-status candidate → handoff to `skill-forge`
-
-**Other backlog (unchanged from prior WIP):**
-- AccentOS module: MODULE_REGISTRY refactor, Saved Filter Sets verify, Bulk action bars wiring, Compact-view toggle
-- M30 SQL: `user_module_overrides` table — when Michael wants real cross-device per-user Module Modes gating
-- 6.x integrations: blocked on M03/M04/M05/M06/M09/M10/M18
-- vibe-speak: claude.ai history export → corpus import expansion
+**No partial work outstanding.** Closed-loop is fully shipped. The 13 deferred gap-closing skills are the work the loop will produce next session(s).

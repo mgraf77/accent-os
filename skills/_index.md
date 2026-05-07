@@ -98,6 +98,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: when you want raw work with zero meta-observation (use raw mode)
 - companion: skill-forge (promotes candidates), vibe-speak (surfaces flags in current mode), build-plan-status
 
+### gap-optimizer
+- summary: AccentOS goal-seeking optimizer that scans HAVE vs. NEED across the documented vision (MASTER §14, BUILD_PLAN, Capability Ladder, KPI catalog), merges with efficiency-monitor's emergent-demand queue, scores every gap on impact × frequency × buildability ÷ cost, and writes a ranked candidate-queue.md that feeds skill-forge.
+- triggers: "run gap analysis", "what should we build next", "close the gap", "optimize skills", "gap optimizer", "/gap", "what skill should we forge"
+- when_to_use: cadence-driven (weekly or end-of-milestone) + auto after every skill-forge commit
+- when_NOT: building the skill itself (use skill-forge), evaluating an existing skill (use skill-eval-suite)
+- companion: skill-forge (consumer), efficiency-monitor (emergent-demand producer), skill-health-monitor (post-build audit)
+
 ### gmc-feed-audit
 - summary: Scan Google Merchant Center feed for missing images, disapproved status, schema gaps.
 - triggers: "GMC audit", "merchant center check", "feed audit", "GMC compliance"
@@ -153,6 +160,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_to_use: after building / modifying a skill
 - when_NOT: trivial skill changes
 - companion: codex-review, skill-forge
+
+### skill-health-monitor
+- summary: AccentOS skill-ecosystem self-maintenance auditor. Scans every skill in skills/ for broken refs, dead companion-links, frontmatter rot, duplicate scope, staleness, and merge candidates. Produces a structured report with proposed Edits — never auto-edits.
+- triggers: "skill audit", "skill health", "audit the skills", "are any skills broken", "find duplicate skills", "/skill-health", "should we merge X and Y"
+- when_to_use: after skill-forge commits, weekly cadence, when gap-optimizer flags queue saturation
+- when_NOT: building a new skill (use skill-forge), choosing what to build (use gap-optimizer)
+- companion: gap-optimizer (paired loop), skill-forge (builds), skill-eval-suite (per-skill tests), efficiency-monitor (provides invocation counts)
 
 ### skill-forge
 - summary: Deep-research external tool, build custom AccentOS skill from it (extract → assess → forge → log).

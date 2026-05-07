@@ -44,10 +44,12 @@ Triggered by CLAUDE.md AUTO-EXECUTE step 1.j and step 8.
 
 1. Read `skills/efficiency-monitor/session-end-summary.md` (last session's findings).
 2. Read `skills/efficiency-monitor/skill-candidates.md` — note any patterns at PROMOTE status.
-3. Surface to Michael in current vibe-speak mode:
+3. Read `skills/gap-optimizer/candidate-queue.md` — note top-3 ranked gap-closing skill candidates if the queue was populated within the last 14 days. If the queue is older than 14 days OR doesn't exist, surface a one-liner: "gap-optimizer queue stale — run `/gap` to refresh."
+4. Surface to Michael in current vibe-speak mode:
    - Top 3 inefficiencies from last session (one-liners)
    - Any skill candidates at PROMOTE status (recommend `skill-forge` to build)
-4. If `session-end-summary.md` does not exist (first run), say nothing — silent.
+   - Top 3 gap-optimizer candidates with composite score (recommend `/gap` then `forge top 3` to act)
+5. If all three sections are empty (first run), say nothing — silent.
 
 Boot output format:
 
@@ -55,11 +57,16 @@ Boot output format:
 ⚙ efficiency-monitor — last session
   • [signal] [count]× — [one-line]
   • ...
-🛠 skill candidates at PROMOTE
+🛠 skill candidates at PROMOTE (emergent demand)
   • [pattern] — [N sessions, est. savings] → run `skill-forge`
+🎯 gap-optimizer queue (top 3 by composite score)
+  • [name] — [score] — [type] — [closes-which-gap]
+  • ...
 ```
 
-Skip section entirely if empty. Do NOT show INFO-level flags at boot.
+Skip any section entirely if empty. Do NOT show INFO-level flags at boot.
+
+**Coordination contract:** PROMOTE candidates from this skill and gap-optimizer queue items can overlap. If the same pattern appears in both, gap-optimizer's Step 3 merges them into a single row. The boot display shows them de-duplicated — gap-optimizer's surfacing wins because it includes scoring.
 
 ---
 

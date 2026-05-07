@@ -63,10 +63,11 @@ Before any search, do these in parallel:
 
 1. **Read the gotcha log** — `/home/user/accent-os/skills/skill-forge/gotcha-log.md`. Apply every prevention rule listed. If the file does not exist yet, treat as empty.
 2. **Load AccentOS context** — `/home/user/accent-os/skills/repo-scout/references/project-profiles.md`. If missing, fall back to `/home/user/accent-os/BUILD_PLAN_CLAUDE.md` and `/home/user/accent-os/MASTER.md` to recover named gaps.
-3. **Mine Michael's phrasing** — read the last ~50 entries of `/home/user/accent-os/PROMPT_LOG.md` and tail of `/home/user/accent-os/SESSION_LOG.md`. Note recurring phrases for use as trigger candidates in Step 5. If either file is absent or empty, skip silently and fall back to phrases from existing `skills/*/SKILL.md` description blocks for tone.
-4. **Capture branch state** — `git -C /home/user/accent-os branch --show-current`. Note the current branch for Step 7. If on `main`, Step 7 will auto-create a `claude/forge-[skill-name]-[short-hash]` branch before committing — do not push to main without explicit permission.
+3. **Check the gap-optimizer queue** — `/home/user/accent-os/skills/gap-optimizer/candidate-queue.md`. If the run was triggered by gap-optimizer hand-off (Michael said "forge top N" or similar after a `/gap` run), the candidate name + intake block is the authoritative target — skip Step 1's disambiguation. If the run was triggered by Michael directly (not via gap-optimizer), check whether the requested target appears in the queue; if yes, fold the queue's "closes which gap(s)" citations into Step 5's proposal block as the explicit gap-closure justification.
+4. **Mine Michael's phrasing** — read the last ~50 entries of `/home/user/accent-os/PROMPT_LOG.md` and tail of `/home/user/accent-os/SESSION_LOG.md`. Note recurring phrases for use as trigger candidates in Step 5. If either file is absent or empty, skip silently and fall back to phrases from existing `skills/*/SKILL.md` description blocks for tone.
+5. **Capture branch state** — `git -C /home/user/accent-os branch --show-current`. Note the current branch for Step 7. If on `main`, Step 7 will auto-create a `claude/forge-[skill-name]-[short-hash]` branch before committing — do not push to main without explicit permission.
 
-Output of Step 0: a short pre-run note: gotcha rules applied, profile source used, branch.
+Output of Step 0: a short pre-run note: gotcha rules applied, profile source used, gap-optimizer queue status (cited / not cited), branch.
 
 ---
 
@@ -300,7 +301,8 @@ After every skill in this run has passed Step 7.5 and Step 8:
 2. `git add skills/[skill-1]/ skills/[skill-2]/ ...`
 3. Commit message: `feat: forge N skills from [target] — [skill-1], [skill-2], ...`
 4. Push to the active branch (NOT main without explicit permission).
-5. Output a single scan-block report listing all forged skills:
+5. **Hand back to gap-optimizer + skill-health-monitor:** if the run was triggered by gap-optimizer (Step 0 noted the queue cite), surface a one-line note in the report: "gap-optimizer rescan queued — run `/gap` next session to refresh candidate-queue.md and log closure to gap-log.md." Also surface: "consider running `/skill-health` to audit the new skill against the existing ecosystem (broken refs, duplicate scope, companion-link drift)."
+6. Output a single scan-block report listing all forged skills:
 
 ```
 SKILL FORGED — [skill-name]
