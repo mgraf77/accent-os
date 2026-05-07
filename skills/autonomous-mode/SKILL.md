@@ -16,7 +16,7 @@ description: >
   writes a final summary so Michael's resume sees exactly what happened.
   Use this skill when Michael says: "going to lunch", "going to bed",
   "stepping away", "go autonomous", "work while I'm gone", "unattended
-  mode", "until I'm back", "until [time]", "for the next [N] hours",
+  mode", "until I'm back", "until 3pm", "for the next 2 hours",
   "drain the prompt queue", "work through the build plan". Do not use
   for one-off tasks (just execute), for tasks needing owner approval
   mid-flow, or for any external-API call with billing implications
@@ -40,7 +40,7 @@ Run when Michael says any of:
 - "stepping away, [scope]"
 - "go autonomous" / "unattended mode"
 - "work while I'm gone" / "work until I'm back"
-- "until [time]" / "for the next [N] hours"
+- "until 3pm" / "for the next 2 hours" (time-bound forms)
 - "drain the prompt queue"
 - "work through the build plan"
 

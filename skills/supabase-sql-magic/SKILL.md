@@ -111,7 +111,7 @@ Estimate query cost based on:
 - Whether `LIMIT` short-circuits the scan
 - Approximate row count of largest table touched
 
-Output:
+Output artifact: a 4-line COST NOTE block (delivered in BLOCK 2 of Step 5):
 
 ```
 COST NOTE
@@ -121,9 +121,7 @@ COST NOTE
 - Run cost: [cheap|moderate|run-during-quiet]
 ```
 
-If the cost is "run-during-quiet" or higher, output an indexed alternative or a CTE-based reformulation immediately below the COST NOTE block.
-
-Output artifact: a 4-line COST NOTE block (see Step 5 BLOCK 2 for exact shape).
+If the cost is "run-during-quiet" or higher, append an indexed alternative or a CTE-based reformulation immediately below the COST NOTE block.
 
 ---
 

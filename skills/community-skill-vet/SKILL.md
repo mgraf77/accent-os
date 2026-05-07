@@ -88,16 +88,22 @@ Scan the skill content for these patterns. Each match is a risk flag:
 
 ## Step 4 — Assess author reputation
 
-For GitHub-sourced skills:
-- Account age
-- Other skills published by the same author
-- Last commit recency on the skill repo (>6 months old = stale)
-- Repo star count vs. issue count (low engagement, many issues = HOLD)
-- README clarity (placeholder README = quality signal weak)
+Produce a reputation table. Fill every row:
 
-For plugin-marketplace skills:
-- Marketplace verification status if visible
-- Plugin install count if visible
+| Signal | Value | Risk flag |
+|---|---|---|
+| Account age | [months / years] | Flag if < 3 months |
+| Other skills by author | [count + links] | Flag if 0 published skills |
+| Last commit | [date] | Flag if > 6 months ago |
+| Star count vs. issue count | [stars] / [open issues] | Flag if issues > stars |
+| README quality | [clear | placeholder | missing] | Flag if placeholder or missing |
+
+For plugin-marketplace skills, add:
+
+| Signal | Value |
+|---|---|
+| Marketplace verified | [yes / no / unknown] |
+| Install count | [count or "not visible"] |
 
 ---
 
