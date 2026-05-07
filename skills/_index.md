@@ -175,6 +175,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: known-shape data
 - companion: supabase-sql-magic, schema-contract-tests
 
+### transcript-intelligence
+- summary: Native replacement for Otter/Fireflies/Granola/Plaud post-meeting AI. Parses any pasted transcript into action items (with owner + due), decisions, open questions, topics, blockers, metrics, deadlines, talk-share, key quotes, and verbatim summary. 100% local, no API.
+- triggers: "Extract Key Items" button (Internal Meetings → AI Notes), "extract from this transcript", "parse this meeting", "run transcript-intel"
+- when_to_use: any pasted meeting transcript from any recorder, or raw dialogue text
+- when_NOT: live audio capture (out of scope v1), single-line decisions (use decision-log directly)
+- companion: decision-log, prompt-queue
+
 ### vendor-cascade
 - summary: Trace vendor scores from priorities down to metric weights and data fields; surface orphan metrics.
 - triggers: "vendor cascade", "score traceability", "metric → priority", "orphan metrics"

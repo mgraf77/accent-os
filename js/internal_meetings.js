@@ -1831,19 +1831,70 @@ function imRenderAiNotes(el, id){
         </div>
         <button class="btn btn-ghost btn-sm" onclick="imRemoveTranscript('${esc(id)}','${esc(t.id)}')">✕</button>
       </div>
-      ${t.parsed_json ? `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <div>
-            <div class="sec-label">Extracted Action Items</div>
-            ${(t.parsed_json.action_items||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + t.parsed_json.action_items.map(a=>`<li>${esc(a)}</li>`).join('') + '</ul>' : '<div class="muted sm">None detected</div>'}
-            ${(t.parsed_json.action_items||[]).length ? `<button class="btn btn-outline btn-sm" onclick="imAddTranscriptToTodos('${esc(id)}','${esc(t.id)}')">+ Add all to To-Dos</button>` : ''}
+      ${t.parsed_json ? (() => {
+        const pj = t.parsed_json;
+        const txt = v => typeof v==='string' ? v : (v?.text || '');
+        const asUL = arr => arr && arr.length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + arr.map(x=>`<li>${esc(txt(x))}</li>`).join('') + '</ul>' : '<div class="muted sm">None detected</div>';
+        const stats = pj.stats || {};
+        const dur = stats.duration_sec ? `${Math.round(stats.duration_sec/60)}m` : '—';
+        const statBar = `<div class="muted sm" style="margin-bottom:10px;font-family:'DM Mono',monospace;">source: ${esc(pj.source||'manual')} · ${stats.lines||0} lines · ${stats.speakers||0} speakers · ${stats.words||0} words · ${dur}</div>`;
+        const actionsHtml = (pj.action_items||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + pj.action_items.map(a => {
+          const owner = a.owner && a.owner!=='unassigned' ? ` <span class="muted sm">— @${esc(a.owner)}</span>` : '';
+          const due = a.due ? ` <span class="muted sm">(due ${esc(a.due)})</span>` : '';
+          return `<li>${esc(txt(a))}${owner}${due}</li>`;
+        }).join('') + '</ul>' : '<div class="muted sm">None detected</div>';
+        const topicsHtml = (pj.topics||[]).length ? '<ol style="margin:6px 0 6px 20px;font-size:13px;">' + pj.topics.map(c => `<li><strong>${esc(c.title)}</strong> <span class="muted sm">(${c.line_count} lines)</span></li>`).join('') + '</ol>' : '<div class="muted sm">No topic shifts detected</div>';
+        const quotesHtml = (pj.key_quotes||[]).length ? pj.key_quotes.map(q => `<blockquote style="margin:4px 0;padding:6px 10px;border-left:3px solid var(--accent);font-size:13px;">"${esc(q.text)}"${q.speaker ? ` <span class="muted sm">— ${esc(q.speaker)}</span>` : ''}</blockquote>`).join('') : '<div class="muted sm">None</div>';
+        const talkHtml = (pj.talk_share||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + pj.talk_share.map(s => `<li>${esc(s.speaker)} — ${s.pct}% <span class="muted sm">(${s.words} words)</span></li>`).join('') + '</ul>' : '<div class="muted sm">No speaker labels</div>';
+        const metricsHtml = (pj.metrics||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + pj.metrics.slice(0,10).map(m => `<li><strong>${esc(m.value)}</strong> <span class="muted sm">— ${esc((m.context||'').slice(0,90))}</span></li>`).join('') + '</ul>' : '<div class="muted sm">None</div>';
+        const summaryHtml = (pj.summary||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + pj.summary.map(s => `<li>${esc(s)}</li>`).join('') + '</ul>' : '<div class="muted sm">No summary</div>';
+        return `
+          ${statBar}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div>
+              <div class="sec-label">Action Items (${(pj.action_items||[]).length})</div>
+              ${actionsHtml}
+              ${(pj.action_items||[]).length ? `<button class="btn btn-outline btn-sm" onclick="imAddTranscriptToTodos('${esc(id)}','${esc(t.id)}')">+ Add all to To-Dos</button>` : ''}
+            </div>
+            <div>
+              <div class="sec-label">Decisions (${(pj.decisions||[]).length})</div>
+              ${asUL(pj.decisions)}
+              ${(pj.decisions||[]).length ? `<button class="btn btn-outline btn-sm" onclick="imAddTranscriptDecisionsToNotes('${esc(id)}','${esc(t.id)}')">+ Add as decision notes</button>` : ''}
+            </div>
+            <div>
+              <div class="sec-label">Open Questions (${(pj.questions||[]).filter(q=>!q.answered).length} open / ${(pj.questions||[]).length} total)</div>
+              ${(pj.questions||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + pj.questions.map(q => `<li>${q.answered?'✅':'❓'} ${esc(q.text)}</li>`).join('') + '</ul>' : '<div class="muted sm">None</div>'}
+            </div>
+            <div>
+              <div class="sec-label">Blockers / Risks (${(pj.blockers||[]).length})</div>
+              ${asUL(pj.blockers)}
+            </div>
+            <div>
+              <div class="sec-label">Topics</div>
+              ${topicsHtml}
+            </div>
+            <div>
+              <div class="sec-label">Talk Share</div>
+              ${talkHtml}
+            </div>
+            <div>
+              <div class="sec-label">Metrics &amp; Numbers</div>
+              ${metricsHtml}
+            </div>
+            <div>
+              <div class="sec-label">Deadlines</div>
+              ${(pj.deadlines||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + pj.deadlines.map(d => `<li><strong>${esc(d.date)}</strong> <span class="muted sm">— ${esc((d.context||'').slice(0,80))}</span></li>`).join('') + '</ul>' : '<div class="muted sm">None</div>'}
+            </div>
           </div>
-          <div>
-            <div class="sec-label">Extracted Decisions</div>
-            ${(t.parsed_json.decisions||[]).length ? '<ul style="margin:6px 0 6px 20px;font-size:13px;">' + t.parsed_json.decisions.map(d=>`<li>${esc(d)}</li>`).join('') + '</ul>' : '<div class="muted sm">None detected</div>'}
-            ${(t.parsed_json.decisions||[]).length ? `<button class="btn btn-outline btn-sm" onclick="imAddTranscriptDecisionsToNotes('${esc(id)}','${esc(t.id)}')">+ Add as decision notes</button>` : ''}
+          <div style="margin-top:14px;">
+            <div class="sec-label">Key Quotes</div>
+            ${quotesHtml}
           </div>
-        </div>` : ''}
+          <div style="margin-top:14px;">
+            <div class="sec-label">Extractive Summary <span class="muted sm">(verbatim lines, no paraphrase)</span></div>
+            ${summaryHtml}
+          </div>`;
+      })() : ''}
       <details style="margin-top:10px;">
         <summary style="cursor:pointer;font-size:12px;color:var(--text-3);">View raw transcript (${(t.raw_text||'').length} chars)</summary>
         <div class="raw-block" style="margin-top:8px;max-height:240px;">${esc(t.raw_text||'')}</div>
@@ -1852,7 +1903,7 @@ function imRenderAiNotes(el, id){
 
   el.innerHTML = `
     <div class="alert alert-info" style="margin-bottom:14px;">
-      <strong>How AI Note Taking Works in AccentOS:</strong> Use any meeting recorder (Otter, Fireflies, Granola, Plaud), then export the transcript and paste it below. AccentOS extracts action items and decisions automatically. Direct API integration is on the roadmap once Phase 1 budget is approved.
+      <strong>Native AI Note-Taking (no paid recorder needed):</strong> Record with any free tool (Otter free, Google Meet, Fireflies free, phone voice memo). Paste the transcript below — AccentOS natively extracts action items (with owner + due date), decisions, open questions, topics, blockers, metrics, deadlines, talk-share, key quotes, and a verbatim summary. Powered by the <code>transcript-intelligence</code> skill. 100% local — no external API spend, works offline.
     </div>
 
     <div style="font-size:13px;font-weight:700;margin:18px 0 10px;">🎙️ Connect Your Recorder</div>
@@ -1883,54 +1934,355 @@ function imRenderAiNotes(el, id){
     ${tHtml}`;
 }
 
+// ── transcript-intelligence skill (skills/transcript-intelligence/SKILL.md) ─
+// Native replacement for Otter/Fireflies/Granola/Plaud post-meeting AI.
+// 100% local string parsing. No external API. Verbatim — never paraphrase.
+
+function _tiDetectSource(text){
+  const head = text.slice(0, 2000);
+  if(/^WEBVTT/m.test(head)) return 'otter';
+  if(/^\s*Speaker \d+\s*\(\d{2}:\d{2}/m.test(head)) return 'firefly';
+  if(/^##\s+Transcript/m.test(head) && /^##\s+Notes/m.test(head)) return 'granola';
+  if(/^\[\d{2}:\d{2}:\d{2}\]\s*[^:]+:/m.test(head)) return 'plaud';
+  if(/^[A-Z][\w .'-]{1,40}\s{2,}\d{1,2}:\d{2}/m.test(head)) return 'otter';
+  return 'manual';
+}
+
+function _tiHmsToSec(s){
+  if(!s) return null;
+  const p = s.split(':').map(Number);
+  if(p.length===3) return p[0]*3600+p[1]*60+p[2];
+  if(p.length===2) return p[0]*60+p[1];
+  return null;
+}
+
+// Normalise raw text → [{speaker, ts_sec, text}]
+function _tiNormalize(text, source){
+  const out = [];
+  const lines = text.split(/\r?\n/);
+
+  if(source==='otter'){
+    let curSpeaker = null, curTs = null, buf = [];
+    const flush = () => { if(buf.length){ out.push({speaker:curSpeaker, ts_sec:curTs, text:buf.join(' ').trim()}); buf=[]; } };
+    for(const raw of lines){
+      const line = raw.trim();
+      if(!line) continue;
+      if(/^WEBVTT/.test(line) || /^\d+$/.test(line) || /-->/.test(line)) continue;
+      const m = line.match(/^([A-Z][\w .'-]{1,40})\s{2,}(\d{1,2}:\d{2}(?::\d{2})?)\s*$/);
+      if(m){ flush(); curSpeaker = m[1].trim(); curTs = _tiHmsToSec(m[2]); continue; }
+      buf.push(line);
+    }
+    flush();
+    return out;
+  }
+
+  if(source==='firefly'){
+    let curSpeaker=null, curTs=null, buf=[];
+    const flush = () => { if(buf.length){ out.push({speaker:curSpeaker, ts_sec:curTs, text:buf.join(' ').trim()}); buf=[]; } };
+    for(const raw of lines){
+      const line = raw.trim();
+      if(!line) continue;
+      const m = line.match(/^Speaker (\d+)\s*\((\d{2}:\d{2}(?::\d{2})?)\)\s*:?\s*(.*)$/);
+      if(m){ flush(); curSpeaker = 'Speaker '+m[1]; curTs = _tiHmsToSec(m[2]); if(m[3]) buf.push(m[3]); continue; }
+      buf.push(line);
+    }
+    flush();
+    return out;
+  }
+
+  if(source==='granola'){
+    // Only parse content under ## Transcript section
+    const m = text.match(/##\s+Transcript[\s\S]+$/i);
+    const body = m ? m[0] : text;
+    for(const raw of body.split(/\r?\n/)){
+      const line = raw.trim();
+      if(!line || /^##/.test(line)) continue;
+      const sm = line.match(/^\*\*([^*]+):\*\*\s*(.+)$/);
+      if(sm){ out.push({speaker:sm[1].trim(), ts_sec:null, text:sm[2].trim()}); continue; }
+      const sm2 = line.match(/^([A-Z][\w .'-]{1,40})[:—-]\s*(.+)$/);
+      if(sm2){ out.push({speaker:sm2[1].trim(), ts_sec:null, text:sm2[2].trim()}); continue; }
+      out.push({speaker:null, ts_sec:null, text:line});
+    }
+    return out;
+  }
+
+  if(source==='plaud'){
+    for(const raw of lines){
+      const line = raw.trim();
+      if(!line) continue;
+      const m = line.match(/^\[(\d{2}:\d{2}:\d{2})\]\s*([^:]+):\s*(.+)$/);
+      if(m){ out.push({speaker:m[2].trim(), ts_sec:_tiHmsToSec(m[1]), text:m[3].trim()}); continue; }
+      out.push({speaker:null, ts_sec:null, text:line});
+    }
+    return out;
+  }
+
+  // manual
+  for(const raw of lines){
+    const line = raw.trim();
+    if(!line) continue;
+    const stripped = line.replace(/^\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s*/, '');
+    const m = stripped.match(/^([A-Z][a-zA-Z .'-]{1,40})[:—-]\s*(.+)$/);
+    if(m){ out.push({speaker:m[1].trim(), ts_sec:null, text:m[2].trim()}); }
+    else { out.push({speaker:null, ts_sec:null, text:stripped}); }
+  }
+  return out;
+}
+
+function _tiResolveDue(cue, meetingDateStr){
+  if(!cue) return null;
+  const base = meetingDateStr ? new Date(meetingDateStr+'T00:00:00') : new Date();
+  const c = cue.toLowerCase();
+  const addDays = n => { const d = new Date(base); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+  if(/\btoday\b/.test(c)) return addDays(0);
+  if(/\btomorrow\b/.test(c)) return addDays(1);
+  if(/\beow\b|\bend of week\b/.test(c)){ const d = new Date(base); const off = (5 - d.getDay() + 7) % 7; return addDays(off||7); }
+  if(/\beom\b|\bend of month\b/.test(c)){ const d = new Date(base.getFullYear(), base.getMonth()+1, 0); return d.toISOString().slice(0,10); }
+  const dayM = c.match(/by (next )?(mon|tue|wed|thu|fri|sat|sun)\w*/);
+  if(dayM){
+    const map = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+    const target = map[dayM[2]];
+    let off = (target - base.getDay() + 7) % 7;
+    if(off===0 || dayM[1]) off += 7;
+    return addDays(off);
+  }
+  const inM = c.match(/in (\d{1,3}) days?/);
+  if(inM) return addDays(parseInt(inM[1],10));
+  return null;
+}
+
+function _tiScoreLine(line){
+  const t = line.text;
+  let s = 0;
+  if(/\b(decided|decision|agreed|approved|going with|the plan is)\b/i.test(t)) s += 3;
+  if(/\b(must|critical|huge|never|always|key|important|biggest)\b/i.test(t)) s += 2;
+  if(/\?\s*$/.test(t)) s += 1;
+  if(t.length>=50 && t.length<=180) s += 1;
+  if(/\$[\d,]+|\b\d+%/.test(t)) s += 2;
+  return s;
+}
+
+function _tiTopics(lines){
+  if(!lines.length) return [];
+  const STOP = new Set('the and a an of to in is are was were be been have has had do does did for on at by with from this that it as or but if so we you i he she they our your their not no yes ok okay just like really very also'.split(' '));
+  const tokenize = t => t.toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w && w.length>3 && !STOP.has(w));
+  const window = 20;
+  const chapters = [];
+  let curStart = 0, curKeys = new Set(), curLines = [];
+  const winKeys = (from, to) => {
+    const counts = {};
+    for(let i=from;i<to && i<lines.length;i++){
+      for(const w of tokenize(lines[i].text)) counts[w] = (counts[w]||0)+1;
+    }
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+  };
+  for(let i=0;i<lines.length;i+=window){
+    const keys = winKeys(i, i+window);
+    const overlap = curKeys.size ? keys.filter(k => curKeys.has(k)).length / Math.max(1, keys.length) : 0;
+    if(i===0 || overlap < 0.3){
+      if(curLines.length){
+        chapters.push({
+          title: [...curKeys].slice(0,3).join(' / ') || 'Discussion',
+          start_sec: lines[curStart].ts_sec,
+          end_sec: lines[Math.min(i,lines.length)-1]?.ts_sec ?? null,
+          line_count: curLines.length
+        });
+      }
+      curStart = i;
+      curKeys = new Set(keys);
+      curLines = [];
+    }
+    for(let j=i;j<i+window && j<lines.length;j++) curLines.push(lines[j]);
+  }
+  if(curLines.length){
+    chapters.push({
+      title: [...curKeys].slice(0,3).join(' / ') || 'Discussion',
+      start_sec: lines[curStart].ts_sec,
+      end_sec: lines[lines.length-1].ts_sec,
+      line_count: curLines.length
+    });
+  }
+  // cap at 8
+  while(chapters.length>8){
+    let minIdx=0;
+    for(let i=1;i<chapters.length;i++) if(chapters[i].line_count < chapters[minIdx].line_count) minIdx=i;
+    const merged = chapters[minIdx];
+    const into = chapters[Math.max(0,minIdx-1)] === merged ? chapters[minIdx+1] : chapters[minIdx-1];
+    into.line_count += merged.line_count;
+    if(merged.end_sec!=null) into.end_sec = merged.end_sec;
+    chapters.splice(minIdx,1);
+  }
+  return chapters;
+}
+
 function imParseTranscript(id){
   const text = $('im-tx-text')?.value?.trim();
-  const source = $('im-tx-source')?.value || 'manual';
+  const sourceSel = $('im-tx-source')?.value || 'manual';
   if(!text){ toast('Paste a transcript first','err'); return; }
 
-  // Simple line-based extraction — robust enough for most transcripts
-  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  const detected = _tiDetectSource(text);
+  const source = sourceSel==='manual' ? detected : sourceSel;
+  const lines = _tiNormalize(text, source);
+  const meeting = (IM_MEETINGS||[]).find(m => m.id===id);
+  const meetingDate = meeting?.meeting_date || null;
+
   const action_items = [];
   const decisions = [];
-  const aRe = /(action item|todo|to-do|will do|needs to|need to|follow up|follow-up|let'?s|we should|i'?ll|she'?ll|he'?ll|they'?ll|assign|owner)\s*[:\-]?\s*(.{8,200})/i;
-  const dRe = /(decided|decision|agreed|we will|the plan is|approved|chose|going with|consensus)\s*[:\-]?\s*(.{8,200})/i;
+  const questions = [];
+  const blockers = [];
+  const metrics = [];
+  const deadlines = [];
+  const talkMap = {};
 
-  lines.forEach(line => {
-    // strip speaker labels e.g. "Michael:" or "[09:32] Michael —"
-    const clean = line.replace(/^\[?\d{1,2}:\d{2}\]?\s*/, '').replace(/^[A-Z][a-zA-Z\s.]{1,40}[:—-]\s*/, '').trim();
-    const a = clean.match(aRe);
-    if(a && a[2]){ action_items.push(a[2].replace(/[.,;]+$/,'').trim()); return; }
-    const d = clean.match(dRe);
-    if(d && d[2]){ decisions.push(d[2].replace(/[.,;]+$/,'').trim()); }
-  });
+  const aCues = [
+    /\b(action item|todo|to[- ]?do|task)\s*[:\-]?\s*(.{6,240})/i,
+    /\b(I|you|he|she|they|we)['']?ll\s+(.{6,240})/i,
+    /\b(will|need(?:s)? to|going to|plan to|should|must|let'?s)\s+(.{6,240})/i,
+    /\b(follow[- ]?up|circle back|loop in|get back to)\s+(.{6,240})/i,
+    /\b(?:assigned? to|owner:?)\s+([A-Z][a-z]+)\b\s*(.{0,240})/i
+  ];
+  const dCue = /\b(decided|decision|we'?ve decided|the decision is|agreed|consensus|approved|chose|going with|the plan is|locked in|signed off)\b\s*[:\-]?\s*(.{6,240})/i;
+  const bCue = /\b(blocked|blocker|stuck|risk|concern|worried|problem|issue|can'?t|won'?t work|breaking)\b\s+(.{6,240})/i;
+  const dueCue = /(today|tomorrow|by (?:next )?(?:mon|tue|wed|thu|fri|sat|sun)\w*|EOW|EOM|end of (?:week|month)|in \d{1,3} days?|by \w+ \d{1,2})/i;
+  const nameCue = /\b([A-Z][a-z]{2,})\s+(?:will|should|needs to|is going to|to)\s+/;
+
+  for(let i=0;i<lines.length;i++){
+    const ln = lines[i];
+    const t = ln.text;
+    if(!t) continue;
+    const sp = ln.speaker || 'unknown';
+    talkMap[sp] = talkMap[sp] || {speaker:sp, lines:0, words:0};
+    talkMap[sp].lines++;
+    talkMap[sp].words += t.split(/\s+/).length;
+
+    // action items
+    for(const re of aCues){
+      const m = t.match(re);
+      if(m){
+        const phrase = (m[2] || m[1] || '').toString().replace(/[.,;]+$/,'').trim();
+        if(phrase.length<6) continue;
+        // owner inference
+        let owner = 'unassigned';
+        if(/^\s*(I|I'?ll|I am|I'?m)\b/i.test(t) && ln.speaker) owner = ln.speaker;
+        else {
+          const nm = t.match(nameCue);
+          if(nm) owner = nm[1];
+          const am = t.match(/\bassigned? to\s+([A-Z][a-z]+)/i) || t.match(/\bowner:?\s+([A-Z][a-z]+)/i);
+          if(am) owner = am[1];
+        }
+        const dueM = t.match(dueCue);
+        const due = dueM ? _tiResolveDue(dueM[1], meetingDate) : null;
+        action_items.push({ text: phrase, owner, due, source_line: t, ts_sec: ln.ts_sec });
+        break; // one action per line
+      }
+    }
+
+    // decisions
+    const dm = t.match(dCue);
+    if(dm) decisions.push({ text: dm[2].replace(/[.,;]+$/,'').trim(), source_line: t, ts_sec: ln.ts_sec });
+
+    // questions
+    if(/\?\s*$/.test(t) && t.length>=12){
+      let answered = false;
+      const qNouns = (t.toLowerCase().match(/\b[a-z]{4,}\b/g)||[]).slice(0,5);
+      for(let j=i+1;j<Math.min(i+9,lines.length);j++){
+        const lt = lines[j].text;
+        if(/^\s*(yes|no|yeah|nope|i think|sure|correct|right)/i.test(lt)){ answered=true; break; }
+        const overlap = qNouns.filter(n => lt.toLowerCase().includes(n)).length;
+        if(overlap>=2){ answered=true; break; }
+      }
+      questions.push({ text: t, answered, source_line: t, ts_sec: ln.ts_sec });
+    }
+
+    // blockers
+    const bm = t.match(bCue);
+    if(bm) blockers.push({ text: bm[2].replace(/[.,;]+$/,'').trim(), source_line: t, ts_sec: ln.ts_sec });
+
+    // metrics
+    const moneyMatches = t.match(/\$[\d,]+(?:\.\d+)?[KMB]?\b/g) || [];
+    moneyMatches.forEach(v => metrics.push({ value: v, unit:'currency', context: t, ts_sec: ln.ts_sec }));
+    const pctMatches = t.match(/\b\d{1,3}(?:\.\d+)?%/g) || [];
+    pctMatches.forEach(v => metrics.push({ value: v, unit:'percent', context: t, ts_sec: ln.ts_sec }));
+
+    // deadlines (outside actions — capture date phrases anywhere)
+    const dlM = t.match(/\b(?:by\s+)?(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{1,2}(?:,\s*\d{4})?/i);
+    if(dlM) deadlines.push({ date: dlM[0], context: t, ts_sec: ln.ts_sec });
+  }
+
+  // dedupe
+  const dedupe = (arr, key) => { const seen = new Set(); return arr.filter(x => { const k = (typeof x==='string'?x:x[key]||JSON.stringify(x)).toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; }); };
+  const action_items_d = dedupe(action_items,'text').slice(0,40);
+  const decisions_d = dedupe(decisions,'text').slice(0,40);
+  const questions_d = dedupe(questions,'text').slice(0,30);
+  const blockers_d = dedupe(blockers,'text').slice(0,20);
+
+  // talk share
+  const totalWords = Object.values(talkMap).reduce((s,x)=>s+x.words,0) || 1;
+  const talk_share = Object.values(talkMap).map(x => ({...x, pct: Math.round(100*x.words/totalWords)})).sort((a,b)=>b.pct-a.pct);
+
+  // topics
+  const topics = _tiTopics(lines);
+
+  // key quotes
+  const scored = lines.map(l => ({l, s:_tiScoreLine(l)})).filter(x => x.s>=3 && x.l.text.length>=30);
+  scored.sort((a,b)=>b.s-a.s);
+  const key_quotes = scored.slice(0,5).map(x => ({ text: x.l.text, speaker: x.l.speaker, ts_sec: x.l.ts_sec }));
+
+  // summary — top scored verbatim lines, ordered by ts/index
+  const sumPool = lines.map((l,idx) => ({l, idx, s:_tiScoreLine(l) + (l.text.length>=40 && l.text.length<=200 ? 1 : 0)}));
+  sumPool.sort((a,b)=>b.s-a.s);
+  const summary = sumPool.slice(0,8).filter(x=>x.s>0).sort((a,b)=>a.idx-b.idx).map(x => x.l.text);
+
+  const durationSec = lines.reduce((mx,l)=> l.ts_sec!=null && l.ts_sec>mx ? l.ts_sec : mx, 0) || null;
+
+  const parsed_json = {
+    source,
+    parsed_at: new Date().toISOString(),
+    stats: { lines: lines.length, speakers: Object.keys(talkMap).length, duration_sec: durationSec, words: totalWords },
+    action_items: action_items_d,
+    decisions: decisions_d,
+    questions: questions_d,
+    topics,
+    key_quotes,
+    blockers: blockers_d,
+    metrics: metrics.slice(0,30),
+    deadlines: deadlines.slice(0,20),
+    talk_share,
+    summary
+  };
 
   const transcript = {
     id: '_tx'+Date.now(),
     meeting_id: id,
     source,
     raw_text: text,
-    parsed_json: { action_items: [...new Set(action_items)].slice(0,40), decisions: [...new Set(decisions)].slice(0,40) },
+    parsed_json,
     created_at: new Date().toISOString()
   };
   if(!IM_TRANSCRIPTS[id]) IM_TRANSCRIPTS[id] = [];
   IM_TRANSCRIPTS[id].unshift(transcript);
 
-  // Persist if Supabase configured
   if(sbConfigured() && !id.startsWith('_')){
     const {id:_, ...body} = transcript;
     sbFetch('/meeting_transcripts', {method:'POST', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(body)}).catch(e => console.warn('[transcripts] save failed:', e.message));
   }
 
   if($('im-tx-text')) $('im-tx-text').value = '';
-  toast(`Extracted ${transcript.parsed_json.action_items.length} actions, ${transcript.parsed_json.decisions.length} decisions`,'ok');
+  toast(`Extracted ${action_items_d.length} actions · ${decisions_d.length} decisions · ${questions_d.length} questions · ${topics.length} topics`,'ok');
   imRenderSub(id);
 }
 
 async function imAddTranscriptToTodos(id, tid){
   const t = (IM_TRANSCRIPTS[id]||[]).find(x => x.id===tid);
   if(!t?.parsed_json?.action_items?.length){ toast('No actions to add','err'); return; }
-  for(const task of t.parsed_json.action_items){
-    await imSaveTodo(id, { task, status:'open', priority:'normal' });
+  for(const a of t.parsed_json.action_items){
+    const task = typeof a==='string' ? a : a.text;
+    const owner = typeof a==='object' && a.owner && a.owner!=='unassigned' ? a.owner : null;
+    const due = typeof a==='object' ? a.due : null;
+    const rec = { task, status:'open', priority:'normal' };
+    if(owner) rec.assignee = owner;
+    if(due) rec.due_date = due;
+    await imSaveTodo(id, rec);
   }
   toast(`Added ${t.parsed_json.action_items.length} to-dos`,'ok');
 }
@@ -1939,7 +2291,7 @@ async function imAddTranscriptDecisionsToNotes(id, tid){
   const t = (IM_TRANSCRIPTS[id]||[]).find(x => x.id===tid);
   if(!t?.parsed_json?.decisions?.length){ toast('No decisions to add','err'); return; }
   for(const d of t.parsed_json.decisions){
-    await imSaveNote(id, d, 'decision');
+    await imSaveNote(id, typeof d==='string' ? d : d.text, 'decision');
   }
   toast(`Added ${t.parsed_json.decisions.length} decisions to notes`,'ok');
 }
