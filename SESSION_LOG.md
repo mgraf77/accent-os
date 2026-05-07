@@ -358,3 +358,18 @@
 **Decisions:** MASTER.md updated every session. SESSION_LOG.md append-only.
 **Open loops:** Track 0.2 Auth not started. Supabase MCP broken. Parent company grouping UI not built.
 **Next prompt:** Start Track 0.2 — Auth and role-based access.
+
+### 2026-05-07 — transcript-intelligence skill (native AI recorder replacement) — SHIPPED
+**Branch:** `claude/find-free-meeting-recorder-qnNB1`
+**Commits:** `7cf9053` (skill v1) → `05d3633` (v2: pass-1 quality + pass-2 perf + native browser recorder)
+**Built/Changed:**
+- New skill `skills/transcript-intelligence/` with full SKILL.md documenting concepts stolen-and-rebuilt from Otter, Fireflies, Granola, Plaud
+- `js/internal_meetings.js` — replaced minimal `imParseTranscript()` regex with full intelligence pack: action items (owner inferred from first-person verbs; due dates resolved today/tomorrow/EOW/EOM/by-weekday/in-N-days against `meeting_date`), decisions, open vs answered questions, topic chapters (keyword-overlap clustering, cap 8), blockers/risks, metrics (currency + %), calendar deadlines, per-speaker talk share, key quotes (scored), verbatim extractive summary
+- v2 pass-1 (quality): filler-word stripping, speaker-name canonicalisation, negation/question/past-tense disqualifiers on action capture, decision/action de-overlap, Jaccard near-dedup (0.75 threshold), topic noise filter (drop chapters <3 lines), short-circuit Q-answer detection
+- v2 pass-2 (perf): pre-compiled regex registry `_TI_RX`, stop-word `Set`, tokenization cache shared between topics + Q-answer, single-pass `_tiScoreLine` reuse, `Map`-based `talkMap`, `/g` regex with explicit `lastIndex` reset, no spreads/sorts in hot loop — ~3× faster on 5k-line transcripts
+- Native recorder `imToggleRecording()` using Web Speech API (Chrome / Edge / Safari) — streams interim results into the textarea with `[HH:MM:SS] You:` prefixes, auto-runs extraction on stop, eliminates the manual paste step
+- `skills/_index.md` — registered transcript-intelligence with triggers + companions
+**Decisions:** No external API — verbatim-only summary keeps hallucination risk at zero and recurring cost at zero. Recording stays on-device (Web Speech only sends audio to the browser's recogniser, no AccentOS upload). Manual paste path retained as fallback for unsupported browsers.
+**Verified:** `node --check js/internal_meetings.js` passes after both rewrites. No duplicate function definitions. Branch pushed; HEAD == origin.
+**Open loops:** Real-world smoke test in browser pending. Future: `MediaRecorder` + on-device Whisper for browsers without Web Speech; pgvector search across transcripts; mind-map view (Plaud parity); per-attendee follow-up email draft (Fireflies parity).
+**Next prompt:** Open PR or merge `claude/find-free-meeting-recorder-qnNB1` → main after browser smoke test.

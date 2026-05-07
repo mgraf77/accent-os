@@ -1,37 +1,29 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-06 — session end · efficiency-monitor v1 shipped (always-on observer)
+**Last updated:** 2026-05-07 — session end · transcript-intelligence v2 shipped (native recorder + 2 optimization passes)
 **Current task:** —
-**Step:** Tree clean on `claude/always-on-efficiency-monitor-2LiuS`. New always-on skill `efficiency-monitor` shipped — silent in-session observer, surfaces flags only at session boundaries. Awaiting first real session to populate `efficiency-log.md`.
+**Step:** Tree clean on `claude/find-free-meeting-recorder-qnNB1`. HEAD `05d3633`, origin in sync.
 
 **Recent shipped (this session):**
-- `skills/efficiency-monitor/` — SKILL.md, `_thresholds.md` (tunable), `efficiency-log.md` (append-only ledger), `skill-candidates.md` (auto-rebuilt with semantic-diff suppression), `session-end-summary.md` (next-boot consumer)
-- `scripts/efficiency-aggregate.sh` — Stop-hook aggregator with cross-session counts + promotion ladder + timestamp-only-diff suppression
-- `.claude/settings.json` — Stop hook wired (runs aggregator → `_aggregator.log`, gitignored)
-- `.claude/CLAUDE.md` — boot step 1.j (replay last summary) + wrap-up step 8 (write findings, batched into session-end commit)
-- `skills/_index.md` — efficiency-monitor entry registered (companion: skill-forge, vibe-speak)
-- Reliability hardening: `_session-scratch.md` (gitignored mid-session journal) makes tracking crash-safe
-- Project hygiene: PROMPT_LOG entry, WIP refresh, SESSION_LOG entry
+- `skills/transcript-intelligence/` — new skill replacing Otter / Fireflies / Granola / Plaud post-meeting AI layer; 100% local string parsing, no external API
+- `js/internal_meetings.js` — full v2 rewrite of `imParseTranscript()`:
+  - Pass 1 (quality): filler stripping, speaker-name canonicalisation, action disqualifiers (questions / negations / past-tense recaps), decision/action de-overlap, Jaccard near-dedup, topic noise filter, short-circuit Q-answer detection
+  - Pass 2 (perf): pre-compiled regex registry (`_TI_RX`), expanded stop-word `Set`, per-line tokenization cache, single-pass scoring, `Map`-based talk tracker, `/g` regex hot-path with `lastIndex` reset
+  - Native recorder: `imToggleRecording()` using Web Speech API; live in-browser capture replaces the manual export-and-paste step entirely
+- `skills/_index.md` — `transcript-intelligence` entry registered (companions: decision-log, prompt-queue)
 
-**Files touched:** `skills/efficiency-monitor/*`, `scripts/efficiency-aggregate.sh`, `.claude/{CLAUDE.md, settings.json}`, `.gitignore`, `skills/_index.md`, `PROMPT_LOG.md`, `WORK_IN_PROGRESS.md`, `SESSION_LOG.md`.
+**Files touched:** `skills/transcript-intelligence/SKILL.md`, `skills/_index.md`, `js/internal_meetings.js`, `PROMPT_LOG.md`, `SESSION_LOG.md`, `WORK_IN_PROGRESS.md`, `skills/efficiency-monitor/{efficiency-log.md, session-end-summary.md}`.
 
-**Commit chain:** 508a27c (build) → db533b2 (gitignore + aggregator output committed) → 74adbb5 (semantic-diff suppression) → final (project hygiene + crash-safe scratch journal).
+**Commit chain:** `7cf9053` (skill v1) → `05d3633` (v2: pass-1 + pass-2 + native recorder) → final (session-end docs).
 
-**Branch status:** `claude/always-on-efficiency-monitor-2LiuS` pushed to origin. NOT merged to main.
+**Branch status:** `claude/find-free-meeting-recorder-qnNB1` pushed to origin. NOT merged to main.
 
 **Next step if interrupted:**
 1. Verify tree clean: `git status`
-2. Open PR or merge `claude/always-on-efficiency-monitor-2LiuS` → main when Michael approves
-3. First "real" session will exercise: scratch journaling during work → wrap-up read+clear → aggregator on Stop → boot replay next session
+2. Open PR or merge `claude/find-free-meeting-recorder-qnNB1` → main when Michael approves
+3. Smoke test in browser: open a meeting → AI Notes tab → click 🎤 Record Live → speak → ⏹ Stop → verify auto-extraction renders all categories
 
-**Watchlist (will fill as the skill runs in real sessions):**
-- Does Claude reliably journal to `_session-scratch.md` mid-session? (the Path A reliability question)
-- Do skill-bypass flags actually catch real bypasses, or fire false positives?
-- First PROMOTE-status candidate → handoff to `skill-forge`
-
-**Other backlog (unchanged from prior WIP):**
-- AccentOS module: MODULE_REGISTRY refactor, Saved Filter Sets verify, Bulk action bars wiring, Compact-view toggle
-- M30 SQL: `user_module_overrides` table — when Michael wants real cross-device per-user Module Modes gating
-- 6.x integrations: blocked on M03/M04/M05/M06/M09/M10/M18
-- vibe-speak: claude.ai history export → corpus import expansion
+**Watchlist:**
+- Does Web Speech API behave reliably on Michael's primary browser?
+- Are Pass-1 disqualifiers (negation / past-tense) producing false negatives on real transcripts?
