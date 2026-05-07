@@ -91,6 +91,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: small WIP changes
 - companion: build-plan-status, decision-log
 
+### educational-synthesis
+- summary: Universal educational synthesis engine — transforms any complex topic / document / AccentOS architecture / external framework into a multi-format learning ecosystem (executive briefing, layered deep-dive, NotebookLM-style podcast prompt, slide deck, infographic, mind map, FAQ, analogies, misconceptions, discussion questions). Optimizes for understanding/retention/systems-thinking, not compression.
+- triggers: "teach me [X]", "explain [X] like a course", "build a learning ecosystem for [X]", "synthesize [topic]", "make this learnable", "deep dive on [X]", "executive briefing on [X]", "podcast this", "deck this", "mental model for [X]", "concept map for [X]", "produce a course on", "turn this into a learning module", "break this down for me"
+- when_to_use: any topic / system / framework worth >1 month memory; AccentOS architecture decisions (Module Modes, probability model, RFM, role gating); after skill-forge spawns ≥3 reusable concepts
+- when_NOT: trivial questions, one-off lookups (use vibe-speak teach-me mode for in-chat); save-this-query (use analysis-snapshot); build-skill-from-tool (use skill-forge)
+- companion: skill-forge, analysis-snapshot, decision-log, vibe-speak (teach-me mode)
+
 ### efficiency-monitor
 - summary: Always-on observer that flags inefficiencies (retries, redundant reads, recurring multi-step patterns, skill bypass, clarification loops, redone WIP) and recommends patterns for promotion to real skills. Surfaces only at session boundaries.
 - triggers: auto-active per `.claude/CLAUDE.md` step 1.j and step 8; manual: "efficiency check", "what could be a skill", "audit this session", "/efficiency end"

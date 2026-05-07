@@ -13,6 +13,37 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-07 — educational-synthesis v1 (universal learning-ecosystem skill) — SHIPPED
+**Skill:** `skills/educational-synthesis/` — transforms any complex topic into a multi-format learning ecosystem (executive briefing, layered deep-dive, NotebookLM-style podcast prompt, slide deck architecture, infographic layout, mind map, FAQ, analogies, misconceptions, discussion questions). System-wide; works across any domain (AI, vendor strategy, economics, software architecture, geopolitics, internal AccentOS systems).
+**Built:**
+- **`SKILL.md`** — 13-step workflow (preflight → ingest → concept inventory → hierarchy → relationship map → 10 internal questions → analogies → format selection → progressive layers → audio/visual → reinforcement → write outputs → update INDEX → report). Lazy-load contract (HOT 3K / WARM 3K / COLD 4K, total ~10K tokens). 11 anti-patterns. Trigger-phrase set: "teach me X", "deep dive on X", "podcast this", "deck this", "concept map for X", "build a learning ecosystem for X", etc.
+- **`MODES.md`** — 6-mode catalog with switching rules and combination logic. Default mode: `deep-dive`. Other modes: `exec-briefing`, `podcast`, `visual-thinking`, `teach-me`, `concept-map`.
+- **`modes/*.md`** — 6 per-mode files with audience defaults, file generation rules, word budgets, mode-specific anti-patterns. Beginner-mode (`teach-me`) doubles Foundational-layer budget and front-loads misconceptions. Exec-briefing capped at ~400 words.
+- **`templates/*.md`** — 4 templates. `output-skeleton.md` defines the `/knowledge/[slug]/` folder layout + INDEX schemas. `concept-inventory.md` schema with worked vendor-probability example. `analogy-library.md` enforces ≥2 analogies per Core concept from different domain classes + "where it breaks" rule. `reinforcement-system.md` schemas for FAQ / misconceptions / discussion-questions / risks-limitations.
+- **`prompts/*.md`** — 4 drop-in prompts. `notebooklm-podcast.md` is the primary deliverable for `podcast` mode (NotebookLM Audio Overview template with required moments + concept inventory + analogies + misconceptions sections). `slide-deck.md` defines slide-by-slide architecture for any deck tool. `infographic.md` defines single-page layout grid (40/30/30 left-center-right). `discussion-questions.md` includes an AccentOS scenario library for grounding scenario prompts.
+- **`references/*.md`** — 3 reference docs. `tone-rules.md` enforces analytical/calm/honest tone with a 15-phrase forbidden-list auto-catch. `adaptive-difficulty.md` defines 5 audience tiers (beginner / intelligent non-expert / intermediate / advanced / executive) with per-tier knobs (vocabulary, analogy density, layer word budgets, competency markers, misconception placement). `educational-architecture.md` defines the 10-tier knowledge model and cross-reference rules between files.
+- **`examples/accentos-vendor-probability-model.md`** — full worked end-to-end example using a real AccentOS topic (the 8-factor weighted probability model from BUILD_PLAN 1.5). Shows every step's output: preflight, 12-row concept inventory, 4-layer hierarchy, Mermaid relationship graph, 10 internal questions, analogies, and compressed deep-dive across all 4 layers (foundational/intermediate/advanced/strategic). Doubles as a calibration reference for the first real invocation.
+- **`knowledge/INDEX.md`** — bootstrapped consumer-facing index where future synthesis outputs land.
+- **`skills/_index.md`** — `educational-synthesis` entry registered between `doc-drift` and `efficiency-monitor` (alphabetical). Companion: skill-forge, analysis-snapshot, decision-log, vibe-speak.
+
+**Decisions:**
+- **Mode-gated outputs, not always-on full set.** The clean-room spec described 9 output types; making all 9 mandatory would bloat artifact sets on simple topics. Resolved: 6 modes with per-mode file selection. Spec-as-superset → mode-as-projection.
+- **Tone enforcement as auto-catch list.** The spec said "avoid hype, no buzzwords, no shallow futurism" — abstract. Resolved with `references/tone-rules.md` containing a 15-phrase forbidden list applied as final pass before file write. Concrete enforcement.
+- **Misconceptions BEFORE mechanism in `teach-me` mode.** Pedagogical research consensus: beginners walk in with wrong models, not empty ones. The misconception must be addressed before the correct model lands or the correct model collides with the wrong model and bounces. Codified as the load-bearing teach-me rule.
+- **Worked example as part of the skill, not documentation about it.** `examples/accentos-vendor-probability-model.md` is canonical reference for what good output looks like. First-run calibration depends on it.
+- **Lazy-load contract from the start.** Skill crossed the ~10K-token threshold at v1 (matches vibe-speak v7's threshold). HOT/WARM/COLD tiers documented with cache markers; second+ run hits ~95% cache.
+- **/knowledge/ as artifact root, not skills/educational-synthesis/output/.** Outputs are content for Michael to consume, not part of the skill itself. Kept separate from skill internals.
+
+**Watchlist (first real invocation):**
+- Does the lazy-load contract hit the ~95% cache target?
+- Do the 11 anti-patterns reliably catch shallow output?
+- Does the worked example transfer calibration to topics outside vendor probability?
+- Does Step 5 (10 internal questions) reliably produce the depth difference vs. summarization?
+
+**Branch:** `claude/educational-synthesis-skill-nC3K7` — pushed to origin, NOT merged to main.
+
+---
+
 ### 2026-05-06 — efficiency-monitor v1 (always-on session observer) — SHIPPED
 **Skill:** `skills/efficiency-monitor/` — silent during work, surfaces only at session boundaries.
 **Built/Changed:**
