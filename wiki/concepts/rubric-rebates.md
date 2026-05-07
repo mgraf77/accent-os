@@ -14,6 +14,8 @@ updated: 2026-05-06
 
 Highest-weight financial category. Rebates are year-end backend payments from vendor to dealer based on total purchase volume. Directly improves net margin without affecting list pricing.
 
+**Score reference**: A vendor with a 3% rebate receives a vendor score of 7 on the rebate rubric. A 6% rebate earns the maximum score of 10. Zero rebate = score 0.
+
 ## 0–10 Scale
 
 | Score | Threshold |

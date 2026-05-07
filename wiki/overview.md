@@ -1,5 +1,5 @@
 ---
-type: synthesis
+type: concept
 slug: overview
 title: AccentOS Wiki — System Overview
 sources: [source-master, source-build-plan-claude]
@@ -66,8 +66,19 @@ AccentOS is the internal operating system for Accent Lighting Inc., a commercial
 | v6.10.55 | vibe-speak v9 corpus learning |
 | v6.11.1 | Wiki module (this build) |
 
+## AccentOS team
+
+| Name | Role | AccentOS access |
+|------|------|----------------|
+| Michael Graf | Owner | Full (all modules, Owner role) |
+| Paul Graf | Sales | Sales role |
+| Patrick Graf | Operations | Admin role |
+
+All three are AccentOS team members at Accent Lighting Inc., Wichita, KS. Michael Graf is the primary product director and AccentOS builder. Paul and Patrick are the primary day-to-day users.
+
 ## Related
 
 - [[karpathy-llm-wiki]] — the pattern this wiki follows
 - [[ADR-007]] — decision to adopt wiki-first RAG
 - [[vendor-scoring]] — most-used wiki cluster
+- [[michael-graf]] · [[paul-graf]] · [[patrick-graf]] — employee profiles

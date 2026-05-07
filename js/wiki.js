@@ -160,56 +160,89 @@ function searchWikiIndex(query, entries) {
 
 // ── WIKI GROUNDING (for sendChat) ─────────────────────────────────────────────
 
+// Tokenize a query string: split on whitespace/punctuation, keep words >2 chars.
+// Also emits slug-component forms: "footcandle" matches "lumen-output-commercial"
+// only if the page body is fetched; but slug components ("lumen","output","commercial")
+// provide a secondary title-level signal.
+function _groundTokenize(text) {
+  return text.toLowerCase()
+    .split(/[\s\-\/]+/)
+    .map(t => t.replace(/[^a-z0-9]/g, ''))
+    .filter(t => t.length > 2);
+}
+
+// Score a slug+title against query terms. Slug components (hyphen-split) are
+// treated as individual title words so "lumen-output-commercial" matches "commercial".
+function _titleScore(entry, terms) {
+  const slugWords = entry.slug.split('-');
+  const text = (entry.title + ' ' + slugWords.join(' ')).toLowerCase();
+  return terms.filter(t => text.includes(t)).length;
+}
+
+// Score fetched page body text against query terms. More thorough than title-only.
+function _bodyScore(bodyText, terms) {
+  const lower = bodyText.toLowerCase();
+  return terms.reduce((sum, t) => {
+    // Count occurrences (capped at 5 to prevent density flooding)
+    let count = 0, pos = 0;
+    while (count < 5 && (pos = lower.indexOf(t, pos)) !== -1) { count++; pos++; }
+    return sum + count;
+  }, 0);
+}
+
 async function wikiGroundQuery(query, chatMode) {
-  // Customer mode: skip sensitive pages
   // Returns { context: string, sources: [{slug, title}] } or null
   try {
     const index = await loadWikiIndex();
     if (!index || !index.length) return null;
 
-    const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 3);
+    const terms = _groundTokenize(query);
     if (!terms.length) return null;
 
-    // Score each entry by term overlap
-    const scored = index
-      .filter(e => {
-        // Never serve sensitive pages to customer mode
-        if (chatMode === 'customer' && (e.type === 'entity' || e.confidence === 'low')) return false;
-        // Never use synthesis/eval pages as grounding context (self-contamination)
-        if (e.type === 'synthesis') return false;
-        return true;
-      })
-      .map(e => {
-        const text = (e.slug + ' ' + e.title).toLowerCase();
-        const hits = terms.filter(t => text.includes(t)).length;
-        return { ...e, hits };
-      })
-      .filter(e => e.hits > 0)
-      .sort((a, b) => b.hits - a.hits)
-      .slice(0, 3);
+    const allowed = index.filter(e => {
+      if (chatMode === 'customer' && (e.type === 'entity' || e.confidence === 'low')) return false;
+      // Synthesis pages are meta-content; exclude from grounding
+      if (e.type === 'synthesis') return false;
+      return true;
+    });
 
-    if (!scored.length) return null;
+    // Pass 1: score all entries by title + slug-component overlap
+    const pass1 = allowed
+      .map(e => ({ ...e, titleHits: _titleScore(e, terms) }))
+      .filter(e => e.titleHits > 0)
+      .sort((a, b) => b.titleHits - a.titleHits)
+      .slice(0, 6);  // Fetch up to 6 candidates for body re-ranking
 
-    // Fetch top pages
-    const pageTexts = await Promise.all(scored.map(async e => {
+    // If no title matches, widen to all allowed pages and take top-2 by title score
+    // (even 0-score ones might have body hits for domain-specific terms)
+    const candidates = pass1.length >= 2 ? pass1
+      : allowed.slice(0, 6);  // fallback: first 6 entries (concept-heavy area)
+
+    // Pass 2: fetch pages and re-rank by body text score
+    const fetched = await Promise.all(candidates.map(async e => {
       const raw = await fetchWikiPage(e.slug);
       if (!raw) return null;
-      // Strip frontmatter + truncate to ~400 chars
       const body = raw.replace(/^---[\s\S]*?---\n/, '').trim();
-      const excerpt = body.slice(0, 500);
-      return { slug: e.slug, title: e.title, excerpt };
+      const bodyHits = _bodyScore(body, terms);
+      const totalScore = e.titleHits * 3 + bodyHits;  // title match weighted 3×
+      return { slug: e.slug, title: e.title, body, bodyHits, totalScore };
     }));
 
-    const validPages = pageTexts.filter(Boolean);
-    if (!validPages.length) return null;
+    const ranked = fetched
+      .filter(Boolean)
+      .filter(p => p.totalScore > 0)
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, 3);
 
-    const context = validPages.map(p =>
-      `[Wiki: ${p.title}]\n${p.excerpt}`
+    if (!ranked.length) return null;
+
+    const context = ranked.map(p =>
+      `[Wiki: ${p.title}]\n${p.body.slice(0, 500)}`
     ).join('\n\n---\n\n');
 
     return {
       context,
-      sources: validPages.map(p => ({ slug: p.slug, title: p.title }))
+      sources: ranked.map(p => ({ slug: p.slug, title: p.title }))
     };
   } catch (e) {
     console.log('[wiki] grounding failed:', e.message);

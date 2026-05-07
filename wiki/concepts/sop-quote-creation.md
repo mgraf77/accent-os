@@ -57,9 +57,9 @@ Gather from customer/specifier:
 - Follow up in 48–72 hours if no response
 - Competitive situations: authorized substitution requires matching spec sheet attributes (lumen output, CCT, CRI, dimming, listing)
 
-## Quote → Job conversion
+## Quote → Job conversion steps
 
-If customer awards project: use Deal → Job preset in AccentOS Pipeline (goTo pipeline → openDeal → Create Job button).
+To convert a quote to a job when a customer awards the project: use the Deal → Job preset in AccentOS Pipeline (goTo pipeline → openDeal → Create Job button). The job is linked to the originating quote and customer automatically.
 
 ## Related
 

@@ -3,6 +3,25 @@
 
 ---
 
+## 2026-05-07 optimization-loops
+- fix: rag_search.py — synthesis type excluded by default (DEFAULT_EXCLUDE_TYPES), --include-synthesis flag to override
+- fix: rag_build_index.py + rag_search.py + rag_eval.py — suffix stemmer (13 rules) + digit-anchored tech-term tokenizer (0-10v, 2700k, etc.)
+- fix: source-seed-corpus-v1 — reclassified type: source → synthesis (meta/provenance page contaminating all clusters)
+- fix: overview.md — reclassified type: synthesis → concept (now indexed + searchable), added team section
+- fix: wiki_lint.py — OPERATIONAL_SLUGS removes "overview" (now in index), skip_files removes "overview.md"
+- enrich: rubric-rebates — "3% rebate = score 7" precision sentence
+- enrich: rubric-imap — "score of 10 = 2.5× markup" precision sentence
+- enrich: rubric-rep-score — "rep score rubric" added to lead text
+- enrich: sop-quote-creation — "convert a quote to a job" language + "steps" in heading
+- enrich: lumen-output-commercial — "Warehouses need 20–75 footcandles" lead sentence
+- enrich: source-build-intelligence — CSV import flow pattern paragraph
+- enrich: employee pages — "AccentOS team member" added to lead lines
+- upgrade: js/wiki.js wikiGroundQuery — title+slug-component pass1, body-text re-rank pass2 (6 candidates → top-3)
+- rebuild: rag_index.json — 155 chunks, 3166 terms, 936KB
+- eval: RAG recall 56.2% → 87.5% (Loop 1) → 100% (Loop 3), composite 80.4% → 91.4%
+
+---
+
 ## 2026-05-06 bootstrap
 - ingest: vendor-scoring — hub page for 14-category scoring system
 - ingest: rubric-rebates, rubric-discounts, rubric-credit-terms, rubric-freight — financial terms rubric pages

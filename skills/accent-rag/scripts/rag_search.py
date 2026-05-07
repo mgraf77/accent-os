@@ -5,6 +5,7 @@ Usage:
     python3 rag_search.py "what rebate does a 3% program score"
     python3 rag_search.py --wiki-only "CRI for retail"
     python3 rag_search.py --top-k 5 --json "emergency lighting battery"
+    python3 rag_search.py --include-synthesis "rag eval recall"
 
 Requires: skills/accent-rag/index/rag_index.json (built by rag_build_index.py)
 """
@@ -21,9 +22,44 @@ DEFAULT_INDEX = "skills/accent-rag/index/rag_index.json"
 DEFAULT_TOP_K = 3
 SNIPPET_LEN = 150  # chars
 
+# Synthesis pages contain meta-content (eval matrices, analysis docs) that
+# would contaminate retrieval results for every query they mention.
+DEFAULT_EXCLUDE_TYPES = {"synthesis"}
 
-def tokenize(text):
-    return re.findall(r'\b[a-z][a-z0-9\-]{1,}\b', text.lower())
+# Minimal suffix stemmer for common English + domain terms.
+# Strips suffixes so "rebates"→"rebat", "onboarding"→"onboard", "dimming"→"dim".
+# Stems must be ≥4 chars to avoid over-stemming short words.
+_STEM_RULES = [
+    ("ations", ""), ("ation", ""), ("ings", ""), ("ing", ""),
+    ("ments", ""), ("ment", ""), ("ances", ""), ("ance", ""),
+    ("ences", ""), ("ence", ""), ("ities", ""), ("ity", ""),
+    ("ness", ""), ("ers", ""), ("er", ""), ("ies", "y"),
+    ("ed", ""), ("es", ""), ("s", ""),
+]
+
+
+def stem(word):
+    for suffix, replacement in _STEM_RULES:
+        if word.endswith(suffix) and len(word) - len(suffix) + len(replacement) >= 4:
+            return word[: len(word) - len(suffix)] + replacement
+    return word
+
+
+def tokenize(text, do_stem=True):
+    lower = text.lower()
+    raw = re.findall(r'\b[a-z][a-z0-9\-]{1,}\b', lower)
+    raw += re.findall(r'\b[0-9][a-z0-9\-]+[a-z]\b', lower)
+    if not do_stem:
+        return list(dict.fromkeys(raw))
+    expanded = []
+    seen = set()
+    for tok in raw:
+        if tok not in seen:
+            seen.add(tok); expanded.append(tok)
+        s = stem(tok)
+        if s != tok and s not in seen:
+            seen.add(s); expanded.append(s)
+    return expanded
 
 
 def load_index(index_path):
@@ -31,7 +67,11 @@ def load_index(index_path):
         return json.load(fh)
 
 
-def search(query, index, top_k=DEFAULT_TOP_K, wiki_only=False):
+def search(query, index, top_k=DEFAULT_TOP_K, wiki_only=False,
+           exclude_types=None):
+    if exclude_types is None:
+        exclude_types = DEFAULT_EXCLUDE_TYPES
+
     terms = tokenize(query)
     if not terms:
         return []
@@ -48,6 +88,8 @@ def search(query, index, top_k=DEFAULT_TOP_K, wiki_only=False):
             doc_id = posting["id"]
             doc = doc_store[doc_id]
             if wiki_only and not doc["is_wiki"]:
+                continue
+            if exclude_types and doc.get("type") in exclude_types:
                 continue
             scores[doc_id] += posting["score"]
 
@@ -114,8 +156,12 @@ def main():
     parser.add_argument("--index", default=DEFAULT_INDEX, help="Index file path")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K, help="Number of results")
     parser.add_argument("--wiki-only", action="store_true", help="Restrict to wiki/ pages only")
+    parser.add_argument("--include-synthesis", action="store_true",
+                        help="Include synthesis pages (excluded by default to prevent contamination)")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     args = parser.parse_args()
+
+    exclude_types = set() if args.include_synthesis else DEFAULT_EXCLUDE_TYPES
 
     if not args.query:
         # Interactive mode
@@ -129,7 +175,7 @@ def main():
                     print(f"Index not found: {args.index}. Run rag_build_index.py first.")
                     continue
                 index = load_index(args.index)
-                results = search(query, index, args.top_k, args.wiki_only)
+                results = search(query, index, args.top_k, args.wiki_only, exclude_types)
                 print(format_results(results, query))
         except (KeyboardInterrupt, EOFError):
             print("\nBye.")
@@ -140,7 +186,7 @@ def main():
         sys.exit(1)
 
     index = load_index(args.index)
-    results = search(args.query, index, args.top_k, args.wiki_only)
+    results = search(args.query, index, args.top_k, args.wiki_only, exclude_types)
 
     if args.json:
         print(json.dumps(results, indent=2))

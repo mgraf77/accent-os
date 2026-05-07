@@ -6,6 +6,7 @@
 
 | slug | title | confidence | updated |
 |------|-------|-----------|---------|
+| overview | AccentOS Wiki — System Overview | high | 2026-05-07 |
 | color-temperature-selection | Color Temperature Selection | high | 2026-05-06 |
 | cri-tm30-tlci | CRI, TM-30, and TLCI Standards | high | 2026-05-06 |
 | dimming-protocols | Dimming Protocols | high | 2026-05-06 |
@@ -131,10 +132,9 @@
 | source-build-plan-michael | "Source: BUILD_PLAN_MICHAEL.md" | medium | 2026-05-06 |
 | source-karpathy-llm-wiki | "Source: Karpathy LLM Wiki Gist" | high | 2026-05-06 |
 | source-master | "Source: MASTER.md" | high | 2026-05-06 |
-| source-seed-corpus-v1 | "Source: Seed Corpus v1" | medium | 2026-05-06 |
-
 ## synthesis pages
 
 | slug | title | confidence | updated |
 |------|-------|-----------|---------|
 | rag-eval-matrix-v1 | RAG Eval Matrix v1 | high | 2026-05-06 |
+| source-seed-corpus-v1 | "Source: Seed Corpus v1" | medium | 2026-05-07 |

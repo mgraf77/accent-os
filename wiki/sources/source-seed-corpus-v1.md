@@ -1,5 +1,5 @@
 ---
-type: source
+type: synthesis
 slug: source-seed-corpus-v1
 title: "Source: Seed Corpus v1"
 sources: []

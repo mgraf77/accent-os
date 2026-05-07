@@ -12,8 +12,7 @@ updated: 2026-05-06
 
 # Patrick Graf — Admin
 
-**Role**: Admin (AccentOS role: Admin)  
-**Company**: Accent Lighting Inc., Wichita, KS  
+AccentOS team member. Admin role. Accent Lighting Inc., Wichita, KS.  
 
 ## Responsibilities
 

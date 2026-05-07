@@ -14,6 +14,8 @@ updated: 2026-05-06
 
 Internet Minimum Advertised Price (IMAP) protection and achievable retail markup multiplier. Higher IMAP = protected margin, reduced price-matching pressure from online competitors.
 
+**Score reference**: A score of 10 on the IMAP rubric means the vendor enforces 2.5× or higher markup (keystone-plus). Score of 0 means no IMAP — open pricing that creates race-to-bottom conditions for dealers.
+
 ## 0–10 Scale
 
 | Score | Markup multiplier |

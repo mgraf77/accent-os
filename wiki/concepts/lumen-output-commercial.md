@@ -12,6 +12,8 @@ updated: 2026-05-06
 
 # Lumen Output — Commercial Applications
 
+Footcandle requirements vary by space type. Warehouses need 20–75 footcandles depending on task: aisles (20–30 FC) and picking zones (50–75 FC) for task-critical accuracy. Offices target 30–50 FC; retail feature displays require 100–150 FC. Use LED high bays for warehouse and distribution center applications.
+
 ## Footcandle targets by space type
 
 | Space | FC (footcandles) | Notes |

@@ -33,7 +33,8 @@ Append-only log of lessons from each shipped AccentOS item. Format: `[item] | [g
 
 **Cross-module patterns**
 - setTimeout(80ms) for navigate-then-open (goTo → detail render) — fragile, document it
-- csvImportFlow() helper extracted at 4th implementation (threshold rule: extract on 4th, not 3rd)
+- `csvImportFlow()` helper: the AccentOS CSV import flow uses paste-or-upload → header alias mapping → preview-then-commit pattern. Extracted as a shared helper at 4th implementation (threshold rule: extract on 4th, not 3rd)
+- CSV import requires: header normalization (sku/qty/cost aliases), vendor_name → vendor_id resolution, bulk upsert on_conflict, import_source column for provenance tracking
 - Inline edits: optimistic update + targeted DOM patch + revert on failure
 
 **Supabase patterns**

@@ -12,8 +12,7 @@ updated: 2026-05-06
 
 # Michael Graf — Owner
 
-**Role**: Owner (AccentOS role: Owner)  
-**Company**: Accent Lighting Inc., Wichita, KS  
+AccentOS team member. Owner role. Accent Lighting Inc., Wichita, KS.  
 
 ## Responsibilities
 

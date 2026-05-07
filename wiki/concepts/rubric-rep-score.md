@@ -12,7 +12,7 @@ updated: 2026-05-06
 
 # Rubric: Rep Score (Weight: 8)
 
-Quality of the manufacturer's rep assigned to Accent. Covers responsiveness, proactivity, problem-solving, and relationship depth.
+The rep score rubric measures quality of the manufacturer's sales rep assigned to Accent. Covers responsiveness, proactivity, problem-solving, and relationship depth. One of 14 vendor scoring categories.
 
 ## 0–10 Scale
 

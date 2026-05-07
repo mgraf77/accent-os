@@ -23,15 +23,16 @@ VALID_TYPES = {"concept", "decision", "entity", "module", "source", "synthesis"}
 VALID_CONFIDENCE = {"high", "medium", "low"}
 PAGE_WORD_LIMIT = 800
 PAGE_WORD_WARNING = 700
-# Operational pages that are always valid wikilink targets but not indexed as regular pages
-OPERATIONAL_SLUGS = {"overview", "log", "hot"}
+# Operational pages that are always valid wikilink targets but skip regular indexing
+# overview was moved to concept pages (2026-05-07) and is now in index.md
+OPERATIONAL_SLUGS = {"log", "hot"}
 
 
 def find_wiki_pages(source_dir):
     pages = []
     for root, dirs, files in os.walk(source_dir):
         # Skip operational files in wiki root
-        skip_files = {"index.md", "log.md", "hot.md", "overview.md", "CLAUDE.md"}
+        skip_files = {"index.md", "log.md", "hot.md", "CLAUDE.md"}
         for f in files:
             if f.endswith(".md") and f not in skip_files:
                 pages.append(os.path.join(root, f))

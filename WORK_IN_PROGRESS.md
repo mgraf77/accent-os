@@ -1,32 +1,27 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-06 — v6.11.3 SHIPPED
-**Current task:** COMPLETE — all unblocked BUILD_PLAN items shipped
+**Last updated:** 2026-05-07 — RAG optimization loops complete
+**Current task:** COMPLETE — recall 56.2% → 100%, composite 80.4% → 91.4%
 
-**Completed this session (continued):**
-- wiki seed: 35 module pages + 30 vendor entity pages = 107 total wiki pages
-- wiki_seed.py: VD_RAW bracket-counting extraction fix, update_index table-row regex
-- wiki_lint.py: OPERATIONAL_SLUGS, orphan suppression for module+entity
-- rag_index.json: rebuilt (154 chunks, 2550-term vocab, 762KB)
-- portal.html: external Partner Portal (magic-link auth, trade partner + vendor rep views)
-- sql/M41_external_portals.sql: external_user_profiles + RLS + trigger
-- portal_preview.js: "Provision Access" button
-- embed.html: employee widget for BigCommerce site
-- bigcommerce-embed-snippet.js: BC Script Manager snippet
-- _headers: Cloudflare Pages CORS rules
-- BUILD_PLAN [x]: 6.5, 6.6, 6.10
-- MASTER.md v6.11.3, BUILD_INTELLIGENCE 5 new entries, SESSION_LOG, wiki/log, wiki/hot
+**Completed this session:**
+- rag_search.py: synthesis exclusion by default, --include-synthesis flag, stemmer, digit-tech tokenizer
+- rag_build_index.py: suffix stemmer + digit-anchored tokenizer (0-10v, 2700k etc.)
+- rag_eval.py: simple_search synthesis exclusion + matching tokenizer
+- source-seed-corpus-v1: reclassified synthesis (was contaminating all clusters like rag-eval-matrix-v1)
+- overview.md: reclassified concept (was synthesis → excluded from search), added team section
+- wiki_lint.py: OPERATIONAL_SLUGS removes "overview", skip_files removes "overview.md"
+- wiki/index.md: overview moved to concept pages, source-seed-corpus-v1 moved to synthesis
+- 6 wiki pages enriched: rubric-rebates, rubric-imap, rubric-rep-score, sop-quote-creation, lumen-output-commercial, source-build-intelligence, employee pages (michael/paul/patrick)
+- js/wiki.js wikiGroundQuery: upgraded from title-only to title+body two-pass re-ranking
+- rag_index.json rebuilt: 155 chunks, 3166 terms, 936KB
+- wiki/log.md + wiki/hot.md updated
 
 **Commits this session:**
-- d6c87d0: docs: v6.11.1 close-out
-- fc892df: wiki: seed modules + vendors + tooling fixes
-- 953a4b6: v6.11.2: external Partner Portal (6.5/6.6)
-- bab6075: v6.11.3: AccentOS embed (6.10)
-- [pending]: docs: session close-out v6.11.3
+- 2b7530c: docs: v6.11.3 close-out (prior session)
+- [pending]: rag: optimization loops 1-3 (100% recall)
 
 **Next step if interrupted:**
-1. All work committed and pushed. Run `git status` to confirm clean tree.
-2. Check BUILD_PLAN_MICHAEL.md for any newly completed M-tasks.
-3. If M41 done: test portal.html magic link → external_user_profiles provisioning flow.
-4. If M04 done: build 5.13 E-Commerce Command Center.
+1. Commit pending changes: git add rag scripts + wiki pages + js/wiki.js + rag_index.json
+2. Push to claude/custom-rag-system-rIT34-KoMaP
+3. Check BUILD_PLAN_MICHAEL.md for newly completed M-tasks

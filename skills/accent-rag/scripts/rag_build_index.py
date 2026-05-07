@@ -25,9 +25,45 @@ CHUNK_SIZE = 200  # words per chunk
 CHUNK_OVERLAP = 40  # word overlap between chunks
 
 
+_STEM_RULES = [
+    ("ations", ""), ("ation", ""), ("ings", ""), ("ing", ""),
+    ("ments", ""), ("ment", ""), ("ances", ""), ("ance", ""),
+    ("ences", ""), ("ence", ""), ("ities", ""), ("ity", ""),
+    ("ness", ""), ("ers", ""), ("er", ""), ("ies", "y"),
+    ("ed", ""), ("es", ""), ("s", ""),
+]
+
+
+def _stem(word):
+    for suffix, replacement in _STEM_RULES:
+        if word.endswith(suffix) and len(word) - len(suffix) + len(replacement) >= 4:
+            return word[: len(word) - len(suffix)] + replacement
+    return word
+
+
 def tokenize(text):
-    """Simple whitespace + punctuation tokenizer, lowercase."""
-    return re.findall(r'\b[a-z][a-z0-9\-]{1,}\b', text.lower())
+    """Tokenizer with light suffix stemming. Emits both original and stem.
+
+    Two-pass extraction:
+    1. Standard: tokens starting with [a-z] (e.g. "dali", "footcandle")
+    2. Tech-term: digit-anchored tokens like "0-10v", "2700k", "10v" that
+       appear in lighting/product specs and must not be dropped.
+    """
+    lower = text.lower()
+    raw = re.findall(r'\b[a-z][a-z0-9\-]{1,}\b', lower)
+    # Capture tech terms: digit + mixed alnum, ends with a letter (e.g. 10v, 0-10v, 2700k)
+    raw += re.findall(r'\b[0-9][a-z0-9\-]+[a-z]\b', lower)
+    expanded = []
+    seen = set()
+    for tok in raw:
+        if tok not in seen:
+            seen.add(tok)
+            expanded.append(tok)
+        s = _stem(tok)
+        if s != tok and s not in seen:
+            seen.add(s)
+            expanded.append(s)
+    return expanded
 
 
 def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
