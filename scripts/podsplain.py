@@ -49,6 +49,18 @@ ELEVENLABS_VOICES = {
 
 ELEVENLABS_SAMPLE_RATE = 24000  # pcm_24000
 
+# TTS normalization — replacements applied before sending text to any TTS engine
+# Prevents em-dashes from creating unnatural pauses, cleans markdown artifacts
+_TTS_REPLACEMENTS = [
+    (r" — ",        ", "),     # em-dash mid-sentence → natural comma pause
+    (r"—",          ", "),     # bare em-dash
+    (r"\.\.\.",     ", "),     # ellipsis → brief comma pause (not trailing silence)
+    (r"\*\*(.+?)\*\*", r"\1"),  # strip bold markdown
+    (r"\*(.+?)\*",  r"\1"),    # strip italic markdown
+    (r"`(.+?)`",    r"\1"),    # strip inline code ticks
+    (r"\[interrupts\]\s*", ""),  # strip any leftover interrupt markers
+]
+
 
 # ─── Script parsing ───────────────────────────────────────────────────────────
 
@@ -88,6 +100,13 @@ def parse_script_file(script_path: Path) -> list[dict]:
 
 # ─── TTS backends ─────────────────────────────────────────────────────────────
 
+def _normalize_for_tts(text: str) -> str:
+    """Clean text of markdown artifacts and punctuation that sounds bad in TTS."""
+    for pattern, replacement in _TTS_REPLACEMENTS:
+        text = re.sub(pattern, replacement, text)
+    return text.strip()
+
+
 def tts_openai(text: str, voice: str, api_key: str) -> bytes:
     """Call OpenAI TTS API, return WAV bytes (24kHz 16-bit mono)."""
     resp = requests.post(
@@ -97,8 +116,8 @@ def tts_openai(text: str, voice: str, api_key: str) -> bytes:
             "Content-Type": "application/json",
         },
         json={
-            "model": "tts-1",
-            "input": text,
+            "model": "tts-1-hd",
+            "input": _normalize_for_tts(text),
             "voice": voice,
             "response_format": "wav",
         },
@@ -117,7 +136,7 @@ def tts_elevenlabs(text: str, voice_id: str, api_key: str) -> bytes:
             "Content-Type": "application/json",
         },
         json={
-            "text": text,
+            "text": _normalize_for_tts(text),
             "model_id": "eleven_multilingual_v2",
             "output_format": "pcm_24000",
             "voice_settings": {
@@ -277,20 +296,26 @@ def assemble_wav(segments: list[dict], backend: str, openai_key: str, elevenlabs
 
 def update_index(podsplains_dir: Path, topic: str, scenario: str, duration_s: float, slug: str, wav_path: Path):
     index_path = podsplains_dir / "INDEX.md"
+    header = (
+        "# PodSplain Episodes\n\n"
+        "| # | Date | Topic | Scenario | Duration | File |\n"
+        "|---|------|-------|----------|----------|------|\n"
+    )
     if not index_path.exists():
-        index_path.write_text(
-            "# PodSplain Episodes\n\n"
-            "| Date | Topic | Scenario | Duration | File |\n"
-            "|------|-------|----------|----------|------|\n"
-        )
+        index_path.write_text(header)
+
+    existing = index_path.read_text(encoding="utf-8")
+
+    # Count existing data rows to derive next episode number
+    data_rows = [l for l in existing.split("\n") if l.startswith("| ") and not l.startswith("| #") and "---" not in l]
+    ep_num = len(data_rows) + 1
 
     date_str = datetime.now().strftime("%Y-%m-%d")
     mins = int(duration_s // 60)
     secs = int(duration_s % 60)
     dur_str = f"{mins}m {secs:02d}s"
-    row = f"| {date_str} | {topic} | {scenario} | {dur_str} | `{slug}/episode.wav` |\n"
+    row = f"| {ep_num} | {date_str} | {topic} | {scenario} | {dur_str} | `{slug}/episode.wav` |\n"
 
-    existing = index_path.read_text(encoding="utf-8")
     index_path.write_text(existing + row, encoding="utf-8")
 
 

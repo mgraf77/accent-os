@@ -8,5 +8,5 @@ Scenarios: `learn` · `boardroom` · `ralph-loop` · `interview` · `customer-on
 
 ---
 
-| Date | Topic | Scenario | Duration | File |
-|------|-------|----------|----------|------|
+| # | Date | Topic | Scenario | Duration | File |
+|---|------|-------|----------|----------|------|

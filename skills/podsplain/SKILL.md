@@ -88,6 +88,23 @@ Write the podcast script directly. Use the system prompt and scenario frame belo
 - No lists, no bullet explanations — pure conversation
 - At least 2 moments where one host builds on a half-finished thought
 - Optional dramatic pauses: `[PAUSE_SHORT]` (0.5s) or `[PAUSE_MED]` (1s)
+- **Always end with a standard outro:** HOST_2 does a 2-3 sentence summary of what they
+  learned in plain English, then HOST_1 closes with "That's a wrap on [topic]" + one
+  memorable one-liner the listener can take away. Use `[PAUSE_MED]` before the outro.
+
+**Good dialogue example (first 4 lines):**
+```
+HOST_1: Okay so today we're talking about database indexes — and I promise, by the end of this you're going to think about your morning commute completely differently.
+HOST_2: I'm already curious what my commute has to do with databases.
+HOST_1: So imagine you walk into a library, right? No computer catalog, no Dewey decimal, nothing. You just need to find one book about penguins.
+HOST_2: Oh no. I'm walking down every aisle.
+```
+
+**Bad dialogue (do not write this):**
+```
+HOST_1: Today we will discuss database indexes. There are three types: B-tree, Hash, and GiST.
+HOST_2: That is interesting. Can you elaborate on each type?
+```
 
 **FORMAT — strict, no deviations:**
 ```
