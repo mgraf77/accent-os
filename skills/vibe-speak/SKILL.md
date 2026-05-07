@@ -640,7 +640,7 @@ Michael can run any of these in plain prompt text. Each one is matched on substr
 | `/vibe replay last` | Replay the most recent session. |
 | `/vibe sessions` | List recent session files in `sessions/`. |
 | `/vibe matrix` | Print the scoring matrix (`scoring-matrix.md`) compact summary. |
-| `/vibe find skill [topic]` | Run skill-router against `skills/_index.md` and surface matches (Step 23). |
+| `/vibe find skill vendor-scoring` | Run skill-router against `skills/_index.md` for the given topic and surface matches (Step 23). |
 | `/vibe skills` | List all skills in `skills/_index.md` with 1-line summaries. |
 | `/vibe propose skill` | Surface pending skill proposals from accumulated brute-force patterns. |
 | `/vibe forge skill from pattern` | Approve the most recent skill proposal — invokes skill-forge with the inferred name + description. |
@@ -1048,7 +1048,7 @@ Step 23 closes that loop by checking the skill registry FIRST.
 
 1. **Explicit:** Michael says `find a skill` / `is there a skill` / `what's the best way` / `better way` / `easier way` / `existing skill` / `tool for this`.
 2. **Implicit:** the about-to-execute task plan has ≥3 tool calls AND the task description has ≥2 nouns matching skill registry domains (vendor / kpi / schema / gmc / etc.).
-3. **Manual:** `/vibe find skill [topic]` runs the check on demand.
+3. **Manual:** `/vibe find skill vendor-scoring` runs the check on demand for a named topic.
 
 If none fire, no router check; proceed normally.
 

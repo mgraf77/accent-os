@@ -121,7 +121,7 @@ For each MEDIUM/LOW confidence row:
   Michael decides whether to mark [x] or leave [ ].
 ```
 
-If no drift, output: "BUILD_PLAN markers are in sync with git + SESSION_LOG as of [timestamp]."
+If no drift, output: "BUILD_PLAN markers are in sync with git + SESSION_LOG as of 2026-05-07 14:30Z." (substitute actual run time.)
 
 ---
 

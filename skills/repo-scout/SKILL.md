@@ -89,7 +89,7 @@ Raw candidates ([N] found):
 
 ## Step 3 — Filter candidates
 
-For each candidate, run in order. First FAIL stops evaluation.
+For each candidate, run filters in order. First FAIL stops evaluation.
 
 | Filter | Condition | Action |
 |---|---|---|
@@ -99,6 +99,14 @@ For each candidate, run in order. First FAIL stops evaluation.
 | Attention test | Reduces Michael's decision/review load | KEEP |
 | Attention fail | Adds overhead without ROI | FLAG LOW PRIORITY |
 | Complexity | >2 min setup = HIGH FRICTION | KEEP but label |
+
+Output of Step 3: a numbered filtered candidate list:
+```
+Filtered candidates ([N] kept of [M] found):
+1. [Tool name] — [reason kept] [FRICTION: HIGH if applicable]
+2. ...
+Skipped (silent): [N] already-installed or overlapping
+```
 
 ---
 

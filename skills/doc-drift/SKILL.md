@@ -121,7 +121,7 @@ For each drift, output an Edit-tool command Michael can run:
   Edit project-profiles.md: remove "Full DB schema (Track 0.4) — all tables in one SQL execution" from "Known capability gaps"
 ```
 
-If no drift exists, output: "All docs agree on priorities, active tracks, and statuses as of [timestamp]." This is a valid happy-path result.
+If no drift exists, output: "All docs agree on priorities, active tracks, and statuses as of 2026-05-07 14:30Z." (substitute actual run time.) This is a valid happy-path result.
 
 ---
 

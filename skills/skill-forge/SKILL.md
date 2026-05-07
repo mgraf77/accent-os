@@ -178,7 +178,21 @@ For each STOLEN concept, classify:
 - STEAL ≥ 1 standalone → proceed to Step 5 (proposals + approval gate). **Do not start designing or building yet.**
 - STEAL = 0 after re-frame → output WATCH and stop. Log gotcha with `outcome: aborted_to_watch`. WATCH is **rare** — most non-trivial targets have at least one stealable concept.
 
-**Step 4's output is a candidate list, not a build manifest.** The candidates go through Michael's approval gate in Step 5 before any file is written.
+**Step 4's output is a candidate list, not a build manifest.** Concrete output shape:
+```
+Step 4 — Concept theft results:
+  STEAL (STANDALONE): [N]
+    - [concept name] — [one-line AccentOS-native rebuild description]
+  STEAL (SUB-FEATURE): [N]
+    - [concept name] → folds into [existing skill]
+  DROP: [N]
+    - [concept name] — [one-line reason]
+  ADD (AccentOS-native extensions): [N]
+    - [concept name] — [Supabase/BC/vendor_scores gap addressed]
+
+Decision: STEAL ≥ 1 standalone → proceed to Step 5
+```
+The candidates go through Michael's approval gate in Step 5 before any file is written.
 
 ---
 

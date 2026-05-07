@@ -95,6 +95,19 @@ Generate 5–8 test cases. Mandatory structure:
 
 For each test case, define `vars` (input), `assert` array (one or more assertions), and optional `description`.
 
+Output of Step 3: a numbered test case inventory (8 rows) confirming each mandatory case is covered and naming the gotcha-log entry ID used for case 4:
+```
+Step 3 test cases ([N] total):
+  1. Canonical happy path — trigger: "[phrase]"
+  2. Alternate trigger — trigger: "[phrase]"
+  3. Empty/minimal input — prereq missing scenario
+  4. Gotcha-log edge case — entry ID: [gotcha-NNN or "none found"]
+  5. Anti-pattern violation attempt
+  6. Stack-substitution check (hsyjcrrazrzqngwkqsqa / store-cwqiwcjxes)
+  7. Output-shape regression — BLOCK headers asserted
+  8. SKILL.md frontmatter parse meta-test
+```
+
 ---
 
 ## Step 4 — Generate promptfooconfig.yaml

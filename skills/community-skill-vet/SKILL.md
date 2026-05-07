@@ -116,7 +116,7 @@ Apply the same Step 7.5 validation that skill-forge runs on its own outputs:
 - Numbered workflow steps with concrete outputs
 - No prose walls
 
-A community skill that fails these is a quality risk, not a safety risk — but worth flagging.
+Record each quality failure as a MEDIUM concern in the Step 6 verdict tally. Quality failures alone do not trigger REJECT, but two or more quality failures combined with any MEDIUM permission concern tip the verdict to HOLD.
 
 ---
 
