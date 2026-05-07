@@ -20,9 +20,12 @@ description: >
   from skill-forge (external-source ingestion) and efficiency-monitor
   (signal collection only). Use this skill when Michael says: "wrap up",
   "we're done", "end session", "/session-end-forge", "forge this session",
-  "make this a skill", or when the session-end commit is being prepared.
-  Do not use for mid-session ad-hoc skill creation (use skill-forge with an
-  external target) or when no recurring process emerged this session.
+  "make this a skill", or any phrasing that signals session-end intent paired
+  with a desire to consolidate the session's recurring work into a reusable
+  artifact. Do not use for mid-session ad-hoc skill creation (use skill-forge
+  with an external target), retrospective-only audits without forging
+  (use `efficiency-monitor`'s `/efficiency end` instead — that emits flags
+  but doesn't forge), or when no recurring process emerged this session.
   Always asks the forge-yes/no, the another-round, and the portability
   questions; always scores against the rubric; always either ships a skill
   ≥85/100 (with optional portable variant) or aborts to WATCH with a
@@ -75,7 +78,7 @@ Run in parallel before asking the question:
 2. **Capture branch state** — `git -C /home/user/accent-os branch --show-current`. If on `main`, Step 11 will auto-create `claude/session-forge-[skill-name]-[8-char-rand]` before committing.
 3. **Read `skills/efficiency-monitor/session-end-summary.md`** — pull any PROMOTE-status candidate. If present, that's the strongest forge target. If missing, skip silently.
 4. **Read `skills/efficiency-monitor/_session-scratch.md`** if it exists — recurring-sequence flags, retry-loops, redundant-reads, skill-bypass entries from this session. Used by Step 1 (signature) and Step 9 (optimization review).
-5. **Read tail of `PROMPT_LOG.md`** (last ~30 entries) — capture Michael's actual phrasing for trigger candidates.
+5. **Read tail of `PROMPT_LOG.md`** (last ~30 entries) — capture Michael's actual phrasing for trigger candidates. If empty or missing, fall back to phrases mined from existing `skills/*/SKILL.md` description blocks for tone (per the skill-forge convention).
 6. **Read `git log --oneline -20`** on the current branch — what shipped this session.
 7. **Read `skills/_index.md`** — for the dedupe check in Step 3 and the skill-invocation cross-reference in Step 9.
 
@@ -240,6 +243,8 @@ Be harsh. The skill must score ≥85/100 to ship. Under 800 words.
 
 When the agent returns, parse `PASS-2-FINDINGS`. Apply the `top-3-fixes` (and any other findings worth applying) via Edit on the draft SKILL.md.
 
+**Malformed-output fallback:** if the agent's response does not contain the literal `PASS-2-FINDINGS` block, or if any of the 5 perspective scores are missing/non-numeric, retry the agent **once** with an explicit format directive (`Reply MUST start with the exact line "PASS-2-FINDINGS" and contain all 5 perspective lines as "<perspective>: NN/20 | findings: ..."`). If the retry also fails, fall back to Claude in-context running the Step 5 shape, log `pass-2-fallback: claude-in-context` AND increment the pass counter as Pass 2 (not Pass 3) so the Claude/Agent alternation contract holds for any later passes. If a third agent attempt also fails (when Pass 4 reaches the agent role), abort with `outcome: aborted_pass2_failure` rather than skipping the agent role entirely. Do not abort the run on a single agent malformation — the loop must continue once.
+
 Append Pass 2 results to `forge-log.md` using the same schema as Pass 1.
 
 ---
@@ -315,7 +320,8 @@ Read `references/clean-room-rewrite.md`. Generate two files:
 - Add a `## Portability notes` section explaining what was parameterized and why.
 
 **Validation gate (auto-run after write):**
-- `grep -iE 'hsyjcrrazrzqngwkqsqa|store-cwqiwcjxes|accent-os|accent lighting|vendor_scores|vendor_overrides|/home/user/accent-os|/workspaces/accent-os' skills/[name]/portable/SKILL.md` must return **0 matches outside fenced code blocks**. Inside fenced blocks, allow them only if framed as "what to replace" examples.
+- `grep -iE 'hsyjcrrazrzqngwkqsqa|store-cwqiwcjxes|accent-os|accent lighting|vendor_scores|vendor_overrides|/home/user/accent-os|/workspaces/accent-os' skills/[name]/portable/SKILL.md skills/[name]/portable/README.md` must return **0 matches outside fenced code blocks**. Inside fenced blocks, allow matches only if framed as "what to replace" examples.
+- **Lineage exception:** the `## Portability notes` section AND `portable/README.md` may legitimately reference "AccentOS" as forge-lineage (e.g. "Forged from an AccentOS-specific skill via session-end-forge Step 8a"). The leakage rule targets stack identifiers, not provenance. Allow `accent-os` / `accent lighting` matches inside Portability-notes blocks; reject everywhere else.
 - YAML frontmatter still parses, description ≥ 250 chars (genericized), ≥ 3 anti-patterns.
 
 If validation fails: fix in place via Edit. Do not commit until clean.
@@ -392,7 +398,9 @@ Run skill-forge's exact Step 7.5 checklist on the AccentOS SKILL.md (no divergen
 4. **Zero AccentOS leakage** — grep check from Step 8a passes.
 5. `Required env vars` block present and lists every placeholder used.
 
-Any failure → fix in place via Edit, do not commit. Log the failure as a gotcha entry in `skill-forge/gotcha-log.md` (session-end-forge shares that log to keep gotcha discipline unified).
+Any failure → fix in place via Edit, do not commit. **Cap fix attempts at 3 per validation rule** — if a rule still fails after 3 fix attempts, abort the run with `outcome: aborted_validation_loop` and surface the specific rule + the last 3 fix attempts. This prevents pathological infinite loops on rules that can't be satisfied (e.g. name collision when every alternative also collides). Log the failure as a gotcha entry in `skill-forge/gotcha-log.md` (session-end-forge shares that log to keep gotcha discipline unified).
+
+**Allowlist sync:** the AccentOS-stack allowlist in rule 3 is the same list as in `skill-forge/SKILL.md` Step 7.5. When AccentOS adds a new stack component (new SaaS, new Supabase project, new ENV var convention), update both files in the same commit — divergence between them is a known rot point.
 
 ---
 
@@ -401,12 +409,12 @@ Any failure → fix in place via Edit, do not commit. Log the failure as a gotch
 After validation passes:
 
 1. **Register in `skills/_index.md`** — append a new entry following the existing schema (name, summary, triggers, when_to_use, when_NOT, companion). If a portable variant exists, mention it in `summary` and add `portable-variant` line.
-2. **Confirm branch** — if on `main`, create `claude/session-forge-[skill-name]-[8-char-rand]`. Otherwise commit on the current branch.
+2. **Confirm branch** — if on `main`, create `claude/session-forge-[skill-name]-[8-char-rand]` (8-char-rand = `openssl rand -hex 4` or equivalent — same convention as skill-forge Step 9). Otherwise commit on the current branch.
 3. **Stage:**
    - `git add skills/[skill-name]/` (includes `portable/` subdirectory if generated)
    - `git add skills/_index.md skills/session-end-forge/forge-log.md`
 4. **Commit** — message: `feat: forge [skill-name] from session signature — score NN/100 in K passes[ + portable variant]`. The `+ portable variant` suffix appears only if Step 8a ran.
-5. **Push** — `git push -u origin [branch-name]` (retry up to 4× with exponential backoff on network failure per Operating Rules).
+5. **Push** — `git push -u origin [branch-name]`. Retry up to 4× with exponential backoff (1s, 2s, 4s, 8s — total ≤15s) on network failure per Operating Rules. If all 4 retries fail, output `Push failed after 4 retries — branch [name] committed locally only. Run \`git push -u origin [name]\` manually.` Do **NOT** abort the run on push failure — the local commit is durable, push is recoverable, and Step 9 + Step 12 still need to run.
 6. **Output** the report block:
 
 ```
@@ -502,6 +510,32 @@ Skipping forge. Session ending.
 
 ---
 
+## Worked example
+
+A representative session signature → forged skill walk-through:
+
+```
+SIGNATURE
+  recurring-process: re-imported BigCommerce CSV, ran KPI sanity SQL, then patched vendor_overrides
+  step-sequence: read csv → import → run sql → cross-check vendor_scores → patch vendor_overrides
+  inputs: CSV path + vendor_id list
+  outputs: count of overrides written, KPI delta
+  occurrences: 4 this session
+  michael-phrasings: ["re-import + KPI check", "csv import then patch overrides", "redo the import + sanity"]
+  closest-existing-skill: none (supabase-sql-magic adjacent but bypassed each time)
+  cross-repo-applicability: stack-bound (vendor_overrides is AccentOS-specific)
+
+Forged: csv-vendor-import-pattern
+  → skills/csv-vendor-import-pattern/SKILL.md (AccentOS variant — vendor_overrides hardcoded)
+  → portable variant declined (Stack Native = 19/20)
+  → Step 9 review flagged: supabase-sql-magic could replace the SQL step
+  → Final score: 91/100 in 3 passes (1 round of "another round?")
+```
+
+This is illustrative — actual sessions will produce different signatures. The point is the path from raw session signals → named skill in one wrap-up.
+
+---
+
 ## AccentOS context
 
 - Stack: Supabase hsyjcrrazrzqngwkqsqa + BigCommerce store-cwqiwcjxes + Cloudflare Pages + Anthropic API (Opus/Sonnet/Haiku 4.x)
@@ -516,7 +550,8 @@ Skipping forge. Session ending.
 ## Anti-patterns
 
 - **Never** skip the Step 2 yes/no gate. The whole skill exists to honor that single user choice.
-- **Never** ship a skill with score < 70. The threshold is the contract — bump score, not the threshold. (Below ≥85 ships only when 4-pass cap hits AND score is 80+.)
+- **Never** ship a skill with score < 80. The ship threshold is ≥85; below 85 ships *only* when the 4-pass cap hits AND score ≥ 80 (`shipped_with_warning`). Score 70–79 at cap or any score < 70 always aborts. Bump scores, not the threshold.
+- **Never** report a score from a stale rescore. After every fix application, re-score the affected perspective(s) before logging totals — Pass-N totals must reflect post-fix state.
 - **Never** run only one ralph pass. The "two ralph passes" promise is the spec — Pass 2 (agentic) always runs even when Pass 1 already scored ≥85.
 - **Never** invent trigger phrases. Mine them from PROMPT_LOG.md — Step 1's `michael-phrasings`.
 - **Never** let Pass 2's agent skip the rubric. The agent prompt must include the perspectives + rubric files by absolute path.
