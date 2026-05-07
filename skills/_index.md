@@ -147,6 +147,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: ad-hoc query work
 - companion: supabase-sql-magic, table-eda, kpi-data-audit
 
+### session-end-forge
+- summary: At session end, ask "Do you want to make this process of the session into a reusable skill? reply yes or no". If yes, distill the session signature into a draft SKILL.md and run 2 agentic ralph-loop optimization passes from 5 perspectives (Reliability Auditor, Trigger Hunter, Stack Native, Maintenance Skeptic, Anti-pattern Cop) until score ≥85/100.
+- triggers: "wrap up", "we're done", "end session", "/session-end-forge", "forge this session", "make this a skill", "save this as a skill", final session-end commit, auto-active per CLAUDE.md AUTO-EXECUTE step 8
+- when_to_use: every session end (default-on, after efficiency-monitor wrap-up)
+- when_NOT: mid-session ad-hoc skill creation (use skill-forge with external target), session had no recurring pattern (Step 1 signature aborts)
+- companion: efficiency-monitor (feeds candidate signals), skill-forge (external-source sibling), skill-eval-suite (post-forge regression tests)
+
 ### skill-eval-suite
 - summary: Generate Promptfoo-compatible eval YAML for AccentOS skills (5–8 test cases including gotchas).
 - triggers: "eval this skill", "test the skill", "skill regression test"

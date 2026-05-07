@@ -20,6 +20,7 @@
 6. Run bash /workspaces/accent-os/scripts/status.sh
 7. Begin building without waiting for Michael input
 8. **At session end** (user signals "wrap up" / "done" / final commit): per `skills/efficiency-monitor/SKILL.md` Step 2, append this session's flags to `efficiency-log.md`, overwrite `session-end-summary.md`. Aggregator runs automatically via Stop hook. Bundle these writes into the session-end commit (per OPERATING RULES batched-doc-update).
+9. **After efficiency-monitor wrap-up, activate `session-end-forge`** (per `skills/session-end-forge/SKILL.md`): run Step 0 preflight + Step 1 session signature, then ask the gate question via `AskUserQuestion` — *"Do you want to make this process of the session into a reusable skill? reply yes or no"*. On **no**, append a `forge-log.md` declined entry and end. On **yes**, run Steps 3–9: draft → Pass 1 (Claude walks 5 perspectives — Reliability Auditor, Trigger Hunter, Stack Native, Maintenance Skeptic, Anti-pattern Cop) → Pass 2 (Agent subagent, independent multi-perspective review) → score-gate (≥85/100, cap 4 passes) → Step 7.5 validation → register in `skills/_index.md` → commit + push to current branch (auto-create `claude/session-forge-...` if on main). Skip the Step 2 question only if Step 1 aborts (signature too thin, occurrences < 2, or duplicate of an existing skill).
 
 ## DEFAULT COMMUNICATION STYLE
 - vibe-speak is **always-on** in the default mode (`vibe`).
