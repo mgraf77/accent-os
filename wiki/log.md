@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-05-07 module-enrichment-batch-1
+- enrich: wiki — full BM25 grounding engine docs (12 functions, 13-rule stemmer, GRAPH_BOOST=0.2 graph re-rank, slug dedup, customer-mode entity exclusion, fallback path); confidence medium → high
+- enrich: digest — Daily Brief email export (4 functions, role-aware computeDailyBrief reuse, plaintext output shape, mailto export, failure modes); confidence medium → high
+- enrich: vendor-score-import — wide→long CSV import via csvImportFlow helper (sbBulkSaveVendorScores, alias map auto-derivation from CAT_DEFS, postProcess vendor_id resolution, 0–10 score validation); confidence medium → high
+- update: wiki/index.md — bumped 3 module rows to confidence:high, updated:2026-05-07; header date bumped
+- note: 35-page module-stub backlog from 2026-05-06 session-2 reduced by 3; pattern established for the remaining 32 (read js source → enrich frontmatter + functions table + read deps + shell touchpoints + failure modes + cross-links)
+
+---
+
 ## 2026-05-07 session-close
 - create: RAG-EXPLAINER.md — beginner-friendly guide to BM25, chunking, graph re-ranking, stemmer, 3 Python scripts, add-knowledge workflow
 - update: wiki/hot.md — session closed, all open loops documented, next-session entry points updated

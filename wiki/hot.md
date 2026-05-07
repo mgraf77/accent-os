@@ -1,10 +1,17 @@
 # Wiki Hot State
-> Updated: 2026-05-07 — Session close
+> Updated: 2026-05-07 — Module enrichment batch 1
 
 ## Current task
-IDLE — All Claude-buildable features complete or blocked on Michael M-tasks. Wiki module pages (35) are stubs and can be enriched without Michael.
+Module-page enrichment in progress (3 of 35 done). Pattern proven; remaining 32 stubs follow the same recipe (read js source → enrich frontmatter + functions table + read deps + shell touchpoints + failure modes + cross-links).
 
-## What shipped (last two sessions)
+## What shipped (this session)
+
+### Module enrichment batch 1 (3 pages)
+- **wiki/modules/wiki.md** — full BM25 grounding engine: 12 functions documented, 13-rule stemmer, GRAPH_BOOST=0.2 graph re-rank, slug dedup, customer-mode entity exclusion, fallback path. Confidence medium → high.
+- **wiki/modules/digest.md** — Daily Brief email export: 4 functions, role-aware `computeDailyBrief` reuse, plaintext output shape, `mailto:` export, failure modes. Confidence medium → high.
+- **wiki/modules/vendor-score-import.md** — wide → long CSV import via `csvImportFlow` helper: `sbBulkSaveVendorScores`, `_buildVendorScoreAliasMap` auto-derivation from `CAT_DEFS`, `postProcess` vendor_id resolution, 0–10 score validation. Confidence medium → high.
+
+## What shipped (prior sessions, retained for context)
 
 ### RAG precision optimization (+5.1pp total)
 - Pass 1 (45.7% → 48.3%): golden set fix, lighting-reference stemmer fix, ADR-001 customer mode sentence, sop-vendor-onboarding key questions phrase, rubric-rep-score heading + density
@@ -40,9 +47,16 @@ Precision 50.8% = ~94% of achievable ceiling. Do not attempt further passes with
 
 ## What Claude can build without Michael
 
-1. **Wiki enrichment**: 35 module pages in wiki/modules/ are stubs (auto-gen, no real function docs). Can be enriched one-by-one using js/ source files as reference. High-value for Ask the Engine grounding.
+1. **Wiki enrichment**: 32 module pages remaining in wiki/modules/ (3 of 35 enriched in this session). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
 2. **Vendor page enrichment**: wiki/entities/vendors/ has 30 pages — can be fleshed out as vendor data becomes available.
 3. **pgvector path** (M42/M43): optional embedding upgrade — not started, not blocked.
+
+## Suggested next enrichment batch
+
+Pick high-fanout modules first (most cross-links, highest grounding value):
+1. **alerts** (`js/alerts.js`) — 9 generators, cross-module signals (deals, coop, quotes, inventory, deliveries, warranty, showroom, POs, scores)
+2. **customers** (`js/customers.js`) — CRM hub: RFM compute, 5 segments, merged activity timeline (interactions + quotes + deals)
+3. **inventory** (`js/inventory.js`) — warehouse + price-book + Windward-sync target; CSV import via shared helper
 
 ## Next-session entry point
 
@@ -51,4 +65,4 @@ Precision 50.8% = ~94% of achievable ceiling. Do not attempt further passes with
 3. If M04 done: build 5.13 E-Commerce Command Center (BigCommerce REST + GMC)
 4. If M06 done: build 6.1 (GA4) + 6.2 (GSC) integrations
 5. If M09 done: build 6.4 Klaviyo integration
-6. If nothing done: enrich wiki/modules/ pages using js/ source files (start with wiki.js, then daily_brief.js, then vendor_scoring.js)
+6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (alerts → customers → inventory). Read `js/<name>.js` first, then write following the batch-1 pattern.

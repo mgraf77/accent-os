@@ -1,6 +1,6 @@
 # AccentOS Wiki — Master Index
 > Auto-maintained. Every wiki page must have an entry here.
-> Updated: 2026-05-06
+> Updated: 2026-05-07
 
 ## concept pages
 
@@ -99,7 +99,7 @@
 | decision-engine | Decision Engine Module | medium | 2026-05-06 |
 | deliveries | Deliveries Module | medium | 2026-05-06 |
 | demand-forecast | Demand Forecast Module | medium | 2026-05-06 |
-| digest | Digest Module | medium | 2026-05-06 |
+| digest | Digest Module (Daily Brief Email) | high | 2026-05-07 |
 | employees | Employees Module | medium | 2026-05-06 |
 | global-search | Global Search Module | medium | 2026-05-06 |
 | health | Health Module | medium | 2026-05-06 |
@@ -119,9 +119,9 @@
 | saved-filters | Saved Filters Module | medium | 2026-05-06 |
 | showroom-displays | Showroom Displays Module | medium | 2026-05-06 |
 | trade-partners | Trade Partners Module | medium | 2026-05-06 |
-| vendor-score-import | Vendor Score Import Module | medium | 2026-05-06 |
+| vendor-score-import | Vendor Score Import Module | high | 2026-05-07 |
 | warranty | Warranty Module | medium | 2026-05-06 |
-| wiki | Wiki Module | medium | 2026-05-06 |
+| wiki | Wiki Module | high | 2026-05-07 |
 
 ## source pages
 
