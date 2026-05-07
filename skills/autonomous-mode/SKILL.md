@@ -37,7 +37,7 @@ description: >
 Run when Michael says any of:
 - "going to lunch — do X while I'm gone"
 - "going to bed, continue working"
-- "stepping away, [scope]"
+- "stepping away — build Track 5.7 while I'm gone" (stepping-away + inline scope form)
 - "go autonomous" / "unattended mode"
 - "drain the prompt queue while I'm out"
 - "until 3pm" / "for the next 2 hours" (time-bound forms)
