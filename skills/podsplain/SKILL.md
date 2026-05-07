@@ -184,10 +184,10 @@ Add a header block to the file:
 
 ## Step 4 — Generate audio
 
-Run the podsplain audio generator:
+Run the podsplain audio generator from the project root:
 
 ```bash
-python3 /home/user/accent-os/scripts/podsplain.py \
+python3 scripts/podsplain.py \
   --script-file podsplains/<slug>/script.md \
   --output-dir podsplains/<slug> \
   --tts auto
@@ -195,14 +195,23 @@ python3 /home/user/accent-os/scripts/podsplain.py \
 
 The script will:
 1. Parse `HOST_1:` / `HOST_2:` lines from the script file
-2. Call the TTS API (auto-detects `OPENAI_API_KEY` → `ELEVENLABS_API_KEY`)
-3. Concatenate all audio segments + inter-speaker silence into a single WAV
-4. Save to `podsplains/<slug>/episode.wav`
-5. Update `podsplains/INDEX.md` with the new episode
+2. Validate word count (warns if < 50 words — catches bad script generation)
+3. Call the TTS API (auto-detects `OPENAI_API_KEY` → `ELEVENLABS_API_KEY`)
+4. Normalize text before TTS (strips em-dashes, ellipses, markdown artifacts)
+5. Concatenate all audio segments + inter-speaker silence into a single WAV
+6. Save to `podsplains/<slug>/episode.wav`
+7. Update `podsplains/INDEX.md` with the new episode
 
-**If no TTS key is set:** the script will exit with a clear error. Tell Michael which key
-to set, and offer to deliver the script file only (skip audio) by ending your response at
-Step 3 and reporting the script path.
+**Expected generation time:** ~1-3 seconds per speech segment via OpenAI TTS.
+- short episode (~40 segments): 1-2 minutes
+- medium episode (~80 segments): 2-4 minutes
+- long episode (~150 segments): 5-8 minutes
+
+**Dry run (parse-only, no TTS):** add `--dry-run` to check segment count before committing API calls.
+
+**If no TTS key is set:** the script exits with a clear error showing which key to set.
+Until the key is set, end your response after Step 3 and report the script path so Michael
+can listen to it via text, or come back later and run the python command manually.
 
 ---
 

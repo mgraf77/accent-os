@@ -327,6 +327,7 @@ def main():
     parser.add_argument("--output-dir", default=None, help="Directory to write episode.wav (default: script file's directory)")
     parser.add_argument("--tts", default="auto", choices=["auto", "openai", "elevenlabs"], help="TTS backend")
     parser.add_argument("--silence-ms", type=int, default=350, help="Milliseconds of silence between speaker turns")
+    parser.add_argument("--dry-run", action="store_true", help="Parse script and print segment summary, skip TTS and WAV generation")
     args = parser.parse_args()
 
     script_path = Path(args.script_file).resolve()
@@ -377,6 +378,20 @@ def main():
     if word_count < 50:
         print(f"WARNING: Script is very short ({word_count} words). Expected 700+ for a short episode.", file=sys.stderr)
         print("  The script may not have generated correctly — check script.md.", file=sys.stderr)
+
+    if args.dry_run:
+        host1 = sum(1 for s in speech_segs if s["speaker"] == "HOST_1")
+        host2 = sum(1 for s in speech_segs if s["speaker"] == "HOST_2")
+        est_secs_low = len(speech_segs) * 1
+        est_secs_high = len(speech_segs) * 3
+        print(f"[dry-run] Segment breakdown:")
+        print(f"  HOST_1: {host1} segments")
+        print(f"  HOST_2: {host2} segments")
+        print(f"  pauses: {len(pause_segs)}")
+        print(f"  words:  ~{word_count}")
+        print(f"  est. generation time: {est_secs_low//60}m{est_secs_low%60}s – {est_secs_high//60}m{est_secs_high%60}s")
+        print(f"[dry-run] No audio generated. Remove --dry-run to produce episode.wav.")
+        return
 
     # ── Generate audio ──
     wav_bytes, duration_s = assemble_wav(segments, backend, openai_key, elevenlabs_key, args.silence_ms)
