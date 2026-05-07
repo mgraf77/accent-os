@@ -161,6 +161,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: install as-is (use repo-scout)
 - companion: repo-scout, codex-review, skill-eval-suite
 
+### skill-optimizer
+- summary: Multi-agent Ralph-loop optimizer for AccentOS skills — scores each skill on a 10-dimension matter scale (0–100), runs parallel agents until all reach 100, logs technique performance, and learns from history to prioritize highest-delta moves in future runs.
+- triggers: "optimize the skills", "run the optimizer", "Ralph loop the skills", "skill quality pass", "score the skills", "how good are our skills", "optimizer history"
+- when_to_use: any time skill quality needs a systematic lift; reads its own run-log to get smarter each run
+- when_NOT: single-skill one-off fixes (just edit that file directly)
+- companion: skill-forge, codex-review, skill-eval-suite
+
 ### supabase-sql-magic
 - summary: Convert natural-language data questions to ready-to-run SQL against AccentOS Supabase.
 - triggers: "query for", "SQL for", "show me data on", "ask the db"
