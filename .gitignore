@@ -4,3 +4,8 @@
 .env.*
 .openai-key
 skills/vibe-speak/profiles/_active.md
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
