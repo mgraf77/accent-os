@@ -1,14 +1,16 @@
 ---
 name: efficiency-monitor
 description: >
-  Always-on observer that watches Michael ↔ Claude back-and-forth for
-  inefficiencies (retries, redundant reads, recurring multi-step
-  patterns, skill bypass, long clarification loops, redone WIP) and
-  flags patterns that should be promoted to a real skill. Surfaces
-  findings ONLY at session boundaries (start = replay last session's
-  flags; end = write this session's flags). Never interrupts mid-flow.
-  Auto-active per `.claude/CLAUDE.md` AUTO-EXECUTE step 1.j and step 8.
-  Pairs with `skill-forge` to promote candidates into real skills.
+  Always-on observer that watches Michael <> Claude back-and-forth in
+  AccentOS build sessions for inefficiencies (retries, redundant reads,
+  recurring multi-step patterns, skill bypass, long clarification loops,
+  redone WIP) and flags patterns that should be promoted to a real skill.
+  Surfaces findings ONLY at session boundaries (start = replay last
+  session's flags; end = write this session's flags). Never interrupts
+  mid-flow. Auto-active per .claude/CLAUDE.md AUTO-EXECUTE step 1.j and
+  step 8. Pairs with skill-forge to promote candidates into real skills.
+  Always surfaces findings at session boundaries only — never interrupts
+  mid-flow, never flags without a cited skill-index entry as evidence.
 ---
 
 # efficiency-monitor
@@ -193,3 +195,13 @@ This is the single most-valuable signal — catching when we're brute-forcing wo
 3. **Skill-bypass flag must cite which `_index.md` entry would have matched.** No vague "could have used a skill."
 4. **All file writes batched into the session-end commit.** Never standalone commits from this skill.
 5. **Aggregator script is the source of truth for promotion status.** SKILL.md only writes raw flags; promotion logic lives in bash.
+---
+
+## Anti-patterns
+
+- **Never** interrupt Michael mid-flow with efficiency observations. Surface only at session start (boot replay) and session end (wrap-up). Mid-session flags go to `_session-scratch.md` silently.
+- **Never** flag a skill-bypass without citing the exact `skills/_index.md` entry that would have matched. Vague "could have used a skill" is not actionable.
+- **Never** auto-promote a skill candidate without the aggregator script confirming the threshold (3+ sessions or cross-session savings > 10 min/occurrence). SKILL.md only writes raw flags.
+- **Never** include assistant responses in signal analysis — only track patterns in the Michael → Claude direction. Analyzing Claude's own output inflates counts.
+- **Never** create standalone commits for efficiency-monitor file writes. Always bundle into the session-end commit per CLAUDE.md batch-doc-update rule.
+- **Never** surface INFO-level flags at boot. Boot output shows only top 3 inefficiencies and PROMOTE-status candidates.

@@ -23,14 +23,16 @@ description: >
   immediately (those go inline) or for ephemeral one-off thoughts.
   Always writes the queue state to PROMPT_QUEUE.md immediately so the
   queue survives session restarts and Codespace rebuilds — never holds
-  queue state only in memory.
+  queue state only in memory. Always writes to
+  /home/user/accent-os/PROMPT_QUEUE.md on every operation — never
+  auto-executes a queued prompt without explicit Michael confirmation.
 ---
 
 # prompt-queue
 
 **Purpose:** Michael keeps a notes app full of prompts he wants to send "later." Pasting them mid-session derails current work; forgetting them loses signal. This skill gives Claude Code a persistent prompt-stack that survives session boundaries, supports priority reordering, and auto-pulls the next item when the current session completes.
 
-Stolen from: Anthropic's Agent Skills compounding execution pattern + the existing `PROMPT_QUEUE.md` AccentOS convention. The skill formalizes operations and expands the storage format to support priority + structured fields.
+Origin: Anthropic Agent Skills compounding execution pattern + the existing PROMPT_QUEUE.md AccentOS convention. Formalizes operations and expands the storage format to support priority + structured fields.
 
 ---
 
