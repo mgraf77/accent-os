@@ -1,0 +1,888 @@
+{
+  "query_results": [
+    {
+      "query": "What score would a vendor with 3% rebate receive?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-rebates",
+        "vendor-scoring"
+      ],
+      "got": [
+        "rubric-rebates",
+        "rubric-l1-member",
+        "sop-vendor-onboarding"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "How is the vendor weighted score calculated?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "vendor-scoring"
+      ],
+      "got": [
+        "vendor-scoring",
+        "rubric-display",
+        "ADR-005"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What does a score of 10 mean for IMAP?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-imap",
+        "vendor-scoring"
+      ],
+      "got": [
+        "rubric-imap",
+        "rubric-dtc",
+        "vendor-scoring"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What is the freight free threshold for a score of 7?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-freight",
+        "vendor-scoring"
+      ],
+      "got": [
+        "rubric-freight",
+        "vendor-scoring",
+        "rubric-returns"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What is L1 membership in the scoring system?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-l1-member",
+        "vendor-scoring"
+      ],
+      "got": [
+        "vendor-scoring",
+        "rubric-lights-america",
+        "rubric-l1-member"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "How does DTC behavior affect vendor score?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-dtc",
+        "vendor-scoring"
+      ],
+      "got": [
+        "rubric-dtc",
+        "vendor-scoring",
+        "ADR-005"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What are the tier boundaries for vendor scoring?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "vendor-scoring"
+      ],
+      "got": [
+        "vendor-scoring",
+        "ADR-005",
+        "rubric-l1-member"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What is the rep score rubric?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-rep-score",
+        "vendor-scoring"
+      ],
+      "got": [
+        "vendor-scoring",
+        "sop-rep-outreach",
+        "rubric-display"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "How are marketing funds scored?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-marketing-funds",
+        "vendor-scoring"
+      ],
+      "got": [
+        "rubric-marketing-funds",
+        "vendor-scoring",
+        "rubric-l1-member"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What display discount earns a score of 8?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-display",
+        "vendor-scoring"
+      ],
+      "got": [
+        "rubric-display",
+        "vendor-scoring",
+        "rubric-rebates"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What CRI is required for retail lighting?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "cri-tm30-tlci",
+        "lighting-reference"
+      ],
+      "got": [
+        "cri-tm30-tlci",
+        "lumen-output-commercial",
+        "dimming-protocols"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What footcandle level is needed for a warehouse?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "lumen-output-commercial",
+        "lighting-reference"
+      ],
+      "got": [
+        "lighting-reference",
+        "lumen-output-commercial",
+        "ADR-001"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What color temperature for a restaurant?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "color-temperature-selection",
+        "lighting-reference"
+      ],
+      "got": [
+        "color-temperature-selection",
+        "cri-tm30-tlci",
+        "lighting-reference"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "How long must emergency lighting last on battery?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "emergency-lighting-compliance",
+        "lighting-reference"
+      ],
+      "got": [
+        "emergency-lighting-compliance",
+        "lighting-reference",
+        "rubric-credit-terms"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What is 0-10V dimming?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "dimming-protocols",
+        "lighting-reference"
+      ],
+      "got": [
+        "dimming-protocols",
+        "lighting-reference",
+        "sop-quote-creation"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What is TM-30 Rg and what does it mean?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "cri-tm30-tlci"
+      ],
+      "got": [
+        "cri-tm30-tlci",
+        "lighting-reference",
+        "emergency-lighting-compliance"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What footcandles for open office per IECC?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "lumen-output-commercial",
+        "lighting-reference"
+      ],
+      "got": [
+        "lumen-output-commercial",
+        "lighting-reference",
+        "color-temperature-selection"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "When should I use DALI instead of 0-10V?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "dimming-protocols"
+      ],
+      "got": [
+        "dimming-protocols",
+        "lighting-reference",
+        "ADR-006"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What questions should I ask a new vendor rep?",
+      "cluster": "sop",
+      "expected": [
+        "sop-rep-outreach",
+        "sop-vendor-onboarding"
+      ],
+      "got": [
+        "sop-vendor-onboarding",
+        "sop-rep-outreach",
+        "ADR-007"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "How do I onboard a new vendor to AccentOS?",
+      "cluster": "sop",
+      "expected": [
+        "sop-vendor-onboarding"
+      ],
+      "got": [
+        "sop-vendor-onboarding",
+        "sop-rep-outreach",
+        "vendor-scoring"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What margin should I target on a commercial quote?",
+      "cluster": "sop",
+      "expected": [
+        "sop-quote-creation"
+      ],
+      "got": [
+        "sop-quote-creation",
+        "dimming-protocols",
+        "lighting-reference"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "When should I escalate a rep issue to vendor management?",
+      "cluster": "sop",
+      "expected": [
+        "sop-rep-outreach"
+      ],
+      "got": [
+        "sop-rep-outreach",
+        "rubric-rep-score",
+        "paul-graf"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What are the steps to convert a quote to a job?",
+      "cluster": "sop",
+      "expected": [
+        "sop-quote-creation"
+      ],
+      "got": [
+        "sop-quote-creation",
+        "sop-vendor-onboarding",
+        "overview"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "How do I handle a rep score that drops below 4?",
+      "cluster": "sop",
+      "expected": [
+        "sop-rep-outreach",
+        "rubric-rep-score"
+      ],
+      "got": [
+        "sop-rep-outreach",
+        "rubric-rep-score",
+        "vendor-scoring"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What is the file size trigger for splitting AccentOS?",
+      "cluster": "module_pattern",
+      "expected": [
+        "ADR-004"
+      ],
+      "got": [
+        "ADR-004",
+        "ADR-002",
+        "rubric-freight"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "How does the CSV import flow work in AccentOS?",
+      "cluster": "module_pattern",
+      "expected": [
+        "source-build-intelligence"
+      ],
+      "got": [
+        "overview",
+        "source-build-intelligence",
+        "rubric-credit-terms"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 0.5,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.806
+      }
+    },
+    {
+      "query": "Why does AccentOS use vanilla JS instead of React?",
+      "cluster": "module_pattern",
+      "expected": [
+        "ADR-002"
+      ],
+      "got": [
+        "overview",
+        "ADR-002",
+        "karpathy-llm-wiki"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 0.5,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.806
+      }
+    },
+    {
+      "query": "How does the goTo dispatcher work?",
+      "cluster": "module_pattern",
+      "expected": [
+        "ADR-004"
+      ],
+      "got": [
+        "ADR-004",
+        "sop-quote-creation",
+        "overview"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What is the AccentOS database?",
+      "cluster": "gotcha",
+      "expected": [
+        "ADR-001",
+        "overview"
+      ],
+      "got": [
+        "overview",
+        "ADR-001",
+        "sop-rep-outreach"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "What is the Karpathy wiki pattern?",
+      "cluster": "gotcha",
+      "expected": [
+        "karpathy-llm-wiki",
+        "ADR-007"
+      ],
+      "got": [
+        "karpathy-llm-wiki",
+        "ADR-007",
+        "overview"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "Why was wiki-first RAG chosen over pgvector?",
+      "cluster": "gotcha",
+      "expected": [
+        "ADR-007",
+        "karpathy-llm-wiki"
+      ],
+      "got": [
+        "ADR-007",
+        "karpathy-llm-wiki",
+        "overview"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "Who are the AccentOS team members?",
+      "cluster": "gotcha",
+      "expected": [
+        "overview",
+        "michael-graf"
+      ],
+      "got": [
+        "overview",
+        "patrick-graf",
+        "rubric-lights-america"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What is Michael Graf's role at Accent?",
+      "cluster": "entity",
+      "expected": [
+        "michael-graf",
+        "overview"
+      ],
+      "got": [
+        "paul-graf",
+        "overview",
+        "patrick-graf"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 0.5,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.806
+      }
+    },
+    {
+      "query": "Who handles showroom management at Accent Lighting?",
+      "cluster": "entity",
+      "expected": [
+        "paul-graf"
+      ],
+      "got": [
+        "sop-vendor-onboarding",
+        "sop-rep-outreach",
+        "paul-graf"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 0.333,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.778
+      }
+    },
+    {
+      "query": "What are the credit terms rubric thresholds?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-credit-terms",
+        "vendor-scoring"
+      ],
+      "got": [
+        "sop-vendor-onboarding",
+        "vendor-scoring",
+        "rubric-credit-terms"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 0.5,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.861
+      }
+    },
+    {
+      "query": "What return policy earns a high vendor score?",
+      "cluster": "vendor_scoring",
+      "expected": [
+        "rubric-returns",
+        "vendor-scoring"
+      ],
+      "got": [
+        "rubric-display",
+        "rubric-returns",
+        "rubric-rebates"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 0.5,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.806
+      }
+    },
+    {
+      "query": "Why is Row-Level Security used in AccentOS?",
+      "cluster": "module_pattern",
+      "expected": [
+        "ADR-001"
+      ],
+      "got": [
+        "ADR-001",
+        "color-temperature-selection",
+        "vendor-scoring"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What is the AccentOS data isolation strategy for customer mode?",
+      "cluster": "module_pattern",
+      "expected": [
+        "ADR-006",
+        "ADR-001"
+      ],
+      "got": [
+        "ADR-006",
+        "ADR-001",
+        "overview"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.67,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.944
+      }
+    },
+    {
+      "query": "How does AccentOS handle authentication?",
+      "cluster": "module_pattern",
+      "expected": [
+        "ADR-001"
+      ],
+      "got": [
+        "ADR-001",
+        "overview",
+        "ADR-003"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    },
+    {
+      "query": "What emergency lighting battery runtime is required by code?",
+      "cluster": "lighting_ref",
+      "expected": [
+        "emergency-lighting-compliance"
+      ],
+      "got": [
+        "emergency-lighting-compliance",
+        "lighting-reference",
+        "lumen-output-commercial"
+      ],
+      "scores": {
+        "recall": 1.0,
+        "rank_quality": 1.0,
+        "precision": 0.33,
+        "coverage": 1.0,
+        "diversity": 1.0,
+        "maintenance": 1.0,
+        "composite": 0.889
+      }
+    }
+  ],
+  "summary": {
+    "total_queries": 40,
+    "avg_composite": 0.901,
+    "dimensions": {
+      "recall": 1.0,
+      "rank_quality": 0.921,
+      "precision": 0.483,
+      "coverage": 1.0,
+      "diversity": 1.0,
+      "maintenance": 1.0
+    },
+    "by_cluster": {
+      "vendor_scoring": 0.907,
+      "lighting_ref": 0.92,
+      "sop": 0.907,
+      "module_pattern": 0.873,
+      "gotcha": 0.93,
+      "entity": 0.792
+    }
+  }
+}
