@@ -176,7 +176,8 @@ def build_index(source_dir, wiki_dir, wiki_boost, include_sources=False):
     tf = []
     doc_lengths = []
     for doc in documents:
-        tokens = tokenize(doc["text"] + " " + doc["title"])
+        # Title repeated 3× → stronger BM25 signal for title-matching queries
+        tokens = tokenize(doc["text"] + " " + " ".join([doc["title"]] * 3))
         freq = defaultdict(int)
         for t in tokens:
             freq[t] += 1
@@ -191,10 +192,24 @@ def build_index(source_dir, wiki_dir, wiki_boost, include_sources=False):
         for term in freq:
             df[term] += 1
 
+    # Per-type boost multipliers. concept pages carry the highest-signal domain
+    # knowledge; source/synthesis pages are meta-content with weaker retrieval value.
+    _TYPE_BOOSTS = {
+        "concept": 1.5,
+        "decision": 1.4,
+        "entity": 1.2,
+        "module": 1.1,
+        "source": 1.0,
+        "synthesis": 1.0,
+    }
+
     # Build inverted index: term -> [{doc_id, bm25_score}]
     inverted = defaultdict(list)
     for doc_id_i, (doc, freq, dl) in enumerate(zip(documents, tf, doc_lengths)):
-        boost = wiki_boost if doc["is_wiki"] else 1.0
+        if doc["is_wiki"]:
+            boost = _TYPE_BOOSTS.get(doc["type"], wiki_boost)
+        else:
+            boost = 1.0
         for term, tf_val in freq.items():
             idf = math.log((N - df[term] + 0.5) / (df[term] + 0.5) + 1)
             tf_norm = (tf_val * (k1 + 1)) / (tf_val + k1 * (1 - b + b * dl / avg_dl))

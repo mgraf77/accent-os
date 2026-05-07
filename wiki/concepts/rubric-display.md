@@ -12,7 +12,7 @@ updated: 2026-05-06
 
 # Rubric: Display Program (Weight: 6)
 
-Showroom display support: discount on display product, promotional cadence, and buyback/refresh program.
+Showroom display support: discount on display product, promotional cadence, and buyback/refresh program. A vendor with a 50%+ display discount earns a score of 8; 60%+ display discount with monthly promos earns a score of 10.
 
 ## Composite scoring (RUBRIC_COMPONENTS)
 

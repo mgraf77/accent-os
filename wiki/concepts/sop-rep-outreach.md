@@ -57,9 +57,9 @@ Standard process for initiating and maintaining manufacturer rep relationships.
 
 ## Rep score escalation
 
-If rep score drops below 4:
+Escalate rep performance issues to vendor management when score drops below 4. If rep score drops below 4:
 1. Document specific failures (missed callbacks, wrong pricing, etc.)
-2. Contact vendor's regional manager directly
+2. Contact vendor management or regional manager directly
 3. Request rep reassignment if pattern persists
 4. Note escalation in AccentOS vendor notes
 

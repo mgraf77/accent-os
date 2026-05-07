@@ -26,6 +26,19 @@ SNIPPET_LEN = 150  # chars
 # would contaminate retrieval results for every query they mention.
 DEFAULT_EXCLUDE_TYPES = {"synthesis"}
 
+# English question/function words. These appear in Q&A queries but rarely in
+# wiki prose, giving them unusually high IDF in a 155-chunk corpus (~2.4 for
+# "what"). Filtering them from queries removes false-positive scoring on chunks
+# that happen to contain question text (e.g. "What protocol?").
+STOP_WORDS = frozenset({
+    "what", "how", "why", "when", "where", "who", "which",
+    "is", "are", "was", "were", "be", "been",
+    "the", "a", "an", "to", "for", "in", "of", "and", "or", "but",
+    "do", "does", "did", "will", "would", "should", "could",
+    "may", "might", "must", "shall", "can",
+    "with", "this", "that", "it", "its", "by", "at", "as", "from", "if",
+})
+
 # Minimal suffix stemmer for common English + domain terms.
 # Strips suffixes so "rebates"→"rebat", "onboarding"→"onboard", "dimming"→"dim".
 # Stems must be ≥4 chars to avoid over-stemming short words.
@@ -72,7 +85,7 @@ def search(query, index, top_k=DEFAULT_TOP_K, wiki_only=False,
     if exclude_types is None:
         exclude_types = DEFAULT_EXCLUDE_TYPES
 
-    terms = tokenize(query)
+    terms = [t for t in tokenize(query) if t not in STOP_WORDS]
     if not terms:
         return []
 

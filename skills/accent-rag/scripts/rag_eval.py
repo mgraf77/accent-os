@@ -71,6 +71,18 @@ GOLDEN_QA = [
     {"query": "What is the Karpathy wiki pattern?", "expected": ["karpathy-llm-wiki", "ADR-007"], "cluster": "gotcha"},
     {"query": "Why was wiki-first RAG chosen over pgvector?", "expected": ["ADR-007", "karpathy-llm-wiki"], "cluster": "gotcha"},
     {"query": "Who are the AccentOS team members?", "expected": ["overview", "michael-graf"], "cluster": "gotcha"},
+
+    # Entity lookup (4 queries — expanded set)
+    {"query": "What is Michael Graf's role at Accent?", "expected": ["michael-graf", "overview"], "cluster": "entity"},
+    {"query": "Who handles showroom management at Accent Lighting?", "expected": ["paul-graf"], "cluster": "entity"},
+    {"query": "What are the credit terms rubric thresholds?", "expected": ["rubric-credit-terms", "vendor-scoring"], "cluster": "vendor_scoring"},
+    {"query": "What return policy earns a high vendor score?", "expected": ["rubric-returns", "vendor-scoring"], "cluster": "vendor_scoring"},
+
+    # Architecture decisions (4 queries — expanded set)
+    {"query": "Why is Row-Level Security used in AccentOS?", "expected": ["ADR-001"], "cluster": "module_pattern"},
+    {"query": "What is the AccentOS data isolation strategy for customer mode?", "expected": ["ADR-006", "ADR-001"], "cluster": "module_pattern"},
+    {"query": "How does AccentOS handle authentication?", "expected": ["ADR-001"], "cluster": "module_pattern"},
+    {"query": "What emergency lighting battery runtime is required by code?", "expected": ["emergency-lighting-compliance"], "cluster": "lighting_ref"},
 ]
 
 
@@ -100,8 +112,23 @@ def _stem(word):
     return word
 
 
-def _tokenize(text):
-    """Match rag_build_index tokenizer: standard pass + digit-anchored tech terms."""
+_STOP_WORDS = frozenset({
+    "what", "how", "why", "when", "where", "who", "which",
+    "is", "are", "was", "were", "be", "been",
+    "the", "a", "an", "to", "for", "in", "of", "and", "or", "but",
+    "do", "does", "did", "will", "would", "should", "could",
+    "may", "might", "must", "shall", "can",
+    "with", "this", "that", "it", "its", "by", "at", "as", "from", "if",
+})
+
+
+def _tokenize(text, filter_stopwords=False):
+    """Match rag_build_index tokenizer: standard pass + digit-anchored tech terms.
+
+    filter_stopwords=True strips English question/function words. Applied to
+    queries (not index building) to prevent high-IDF noise from question words
+    skewing results on a small 155-chunk corpus.
+    """
     import re
     lower = text.lower()
     raw = re.findall(r'\b[a-z][a-z0-9\-]{1,}\b', lower)
@@ -109,6 +136,8 @@ def _tokenize(text):
     expanded = []
     seen = set()
     for tok in raw:
+        if filter_stopwords and tok in _STOP_WORDS:
+            continue
         if tok not in seen:
             seen.add(tok); expanded.append(tok)
         s = _stem(tok)
@@ -131,7 +160,7 @@ def simple_search(query, index, top_k=TOP_K, wiki_only=False,
 
     inverted = index["inverted"]
     doc_store = index["doc_store"]
-    terms = _tokenize(query)
+    terms = _tokenize(query, filter_stopwords=True)
 
     scores = defaultdict(float)
     for term in terms:

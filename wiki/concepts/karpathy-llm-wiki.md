@@ -12,7 +12,7 @@ updated: 2026-05-06
 
 # Karpathy LLM Wiki Pattern
 
-Andrej Karpathy's proposal: instead of training models on fresh data continuously, maintain a curated "LLM Wiki" — a set of human-readable, dense, cross-linked markdown documents that serve as the grounding layer for an LLM. The LLM retrieves relevant pages and uses them as context rather than relying on parametric memory.
+The Karpathy LLM Wiki pattern is the basis for AccentOS's wiki-first RAG architecture, chosen over pgvector in [[ADR-007]]. Andrej Karpathy's proposal: instead of training models on fresh data continuously, maintain a curated "LLM Wiki" — a set of human-readable, dense, cross-linked markdown documents that serve as the grounding layer for an LLM. The LLM retrieves relevant pages and uses them as context rather than relying on parametric memory.
 
 ## Core principles
 

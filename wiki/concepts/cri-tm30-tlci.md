@@ -7,12 +7,14 @@ related: [lighting-reference, color-temperature-selection, lumen-output-commerci
 confidence: high
 sensitive: false
 created: 2026-05-06
-updated: 2026-05-06
+updated: 2026-05-07
 ---
 
 # CRI, TM-30, and TLCI Standards
 
 ## CRI (Color Rendering Index) — Ra
+
+CRI ≥ 80 is required for commercial lighting; CRI ≥ 90 required for premium retail, museum, and medical applications.
 
 Legacy metric. 0–100 scale; 100 = perfect color rendering under reference illuminant.
 

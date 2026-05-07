@@ -44,7 +44,7 @@ Central hub for Accent Lighting technical reference. Covers commercial lighting 
 
 ## Notes
 
-These pages are consulted by Ask the Engine when customers or sales ask technical specification questions. All values are industry standards; Accent-specific product details come from vendor spec sheets.
+These pages are referenced by Ask the Engine for technical specification data in customer and sales conversations. All values are industry standards; Accent-specific product details come from vendor spec sheets.
 
 ## Related
 
