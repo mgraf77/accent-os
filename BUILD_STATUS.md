@@ -4,10 +4,10 @@
 > Source of truth: `BUILD_PLAN_CLAUDE.md`, `BUILD_PLAN_MICHAEL.md`, `ROADMAP_2026.md`, `WORK_IN_PROGRESS.md`, git log.
 > Manual refresh: `bash scripts/build-status.sh`
 
-**Last updated:** 2026-05-07 17:08 UTC
+**Last updated:** 2026-05-07 17:10 UTC
 **Branch:** `claude/accentos-roadmap-planning-PKRA0`
-**Last commit:** `130368e feat(status): live BUILD_STATUS.md dashboard + regen hooks`
-**Working tree:** 1 uncommitted file(s)
+**Last commit:** `fe079e2 fix(status): suppress timestamp-only diffs to break Stop-hook loop`
+**Working tree:** 0 uncommitted file(s)
 **Roadmap version:** v3.1 (round-5 — ecom site + user-safety dimensions)
 **Threshold score:** 93% (honest matrix, see §6)   ·   **Leverage:** 8.0 / 10
 
@@ -101,11 +101,11 @@ Pre-mortem early-warning instrumentation (must be live by phase end):
 
 ## 8. Recent commits
 
-- `130368e` feat(status): live BUILD_STATUS.md dashboard + regen hooks
+- `fe079e2` fix(status): suppress timestamp-only diffs to break Stop-hook loop
+- `c17c2f0` feat(status): live BUILD_STATUS.md dashboard + regen hooks
 - `9892f69` docs(plan): operationalize ROADMAP_2026 v3.1 into BUILD_PLAN tracks 7-14
 - `ed905b9` docs(roadmap): v3.1 — round 5 (ecom site + user-safety dimensions)
 - `b934163` docs(roadmap): v3.0 — round 4 (customer/retrofit/owner-time/pre-mortem/compounding)
-- `84756ee` docs(roadmap): v2.0 — round 2+3 synthesis, multi-metric heartbeat, dynamic thresholds
 
 ---
 

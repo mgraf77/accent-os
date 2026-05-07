@@ -9,6 +9,8 @@ REPO="${REPO:-/home/user/accent-os}"
 cd "$REPO"
 
 OUT="$REPO/BUILD_STATUS.md"
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT
 TS="$(date -u +'%Y-%m-%d %H:%M UTC')"
 BRANCH="$(git branch --show-current 2>/dev/null || echo unknown)"
 LAST_COMMIT="$(git log -1 --pretty='%h %s' 2>/dev/null || echo none)"
@@ -206,13 +208,15 @@ $RECENT_COMMITS
 
 If this file is stale, the hooks aren't firing — investigate \`.claude/settings.json\` Stop hook + \`.git/hooks/pre-push\` exec bit.
 EOF
-} > "$OUT"
+} > "$TMP"
 
-# Optional: include in commit if file changed and tree was clean
-if [ -n "${BUILD_STATUS_AUTOCOMMIT:-}" ] && [ "$DIRTY_COUNT" -le 1 ]; then
-  if ! git diff --quiet "$OUT" 2>/dev/null; then
-    git add "$OUT" && git commit -m "chore(status): refresh BUILD_STATUS.md" --no-verify || true
-  fi
+# Idempotency: only replace OUT if substantive content changed (ignore the timestamp line).
+# Without this guard the Stop hook creates an infinite loop: regen → dirty file → next-session warning → regen.
+if [ -f "$OUT" ] && diff <(grep -v '^\*\*Last updated:\*\*' "$OUT") <(grep -v '^\*\*Last updated:\*\*' "$TMP") >/dev/null 2>&1; then
+  echo "BUILD_STATUS.md unchanged (timestamp-only diff suppressed)"
+  exit 0
 fi
 
+mv "$TMP" "$OUT"
+trap - EXIT
 echo "BUILD_STATUS.md regenerated → $OUT"
