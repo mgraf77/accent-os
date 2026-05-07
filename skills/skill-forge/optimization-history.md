@@ -85,3 +85,33 @@ No new changes — all Ralph findings addressed in Cycle 2
 **Stuck dimensions:** none
 
 ---
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten to single tight verb sentence | Two-clause compound sentence lacking a single driving verb | "Extract concepts from an external tool, strip everything that doesn't fit AccentOS, and ship a committed, stress-tested SKILL.md to `/home/user/accent-os/skills/` in one uninterrupted pass." | Purpose lines must anchor the skill in one sentence with a specific verb; compound phrasing obscures the core action |
+| "Never write a skill longer than the source's docs" expanded with AccentOS consequence | Generic rule with no named failure mode | Names the specific failure: padding that should live in gotcha-log.md ends up in the skill body | Anti-patterns must name a specific AccentOS failure mode, not a general principle |
+| "Never stop at the gap analysis" rewritten with named consequence | Generic — didn't state what actually goes wrong | Names the failure: "run produces zero committed files and wastes the research phase" | AccentOS-specific consequence makes the rule actionable, not advisory |
+| "Never add Future enhancements" expanded with the correct destination | Said "skills represent shipped state only" — didn't say where deferred items go | Adds: "deferred items go to `/home/user/accent-os/skills/skill-forge/future-builds.md` per Step 5" | A new Claude session needs a fallback action, not just a prohibition |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was ambiguous | What it became | Reasoning |
+|---|---|---|---|
+| Step 9 branch-create instruction: `[8-char-rand]` → `$(git -C /home/user/accent-os rev-parse --short=8 HEAD)` | "[8-char-rand]" is a template marker outside a fenced block — a new session has no mechanism to generate it | Concrete shell expression that any session can evaluate | Precondition was ambiguous; new session couldn't execute without guessing the hash source |
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: compound description → single tight verb sentence
+- Two anti-patterns: generic principles → AccentOS-specific failure modes with named consequences
+- Step 9: ambiguous `[8-char-rand]` → concrete `git rev-parse --short=8 HEAD` expression
+
+---

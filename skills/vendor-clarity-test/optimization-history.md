@@ -82,3 +82,29 @@
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | "A vendor's score must align across three angles... This is the diagnostic." — a statement about what should be true, not about what the skill does; no specific action verb | "Verify that each sampled AccentOS vendor's score driver aligns across three angles... and surface every vendor where those three disagree." | Single tight sentence with specific verbs (verify, surface); describes what the skill does rather than what a good state looks like |
+| Supabase project ID added to Step 1 SQL block | SQL block had no project context; only the description frontmatter named `hsyjcrrazrzqngwkqsqa` | Added `-- Supabase hsyjcrrazrzqngwkqsqa` comment to the Step 1 SELECT block | Every SQL block that touches Supabase must carry the project ID so a new session can paste it directly |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was ambiguous | What it became | Reasoning |
+|---|---|---|---|
+| "Fire also as a sanity gate" → "Fire as a sanity gate" | "also" implies this fires only when something else also fired; a new-session reader following the trigger list could interpret it as requiring a co-condition | Removed "also" — standalone imperative | Residual passive-adjacent "also" from prior run; the history showed it was supposed to be fixed in the prior run's Round 1 but the word survived |
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Purpose line: action-verb sentence (verify, surface) instead of state-description sentence
+- Step 1 SQL block now carries `-- Supabase hsyjcrrazrzqngwkqsqa` for paste-readiness
+- "Fire also as a sanity gate" residual "also" removed — sanity-gate trigger is now unambiguously standalone
+
+---

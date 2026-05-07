@@ -33,7 +33,7 @@ Run this skill when Michael says anything like:
 - "how many [X]"
 - "find rows where [X]"
 - "supabase query for [X]"
-- "ad-hoc query for [X]"
+- "pull the data for [X]"
 - "give me the SQL for [X]"
 
 Do **not** trigger for: vendor score traces ("why is vendor X ranked there" → vendor-cascade) or rule design ("how do I score for X" → priority-articulation).
@@ -50,7 +50,7 @@ TABLE → primary key, foreign keys, columns relevant to the question
 
 Cache table names in working memory for this run. Every column referenced in the output SQL must exist in one of the loaded files — never rely on guesses.
 
-Output artifact: a working table inventory in the form `TABLE → primary key, foreign keys, columns relevant to the question`.
+Output artifact: a schema snapshot in the form `TABLE → pk: [col], fk: [col→table], relevant columns: [col_list]` — one line per table that will appear in the query. Used in Step 3 to validate every column reference before emitting SQL.
 
 If a referenced table or column does not exist, output "Schema gap: table/column [X] not found in /home/user/accent-os/sql/" and stop. Do not invent fields.
 
@@ -83,7 +83,7 @@ Compose the query in this order, always:
 3. WHERE clauses (from filters)
 4. GROUP BY / HAVING
 5. ORDER BY
-6. LIMIT (always include — default 100 unless aggregation)
+6. LIMIT (always include — default 100; omit only when the query is a true aggregation returning a single summary row or a fixed small count)
 
 Format as paste-ready SQL with one clause per line for scan-readability. Output artifact: the final SQL block delivered in BLOCK 1 of Step 5:
 

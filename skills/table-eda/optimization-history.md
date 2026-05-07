@@ -78,3 +78,29 @@
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Trigger: "table profile" → "show me column stats on [table]" | "table profile" is a near-paraphrase of "profile [table]" — same noun, different order | "show me column stats on [table]" is a conversational phrase that covers users who don't know the word "profile" | Trigger distinctness: analyst who says "column stats" never says "table profile" — different vocabulary coverage |
+| Anti-pattern: "Never silently skip a column" → specific type list + exact output format | Generic — passes the "Never" check but no AccentOS failure mode named | Names specific problematic types (`jsonb`, `tsvector`, `bytea`) + exact output string `[column]: SKIPPED — type [type] requires manual probe` | Specific types make it actionable; exact output string means a new session produces consistent skip messages |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | Ambiguity found | Fix |
+|---|---|---|
+| Step 3 precondition | Step 3 said "After Michael runs the SQL" but gave no instruction for what to do if results aren't available yet — a new session would be stuck | Added explicit precondition block: if no results present, output BLOCK 3 SQL and pause; Step 3 resumes when Michael re-invokes with results |
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Trigger distinctness: "table profile" (near-duplicate of "profile [table]") replaced with vocabulary-distinct phrase
+- Anti-pattern specificity: generic "silently skip" replaced with named types + exact skip-message format
+- Step 3 precondition: missing fallback for "no results yet" case made explicit
+
+---

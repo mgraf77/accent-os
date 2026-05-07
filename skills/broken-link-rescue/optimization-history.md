@@ -77,3 +77,35 @@ No new changes — all Ralph findings addressed in Cycle 1. The "Never mix" phra
 - Step 2 WebFetch rationale addition → stylistic M8/M7 tightening; both dimensions were already passing at baseline, so no score movement
 
 **Stuck dimensions:** none
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | Opened with milestone reference "M16 (4 GMC URLs…)" — no specific verb, reads as a task note not a skill descriptor | "Detect and triage broken product URLs across Accent Lighting's BC store-cwqiwcjxes catalog — surfacing 404s, redirect chains, canonical mismatches, and GMC-noindex violations before GMC penalizes the affected products" | Verb-first ("Detect and triage"), names BC store ID, states the consequence avoided |
+| Step 2 crawl record field names aligned | History added `url, http_status, redirect_chain, final_url, crawl_timestamp` but the actual file still had the original fields `redirect_hops, canonical, robots_directive, page_title` with no `final_url` | Unified to: `url`, `http_status`, `redirect_chain`, `final_url`, `canonical`, `robots_directive`, `page_title`, `crawl_timestamp` | A new session reading Step 2 would produce a crawl record with different fields than what Step 5 CSV expects |
+| Step 2 WebFetch threshold raised to ≤50 | Threshold was ≤20 in Step 2 but Step 5 BLOCK 3 said "> 50" — contradiction meant the Firecrawl fallback would never trigger until the block-size rule overrode the crawl rule | Both thresholds set to 50; BLOCK 3 label updated to note the alignment | Contradictory thresholds in the same skill produce unpredictable operator behavior |
+| Anti-pattern 3 sharpened | "Never flag a redirect chain of length 1 as broken — that's intentional" — generic; no AccentOS context | "BC's slug migration from the 2023 store rebuild created intentional single-hop redirects for ~3,000 products; flagging them fills the fix queue with false positives" | Names the specific historical cause, quantifies the false-positive volume |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was missing | What it became | Reasoning |
+|---|---|---|---|
+| Step 4 BC admin path made fully qualified | Step 4 showed `/manage/products/12345` — a new session would not know the domain prefix | Updated to full URL `https://store-cwqiwcjxes.mybigcommerce.com/manage/products/12345` | Without the domain, the BC admin path is unusable without prior knowledge of the store URL |
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: verb-first, BC store ID named, consequence stated
+- Step 2: crawl record field set corrected and aligned with Step 5 CSV columns
+- Step 2/Step 5 threshold: contradiction between ≤20 and >50 resolved to consistent ≤50/>50
+- Anti-pattern 3: 2023 slug migration context and ~3,000 product count added
+- Step 4: BC admin URLs fully qualified with store-cwqiwcjxes domain
+
+---

@@ -23,7 +23,7 @@ description: >
 
 # skill-eval-suite
 
-**Purpose:** Ralph-loop fixes are durable only if they're regression-tested. This skill generates Promptfoo eval YAMLs that lock in the Ralph fixes plus canonical behavior, runnable on every skill change.
+**Purpose:** Convert skill-forge Step 8 Ralph findings into Promptfoo regression tests committed alongside each `/home/user/accent-os/skills/` SKILL.md, so a future edit that breaks a Ralph-proven behavior fails before it merges.
 
 Stolen from: Promptfoo (https://github.com/promptfoo/promptfoo) — Anthropic-acquired Mar 2026, ships an official Agent Skill via `/promptfoo-evals`. AccentOS-customized for skill-validation context.
 
@@ -33,13 +33,13 @@ Stolen from: Promptfoo (https://github.com/promptfoo/promptfoo) — Anthropic-ac
 
 Run when Michael says:
 - "eval suite for [skill name]"
-- "test [skill]" / "promptfoo for [skill]"
+- "promptfoo for [skill]"
 - "regression tests for [skill]"
 - "automate the Ralph loop"
 - "lock in [skill] behavior"
 - "make sure [skill] doesn't break"
 - "write evals for [skill]"
-- "coverage for [skill]"
+- "add promptfoo tests to [skill]"
 
 ---
 
@@ -50,7 +50,7 @@ Input: skill name (e.g. `vendor-cascade`) or path (e.g. `/home/user/accent-os/sk
 Read:
 - `SKILL.md` — for description, trigger phrases, workflow steps, output format
 - `references/*.md` — for any templated outputs
-- Recent `gotcha-log.md` entries that mention this skill — for known edge cases
+- Recent entries in `/home/user/accent-os/skills/skill-forge/gotcha-log.md` that mention this skill by name — for known edge cases from prior forge runs
 
 If the skill doesn't exist in `/home/user/accent-os/skills/`, output "Skill not found" and stop.
 

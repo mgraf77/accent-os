@@ -79,3 +79,31 @@
 - Outlier trigger phrasing tightening → stylistic M7 refinement; dimension was already passing
 
 **Stuck dimensions:** none
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | "rep-group-matchmaker closes M19 by suggesting rep_group_id, but a complete vendor record needs more..." — explains the *why* in terms of another skill; no action verb describing what this skill does | "Verify that a new AccentOS vendor's Supabase `hsyjcrrazrzqngwkqsqa` record satisfies the completeness contract — required fields, FK integrity, and cross-sibling consistency — before it goes live or after rep-group-matchmaker assigns a `rep_group_id`." | Single tight action verb (verify); names the Supabase project ID; states the contract dimensions explicitly |
+| 5th trigger phrase added | Trigger Recognition had only 4 bullet lines (4 phrase pairs); ≥5 distinct triggers is a sub-dimension standard | Added "check rep-group-matchmaker output" / "did the M19 batch leave gaps" — a distinct entry point for the post-M19-run audit scenario | The M19-batch-follow-up case was described in the description but absent from the trigger list, creating a routing gap |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was ambiguous | What it became | Reasoning |
+|---|---|---|---|
+| Supabase project ID added to Step 4 SQL block | `WITH sibling_norms AS (` SQL block had no project context | Added `-- Supabase hsyjcrrazrzqngwkqsqa` as first line of the Step 4 SQL block | A new session with no prior context cannot know which Supabase project to paste into without this comment |
+| Supabase project ID added to Step 5 Block 3 SQL UPDATE stubs | Comment said "run in Supabase SQL Editor" but no project ID | "-- Supabase hsyjcrrazrzqngwkqsqa — fill in [VALUE] then run in SQL Editor:" | Consistent project ID on every SQL block; paste-readiness requires no implicit context |
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Purpose line: action-verb sentence with Supabase project ID named inline
+- Trigger list: 5th distinct entry point added (M19-batch follow-up scenario)
+- Step 4 SQL block carries `-- Supabase hsyjcrrazrzqngwkqsqa` for paste-readiness
+- Step 5 UPDATE stub header carries project ID — consistent with all other SQL blocks in the skill

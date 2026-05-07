@@ -78,3 +78,28 @@
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Trigger: "data gap audit" / "data gap analysis" → "data gap audit" / "which KPIs can I ship today" | "data gap analysis" is a near-paraphrase of "data gap audit" — same words, different suffix only | "which KPIs can I ship today" is a result-oriented entry point not covered by any other trigger | Trigger distinctness: "analysis" vs "audit" fails when user says either; the new phrase captures a different user intent entirely |
+| Step 1 output artifact: "a source inventory — catalog KPI count, M-file list, integration source list" → literal 3-line format with exact column names | Shape-vague — didn't show the exact format | `Catalog: N KPIs \| Schema: M01–M29, N tables, N columns \| Integrations: [list]` one-liner | Literal shape lets a new session produce the exact preamble without guessing field names |
+| Added missing `---` separator between Step 0 and Step 1 | Step 0 had no horizontal rule after it, making the section boundary visually ambiguous | `---` divider added | Structural consistency with all other step boundaries |
+
+### Pass 2 — Ralph cold-read challenge
+
+No ambiguous steps, preconditions, or missing fallbacks found — CLEAN
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Trigger distinctness: near-paraphrase "data gap analysis" replaced with result-oriented distinct phrase
+- Step 1 output literal shape: exact 3-line format with pipe-delimited fields specified
+- Step boundary: missing `---` divider added after Step 0 for scan-readability
+
+---

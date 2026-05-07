@@ -18,7 +18,7 @@ description: >
 
 # broken-link-rescue
 
-**Purpose:** M16 (4 GMC URLs pending re-index, P053-077 batch) and ongoing URL hygiene. Without this skill, broken canonicals get noticed only when GMC penalizes a product.
+**Purpose:** Detect and triage broken product URLs across Accent Lighting's BC store-cwqiwcjxes catalog — surfacing 404s, redirect chains, canonical mismatches, and GMC-noindex violations before GMC penalizes the affected products.
 
 Stolen from: Firecrawl MCP recurring-crawls + broken-link-detection patterns + Universal SEO Skill link-auditing primitive.
 
@@ -60,7 +60,7 @@ For each URL, capture:
 - Meta robots directive (noindex/nofollow flags)
 - Page title (for redirect-target sanity check)
 
-Use `WebFetch` for direct probes when the URL set is ≤20 — capture results into a per-URL crawl record (url, http_status, redirect_hops, canonical, robots_directive, page_title). Above 20, generate a Firecrawl batch payload as paste-ready JSON output for Michael to run externally — sequential WebFetch calls hit rate limits fast and cost compounds.
+Use `WebFetch` for direct probes when the URL set is ≤50 — capture results into a per-URL crawl record with fields: `url`, `http_status`, `redirect_chain` (list of each hop URL), `final_url`, `canonical`, `robots_directive`, `page_title`, `crawl_timestamp`. Above 50, generate a Firecrawl batch payload as paste-ready JSON output for Michael to run externally — sequential WebFetch calls hit rate limits fast and cost compounds.
 
 ---
 
@@ -89,7 +89,7 @@ For each non-OK row, output one concrete next step:
 - **GMC_NOINDEX** → "Remove `<meta name='robots' content='noindex'>` from product template"
 - **PENDING_REINDEX** → "Submit the product URL to GMC re-index queue"
 
-Pair every fix line with the BC admin path (e.g. `/manage/products/12345` or `/manage/redirects`) and the Feedenomics re-index rule number if the product is in the M16 batch.
+Pair every fix line with the full BC admin URL (e.g. `https://store-cwqiwcjxes.mybigcommerce.com/manage/products/12345` or `https://store-cwqiwcjxes.mybigcommerce.com/manage/redirects`) and the Feedenomics re-index rule number if the product is in the M16 batch.
 
 ---
 
@@ -108,7 +108,7 @@ url,status,severity,action,bc_admin_path
 /products/old-sconce-fixture,REDIRECT_CHAIN,MEDIUM,"Direct 301 → /products/new-sconce",/manage/redirects
 ...
 
-═══ BLOCK 3: FIRECRAWL BATCH PAYLOAD ═══ (only if URL set > 50)
+═══ BLOCK 3: FIRECRAWL BATCH PAYLOAD ═══ (only if URL set > 50; Step 2 threshold is also 50)
 [paste-ready Firecrawl MCP batch JSON]
 
 ═══ BLOCK 4: M16 CLOSE-OUT ═══
@@ -123,7 +123,7 @@ For PENDING_REINDEX rows that were P053-077:
 
 - **Never** modify BC URLs or set redirects from this skill — output the actions, Michael executes.
 - **Never** make >50 sequential WebFetch calls. Batch via Firecrawl when scope is large.
-- **Never** flag a redirect chain of length 1 (single 301) as broken — that's intentional.
+- **Never** flag a redirect chain of exactly 1 hop (a single 301) as broken — BC's slug migration from the 2023 store rebuild created intentional single-hop redirects for ~3,000 products; flagging them as REDIRECT_CHAIN fills the fix queue with false positives.
 - **Never** classify a URL as HARD_404 on a single failed probe. Retry once after 60s.
 - **Never** silently ignore the canonical tag — it's the single most common GMC issue after missing images.
 - **Never** mix URL sets from different batches (e.g. P053-077 and P100-150) in a single crawl run — keep batch IDs separate so the M16 close-out CSV maps cleanly to one batch at a time.

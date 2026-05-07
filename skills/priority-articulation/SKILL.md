@@ -19,7 +19,7 @@ description: >
 
 # priority-articulation
 
-**Purpose:** Bridge the gap between "what Accent Lighting cares about" and "what AccentOS measures." Vague priorities don't drive vendor scores until they're broken down into measurable rules with thresholds and weights.
+**Purpose:** Translate vague Accent Lighting business priorities into measurable scoring rules with explicit thresholds, Supabase hsyjcrrazrzqngwkqsqa field mappings, and weights that vendor-cascade can consume directly.
 
 Stolen from: the strategy-articulation concept in `alirezarezvani/claude-skills` `c-level-advisor/strategic-alignment`. Rebuilt as a single-purpose AccentOS skill — no board package wrapper, no team realignment, just priority → rule translation.
 
@@ -132,7 +132,7 @@ Recommended primary: [name]   |   Recommended backup: [name]
 **Intent:** [one-sentence intent from Step 1]
 **Primary rule:** [name] — `[table.column] [operator] [threshold]` weighted [w] in cascade priority P[n]
 **Backup rule:** [name] — `[table.column] [operator] [threshold]`
-**Data field path:** [Supabase /home/user/accent-os/sql/ source]
+**Data field path:** [Supabase hsyjcrrazrzqngwkqsqa — source M-file: /home/user/accent-os/sql/M__.sql]
 **Re-tune cadence:** [weekly/monthly/quarterly]
 **Last articulated:** YYYY-MM-DD
 ```
@@ -144,6 +144,6 @@ Recommended primary: [name]   |   Recommended backup: [name]
 - **Never** invent threshold numbers. They come from Michael's stated input or get asked once. The skill is articulation, not arbitrary cutoff-setting.
 - **Never** propose new schema additions in this skill. If no field measures the priority, flag and stop — schema changes are M-task work for Michael.
 - **Never** modify vendor_scores or vendor_overrides directly. This skill produces rule specs that vendor-cascade then consumes.
-- **Never** skip the Supabase schema read. Articulating against imagined fields wastes Michael's review time.
+- **Never** skip the Supabase schema read. Rules written against imagined fields (e.g. a `gross_margin_pct` column that doesn't exist in M02) produce a vendor-cascade run that errors silently and returns all zeros for the affected dimension.
 - **Never** produce more than 3 rules per priority. Picking 1 primary + 1 backup is the deliverable; offering 7 alternatives shifts the decision burden onto Michael.
 - **Never** output a rule that references a field not present in the currently loaded M-file schema — verify each `table.column` exists before writing it into the rule spec.

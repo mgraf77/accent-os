@@ -29,12 +29,12 @@ description: >
 
 Run when Michael says:
 - "check for doc drift"
-- "are my docs consistent"
-- "verify priorities are aligned"
+- "are my docs consistent" / "verify priorities are aligned"
 - "do my plans agree"
 - "audit my docs"
-- "drift check" / "consistency check on plans"
-- "are the plans in sync" / "cross-check the docs"
+- "drift check"
+- "MASTER.md vs BUILD_PLAN" (cross-doc comparison form)
+- "cross-check the docs" / "which doc is right"
 
 ---
 
@@ -107,18 +107,27 @@ For each ✗ DRIFT row, classify:
 
 ```
 ═══ BLOCK 1: AGREEMENT TABLE ═══
-[full Step 3 table]
+Files loaded: MASTER.md, BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, SESSION_LOG.md (last 200 lines),
+              PROMPT_LOG.md (last 50 entries), WORK_IN_PROGRESS.md, PROMPT_QUEUE.md, project-profiles.md
+Missing files (if any): [list each by full path]
+
+[Step 3 delta table — all claim classes × all docs loaded]
 
 ═══ BLOCK 2: DRIFT LIST ═══
-For each ✗ DRIFT, list:
-  - Claim class + claim
-  - Drift type (stale-marker / priority / status-label)
-  - Recommended source-of-truth (which doc to align others to)
+For each ✗ DRIFT row:
+  Claim class:      [e.g. Track status]
+  Drift type:       stale-marker | priority | status-label
+  Conflict:         "[MASTER says X]" vs "[BUILD_PLAN_CLAUDE says Y]"
+  Source-of-truth:  [doc name] — reason: [one line]
 
 ═══ BLOCK 3: PASTE-READY FIXES ═══
 For each drift, output an Edit-tool command Michael can run:
-  Edit BUILD_PLAN_CLAUDE.md: change `- [ ] 0.4 Full DB schema` → `- [x] 0.4 Full DB schema (M21/M22/M23 ran clean 2026-05-04)`
-  Edit project-profiles.md: remove "Full DB schema (Track 0.4) — all tables in one SQL execution" from "Known capability gaps"
+  Edit /home/user/accent-os/BUILD_PLAN_CLAUDE.md:
+    old: "- [ ] 0.4 Full DB schema"
+    new: "- [x] 0.4 Full DB schema (M21/M22/M23 ran clean 2026-05-04)"
+
+  Edit /home/user/accent-os/skills/repo-scout/references/project-profiles.md:
+    remove: "Full DB schema (Track 0.4) — all tables in one SQL execution" from Known capability gaps
 ```
 
 If no drift exists, output: "All docs agree on priorities, active tracks, and statuses as of 2026-05-07 14:30Z." (substitute actual run time.) This is a valid happy-path result.

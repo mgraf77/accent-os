@@ -28,7 +28,7 @@ description: >
 
 # autonomous-mode
 
-**Purpose:** Let Michael walk away with a clear directive and have AccentOS keep building until the directive's exit condition triggers — without losing state, without overspending tokens, without making owner-only calls in his absence. Always writes a timestamped state file before touching any code — never runs blind.
+**Purpose:** Runs the AccentOS work loop autonomously — committing items from BUILD_PLAN_CLAUDE.md or PROMPT_QUEUE.md, checking exit criteria between commits, and persisting state so the next session resumes exactly where this one stopped. Always writes a timestamped state file before touching any code — never runs blind.
 
 ---
 
@@ -39,10 +39,10 @@ Run when Michael says any of:
 - "going to bed, continue working"
 - "stepping away, [scope]"
 - "go autonomous" / "unattended mode"
-- "work while I'm gone" / "work until I'm back"
+- "drain the prompt queue while I'm out"
 - "until 3pm" / "for the next 2 hours" (time-bound forms)
-- "drain the prompt queue"
-- "work through the build plan"
+- "work through the build plan without stopping"
+- "build autonomously until I get back"
 
 If the trigger is ambiguous about scope OR exit criteria, ask one clarifying question and wait — never guess.
 
@@ -221,17 +221,18 @@ When Michael returns, the next session-start will see autonomous_mode.json's `st
 The skill's run-time output (the prompt that triggered it) returns immediately:
 
 ```
-AUTONOMOUS MODE STARTED — [date HH:MM]
+AUTONOMOUS MODE STARTED — 2026-05-07 14:30
 
-Scope:        [scope]
-Time bound:   [bound]
-Exit:         [criteria summary]
-Est. work:    [N commits, ~Ktokens]
+Scope:        drain PROMPT_QUEUE.md (3 items), then BUILD_PLAN_CLAUDE walk
+Time bound:   2h soft cap (hard stop at 2026-05-07T16:30:00Z)
+Exit:         queue empty AND no unblocked [ ] items; OR token budget >80%; OR Michael returns
+Est. work:    5 commits, ~80K tokens
 State file:   /home/user/accent-os/.claude/autonomous_mode.json
 Resume:       WORK_IN_PROGRESS.md will reflect current step
 
 Going dark. Will surface a summary in SESSION_LOG.md on exit.
 ```
+(Substitute actual scope, time bound, exit criteria, and estimates from Step 0 parse.)
 
 ---
 

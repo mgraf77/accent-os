@@ -77,3 +77,26 @@
 - "do not exist" → "are missing" → stylistic M7 tightening; M7 was already failing for the bigger NULL-abort issue, so this change contributed to the fix but wasn't the sole driver
 
 **Stuck dimensions:** none
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | "Concentration risk on Accent Lighting top vendors is currently invisible — no skill surfaces 'if vendor X disappeared tomorrow, what % of revenue evaporates.' This is the diagnostic." — states the problem, not what the skill does; "This is the diagnostic" is shape-vague | "Rank the top-N AccentOS vendors by composite risk across concentration, volatility, stockouts, and GMC failures so that existential single-vendor exposure at Accent Lighting surfaces before a surprise, not after." | Single tight sentence with a specific verb (rank); names all four dimensions; states the outcome benefit |
+
+### Pass 2 — Ralph cold-read challenge
+
+No ambiguous steps, preconditions, or missing fallbacks found — CLEAN
+
+All four risk dimensions have explicit fallback handling (NULL-total abort for dim A; sample_count<2 exclusion for dim B; missing-table flag for dims C/D). Weight re-normalization covers every missing-dimension combination. Severity bands are fully defined with no undefined ranges. The composite score maps deterministically to severity with override rules stated.
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Purpose line: action-verb sentence (rank) naming all four dimensions and the outcome benefit; replaced a problem-description with a skill-description

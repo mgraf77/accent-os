@@ -78,3 +78,31 @@
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | Two sentences; second sentence restated the orphan rule already implied by the skill name | "Trace every AccentOS vendor score component back to a named Accent Lighting priority and flag anything that does not connect as an orphan." | Single tight sentence with a specific verb; eliminates redundancy |
+| Reverse-cascade Step 1 Supabase table named | "Pull vendor Y's per-metric values from BC store-cwqiwcjxes / Supabase" — slash-Supabase is vague; no table named | "from BC store-cwqiwcjxes and from the `vendor_scores` table in Supabase `hsyjcrrazrzqngwkqsqa`" | Every Supabase reference must name the project ID and the specific table |
+| Reverse-cascade Step 4 output instruction clarified | "Vendor Y's score is X" — X is a shape-vague placeholder; instructional note said "actual computed values" but didn't say what to do with X | Replaced X with "[computed total 0–1]" and added "replace each bracketed token with the actual numeric result — never leave as-is" | Fill-in requirement was implied but not stated; now unambiguous |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was ambiguous | What it became | Reasoning |
+|---|---|---|---|
+| "Trigger also when" clause rewritten | "Trigger also when Michael questions a specific vendor's rank..." — "also" implies conjunction with the primary trigger list; new-session reader could require one of the 8 phrases to also be present | "Trigger when Michael questions a specific vendor's rank or asks for score explainability for a partner, board member, or store owner — even if none of the phrases above appear verbatim." | Removes the "also" conjunction ambiguity; trailing clause confirms standalone trigger |
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Purpose line: single-verb sentence, no redundancy
+- Reverse-cascade Supabase reference names exact table (`vendor_scores` in `hsyjcrrazrzqngwkqsqa`)
+- Reverse-cascade output token fill-in is explicitly instructed, not implied
+- Secondary trigger clause is now a standalone condition, not an "also" conjunction
+
+---

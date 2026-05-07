@@ -273,14 +273,16 @@ For each row in WAITING:
 Output of the RESOLVE operation:
 
 ```
-═══ RESOLVE — [N] waiting items evaluated ═══
-PROMOTED ([P]):
-  - #3 "backfill customers.segment..." → defer m_task:M30 resolved (M30 marked [x] at 14:30)
-  - #5 "audit the kpi data..." → defer prompt:#1_completed resolved
-STILL WAITING ([W]):
-  - #4 "run bc-business-review..." → date:2026-05-12T09:00 (in 6 days)
-  - #N "..." → m_task:M27 (still pending)
+═══ RESOLVE — 5 waiting items evaluated ═══
+PROMOTED (2):
+  - #3 "backfill customers.segment for top 100 by revenue" → m_task:M30 resolved (M30 marked [x] at 14:30)
+  - #5 "audit the kpi data and propose next 3 forges" → prompt:#1_completed resolved
+STILL WAITING (3):
+  - #4 "run bc-business-review and snapshot it" → date:2026-05-12T09:00:00Z (in 6 days)
+  - #6 "verify deliveries data integrity" → m_task:M27 (still pending in BUILD_PLAN_MICHAEL.md)
+  - #7 "update vendor scores after M28 lands" → m_task:M28 (still pending)
 ```
+(Substitute actual item counts, prompt text, and condition details from PROMPT_QUEUE.md.)
 
 If no items promoted, output: "No waiting items ready. Re-evaluate when M-tasks land."
 

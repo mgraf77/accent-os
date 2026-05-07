@@ -84,3 +84,30 @@ No new changes — all Ralph findings addressed in Cycle 2
 **Stuck dimensions:** none
 
 ---
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten to single tight verb sentence | Two sentences that described the meta-rationale before the action | "Convert skill-forge Step 8 Ralph findings into Promptfoo regression tests committed alongside each SKILL.md..." | Purpose must lead with the specific action, not the rationale for needing it |
+| Trigger "test [skill] / promptfoo for [skill]" split; "coverage for [skill]" replaced with "add promptfoo tests to [skill]" | "test [skill]" and "promptfoo for [skill]" were a paired duplicate; "coverage for [skill]" could route to code test runners | Each entry is now a distinct, unambiguous phrase | Overlapping trigger pairs reduce routing confidence; "coverage" is ambiguous outside this context |
+| `gotcha-log.md` path in Step 1 made absolute | "Recent `gotcha-log.md` entries that mention this skill" had no path — new session wouldn't know which log to read | "Recent entries in `/home/user/accent-os/skills/skill-forge/gotcha-log.md`" | The gotcha-log lives in skill-forge, not in the target skill's directory; missing path is a precondition gap |
+
+### Pass 2 — Ralph cold-read challenge
+
+CLEAN — after Pass 1 fixes the Step 1 path ambiguity was the only cold-read gap; no further issues found.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: two-sentence rationale-first → single action-first verb sentence
+- Trigger list: 2 overlapping or ambiguous phrases replaced with 2 distinct, unambiguous ones
+- Step 1 gotcha-log path: implicit → absolute path with context note
+
+---

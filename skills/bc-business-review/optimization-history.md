@@ -82,3 +82,31 @@
 - Pagination / "Omit LIMIT" style checks → not applicable to this skill; no equivalent constructs present
 
 **Stuck dimensions:** none
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | "Accent Lighting has no current 'what happened this week' digest" — describes the problem, no action verb | "Produce a weekly aggregate performance digest for Accent Lighting from Supabase hsyjcrrazrzqngwkqsqa — answering 'is the business moving in the right direction' with WoW revenue, AOV, anomaly flags, and concentration risk callouts…" | Verb-first ("Produce"), names Supabase ID, lists the specific output types |
+| Step 5 BLOCK 1 emoji removed | `⚠ Concentration:` used a warning emoji | `CONCENTRATION FLAG:` — text-only label | Project instructions prohibit emojis; emoji also renders inconsistently across output targets |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was missing | What it became | Reasoning |
+|---|---|---|---|
+| Step 4 SQL invalid double-CTE fixed | Two sequential `WITH` clauses (`WITH historical AS (…) WITH this_week_rev AS (…)`) — PostgreSQL syntax error; a new session executing this SQL would get an immediate parse failure | Merged into a single `WITH weekly_rev AS (…), historical AS (…), this_week_rev AS (…)` block | PostgreSQL requires all CTEs in a single `WITH` clause; the broken query would halt the entire anomaly detection step |
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: verb-first, Supabase project ID named, output type list added
+- Step 5 BLOCK 1: emoji replaced with text-only concentration flag label
+- Step 4 SQL: invalid double-WITH syntax corrected to single CTE block with three named CTEs
+
+---

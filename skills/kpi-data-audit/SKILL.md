@@ -33,7 +33,7 @@ Stolen from: dbt's `dbt source freshness` + `manifest.json` dependency-graph ide
 Run when Michael says:
 - "audit the KPI data"
 - "what variables are missing"
-- "data gap audit" / "data gap analysis"
+- "data gap audit" / "which KPIs can I ship today"
 - "check KPI dependencies"
 - "variable inventory"
 - "what's missing for [KPI ID]"
@@ -75,6 +75,8 @@ Detect from Michael's prompt:
 
 Output artifact: a one-line mode header at the top of the final BLOCK 1 report, e.g. `Mode: full-catalog | scoped(F3) | snapshot`. This makes the run reproducible.
 
+---
+
 ## Step 1 — Locate the catalog and schema sources
 
 Read in parallel:
@@ -86,7 +88,7 @@ Read in parallel:
 
 If catalog is missing, abort with the scope-fail message above. If a schema file is unreadable, log the file and continue with what's available.
 
-Output artifact: a source inventory — catalog KPI count, M-file list with table counts, integration source list — printed as the preamble to BLOCK 1.
+Output artifact: a 3-line preamble printed before BLOCK 1 — `Catalog: N KPIs | Schema: M01–M29, N tables, N columns | Integrations: [list with connected/pending]` — used as the audit header for every subsequent block.
 
 ---
 

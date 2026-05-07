@@ -79,3 +79,32 @@
 - "suggest" → "produce" verb swap → contributed to M7 fix but Round 1 M7 was the main driver; this change was stylistic within an already-addressed dimension
 
 **Stuck dimensions:** none
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| 5th trigger phrase added | Trigger Recognition had only 4 bullet lines; ≥5 distinct triggers is the sub-dimension standard | Added "which vendors still have no rep group" / "how many are still unmatched" — a distinct count-query entry point | The unassigned-count-check case (Michael wants to see progress without running a full match) had no trigger, creating a routing gap |
+| `-- Supabase hsyjcrrazrzqngwkqsqa` added to Step 1 SQL | SQL block had no project context; only the description frontmatter named the project | Added comment as first line of Step 1 SELECT | Every SQL block that touches Supabase must carry the project ID |
+| `-- Supabase hsyjcrrazrzqngwkqsqa` added to Step 2 SQL | Same as Step 1 — no project context in the code block | Added comment as first line of Step 2 SELECT/JOIN | Consistent project ID on every SQL block for paste-readiness |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was ambiguous | What it became | Reasoning |
+|---|---|---|---|
+| `state_proximity` "neighboring" definition added | "0.5 if neighboring" — undefined; a new session cannot determine what "neighboring" means for US states without external context | "0.5 if a state sharing a border with the cluster's modal state (use US contiguous-border adjacency)" | Precondition was ambiguous; a new session could not execute this dimension deterministically without knowing the adjacency rule |
+| Supabase project ID added to Block 3 UPDATE SQL | "-- Apply only after Michael spot-checks..." — no project context in the SQL comment | "-- Supabase hsyjcrrazrzqngwkqsqa — apply only after Michael spot-checks the HIGH rows above" | Paste-ready SQL must carry the project ID; this block was the only SQL block without it after Pass 1 edits |
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Trigger list: 5th distinct entry point added (unassigned-count progress check)
+- Step 1 and Step 2 SQL blocks carry `-- Supabase hsyjcrrazrzqngwkqsqa` for paste-readiness
+- `state_proximity` adjacency rule is now deterministic (US contiguous-border adjacency)
+- Block 3 UPDATE SQL carries project ID — all SQL blocks now consistent

@@ -79,3 +79,33 @@
 - Pagination sentence condensation → stylistic M8 tightening; M8 was already passing at baseline
 
 **Stuck dimensions:** none
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | "Turn M14… from '20K problems' into '10 fix sprints'" — metaphor, not a specific verb | "Convert M14 (20K+ products with missing images, disapprovals, and broken canonicals) from an undifferentiated 20K-row dump into sprint-sized remediation queues ranked by revenue impact and fix type" | Verb-first ("Convert"), names the three specific problem types, states the output shape |
+| Step 1 source output block stale date removed | Example showed `last synced 2024-05-01` — a fixed date over 1 year old implies stale data may be acceptable | Replaced with `YYYY-MM-DD` template and added an explicit stop condition: if `last_synced_at` > 7 days, halt with `STALE SOURCE` message | A new session seeing a hardcoded past date might assume 2024-05-01 is a valid example sync date and proceed with stale data |
+| Step 5 BLOCK 2 file naming format added | Sprint CSV output had no save-as convention — new session would produce unnamed or inconsistently named files | Added `# Save as: gmc-audit-YYYY-MM-DD-sprint[N].csv (one file per sprint)` comment line at top of BLOCK 2 | Connects the sprint ID from Step 4 to a concrete file naming convention |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was missing | What it became | Reasoning |
+|---|---|---|---|
+| Step 4 M17 rule explanation added | "newer SKUs first per Feedenomics M17 rule" — a new session has no context for why newer is higher priority | Added inline rationale: "newly added products have a shorter GMC-approval window before the listing lapses to 'pending' status, so fixing them earlier avoids re-submission" | Without the rationale, a new session might reverse-sort or skip this criterion entirely |
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: verb-first, three problem types named, output shape stated
+- Step 1 source block: live timestamp instead of hardcoded 2024 date, plus stale-data stop condition
+- Step 5 BLOCK 2: sprint file naming convention explicitly documented
+- Step 4: M17 rule rationale made self-explaining without external reference
+
+---

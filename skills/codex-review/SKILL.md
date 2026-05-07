@@ -22,7 +22,7 @@ description: >
 
 # codex-review
 
-**Purpose:** Claude's self-review (the Step 8 Ralph loop in skill-forge) catches what Claude knows to look for. Cross-agent review catches blind spots — patterns one agent over-uses, edge cases one agent under-handles, idioms one agent prefers that another would call out. This skill closes that loop with a tight safety gate.
+**Purpose:** Run recent AccentOS work through Codex to surface blind spots Claude's own Step 8 Ralph loop misses, auto-apply LOW-risk fixes, and gate HIGH-risk changes (SQL rewrites, trigger edits, step reorders) on Michael's explicit approval.
 
 Stolen from: nothing external — this is a cross-agent collaboration pattern AccentOS-specific. Companion to `skill-eval-suite` (Promptfoo automated tests) and `skill-forge` Step 8 (mental Ralph loop).
 
@@ -278,13 +278,13 @@ If everything was clean (Codex returned 0 recommendations OR all were schema-rej
 
 ## Anti-patterns
 
-- **Never** auto-apply HIGH-risk recommendations. The whole point of the skill is the safety gate — behavioral changes, SQL rewrites, and trigger phrase edits always surface to Michael first.
+- **Never** auto-apply HIGH-risk recommendations — a Codex-suggested SQL rewrite against `hsyjcrrazrzqngwkqsqa` or a trigger phrase change on a core skill like `vendor-cascade` can silently break AccentOS workflows with no visible diff alarm; always surface these to Michael first.
 - **Never** auto-apply a LOW recommendation whose `old_string` isn't unique in the target file. Demote to PROPOSE with reason "ambiguous anchor — needs manual review."
 - **Never** apply a recommendation that touches YAML frontmatter (lines 1 through the second `---`). Frontmatter contains trigger phrases and descriptions — too load-bearing to auto-edit.
 - **Never** invoke Codex on more than 10 files in one call — split into batches of ≤10 and merge recommendations in the report.
 - **Never** include Codex's verbatim output text in commit messages — paraphrase. Avoids ToS questions on derivative content from the OpenAI API.
 - **Never** trust a Codex recommendation when `old_string` and `new_string` are semantically identical (e.g. whitespace-only differences) — reject as no-op in Step 5.
-- **Never** modify files outside the Step 1 review scope, even if Codex suggests it. The scope set in Step 1 is absolute.
+- **Never** modify files outside the Step 1 review scope, even if Codex suggests it — Codex may reference shared AccentOS helpers like `references/skill-template.md` or `BUILD_INTELLIGENCE.md` that affect every skill; edits to those require their own targeted review run, not a side-effect of this one.
 - **Never** auto-revert a Step 6 edit silently — log every revert in BLOCK 2 explicitly so Michael sees what failed Step 7.5 validation and why.
 - **Never** run codex-review on an empty diff — confirm the Step 1 target resolves to at least one changed file before invoking Codex.
 - **Never** skip the Step 5 schema validation pass — unvalidated Codex output can contain file paths outside the review scope or risk values outside the allowed enum.

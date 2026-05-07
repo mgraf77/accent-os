@@ -18,7 +18,7 @@ description: >
 
 # vendor-clarity-test
 
-**Purpose:** A vendor's score must align across three angles — the math (`vendor_scores`), the human notes (`vendor_overrides`), and the stated business priority (`project-profiles.md`). When those three disagree on what's actually driving a vendor's rank, scoring drifts. This is the diagnostic.
+**Purpose:** Verify that each sampled AccentOS vendor's score driver aligns across three angles — the math (`vendor_scores`), the human notes (`vendor_overrides`), and the stated business priority (`project-profiles.md`) — and surface every vendor where those three disagree.
 
 Stolen from: Cascade `strategic-alignment` "5-people-from-5-teams test." Rebuilt: instead of asking 5 people what the priority is, ask 5 vendors what their score is built on.
 
@@ -35,15 +35,16 @@ Run when Michael says:
 - "are scores explainable"
 - "spot-check vendor scores"
 
-Fire also as a sanity gate after any priority-articulation or vendor-cascade run that adjusted weights.
+Fire as a sanity gate after any priority-articulation or vendor-cascade run that adjusted weights.
 
 ---
 
 ## Step 1 — Pick the 5 vendors
 
-Default: 5 random vendors from the `vendors` table, selected via:
+Default: 5 random vendors from the `vendors` table in Supabase `hsyjcrrazrzqngwkqsqa`, selected via:
 
 ```sql
+-- Supabase hsyjcrrazrzqngwkqsqa
 SELECT id, name FROM vendors
 ORDER BY RANDOM()
 LIMIT 5;

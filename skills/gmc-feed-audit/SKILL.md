@@ -20,7 +20,7 @@ description: >
 
 # gmc-feed-audit
 
-**Purpose:** Turn M14 (20K+ products with missing images) from "20K problems" into "10 fix sprints" by surfacing the highest-impact remediation queue with concrete fix types and severity.
+**Purpose:** Convert M14 (20K+ products with missing images, disapprovals, and broken canonicals) from an undifferentiated 20K-row dump into sprint-sized remediation queues ranked by revenue impact and fix type.
 
 Stolen from: Universal SEO Skill technical-audit pattern + Firecrawl MCP structured-extraction primitive.
 
@@ -50,8 +50,9 @@ Determine the source for this audit (in preference order):
 Output the chosen source up front so the rest of the audit is reproducible:
 
 ```
-Audit source: Supabase hsyjcrrazrzqngwkqsqa → marketing.feed_status (M29 schema, last synced 2024-05-01)
+Audit source: Supabase hsyjcrrazrzqngwkqsqa → marketing.feed_status (M29 schema, last synced YYYY-MM-DD, row_count: N)
 ```
+Replace `YYYY-MM-DD` with the actual `last_synced_at` timestamp from the table — never use a cached or assumed date. If `last_synced_at` is older than 7 days, stop and output: `STALE SOURCE — re-sync marketing.feed_status before auditing.`
 
 ---
 
@@ -97,7 +98,7 @@ Per row, assign one fix type (in priority order — first match wins):
 Sort by:
 1. Severity (HIGH > MEDIUM > LOW)
 2. Vendor revenue tier (top vendors first — from `vendors.revenue_tier` if available)
-3. SKU age descending (newer SKUs first per Feedenomics M17 rule)
+3. SKU age descending (newer SKUs first — Feedenomics M17 rule: newly added products have a shorter GMC-approval window before the listing lapses to "pending" status, so fixing them earlier avoids re-submission)
 
 Chunk into **fix sprints** of 50–100 SKUs per fix type so Michael can work them serially. Each sprint gets a numbered ID: `SPRINT_001`, `SPRINT_002`, etc. The sprint-to-SKU mapping feeds directly into Step 5 BLOCK 3.
 
@@ -112,6 +113,7 @@ Total audited: [N]
 HIGH: [count]  MEDIUM: [count]  LOW: [count]  CLEAN: [count]
 
 ═══ BLOCK 2: REMEDIATION QUEUE (CSV) ═══
+# Save as: gmc-audit-YYYY-MM-DD-sprint[N].csv (one file per sprint)
 sku,brand,vendor_id,fix_type,severity,sprint_id,suggested_action
 12345,Acme,V123,MISSING_PRIMARY,HIGH,SPRINT_001,"Upload primary image + bulk-meta-description"
 ...

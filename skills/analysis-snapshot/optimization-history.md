@@ -83,3 +83,34 @@
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Trigger: "preserve this" + "keep this one" → "preserve this analysis for later" + "turn this into a re-runnable report" | Two triggers were near-paraphrases of "snapshot this" and "save this analysis" — no distinct entry point | Two genuinely different entry-point phrasings covering intent-preservation and report-conversion angles | Trigger distinctness: paraphrases fail routing when the real phrase is slightly different |
+| Step 1 output artifact: "binary PROCEED / SKIP" → `PROCEED` or `SKIP: [reason in ≤15 words]` inline format | Shape-vague — didn't specify where it appears or max length | Single literal line format with length constraint, placement stated | Output literal shape spec removes any ambiguity about format |
+| Step 2 output artifact: "structured component list" → labeled 5-field list with `ASK` markers | Shape-vague — "structured" doesn't tell a new session what fields exist | Named fields, `ASK` marker semantics, consolidation rule for missing fields | A new session can now produce the exact Step 2 artifact with no guessing |
+| Anti-pattern: "Never snapshot something that has no re-runnable value" → specific example of throwaway question | Generic — passes the binary "Never" check but gives no AccentOS failure-mode example | Names the concrete failure case: one-shot hardcoded row count question | AccentOS-specific failure mode named explicitly |
+| Description frontmatter: updated trigger list to match body edits | Frontmatter listed "preserve this" and "keep this one" (old phrases) while body had the new ones | Frontmatter now consistent with Trigger Recognition body | Consistency: a new session reading only the frontmatter got stale trigger phrases |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | Ambiguity found | Fix |
+|---|---|---|
+| Description frontmatter trigger list | Body had updated phrases; frontmatter still had "preserve this" / "keep this one" from before Pass 1 | Synced frontmatter triggers to match the updated body list |
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Trigger distinctness: 2 near-paraphrase triggers replaced with genuinely different entry points
+- Step 1 output literal shape: format string + length constraint added
+- Step 2 output literal shape: named field list + ASK marker semantics specified
+- Anti-pattern specificity: generic "no re-runnable value" replaced with named AccentOS failure example
+- Frontmatter/body consistency: trigger lists now aligned
+
+---

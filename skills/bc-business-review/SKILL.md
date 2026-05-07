@@ -18,7 +18,7 @@ description: >
 
 # bc-business-review
 
-**Purpose:** Accent Lighting has no current "what happened this week" digest. vendor-cascade and vendor-risk-register answer per-vendor questions; this skill answers the aggregate "is the business moving the right direction" question on a weekly cadence.
+**Purpose:** Produce a weekly aggregate performance digest for Accent Lighting from Supabase hsyjcrrazrzqngwkqsqa — answering "is the business moving in the right direction" with WoW revenue, AOV, anomaly flags, and concentration risk callouts that vendor-cascade and vendor-risk-register cannot provide at the aggregate level.
 
 Stolen from: claude-ecom by takechanman1228 (KPI decomposition from order CSVs) — adapted to read from Supabase deals table instead of CSV import.
 
@@ -125,27 +125,37 @@ Pair with vendor-risk-register to evaluate exposure.
 Pull historical baseline (last 8 weeks excluding current):
 
 ```sql
-WITH historical AS (
+-- Single CTE block: historical baseline + this_week_rev must be in one WITH clause
+WITH weekly_rev AS (
+  SELECT vendor_id,
+         DATE_TRUNC('week', completed_at) AS wk,
+         SUM(unit_price * quantity) AS weekly_revenue
+  FROM deals
+  WHERE completed_at BETWEEN NOW() - INTERVAL '9 weeks' AND NOW() - INTERVAL '1 week'
+    AND status = 'completed'
+  GROUP BY vendor_id, wk
+),
+historical AS (
   SELECT vendor_id,
          AVG(weekly_revenue) AS mean_rev,
          STDDEV(weekly_revenue) AS std_rev
-  FROM (
-    SELECT vendor_id,
-           DATE_TRUNC('week', completed_at) AS wk,
-           SUM(unit_price * quantity) AS weekly_revenue
-    FROM deals
-    WHERE completed_at BETWEEN NOW() - INTERVAL '9 weeks' AND NOW() - INTERVAL '1 week'
-      AND status = 'completed'
-    GROUP BY vendor_id, wk
-  ) hist
+  FROM weekly_rev
   GROUP BY vendor_id
   HAVING COUNT(*) >= 4  -- need at least 4 weeks history for std
+),
+this_week_rev AS (
+  SELECT vendor_id,
+         SUM(unit_price * quantity) AS this_week_rev
+  FROM deals
+  WHERE status = 'completed'
+    AND completed_at BETWEEN $1 AND $2
+  GROUP BY vendor_id
 )
-SELECT vendor_id, this_week_rev, mean_rev, std_rev,
-       (this_week_rev - mean_rev) / NULLIF(std_rev, 0) AS z_score
+SELECT h.vendor_id, tw.this_week_rev, h.mean_rev, h.std_rev,
+       (tw.this_week_rev - h.mean_rev) / NULLIF(h.std_rev, 0) AS z_score
 FROM historical h
 JOIN this_week_rev tw USING (vendor_id)
-WHERE ABS((this_week_rev - mean_rev) / NULLIF(std_rev, 0)) > 2.0;
+WHERE ABS((tw.this_week_rev - h.mean_rev) / NULLIF(h.std_rev, 0)) > 2.0;
 ```
 
 Anomaly flags fire on |z| > 2.0. For each qualifying vendor output a one-line flag:
@@ -175,7 +185,7 @@ AOV:        $[XXX]       ([+/-X.X%] WoW)
 Customers:  [N]
 
 [If concentration > 50%:]
-⚠ Concentration: top 3 vendors = [X]% of weekly revenue
+CONCENTRATION FLAG: top 3 vendors = [X]% of weekly revenue
 
 ═══ BLOCK 2: TOP VENDORS / CATEGORIES ═══
 Top vendors (this week):

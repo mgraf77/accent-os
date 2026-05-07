@@ -82,3 +82,31 @@
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Trigger: removed duplicate "/" paraphrase from "contract tests for [table]" / "schema tests" | "schema tests" is a near-paraphrase of "contract tests for [table]" — both mean the same thing, just shorter | Entry collapsed to single canonical phrase; "schema tests" was already covered by the description's trigger list and had no distinct entry point of its own | Trigger distinctness: duplicate phrase wasted a slot; removing it tightens the trigger set without losing coverage |
+| Anti-pattern: "Never assert business rules without surfacing them as singular tests; never bury them in schema as silent CHECK constraints" → AccentOS-specific named examples + exact test runner output description | Generic double-never with no failure-mode example | Names 3 specific AccentOS business rules + explains why named tests beat CHECK constraints (test_name label vs cryptic violation) | AccentOS-specific failure mode makes this actionable for a new session generating singular tests |
+| Step 2 output artifact: "a set of SQL SELECT statements" → literal form with UNION ALL context | Shape-vague — didn't name the exact SQL pattern or its destination | `SELECT '[class]:[table].[column]' AS test_name, COUNT(*) AS failures FROM ...` with explicit note that these are UNION ALL arms in Step 4's CTE | Literal shape + downstream destination removes all ambiguity |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | Ambiguity found | Fix |
+|---|---|---|
+| pg-cron nightly schedule example | Referenced `test_runs` table that doesn't exist in the schema and is never defined — a new session would schedule a cron job into a non-existent table | Added inline `CREATE TABLE IF NOT EXISTS test_runs` DDL before the schedule call, and corrected the INSERT to reference `all_tests` CTE columns |
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Trigger distinctness: near-paraphrase "schema tests" removed from duplicate "/" slot
+- Anti-pattern specificity: generic double-never replaced with 3 named AccentOS business rules + exact failure-mode description
+- Step 2 output literal shape: named SQL form + UNION ALL destination specified
+- Step 5 pg-cron fallback: missing test_runs table definition added; INSERT corrected to reference CTE
+
+---

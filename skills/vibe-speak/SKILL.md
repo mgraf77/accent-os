@@ -36,7 +36,7 @@ description: >
 
 # vibe-speak
 
-**Purpose:** Caveman-style token savings for Michael's AccentOS sessions, but in native conversational English instead of broken grunt speech. The same compression principles — drop filler, drop preamble, drop pleasantries — applied through a vibe-coder lens that also strips coding jargon. Output should read like a smart friend who happens to know the stack, not a CS textbook.
+**Purpose:** Compresses Claude's AccentOS session output by stripping filler, jargon, and preamble while keeping code identifiers, file paths, and AccentOS proper nouns byte-exact — so responses read like a smart friend who knows the stack, not a CS textbook narrating every tool call.
 
 Origin: JuliusBrussee/caveman (token-cutting skill, 5-level intensity model, hard-keep list for code identifiers, Wenyan-style classical compression idea) + AccentOS skill-forge (gotcha-log self-optimization pattern). Reworked for native English, per-user calibration, and adaptive learning across sessions. Adjacent to the AccentOS CLAUDE.md rule "no narration between steps — action and result only."
 
@@ -203,12 +203,13 @@ After bootstrap, the first response says: "Bootstrapped vibe-speak files at `ski
 
 Activate when Michael says any of:
 
-- "vibe mode" / "vibe speak" / "vibe on"
+- "vibe mode" / "vibe on"
 - "talk plain" / "plain English" / "stop the dev speak"
-- "drop the jargon" / "no jargon" / "human mode"
-- "explain like I'm vibing" / "vibe coder mode"
-- "less words" / "tighten up" / "shorter"
+- "drop the jargon" / "human mode"
+- "less words" / "tighten up"
+- "compress this" / "cut the jargon and give me the short version"
 - "/vibe" (slash-style)
+- "switch to vibe" (explicit mode-switch form)
 
 **Fuzzy matching.** Match on **whole-word edit-distance ≤ 2** for any single trigger word, OR exact substring match for multi-word triggers. Examples that match:
 

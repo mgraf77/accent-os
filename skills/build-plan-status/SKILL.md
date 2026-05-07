@@ -19,7 +19,7 @@ description: >
 
 # build-plan-status
 
-**Purpose:** During autonomous AccentOS builds, modules ship and commits land but BUILD_PLAN_CLAUDE markers don't always update — especially when Michael completes M-tasks outside the Claude session. This skill closes the gap between git history and plan state, producing paste-ready Edit commands so every stale `[ ]` marker gets corrected to `[x]` in one pass.
+**Purpose:** Reconciles git commit history and SESSION_LOG.md against BUILD_PLAN_CLAUDE.md and BUILD_PLAN_MICHAEL.md markers — catching every `[ ]` that should be `[x]` and producing paste-ready Edit commands so Michael fixes the drift in one pass. Modules ship and commits land in the AccentOS repo faster than BUILD_PLAN_CLAUDE markers update; this skill closes that gap before it causes a wrong-priority build session.
 
 ---
 
@@ -27,10 +27,11 @@ description: >
 
 Run when Michael says:
 - "sync the build plan" / "update the plan markers"
-- "what's actually shipped"
+- "what's actually shipped" / "what landed since last update"
 - "build plan status" / "audit the build plan"
 - "update [x]/[ ] from git"
-- "reconcile the plan" / "plan drift"
+- "reconcile the plan"
+- "plan drift" / "markers are stale"
 
 ---
 
@@ -104,21 +105,31 @@ Group commands by file so Michael can apply them in one pass.
 
 ```
 ═══ BLOCK 1: SUMMARY ═══
-Lookback window: [date of last BUILD_PLAN edit] → today
-Evidence rows surfaced: [N]
-HIGH confidence: [count]   MEDIUM: [count]   LOW: [count]
-Drift detected: [count] markers need updating
+Lookback window: 2026-05-04 → 2026-05-07  (date of last BUILD_PLAN_CLAUDE.md edit → today)
+Evidence rows surfaced: 8
+HIGH confidence: 5   MEDIUM: 2   LOW: 1
+Drift detected: 4 markers need updating
 
 ═══ BLOCK 2: DRIFT TABLE ═══
-[Step 3 table]
+| Identifier | Plan marker | Evidence | Drift? |
+|---|---|---|---|
+| 5.5 | [ ] | shipped v6.10.13, commit cd8cf3f | DRIFT — mark [x] |
+| M21 | [x] | confirmed in SESSION_LOG | in sync |
+| M22 | [ ] | "ran clean" in SESSION_LOG 2026-05-04 | DRIFT — mark [x] |
 
 ═══ BLOCK 3: PASTE-READY EDITS ═══
-[Step 4 commands grouped by file]
+Edit /home/user/accent-os/BUILD_PLAN_CLAUDE.md:
+  old: "- [ ] **5.5** — Trade Partner Network"
+  new: "- [x] **5.5** — Trade Partner Network (shipped v6.10.13, commit cd8cf3f)"
+
+Edit /home/user/accent-os/BUILD_PLAN_MICHAEL.md:
+  old: "- [ ] **M22** — Run Inventory schema"
+  new: "- [x] **M22** — Run Inventory schema (confirmed 2026-05-04)"
 
 ═══ BLOCK 4: AMBIGUOUS ROWS ═══
 For each MEDIUM/LOW confidence row:
-  - identifier, evidence excerpt, recommended manual check
-  Michael decides whether to mark [x] or leave [ ].
+  Identifier: 6.3   Evidence: "6.3 BC REST" in commit body (no explicit "shipped")
+  Recommend: check git log for a follow-up "ship:" or "feat:" commit before marking [x]
 ```
 
 If no drift, output: "BUILD_PLAN markers are in sync with git + SESSION_LOG as of 2026-05-07 14:30Z." (substitute actual run time.)

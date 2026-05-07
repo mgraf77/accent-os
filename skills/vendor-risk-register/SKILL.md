@@ -18,7 +18,7 @@ description: >
 
 # vendor-risk-register
 
-**Purpose:** Concentration risk on Accent Lighting top vendors is currently invisible — no skill surfaces "if vendor X disappeared tomorrow, what % of revenue evaporates." This is the diagnostic.
+**Purpose:** Rank the top-N AccentOS vendors by composite risk across concentration, volatility, stockouts, and GMC failures so that existential single-vendor exposure at Accent Lighting surfaces before a surprise, not after.
 
 Stolen from: Cascade `ceo-advisor` risk register pattern. Rebuilt for the AccentOS / Accent Lighting context — no board format, no quarterly cadence wrapper, just a paste-ready ranked table.
 

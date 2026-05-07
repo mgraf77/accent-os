@@ -29,10 +29,10 @@ Run when Michael says:
 - "log this decision"
 - "decision: auth model" / "decision: vendor scoring" (topic form)
 - "save this go/no-go"
-- "document this choice"
-- "record this call"
-- "decided" (when followed by a decision statement)
 - "capture this tradeoff" / "save the reasoning"
+- "decided" (when followed by a decision statement)
+- "why did we choose X" (retroactive capture)
+- "lock in this approach" / "commit to this architecture"
 
 Also fire automatically (with one-line confirmation prompt) after any conversation where Claude observed a non-trivial architectural, vendor, or process choice.
 
@@ -132,18 +132,19 @@ Append to `/home/user/accent-os/decisions/INDEX.md` (create if missing). Sort ne
 ## Step 5 — Output
 
 ```
-DECISION LOGGED — decision-NNN
+DECISION LOGGED — decision-004
 
-File: /home/user/accent-os/decisions/decision-NNN-[name].md
-Class: [class]   |   Reversal cost: [cost]
-Indexed: yes
+File: /home/user/accent-os/decisions/decision-004-auth-model-rls-vs-jwt.md
+Class: architecture   |   Reversal cost: HIGH
+Indexed: yes   (decisions/INDEX.md row added, newest-first)
 
-Cite as: "per decision-NNN" in future PROMPT_LOG entries or commit messages.
+Cite as: "per decision-004" in future PROMPT_LOG entries or commit messages.
 
-[If HIGH reversal cost, also surface:]
-⚠ HIGH reversal cost. Reopen if: [trigger]
-   Worst case: [one line]
+HIGH reversal cost.
+  Reopen if: AccentOS goes multi-user or a second Supabase project is added
+  Worst case: all RLS policies must be rewritten if the auth model changes
 ```
+(Substitute actual decision number, filename, class, reversal cost, reopen trigger, and worst-case line. `decision-NNN` increments by reading `decisions/INDEX.md` max NNN before writing.)
 
 ---
 

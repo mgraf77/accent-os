@@ -30,11 +30,11 @@ description: >
 ## Trigger Recognition
 
 Auto-active — no invocation needed. Also run explicitly when Michael says:
-- "efficiency report" / "what's inefficient"
+- "efficiency report" / "what's been repeated this session"
 - "end session" / "wrap up" / "we're done" (fires Step 2 wrap-up)
 - "/efficiency end" (explicit Step 2 trigger)
-- "what patterns do you see" / "show efficiency flags"
-- "skill candidates" / "what should we forge next"
+- "show efficiency flags" / "skill candidates"
+- "what should we forge next" / "what patterns should become a skill"
 
 For mid-session manual queries ("what patterns do you see"), surface the scratch-file count only — never the detail — then continue silently.
 
@@ -66,14 +66,15 @@ Triggered by CLAUDE.md AUTO-EXECUTE step 1.j and step 8.
    - Any skill candidates at PROMOTE status (recommend `skill-forge` to build)
 4. If `session-end-summary.md` does not exist (first run), say nothing — silent.
 
-Boot output format:
+Boot output format (literal shape — substitute actual values):
 
 ```
-⚙ efficiency-monitor — last session
-  • [signal] [count]× — [one-line]
-  • ...
-🛠 skill candidates at PROMOTE
-  • [pattern] — [N sessions, est. savings] → run `skill-forge`
+efficiency-monitor — last session
+  redundant-read 4x — re-read js/csv_import.js 4 times in one session
+  retry-loop 2x — npm install failed, noticing missing node_modules
+  skill-bypass 1x — weekly review done by hand; bc-business-review would have handled it
+skill candidates at PROMOTE
+  read→grep→edit→test loop — 4 sessions, est. 8 min/occurrence → run skill-forge
 ```
 
 Skip section entirely if empty. Do NOT show INFO-level flags at boot.

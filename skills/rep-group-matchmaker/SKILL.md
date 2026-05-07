@@ -31,12 +31,14 @@ Run when Michael says:
 - "rep group matchmaker" / "assign rep groups"
 - "find rep group for Acme Lighting" / "find rep group for V123"
 - "257 vendors" (or current unassigned count)
+- "which vendors still have no rep group" / "how many are still unmatched"
 
 ---
 
 ## Step 1 — Pull the unassigned set
 
 ```sql
+-- Supabase hsyjcrrazrzqngwkqsqa
 SELECT id, name, brand_category, region, price_tier,
        hq_city, hq_state, primary_contact_email
 FROM vendors
@@ -59,6 +61,7 @@ If the count drifted, note the direction (reduction = progress, increase = new v
 ## Step 2 — Pull the assigned ground-truth
 
 ```sql
+-- Supabase hsyjcrrazrzqngwkqsqa
 SELECT v.id, v.name, v.brand_category, v.region, v.price_tier,
        v.hq_city, v.hq_state,
        rg.id AS rep_group_id, rg.name AS rep_group_name, rg.regions
@@ -112,7 +115,7 @@ Where:
 - **category_match** — 1.0 if exact match to top-1, 0.5 if matches top-3, 0 otherwise
 - **region_match** — 1.0 if vendor's region is in rep_group's stated regions, 0.5 if adjacent, 0 otherwise
 - **price_tier_match** — 1.0 if exact, 0.5 if adjacent tier, 0 otherwise
-- **state_proximity** — 1.0 if same state as cluster, 0.5 if neighboring, 0 otherwise
+- **state_proximity** — 1.0 if same state as cluster, 0.5 if a state sharing a border with the cluster's modal state (use US contiguous-border adjacency), 0 otherwise
 
 Return top 3 candidates per vendor (sorted by score descending).
 
@@ -147,7 +150,7 @@ V789,Lumen Inc,(none),(none),0.32,LOW,"No rep_group has matching category profil
 ...
 
 ═══ BLOCK 3: HIGH-CONFIDENCE BULK UPDATE SQL ═══
--- Apply only after Michael spot-checks the HIGH rows above
+-- Supabase hsyjcrrazrzqngwkqsqa — apply only after Michael spot-checks the HIGH rows above
 UPDATE vendors SET rep_group_id = 'RG045' WHERE id = 'V123' AND rep_group_id IS NULL;
 UPDATE vendors SET rep_group_id = 'RG012' WHERE id = 'V456' AND rep_group_id IS NULL;
 ...

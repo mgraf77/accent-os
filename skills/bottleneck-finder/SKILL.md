@@ -19,7 +19,7 @@ description: >
 
 # bottleneck-finder
 
-**Purpose:** AccentOS has 22 pending M-tasks and 10 open tracks. "Build the lowest [ ]" is not a strategy. This skill applies Theory of Constraints to identify which single thing, if unblocked, opens the most downstream work — and proposes how to exploit the constraint before investing in elevation. Always names the constraint with a leverage score before proposing exploits — never returns "wait for Michael" as the sole output.
+**Purpose:** Applies Theory of Constraints to AccentOS's open BUILD_PLAN_CLAUDE.md tracks and BUILD_PLAN_MICHAEL.md M-tasks — computing which single item's completion cascades the most downstream unblocks, ranking by leverage score, and proposing exploit options before elevation. "Build the lowest [ ]" is not a strategy; leverage-ranked constraint analysis is. Always names the constraint with a leverage score before proposing exploits — never returns "wait for Michael" as the sole output.
 
 ---
 
@@ -28,10 +28,11 @@ description: >
 Run when Michael says:
 - "what's the bottleneck" / "find the constraint"
 - "what should I work on next"
-- "what unblocks the most"
+- "what unblocks the most downstream work"
 - "TOC analysis"
-- "where's the build stuck"
-- "leverage analysis" / "priority analysis"
+- "where's the build stuck" / "why isn't the build moving"
+- "leverage analysis"
+- "which M-task is blocking everything"
 
 ---
 

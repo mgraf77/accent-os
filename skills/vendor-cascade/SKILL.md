@@ -17,7 +17,7 @@ description: >
 
 # vendor-cascade
 
-**Purpose:** Make AccentOS vendor scores explainable end-to-end. Every score component must trace back to a named Accent Lighting priority. Anything that does not is an orphan — flag it.
+**Purpose:** Trace every AccentOS vendor score component back to a named Accent Lighting priority and flag anything that does not connect as an orphan.
 
 Forged from: `alirezarezvani/claude-skills` `c-level-advisor/strategic-alignment` (cascade pattern only — board reporting wrapper dropped).
 
@@ -35,7 +35,7 @@ Run this skill when Michael says anything like:
 - "sum-check the weights"
 - "where does this score come from"
 
-Trigger also when Michael questions a specific vendor's rank or asks for score explainability for a partner/board/owner.
+Trigger when Michael questions a specific vendor's rank or asks for score explainability for a partner, board member, or store owner — even if none of the phrases above appear verbatim.
 
 ---
 
@@ -173,10 +173,10 @@ VALUES
 ## Reverse-cascade variant
 
 When Michael asks "why is vendor Y ranked there" (rank-surprise mode), invert the flow:
-1. Pull vendor Y's per-metric values from BC store-cwqiwcjxes / Supabase
+1. Pull vendor Y's per-metric values from BC store-cwqiwcjxes and from the `vendor_scores` table in Supabase `hsyjcrrazrzqngwkqsqa`
 2. Multiply each metric value by its weight from the cascade map
 3. Group contributions by priority (sum metric × weight per priority)
-4. Output: "Vendor Y's score is X. Priority breakdown: P1 contributes 0.42, P2 contributes 0.18, ..." (actual computed values, not placeholders)
+4. Output: "Vendor Y's score is [computed total 0–1]. Priority breakdown: P1 contributes [computed], P2 contributes [computed], ..." (replace each bracketed token with the actual numeric result — never leave as-is)
 5. Highlight the largest contributor and the largest underperformer for that vendor
 
 This variant uses Steps 1–3 then branches; Steps 4–5 are skipped, Step 6 produces only Block 1 with a 5th column added:

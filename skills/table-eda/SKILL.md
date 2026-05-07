@@ -31,7 +31,7 @@ Run when Michael says:
 - "data quality check on [table]"
 - "what's in [table]"
 - "profile [table]"
-- "table profile"
+- "show me column stats on [table]"
 - "is this data sane"
 - "feed quality check"
 - "check the shape of [table]"
@@ -120,7 +120,9 @@ Output artifact: a set of paste-ready SQL blocks (per-column probes + optional h
 
 ## Step 3 — Build the profile table
 
-After Michael runs the SQL (or if results are available from a prior run), format the results into this table. This is the primary output artifact for BLOCK 1:
+**Precondition:** Step 3 runs only when query results are available in the current session context (Michael pasted the output, or results came from a prior supabase-sql-magic run). If no results are present, output Step 2's SQL blocks (BLOCK 3) and pause — Step 3 runs when Michael re-invokes with the results.
+
+Format the query output into this table. This is the primary output artifact for BLOCK 1:
 
 | Column | Type | Null % | Distinct | Min | Max | Top value | Top % |
 |---|---|---|---|---|---|---|---|
@@ -192,7 +194,7 @@ For each fired flag, suggest a follow-up:
 - **Never** use `SELECT *` on the target table for the profile — generate per-column probes.
 - **Never** profile a table without first verifying it exists in `/home/user/accent-os/sql/M*.sql`.
 - **Never** report Top values for columns where every row is unique (UUIDs, timestamps) — meaningless and noisy.
-- **Never** silently skip a column. If profiling fails on a specific column (e.g. JSON type with awkward shape), flag it and continue with the others.
+- **Never** silently skip a column when profiling fails — if a column's type (e.g. `jsonb`, `tsvector`, `bytea`) cannot be handled by the generic per-column probe, output `[column]: SKIPPED — type [type] requires manual probe` and continue with the remaining columns.
 - **Never** run the profile SQL automatically — output it as paste-ready blocks. Michael runs the queries.
 - **Never** invoke WIDTH_BUCKET on a column before confirming it has at least one non-NULL value — use the per-column probe results to gate histogram generation.
 - **Never** use this skill for vendor scoring questions (that's vendor-cascade) or for filtered ad-hoc data retrieval (that's supabase-sql-magic) — redirect when the trigger is ambiguous.

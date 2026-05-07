@@ -20,7 +20,7 @@ description: >
 
 # bulk-meta-description
 
-**Purpose:** Eugene's CSV (M15) and the gmc-feed-audit output both produce lists of products that need meta descriptions. This skill generates them at scale, optimized for Accent Lighting SEO and ready for BigCommerce bulk import.
+**Purpose:** Generate SEO meta descriptions at scale from Eugene's CSV (M15) and gmc-feed-audit output, optimized for Accent Lighting SEO and formatted for BigCommerce store-cwqiwcjxes bulk import.
 
 Stolen from: Universal SEO Skill meta-tag-generation primitive + product-self-knowledge attribute-mining pattern.
 
@@ -47,10 +47,12 @@ The input is one of:
 
 If the input is ambiguous, ask once: "Source — paste IDs, /path/to/csv, or vendor name?"
 
-Output: a confirmed, deduplicated product ID list with source label, e.g.:
+Output: a confirmed, deduplicated product ID list with source label and batch ID, e.g.:
 ```
+Batch: BMD-2026-05-07-001
 Source: Eugene's CSV (M15) — 87 product IDs loaded, 3 duplicates removed → 84 to process
 ```
+The batch ID (`BMD-YYYY-MM-DD-NNN`) allows cross-referencing the REVIEW LOG in Step 5 BLOCK 2b against the source run.
 
 ---
 
@@ -67,7 +69,7 @@ FROM products
 WHERE bc_sku = ANY($1::text[]);
 ```
 
-If `products` table is missing or schema-shaped differently in `/home/user/accent-os/sql/M*.sql`, fall back to whatever attribute table exists. Flag missing fields per row.
+If the `products` table is missing or schema-shaped differently, check `/home/user/accent-os/sql/M02_core_schema.sql` for the canonical column list, then fall back to the closest matching attribute table (e.g. `product_attributes` or `bc_products`). Flag missing fields per row with the column name that was absent.
 
 ---
 
@@ -153,7 +155,7 @@ https://store-cwqiwcjxes.mybigcommerce.com/manage/products/import
 
 - **Never** generate meta descriptions outside the 145–160 character target range. If a product can't fit, regenerate with a tighter template.
 - **Never** run this skill on a product batch without first checking existing meta quality — skip rows where `current_meta_description` is already 145–160 chars and contains the brand name.
-- **Never** use clickbait language. Accent Lighting voice is informative.
-- **Never** confuse vendor with brand — they're different fields.
-- **Never** overwrite a meta that's already within length AND mentions brand — skip it as `NO_CHANGE`.
+- **Never** use superlatives or marketing filler ("best", "amazing", "must-have") — Accent Lighting product descriptions failed GMC policy review in M14 specifically because prior meta copy contained hype language that triggered disapproval.
+- **Never** use `vendor_id` as the brand field — Accent Lighting's BC product records separate `vendor_id` (fulfillment source) from `brand` (manufacturer label); conflating them produced wrong brand names in M15 batch output.
+- **Never** overwrite a meta that already passes all constraints (145–160 chars, brand name present, no hype language) — mark it `NO_CHANGE` and exclude it from the BC import CSV to prevent accidental regression.
 - **Never** invent product attributes. If a finish/lumens isn't in the data, leave it out of the description.

@@ -10,8 +10,9 @@ description: >
   re-run identically next week or next quarter without re-explaining
   context. Fires when Michael says: "save this analysis", "snapshot
   this", "I want to re-run this later", "make this re-runnable", "name
-  this query", "preserve this", "snapshot this query", "keep this one",
-  or "save it as vendor-rank-drops" (any kebab-case name). Fires automatically (with confirmation) after
+  this query", "preserve this analysis for later", "snapshot this query",
+  "turn this into a re-runnable report", or "save it as vendor-rank-drops"
+  (any kebab-case name). Fires automatically (with confirmation) after
   any vendor-cascade or supabase-sql-magic run against
   hsyjcrrazrzqngwkqsqa that produced a re-runnable result shape. Skip
   for one-time throwaway questions, code changes (use git), and docs
@@ -36,9 +37,9 @@ Run this skill when Michael says anything like:
 - "I want to re-run this later"
 - "make this re-runnable"
 - "name this query"
-- "preserve this"
+- "preserve this analysis for later"
 - "snapshot this query"
-- "keep this one"
+- "turn this into a re-runnable report"
 - "save it as vendor-rank-drops" (any kebab-case name)
 
 Fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run against `hsyjcrrazrzqngwkqsqa` where the result has re-runnable value: a recurring report shape, a diagnostic that will be needed again, or a query Michael spent time refining.
@@ -54,7 +55,7 @@ Before writing any file, verify the analysis earns a snapshot. Reject with a one
 
 When unclear, default to capturing — a slightly redundant snapshot beats losing a useful one.
 
-Output artifact: a binary PROCEED / SKIP decision with one-line rationale if SKIP.
+Output artifact: a single line — `PROCEED` or `SKIP: [reason in ≤15 words]` — printed before any file write begins.
 
 ---
 
@@ -67,7 +68,7 @@ Pull from the current conversation context:
 - **Reasoning pattern** — if Claude interpreted the result, capture the steps as bullets
 - **Output shape** — the format the result took (table, list, single number, chart spec)
 
-Output artifact: a structured component list used verbatim in Step 4. If any component is missing from context, ask Michael once — never invent a value.
+Output artifact: a labeled 5-field list (originating_prompt, parameters, query_or_cascade_input, reasoning_pattern, output_shape) — each field either filled from context or marked `ASK`. If any field is `ASK`, surface one consolidated question before proceeding to Step 3.
 
 ---
 
@@ -174,7 +175,7 @@ Output artifact: the confirmation block above plus the file path of the written 
 
 ## Anti-patterns
 
-- **Never** snapshot something that has no re-runnable value. Throwaway questions don't belong in `/home/user/accent-os/analyses/`.
+- **Never** snapshot a one-shot throwaway question (e.g. "how many rows does vendors have right now") — re-runnable value requires parameterizable inputs, not a single hardcoded answer. Throwaway questions don't belong in `/home/user/accent-os/analyses/`.
 - **Never** snapshot something that is already a feature in an AccentOS module — those have their own re-run path.
 - **Never** invent parameters. If the original run did not specify a date range, capture "no range / all-time" rather than guessing one.
 - **Never** modify the originating SQL or cascade input when snapshotting. Capture-as-is against `hsyjcrrazrzqngwkqsqa`; improvements happen on the next re-run.

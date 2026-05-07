@@ -83,3 +83,29 @@ No new changes — all Ralph findings addressed in Cycle 2
 **Stuck dimensions:** none
 
 ---
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten to single tight verb sentence | Three sentences — meta-description of Claude's blind spots, then the capability, then "this skill closes that loop" | Single sentence naming the action (run Codex), the specific gap closed (Ralph blind spots), and the safety gate type | Purpose line must be one sentence with a specific verb; three-sentence opening buries the action |
+| "Never auto-apply HIGH-risk recommendations" given AccentOS-specific consequence | Generic rationale "The whole point of the skill is the safety gate" | Names `hsyjcrrazrzqngwkqsqa` SQL rewrites and `vendor-cascade` trigger changes as the specific AccentOS failure modes | Anti-patterns must name a specific AccentOS failure mode; generic rationale doesn't anchor the risk in real consequences |
+| "Never modify files outside Step 1 review scope" expanded with AccentOS-specific scope violation example | Said "even if Codex suggests it. The scope set in Step 1 is absolute." — no named consequence | Names `references/skill-template.md` and `BUILD_INTELLIGENCE.md` as shared files Codex might suggest but must not auto-edit | New Claude session needs to know *what kind* of out-of-scope file Codex would suggest; abstract rule is under-specified |
+
+### Pass 2 — Ralph cold-read challenge
+
+CLEAN — Step 2 backend detection, Step 4 invocation paths, and Step 7 apply-mode follow-up semantics all execute unambiguously from cold read; no further changes needed.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: three-sentence meta-rationale → single action-specific verb sentence
+- Two anti-patterns: generic principles → AccentOS-specific failure modes with named components (Supabase ID, skill names, shared file paths)
+
+---

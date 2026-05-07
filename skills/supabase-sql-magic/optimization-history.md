@@ -78,3 +78,28 @@
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Trigger: "ad-hoc query for [X]" → "pull the data for [X]" | "ad-hoc query for [X]" is a near-paraphrase of "query for [X]" — different adjective, same pattern | "pull the data for [X]" captures a conversational entry point that doesn't use the word "query" | Trigger distinctness: user who says "pull" never says "ad-hoc query" — replacing covers a different vocabulary set |
+| Step 1 output artifact: generic description repeated → `TABLE → pk: [col], fk: [col→table], relevant columns: [col_list]` with purpose clause | Shape-vague — artifact description exactly restated the Step's build-instructions | Named literal format + explicit downstream use ("Used in Step 3 to validate every column reference") | Literal shape + downstream use tells a new session exactly what to produce and why |
+| Step 3 LIMIT rule: "unless aggregation" → explicit exception definition | Ambiguous — "unless aggregation" doesn't say when to omit, how many rows an aggregation returns, or what counts as "true aggregation" | "omit only when query returns a single summary row or a fixed small count" | Removes interpretation: a new session now knows exactly when LIMIT is omitted |
+
+### Pass 2 — Ralph cold-read challenge
+
+No ambiguous steps, preconditions, or missing fallbacks found — CLEAN
+
+### Net matter score change: 100 → 100 (dimension scores unchanged; sub-dimension quality improved)
+
+### Sub-dimension improvements:
+- Trigger distinctness: "ad-hoc query" (near-duplicate) replaced with vocabulary-distinct "pull the data for"
+- Step 1 output literal shape: named field format + downstream use clause specified
+- Step 3 LIMIT exception: ambiguous "unless aggregation" replaced with precise definition of when to omit
+
+---

@@ -20,7 +20,7 @@ description: >
 
 # community-skill-vet
 
-**Purpose:** As the AccentOS skill library grows, the temptation to install community skills increases. Without vetting, one bad skill could exfiltrate Supabase credentials, write to wrong paths, or introduce prompt-injection vectors. This skill is the gate.
+**Purpose:** Gate every community skill before it lands in `/home/user/accent-os/skills/` by auditing permissions, scanning for shell-injection and exfiltration patterns, and delivering a INSTALL / HOLD / REJECT verdict with one-paragraph evidence before any copy command runs.
 
 Stolen from: skill-audit (aptratcn/skill-audit) — the pre-install community-skill audit pattern.
 
@@ -35,7 +35,7 @@ Run when Michael says:
 - "review before install" / "skill audit for [name]"
 - "check this before I add it to AccentOS"
 - "community skill check for [name]"
-- "is [skill name] trustworthy"
+- "does [skill name] have any hidden permissions"
 
 ---
 
@@ -46,7 +46,7 @@ Input is one of:
 - Plugin marketplace identifier (e.g. `c-level-skills@claude-code-skills`)
 - Local path (if Michael cloned it but hasn't moved to skills/)
 
-Fetch the SKILL.md and any `references/*.md`, scripts, or assets in the same directory. If the source is a plugin, fetch the plugin manifest.
+Fetch the SKILL.md and any `references/*.md`, scripts, or assets in the same directory using WebFetch on the raw GitHub URL or local Read on the file path. If the source is a plugin marketplace identifier, use WebFetch on `https://claude-code-skills.com/plugins/[identifier]/manifest.json` (or equivalent registry URL) to retrieve the plugin manifest before any code-scan step.
 
 **Auth-required URLs:** if the candidate is in a private repo or requires GitHub auth, WebFetch will fail. Ask Michael once: "This source requires auth — paste the SKILL.md contents here." Do not attempt to vet a skill blind.
 
@@ -172,7 +172,7 @@ For REJECT:
 - **Never** verdict INSTALL on a skill that fails Step 3 with any HIGH-risk pattern unjustified — one unreviewed shell-injection vector can exfiltrate Supabase hsyjcrrazrzqngwkqsqa credentials.
 - **Never** verdict INSTALL without completing the Step 2 permissions audit. Skill-quality signals (good description, clean formatting) do not substitute for permission scope review.
 - **Never** trust a SKILL.md description alone — read every workflow step and any included scripts or reference files for hidden tool calls.
-- **Never** auto-install. Write the install command to BLOCK 4; Michael executes it against `/home/user/accent-os/skills/`.
+- **Never** auto-install — running `cp -r [source] /home/user/accent-os/skills/[name]/` without Michael's explicit confirmation brings unaudited code into the same directory tree as `hsyjcrrazrzqngwkqsqa` credentials and AccentOS session hooks; write the command to BLOCK 4 and stop.
 - **Never** REJECT without proposing the skill-forge alternative — "look into [original target]" lets Michael capture the concept safely.
 - **Never** vet a skill blind when the source requires auth — ask Michael to paste the SKILL.md once; do not guess at contents.
 - **Never** issue a HOLD verdict without listing the specific issues to resolve — "HOLD — see above" is not actionable.

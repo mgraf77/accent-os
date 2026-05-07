@@ -20,7 +20,7 @@ description: >
 
 # repo-scout
 
-**Purpose:** Find what's actually relevant, kill the noise, and deliver install-ready adaptations — all in one pass. Michael does not read. He scans and acts.
+**Purpose:** Search GitHub, MCP registries, and skill repositories, filter every candidate against the live AccentOS stack (BigCommerce store-cwqiwcjxes, Supabase hsyjcrrazrzqngwkqsqa), and return a verdict table with paste-ready install snippets — no raw lists, no README hand-offs.
 
 ---
 
@@ -53,7 +53,7 @@ Key constraints as filters:
 
 ## Step 2 — Search for candidates
 
-Run parallel web_search calls:
+Run parallel web_search calls. The queries below are the baseline set; extend with gap-specific terms pulled from the named gaps in the `project-profiles.md` loaded in Step 1:
 
 Skill/repo discovery:
 - awesome-claude-skills github 2026
@@ -178,7 +178,7 @@ For every INSTALL item:
 - **Never** suggest installing something that overlaps the current MCP stack (Notion, Supabase, GitHub, Gmail, Google Calendar, Make, Canva, Vercel, Google Drive, Indeed are already connected).
 - **Never** rate INSTALL without a customized snippet — generic install instructions that reference "your project" instead of AccentOS or store-cwqiwcjxes are not accepted.
 - **Never** surface a tool requiring more than 5 minutes of Michael's attention without pre-chewing it — summarize, extract the relevant config, and paste it ready.
-- **Never** skip the filter pass because a repo has high stars — star count is not a relevance signal for AccentOS + Accent Lighting stack fit.
+- **Never** skip the filter pass because a repo has high stars — a 10k-star generic Supabase tool that doesn't understand `store-cwqiwcjxes` product catalog context is not worth more attention than a 40-star BigCommerce-native MCP that does.
 - **Never** ask Michael to read the README — extract what he needs and present it in the verdict block.
-- **Never** run Step 2 searches without first loading the AccentOS context from `references/project-profiles.md` — blind searches produce irrelevant candidates.
+- **Never** run Step 2 searches without first loading the AccentOS context from `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` — without it, searches will surface Shopify, WooCommerce, and AWS-native tools instead of the BigCommerce + Cloudflare + vanilla-JS stack AccentOS actually runs on.
 - **Never** omit the candidate count summary line ("Candidates: X | Filtered to: Y | INSTALL: Z") — it lets Michael verify the filter pass ran correctly.

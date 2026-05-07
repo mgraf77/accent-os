@@ -22,7 +22,7 @@ description: >
 
 # vendor-onboard-checklist
 
-**Purpose:** rep-group-matchmaker closes M19 by suggesting rep_group_id, but a complete vendor record needs more (W-9, payment terms, MOQ, etc.). Without this skill, M19-resolved vendors silently ship with incomplete data.
+**Purpose:** Verify that a new AccentOS vendor's Supabase `hsyjcrrazrzqngwkqsqa` record satisfies the completeness contract — required fields, FK integrity, and cross-sibling consistency — before it goes live or after rep-group-matchmaker assigns a `rep_group_id`.
 
 Stolen from: B2B partner-onboarding workflow patterns common across Crossbeam, Allbound, Impartner, Tradogram. AccentOS-customized for the Accent Lighting vendor record contract.
 
@@ -35,6 +35,7 @@ Run when Michael says:
 - "is this vendor complete" / "vendor complete?"
 - "audit Acme Lighting record" / "audit V123 record"
 - "verify Bright Co data" / "verify this vendor data"
+- "check rep-group-matchmaker output" / "did the M19 batch leave gaps"
 
 ---
 
@@ -107,6 +108,7 @@ Status:
 For each vendor with a complete-ish record, compare against sibling vendors in the same `brand_category`:
 
 ```sql
+-- Supabase hsyjcrrazrzqngwkqsqa
 WITH sibling_norms AS (
   SELECT brand_category,
          AVG(lead_time_days) AS avg_lead,
@@ -155,7 +157,7 @@ Vendor: Acme Lighting (V123)
 [repeat per vendor]
 
 ═══ BLOCK 3: PASTE-READY SQL UPDATE STUBS ═══
--- Fill in [VALUE] then run in Supabase SQL Editor:
+-- Supabase hsyjcrrazrzqngwkqsqa — fill in [VALUE] then run in SQL Editor:
 UPDATE vendors SET payment_terms = '[Net30|Net60|COD|Wire]'
   WHERE id = 'V123';
 UPDATE vendors SET moq_dollars = [VALUE]

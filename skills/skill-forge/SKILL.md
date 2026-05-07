@@ -19,7 +19,7 @@ description: >
 
 # skill-forge
 
-**Purpose:** Take an external tool or methodology, extract its real concepts from primary sources, drop the parts that don't fit AccentOS, add the parts that are missing, and ship a usable local skill in one pass.
+**Purpose:** Extract concepts from an external tool, strip everything that doesn't fit AccentOS, and ship a committed, stress-tested SKILL.md to `/home/user/accent-os/skills/` in one uninterrupted pass.
 
 Six phases in order: **preflight → extract → assess → propose-and-approve → forge-and-ralph → log**. No phase is optional. The approve gate (Step 5) and Ralph loop (Step 8) are non-negotiable — they exist to prevent over-shipping and under-testing respectively.
 
@@ -319,7 +319,7 @@ If a Ralph iteration surfaces a class-of-issue that affects skill-forge itself (
 
 After every skill in this run has passed Step 7.5 and Step 8:
 
-1. Confirm branch (Step 0 output). If on main, create `claude/forge-[target-slug]-[8-char-rand]` first — one branch per forge run, regardless of how many skills were forged.
+1. Confirm branch (Step 0 output). If on main, create `claude/forge-[target-slug]-$(git -C /home/user/accent-os rev-parse --short=8 HEAD)` first — one branch per forge run, regardless of how many skills were forged.
 2. `git add skills/[skill-1]/ skills/[skill-2]/ ...`
 3. Commit message: `feat: forge N skills from [target] — [skill-1], [skill-2], ...`
 4. Push to the active branch (NOT main without explicit permission).
@@ -380,13 +380,13 @@ NNN is sequential. Same `prevention_rule` wording across entries is what lets th
 
 - **Never** skip the Step 5 approval gate. Building before Michael approves means producing skills he didn't sign off on.
 - **Never** skip the Step 8 Ralph loop. A skill that hasn't been stress-tested ships hidden gotchas.
-- **Never** stop at the gap analysis. Either produce proposals (Step 5) or an explicit WATCH abort with reasoning.
+- **Never** stop at the gap analysis and hand Michael a list of observations — without a Step 5 proposal block or an explicit WATCH abort, the run produces zero committed files and wastes the research phase.
 - **Never** include concepts in KEEP that don't tie to a named AccentOS gap — not even if the concept is interesting in isolation.
 - **Never** generate a skill with fewer than 3 concrete AccentOS substitutions (AccentOS, Accent Lighting, store-cwqiwcjxes, hsyjcrrazrzqngwkqsqa, vendor_scores, vendor_overrides, GMC, Klaviyo).
 - **Never** ship a skill where the description is generic enough to also fit a non-AccentOS user — every description must name AccentOS or Accent Lighting explicitly.
 - **Never** copy SKILL.md prose verbatim from the target. Forge means rewrite from concepts, not paraphrase.
-- **Never** write a skill longer than the source's docs. If it's longer, it's bloated.
-- **Never** add "Future enhancements", "Roadmap", or "TODO" sections — skills represent shipped state only.
+- **Never** write a skill longer than the source's primary docs — AccentOS SKILL.md files that exceed the source docs are padded with meta-commentary that should live in gotcha-log.md, not the skill itself.
+- **Never** add "Future enhancements", "Roadmap", or "TODO" sections — skills represent shipped state only; deferred items go to `/home/user/accent-os/skills/skill-forge/future-builds.md` per Step 5.
 - **Never** ask Michael which trigger phrases to use — mine `/home/user/accent-os/PROMPT_LOG.md`, infer from his actual phrasing.
 - **Never** auto-edit this SKILL.md from the gotcha-log without surfacing the proposed Edit in the report first.
 - **Never** push to main without explicit permission.

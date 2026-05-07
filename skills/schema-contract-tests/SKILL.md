@@ -28,7 +28,7 @@ Stolen from: dbt (generic tests: `not_null`, `unique`, `accepted_values`, `relat
 ## Trigger Recognition
 
 Run when Michael says:
-- "contract tests for [table]" / "schema tests"
+- "contract tests for [table]"
 - "data quality tests" / "dbt-style tests"
 - "test the [table] schema"
 - "lock in the [table] contract"
@@ -93,7 +93,7 @@ WHERE status NOT IN ('active', 'inactive', 'pending', 'archived');
 
 Pull enum values from `CREATE TYPE` statements in the schema files.
 
-Output artifact: a set of SQL SELECT statements (one per test class A–D) that each return `test_name, failures` — assembled into the CTE in Step 4.
+Output artifact: one SQL SELECT per test class A–D, each in the form `SELECT '[class]:[table].[column]' AS test_name, COUNT(*) AS failures FROM ...` — these are the UNION ALL arms assembled verbatim into the `all_tests` CTE in Step 4's artifact file.
 
 ---
 
@@ -201,9 +201,10 @@ Wrote: /home/user/accent-os/sql/tests/[name]_contracts.sql
 Paste into Supabase SQL Editor:
 https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new
 
-Or schedule via pg-cron nightly:
+Or schedule via pg-cron nightly (requires a test_runs table — create with
+  CREATE TABLE IF NOT EXISTS test_runs (run_at timestamptz, test_name text, failures int, status text)):
 SELECT cron.schedule('contracts-nightly', '0 3 * * *',
-  'INSERT INTO test_runs SELECT NOW(), * FROM (...)');
+  'INSERT INTO test_runs SELECT NOW(), test_name, failures, CASE WHEN failures=0 THEN ''PASS'' ELSE ''FAIL'' END FROM all_tests');
 
 ═══ BLOCK 4: SCHEMA-DRIFT NOTES ═══
 Columns referenced that don't exist in /home/user/accent-os/sql/M*.sql:
@@ -218,7 +219,7 @@ These need either: (a) the schema file updated, or (b) the test removed.
 - **Never** invent column names. Every column referenced must trace to an `M*.sql` file.
 - **Never** generate a test that mutates data (no INSERT/UPDATE/DELETE in tests).
 - **Never** generate a test that depends on data volume (test must work on empty tables — failures = 0 means PASS).
-- **Never** assert business rules without surfacing them as singular tests; never bury them in the schema as silent CHECK constraints.
+- **Never** bury AccentOS business rules (e.g. vendor_scores weight-sum-to-1, rep_group active-only FK, deal vendor must exist) as silent CHECK constraints — surface each as a named singular test so failures show in the test runner with a `test_name` label, not as a cryptic constraint violation.
 - **Never** auto-run the test SQL. Output the artifact to `/home/user/accent-os/sql/tests/`; Michael executes when ready.
 - **Never** write contract tests for a table that does not exist in `/home/user/accent-os/sql/M*.sql` — if the table is expected but missing from the schema files, flag it as a schema gap and stop.
 - **Never** reuse enum values from memory. Pull accepted values from the `CREATE TYPE` statements in the M-schema files every run — enum definitions drift.

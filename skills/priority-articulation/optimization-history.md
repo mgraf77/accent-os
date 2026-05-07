@@ -88,3 +88,28 @@ No new changes — all Ralph findings addressed in Cycle 2
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | "Bridge the gap between 'what Accent Lighting cares about' and 'what AccentOS measures'" — metaphor opener, no specific verb | "Translate vague Accent Lighting business priorities into measurable scoring rules with explicit thresholds, Supabase hsyjcrrazrzqngwkqsqa field mappings, and weights that vendor-cascade can consume directly" | Verb-first ("Translate"), names Supabase ID, names the downstream consumer (vendor-cascade) |
+| Anti-pattern 4 sharpened | "Articulating against imagined fields wastes Michael's review time" — consequence is inconvenience, not a failure mode | Added: "Rules written against imagined fields (e.g. a `gross_margin_pct` column that doesn't exist in M02) produce a vendor-cascade run that errors silently and returns all zeros for the affected dimension" | Names the specific AccentOS failure mode: silent zero-return from vendor-cascade when field doesn't exist |
+| Step 5 BLOCK 2 data field path clarified | `[Supabase /home/user/accent-os/sql/ source]` — bracket notation plus vague path pattern | `[Supabase hsyjcrrazrzqngwkqsqa — source M-file: /home/user/accent-os/sql/M__.sql]` — names the project ID and file naming convention | A new session writing the paste-in block needs the Supabase project ID and enough path specificity to locate the right M-file |
+
+### Pass 2 — Ralph cold-read challenge
+
+CLEAN — all steps are executable by a new session with no prior context. Step 1's three-source priority resolution order is unambiguous. Step 2's schema load instruction names specific file paths. Step 3–4 rule drafting and scoring are self-contained with example values.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: verb-first, Supabase project ID named, vendor-cascade as downstream consumer named
+- Anti-pattern 4: silent-zero failure mode in vendor-cascade named as the specific consequence
+- Step 5 BLOCK 2: Supabase project ID and M-file path pattern added to data field path template
+
+---
