@@ -30,10 +30,11 @@ Run when Michael says:
 - "EDA on [table]"
 - "data quality check on [table]"
 - "what's in [table]"
-- "audit [table]"
+- "profile [table]"
 - "table profile"
 - "is this data sane"
 - "feed quality check"
+- "check the shape of [table]"
 
 ---
 
@@ -42,6 +43,8 @@ Run when Michael says:
 If the target table has more than 30 columns, skip full profiling. Output the column list and ask Michael for a subset (e.g. "which columns matter for this profile?"). Proceed with only those.
 
 If Michael says "all columns" explicitly, proceed with all but warn that the output will be wide.
+
+Output artifact: a guardrail notice (if triggered) or a silent pass-through to Step 1.
 
 ---
 
@@ -54,6 +57,8 @@ The target is one of:
 - A specific column on a specific table (e.g. `vendors.gross_margin_pct`)
 
 Confirm the target exists by reading `/home/user/accent-os/sql/M*.sql`. If not found, output "Target not found in /home/user/accent-os/sql/" and stop.
+
+Output artifact: a confirmed target identifier (e.g. `vendors` → `hsyjcrrazrzqngwkqsqa.public.vendors, 12 columns`) used in Step 2 to build the profile SQL.
 
 ---
 
@@ -109,11 +114,13 @@ LIMIT 10;
 
 If the target is a query result (not a table), generate the same probes against a CTE wrapping the query.
 
+Output artifact: a set of paste-ready SQL blocks (per-column probes + optional histograms + optional top-10s) delivered in BLOCK 3 of Step 5.
+
 ---
 
 ## Step 3 — Build the profile table
 
-After Michael runs the SQL (or if results are available from a prior run), format:
+After Michael runs the SQL (or if results are available from a prior run), format the results into this table. This is the primary output artifact for BLOCK 1:
 
 | Column | Type | Null % | Distinct | Min | Max | Top value | Top % |
 |---|---|---|---|---|---|---|---|
@@ -140,7 +147,7 @@ If `total_rows > 0`, proceed with per-column checks. For each column, run these 
 | **EMPTY** | total_rows = 0 |
 | **NULL_DROP** | null_pct > 10% on a column that should rarely be null (id, name, status) |
 
-Output:
+Output artifact: an OUTLIER FLAGS block delivered in BLOCK 2 of Step 5:
 
 ```
 OUTLIER FLAGS
@@ -157,6 +164,8 @@ If no flags fire, output: "No outlier flags. Data shape looks clean."
 
 ## Step 5 — Output
 
+Output artifact: four blocks printed in-session — PROFILE TABLE, OUTLIER FLAGS, PROFILE SQL (paste-ready for `hsyjcrrazrzqngwkqsqa`), and NEXT-STEP HINTS.
+
 ```
 ═══ BLOCK 1: PROFILE TABLE ═══
 [full Step 3 table]
@@ -172,7 +181,7 @@ If no flags fire, output: "No outlier flags. Data shape looks clean."
 ═══ BLOCK 4: NEXT-STEP HINTS ═══
 For each fired flag, suggest a follow-up:
   - HIGH_NULL on [col] → check the writer module at js/[module].js
-  - HEAVY_SKEW on [col] → evaluate whether this should be split into multiple columns or treated as a derived flag
+  - HEAVY_SKEW on [col] → split the column into multiple or promote it to a derived flag in vendor-cascade
   - NULL_DROP on [col] → vendor-cascade or vendor-clarity-test would surface affected rows
 ```
 

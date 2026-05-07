@@ -42,7 +42,10 @@ Run when Michael says:
 
 Fire automatically (with confirmation) after any commit that modifies `/home/user/accent-os/KPI_CATALOG.md` or any `/home/user/accent-os/sql/M*.sql` — the audit results may change.
 
-**Recommended cadence:** Run on demand whenever an M-task lands (schema or integration), and at minimum monthly to detect drift between catalog state and live schema. Coverage trend (% computable today) is the headline metric to watch — it should rise as M-tasks complete.
+**Recommended cadence:**
+- Run on demand whenever an M-task lands (schema or integration)
+- Run at minimum monthly to detect drift between catalog state and live schema
+- Watch coverage trend (% computable today) as the headline metric — it rises as M-tasks complete
 
 ---
 
@@ -54,7 +57,7 @@ Fire automatically (with confirmation) after any commit that modifies `/home/use
 - Integration availability flags (which M-tasks have landed)
 
 **Out of scope — fail fast:**
-- KPI catalog missing → "KPI_CATALOG.md not found at /home/user/accent-os/KPI_CATALOG.md. Commit it first OR pass an alternative path: 'audit data using [path]'"
+- KPI catalog missing → "KPI_CATALOG.md not found at /home/user/accent-os/KPI_CATALOG.md. Commit it first OR pass an alternative path: 'audit data using path/to/catalog.md'"
 - Auditing against a SQL file outside `/home/user/accent-os/sql/` → "Schema files must live under /home/user/accent-os/sql/ to be audited"
 
 ---
@@ -70,7 +73,7 @@ Detect from Michael's prompt:
 | `snapshot` keyword | implies snapshot intent | Step 8 enabled, with `--full` auto-applied |
 | (none of the above) | full-catalog audit, top-10 default | standard run |
 
-Output the parsed mode at the top of the report so the run is reproducible.
+Output artifact: a one-line mode header at the top of the final BLOCK 1 report, e.g. `Mode: full-catalog | scoped(F3) | snapshot`. This makes the run reproducible.
 
 ## Step 1 — Locate the catalog and schema sources
 
@@ -82,6 +85,8 @@ Read in parallel:
 4. `/home/user/accent-os/BUILD_PLAN_MICHAEL.md` — for M-task status (which credentials/integrations are pending)
 
 If catalog is missing, abort with the scope-fail message above. If a schema file is unreadable, log the file and continue with what's available.
+
+Output artifact: a source inventory — catalog KPI count, M-file list with table counts, integration source list — printed as the preamble to BLOCK 1.
 
 ---
 
@@ -104,7 +109,7 @@ Source types and how to detect:
 
 Use the explicit ⚠ markers in the catalog as a strong hint that a variable is missing. Verify independently — never trust the marker blindly.
 
-Output of Step 2: a list of `(kpi_id, source_type, descriptor)` tuples — typically 200–400 across the full catalog — plus a separate list of `AMBIGUOUS_FORMULA` KPIs needing catalog refinement.
+Output artifact: a list of `(kpi_id, source_type, descriptor)` tuples — typically 200–400 across the full catalog — plus a separate list of `AMBIGUOUS_FORMULA` KPIs needing catalog refinement.
 
 ---
 
@@ -121,9 +126,9 @@ Parsing rules:
 
 **Parser limitations.** Pure regex/awk parsing handles the common cases but can miss: columns inside multi-line generated/computed expressions, columns added via complex `ALTER`s with conditionals, columns inside `IF NOT EXISTS` blocks that depend on runtime checks. If a KPI's expected table appears in the schema but the specific column isn't found, output a `SCHEMA_PARSE_UNCERTAIN` flag for that variable rather than declaring MISSING — Michael spot-checks these manually.
 
-Output: a flat HAVE-set like `{(vendors, id), (vendors, name), (deals, vendor_id), ...}`.
+Output artifact: a flat HAVE-set like `{(vendors, id), (vendors, name), (deals, vendor_id), ...}`.
 
-If a table is referenced but no `CREATE TABLE` is found (e.g. it's expected from another source), mark as `MISSING_TABLE`.
+Mark any referenced table with no `CREATE TABLE` block as `MISSING_TABLE`.
 
 ---
 
@@ -141,7 +146,7 @@ Map each integration to a known/unknown state by reading:
 - `skills/repo-scout/references/project-profiles.md` → "Currently Connected MCPs"
 - `.claude/settings.local.json` → for env-var-gated integrations (e.g. `OPENAI_API_KEY`)
 
-Output: a flag dictionary like `{bigcommerce_api: false, gmc_api: false, ga4: false, klaviyo: false, windward: false, supabase_basic: true, ...}`.
+Output artifact: a flag dictionary like `{bigcommerce_api: false, gmc_api: false, ga4: false, klaviyo: false, windward: false, supabase_basic: true, ...}`.
 
 ---
 
@@ -163,6 +168,8 @@ Per-KPI status:
 - **BLOCKED** — primary variable(s) MISSING
 - **DERIVED_DEPENDENT** — itself derived; status equals worst of its upstream KPIs
 - **AMBIGUOUS_FORMULA** — flagged in Step 2; cannot be audited until catalog refines
+
+Output artifact: a per-KPI status list, e.g. `F1: COMPUTABLE_TODAY | F3: BLOCKED(products.cost) | F8: BLOCKED(invoices table) | F11: DERIVED_DEPENDENT` — consumed by Step 7 BLOCK 2 and BLOCK 3.
 
 ---
 
@@ -217,6 +224,8 @@ For each remediation block, also output the M-task line that should land in `BUI
 ```
 - [ ] **MNN** — Add [schema] (unblocks: F3, F4, F5, P4, P5, P10, H2, S-OS12)
 ```
+
+Output artifact: a set of remediation blocks (one per MISSING or CONFIRMED_GAP variable), plus M-task paste-ready lines — assembled into BLOCK 4 and BLOCK 5 of Step 7.
 
 ---
 
@@ -288,15 +297,19 @@ sprint is possible, this is the order:
 
 If everything is HAVE (catalog fully covered), output: "All 152 KPIs are computable against the current schema and integrations. No remediation needed."
 
+Output artifact: the 6-block report above, printed in-session. When Michael appends `snapshot`, this becomes the input to the analysis-snapshot skill.
+
 ---
 
 ## Step 8 — Optional: log a run snapshot
 
-When Michael runs this skill periodically, the audit results form a trend: "% of catalog computable today" should rise over time as M-tasks land.
+Run this skill periodically to build a trend: "% of catalog computable today" rises over time as M-tasks land.
 
 If `/home/user/accent-os/analyses/` exists, suggest in BLOCK 6: "Run `analysis-snapshot` on this audit to track coverage trend over time. **Use `audit data --full` first** so the snapshot captures the complete remediation list, not just the top-10 — top-10 is for human-scan, full is for trend tracking."
 
 Never auto-snapshot — Michael decides which audits are worth preserving.
+
+Output artifact: a one-line suggestion appended to BLOCK 6 when `/home/user/accent-os/analyses/` exists.
 
 ---
 

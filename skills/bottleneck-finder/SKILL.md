@@ -1,28 +1,25 @@
 ---
 name: bottleneck-finder
 description: >
-  Read AccentOS planning state (BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md,
-  WORK_IN_PROGRESS.md, PROMPT_QUEUE.md) and identify the single track or
-  M-task whose completion would unblock the most downstream work.
-  Applies Theory of Constraints: identify the constraint, surface 2 ways
-  to exploit before investing in elevation, and rank candidates by
-  unblock-count × leverage. Use this skill when Michael says: "what's
-  the bottleneck", "what should I work on next", "what unblocks the
-  most", "TOC analysis", "find the constraint", "where's the build
-  stuck", or any phrasing that asks for build-prioritization advice
-  on the autonomous AccentOS work. Do not use for vendor scoring
-  prioritization (that's vendor-cascade) or for code-level performance
-  bottlenecks (different concern). Always produces a named bottleneck +
-  exploit options + rank table — never returns prose-only.
-  Always names the constraint before proposing exploits — never
-  returns "wait for Michael" as the only option.
+  Read AccentOS planning state at /home/user/accent-os/ (BUILD_PLAN_CLAUDE.md,
+  BUILD_PLAN_MICHAEL.md, WORK_IN_PROGRESS.md, PROMPT_QUEUE.md) and identify
+  the single track or M-task whose completion would unblock the most
+  downstream work. Applies Theory of Constraints: identify the constraint,
+  surface 2 ways to exploit before investing in elevation, and rank
+  candidates by unblock-count × cascading leverage. Use this skill when
+  Michael says: "what's the bottleneck", "what should I work on next",
+  "what unblocks the most", "TOC analysis", "find the constraint", "where's
+  the build stuck", "leverage analysis", or any phrasing that asks for
+  build-prioritization advice on the AccentOS autonomous build. Do not use
+  for vendor scoring prioritization (that's vendor-cascade) or code-level
+  performance bottlenecks (different concern). Always produces a named
+  constraint + leverage rank table + exploit options — never returns
+  prose-only, never returns "wait for Michael" as the sole output.
 ---
 
 # bottleneck-finder
 
-**Purpose:** AccentOS has 22 pending M-tasks and 10 open tracks. "Build the lowest [ ]" is not a strategy. This skill applies Theory of Constraints to identify which single thing, if unblocked, opens the most downstream work — and proposes how to exploit the constraint before investing in elevation.
-
-Origin: Factory-Floor TOC (identify, exploit, subordinate, elevate, repeat).
+**Purpose:** AccentOS has 22 pending M-tasks and 10 open tracks. "Build the lowest [ ]" is not a strategy. This skill applies Theory of Constraints to identify which single thing, if unblocked, opens the most downstream work — and proposes how to exploit the constraint before investing in elevation. Always names the constraint with a leverage score before proposing exploits — never returns "wait for Michael" as the sole output.
 
 ---
 
@@ -34,6 +31,7 @@ Run when Michael says:
 - "what unblocks the most"
 - "TOC analysis"
 - "where's the build stuck"
+- "leverage analysis" / "priority analysis"
 
 ---
 
@@ -149,8 +147,10 @@ Open tracks: [N]   Open M-tasks: [N]   WIP: [from WORK_IN_PROGRESS]
 
 ## Anti-patterns
 
-- **Never** suggest "elevate" before exhausting "exploit." TOC core principle.
-- **Never** treat low-leverage tasks (leaves) as valid build targets when high-leverage ones exist.
-- **Never** propose a constraint without naming exploit options. "Wait for Michael" is not an exploit.
-- **Never** rank by [ ] count alone — leverage matters more than raw blocker count.
-- **Never** ignore PROMPT_QUEUE.md — Michael-queued items are signal about what he thinks is the constraint.
+- **Never** suggest "elevate" before exhausting "exploit." TOC core principle — exploit the constraint with existing resources first.
+- **Never** treat low-leverage leaf tasks as valid build targets when high-leverage constrained tasks exist.
+- **Never** propose a constraint without naming at least one exploit option. When no genuine exploit exists, output `elevation_only: true` and name the required external action explicitly.
+- **Never** rank by [ ] count alone — leverage (cascading unblock depth) matters more than raw blocker count.
+- **Never** ignore /home/user/accent-os/PROMPT_QUEUE.md — Michael-queued items are direct signal about what he considers the constraint.
+- **Never** fabricate exploit options to fill the format. A weak exploit ("ask the vendor for their CSV again") stated as a real option poisons the analysis.
+- **Never** run leverage computation without cycle detection. Log cycle_warning entries before truncating DFS — hidden cycles produce infinite leverage scores.

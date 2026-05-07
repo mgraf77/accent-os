@@ -20,18 +20,15 @@ description: >
   "drain the prompt queue", "work through the build plan". Do not use
   for one-off tasks (just execute), for tasks needing owner approval
   mid-flow, or for any external-API call with billing implications
-  without explicit pre-approval. Always writes mode state + scope +
-  exit criteria to disk before beginning — never starts autonomously
-  without a recorded plan. Always writes mode state + scope +
-  exit criteria before beginning any work — never executes
-  autonomously without a recorded, disk-persisted plan.
+  without explicit pre-approval. Always writes
+  /home/user/accent-os/.claude/autonomous_mode.json with scope and exit
+  criteria before touching any code — never executes autonomously without
+  a disk-persisted, timestamped plan.
 ---
 
 # autonomous-mode
 
-**Purpose:** Let Michael walk away with a clear directive and have AccentOS keep building until the directive's exit condition triggers — without losing state, without overspending tokens, without making owner-only calls in his absence.
-
-Origin: Anthropic's "agent loop" pattern + Claude Code's existing PROMPT_QUEUE convention. AccentOS-customized for solo-build resilience and explicit exit criteria.
+**Purpose:** Let Michael walk away with a clear directive and have AccentOS keep building until the directive's exit condition triggers — without losing state, without overspending tokens, without making owner-only calls in his absence. Always writes a timestamped state file before touching any code — never runs blind.
 
 ---
 
@@ -248,10 +245,11 @@ Going dark. Will surface a summary in SESSION_LOG.md on exit.
 
 ## Anti-patterns
 
-- **Never** start autonomous work without writing the mode-state file. The file IS the directive.
-- **Never** silently extend the time_bound. If a soft cap is hit, stop — let Michael decide whether to extend.
-- **Never** push to main if the soft cap is hit mid-commit. Finish the current commit on its branch, then stop. Don't leave half-finished work on main.
-- **Never** make billing-implication external-API calls in autonomous mode without prior approval. Codex-review's LOW-risk auto-apply costs cents per invocation; that's pre-approved. New API costs require Michael present.
-- **Never** auto-rebase or auto-resolve merge conflicts in autonomous mode. Stop, flag, await Michael.
-- **Never** delete autonomous_mode.json on exit. Leave it as audit trail.
-- **Never** treat WORK_IN_PROGRESS.md as a queue — it's a resume-point indicator. The queue is PROMPT_QUEUE.md.
+- **Never** start autonomous work without writing /home/user/accent-os/.claude/autonomous_mode.json first. The file IS the directive; missing it means no record of scope exists.
+- **Never** silently extend the time_bound. When a soft cap hits, stop and let Michael decide whether to extend.
+- **Never** push to main when the soft cap fires mid-commit. Finish the current commit on its branch, then stop — no half-finished work on main.
+- **Never** make billing-implication external-API calls in autonomous mode without prior approval. Codex-review LOW-risk auto-apply is pre-approved; every new API integration requires Michael present.
+- **Never** auto-rebase or auto-resolve merge conflicts in autonomous mode. Stop, flag the conflict in SESSION_LOG.md, and await Michael.
+- **Never** delete autonomous_mode.json on exit. Leave it as audit trail; the next autonomous-mode run overwrites it.
+- **Never** treat WORK_IN_PROGRESS.md as a queue — it is a resume-point indicator only. The queue lives in /home/user/accent-os/PROMPT_QUEUE.md.
+- **Never** execute a needs-Michael task (schema migration against Supabase hsyjcrrazrzqngwkqsqa, BC store-cwqiwcjxes config, force-push to main) autonomously — halt with a BLOCKED notice and preserve state.

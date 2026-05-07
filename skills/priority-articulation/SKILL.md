@@ -7,9 +7,9 @@ description: >
   hsyjcrrazrzqngwkqsqa data field mappings. The output feeds directly into
   vendor-cascade as the "priorities" input and into project-profiles.md as
   a paste-in. Use this skill when Michael says: "articulate this priority",
-  "make this measurable", "what would [priority] mean numerically", "turn
-  this into a rule", "how do I score for [X]", "translate [priority] into
-  weights", "operationalize [X]", or any phrasing that asks to convert a
+  "make this measurable", "what would this priority mean numerically", "turn
+  this into a rule", "how do I score for this", "translate this priority into
+  weights", "operationalize this", or any phrasing that asks to convert a
   qualitative AccentOS or Accent Lighting business priority into a
   quantitative rule. Do not use this skill to design new vendors, modify
   scoring weights of existing rules, or trace existing scores (that's
@@ -28,13 +28,13 @@ Stolen from: the strategy-articulation concept in `alirezarezvani/claude-skills`
 ## Trigger Recognition
 
 Run when Michael says:
-- "articulate [priority]"
-- "make [X] measurable"
+- "articulate this priority" / "articulate ..." (any priority name)
+- "make ... measurable" (any metric or goal)
 - "turn this into a rule"
-- "how do I score for [X]"
-- "what would [priority] mean numerically"
-- "operationalize [X]"
-- "translate [priority] into weights"
+- "how do I score for ..." (any dimension)
+- "what would ... mean numerically" (any priority statement)
+- "operationalize ..." (any goal)
+- "translate ... into weights" (any priority)
 
 ---
 
@@ -79,7 +79,7 @@ Candidate measurement fields:
 - inventory.fill_rate_30d         (M22)   — proxy for stockout pressure
 ```
 
-If no fields measure the priority, flag "No measurement coverage in current schema" and propose what'd need to be added (a new column or join).
+If no fields measure the priority, flag "No measurement coverage in current schema" and stop — schema additions are M-task work, not part of this skill's scope.
 
 ---
 
@@ -96,7 +96,7 @@ weight in P[n]   : [0.0–1.0]
 data freshness   : [how often this updates — daily, on order, manual]
 ```
 
-Aim for 1–3 rules per priority, ranked by:
+Propose 1–3 rules per priority, ranked by:
 1. **Defensibility** — would Michael agree this measures the priority?
 2. **Computability** — can it be calculated from existing data without new joins?
 3. **Stability** — does the threshold need re-tuning every week?
@@ -146,3 +146,4 @@ Recommended primary: [name]   |   Recommended backup: [name]
 - **Never** modify vendor_scores or vendor_overrides directly. This skill produces rule specs that vendor-cascade then consumes.
 - **Never** skip the Supabase schema read. Articulating against imagined fields wastes Michael's review time.
 - **Never** produce more than 3 rules per priority. Picking 1 primary + 1 backup is the deliverable; offering 7 alternatives shifts the decision burden onto Michael.
+- **Never** output a rule that references a field not present in the currently loaded M-file schema — verify each `table.column` exists before writing it into the rule spec.

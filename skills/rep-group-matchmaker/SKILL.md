@@ -8,7 +8,7 @@ description: >
   vendor_id, suggested_rep_group_id, confidence_score (0–1), and the
   top 3 evidence reasons. Use this skill when Michael says: "match
   unassigned vendors", "M19 batch", "rep group matchmaker", "assign
-  rep groups", "find rep group for [vendor]", "257 vendors", or any
+  rep groups", "find rep group for Acme Lighting", "257 vendors", or any
   phrasing that asks to populate the rep_group_id field on vendors.
   Do not use to override existing assignments — this skill only
   proposes for vendors where rep_group_id IS NULL. Always produces a
@@ -29,7 +29,7 @@ Stolen from: clustering / similarity-matching primitives common across SegmentSt
 Run when Michael says:
 - "match unassigned vendors" / "M19 batch"
 - "rep group matchmaker" / "assign rep groups"
-- "find rep group for [vendor name]"
+- "find rep group for Acme Lighting" / "find rep group for V123"
 - "257 vendors" (or current unassigned count)
 
 ---
@@ -46,7 +46,13 @@ ORDER BY revenue_tier DESC NULLS LAST, name;
 
 If the schema differs in `/home/user/accent-os/sql/M02_core_schema.sql`, adapt to actual column names and flag any missing fields.
 
-Confirm count vs. M19's stated 257 — if the count drifted, note it.
+Confirm count vs. M19's stated 257. Output before proceeding:
+
+```
+UNASSIGNED SET: 243 vendors (M19 baseline: 257 — 14 assigned since last run)
+```
+
+If the count drifted, note the direction (reduction = progress, increase = new vendors added without rep group).
 
 ---
 
@@ -75,7 +81,17 @@ For each rep_group, compute its "fingerprint" from assigned vendors:
 | **price_tier_distribution** | Count per tier (entry / mid / premium / luxury) |
 | **hq_state_cluster** | Modal state(s) of assigned vendors' HQ |
 
-This is the fingerprint each unassigned vendor will be matched against.
+Output one fingerprint block per rep_group:
+
+```
+REP GROUP FINGERPRINT — RG045 "Northeast Lighting Reps"
+  dominant_categories:    Pendants (62%), Chandeliers (24%), Flush Mount (14%)
+  regions_covered:        NE, MW (stated); NE (assigned vendors)
+  price_tier_distribution: entry=3, mid=18, premium=7, luxury=2
+  hq_state_cluster:       NY (modal), NJ (secondary)
+```
+
+These fingerprints drive Step 4 scoring.
 
 ---
 
@@ -155,3 +171,4 @@ For each vendor missing both brand_category AND region:
 - **Never** suggest a rep_group with confidence < 0.50 — flag as LOW for manual review.
 - **Never** ignore the state_proximity dimension — geography matters in B2B distribution.
 - **Never** invent rep_groups. If LOW confidence, suggest "consider creating new group" rather than picking a wrong one.
+- **Never** skip the INSUFFICIENT_DATA block (BLOCK 5) — vendors missing both `brand_category` and `region` in Supabase `hsyjcrrazrzqngwkqsqa` are silently excluded from scoring, and omitting them from the output hides the true M19 completion gap from Michael.

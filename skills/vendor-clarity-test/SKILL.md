@@ -18,7 +18,7 @@ description: >
 
 # vendor-clarity-test
 
-**Purpose:** A vendor's score should make sense from three angles — the math (`vendor_scores`), the human notes (`vendor_overrides`), and the stated business priority (`project-profiles.md`). When those three disagree on what's actually driving a vendor's rank, scoring drifts. This is the diagnostic.
+**Purpose:** A vendor's score must align across three angles — the math (`vendor_scores`), the human notes (`vendor_overrides`), and the stated business priority (`project-profiles.md`). When those three disagree on what's actually driving a vendor's rank, scoring drifts. This is the diagnostic.
 
 Stolen from: Cascade `strategic-alignment` "5-people-from-5-teams test." Rebuilt: instead of asking 5 people what the priority is, ask 5 vendors what their score is built on.
 
@@ -33,6 +33,7 @@ Run when Michael says:
 - "do my vendors agree"
 - "scoring sanity check"
 - "are scores explainable"
+- "spot-check vendor scores"
 
 Fire also as a sanity gate after any priority-articulation or vendor-cascade run that adjusted weights.
 
@@ -125,14 +126,14 @@ Overall verdict:
   - ≤3/5 ✓ OR any ✗ → INVESTIGATE — likely scoring weights need re-articulation
 
 ═══ BLOCK 3: NEXT-STEP RECOMMENDATIONS ═══
-For each ⚠ or ✗ row:
-  - Suggested next skill to run (priority-articulation if math/priority drift,
-    vendor-cascade for full trace, or write-an-override for missing notes)
+V456 — Bright Co (✗ drift):  run vendor-cascade → trace M7 vs P1 weight conflict
+V789 — Lumen (⚠ partial):    run write-an-override → missing notes for M2/GMC
+(one line per ⚠ or ✗ vendor; format: Vendor — classification: skill-name → reason)
 
 ═══ BLOCK 4: SCHEMA GAPS (if any) ═══
-List any fields referenced in View B (vendor_overrides) that are absent from
-/home/user/accent-os/sql/M*.sql — one line per missing column.
-If no gaps, omit this block.
+vendor_overrides.override_reason — missing from /home/user/accent-os/sql/M*.sql (View B blocked)
+vendor_overrides.set_by          — missing from /home/user/accent-os/sql/M*.sql (View B blocked)
+(one line per missing column; omit this block entirely if no gaps)
 ```
 
 ---
@@ -144,3 +145,4 @@ If no gaps, omit this block.
 - **Never** auto-fix scoring weights from this skill. The job is detection, not remediation.
 - **Never** sample the same 5 vendors twice in a row when running periodically — random-seed each invocation so coverage rotates.
 - **Never** conflate priority drift with override-staleness. They're different problems with different fixes.
+- **Never** run this skill if `vendor_scores` is empty for all sampled vendors — redirect to vendor-cascade or the AccentOS scoring engine first; do not produce a clarity table on phantom data.

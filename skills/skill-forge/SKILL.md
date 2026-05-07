@@ -86,7 +86,11 @@ If the target is ambiguous, pick the highest-likelihood match given AccentOS con
 
 ### Step 1.5 — Pattern vs. product check
 
-The target Michael named may be the *wrapper* around a pattern, not the pattern itself. If the surface framing fails Step 4 (KEEP < 3), retry exactly once with the target re-framed as the underlying pattern (e.g. Cascade-the-board-reporting-tool → cascade-the-mechanic). Document the re-frame in Step 0's preflight note. Do not retry twice — if the re-framed target still fails, abort to WATCH.
+The target Michael named may be the *wrapper* around a pattern, not the pattern itself.
+
+- If the surface framing fails Step 4 (KEEP < 3), retry exactly once: re-frame the target as the underlying pattern (e.g. Cascade-the-board-reporting-tool → cascade-the-mechanic).
+- Document the re-frame in Step 0's preflight note.
+- Do not retry twice — if the re-framed target still fails Step 4, abort to WATCH.
 
 ---
 
@@ -172,7 +176,7 @@ For each STOLEN concept, classify:
 
 **Decision gate:**
 - STEAL ≥ 1 standalone → proceed to Step 5 (proposals + approval gate). **Do not start designing or building yet.**
-- STEAL = 0 after re-frame → output WATCH and stop. Log gotcha with `outcome: aborted_to_watch`. WATCH should be **rare** — most non-trivial targets have at least one stealable concept.
+- STEAL = 0 after re-frame → output WATCH and stop. Log gotcha with `outcome: aborted_to_watch`. WATCH is **rare** — most non-trivial targets have at least one stealable concept.
 
 **Step 4's output is a candidate list, not a build manifest.** The candidates go through Michael's approval gate in Step 5 before any file is written.
 

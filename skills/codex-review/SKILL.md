@@ -35,6 +35,9 @@ Run when Michael says:
 - "have codex check this" / "second-opinion on [target]"
 - "peer review the last commit" / "review what we just did"
 - "cross-review" / "cross-agent review"
+- "another set of eyes on [skill/file/branch]"
+- "what did we miss in [skill/file]"
+- "sanity check the last commit"
 
 Also fire automatically (with confirmation) at the end of any skill-forge run that produced ≥3 forged skills — the cross-review payoff is highest on multi-skill batches.
 
@@ -269,11 +272,13 @@ If everything was clean (Codex returned 0 recommendations OR all were schema-rej
 
 ## Anti-patterns
 
-- **Never** auto-apply HIGH-risk recommendations. The whole point of the skill is the safety gate.
-- **Never** auto-apply a LOW recommendation whose `old_string` isn't unique in the target file. Demote, don't guess.
-- **Never** apply a recommendation that touches YAML frontmatter (lines 1 through the second `---`). Frontmatter contains trigger phrases — too important to auto-edit.
-- **Never** invoke Codex on >10 files in one call. Split into batches of ≤10.
-- **Never** include Codex's verbatim text in commit messages — paraphrase. Avoids ToS questions on derivative content.
-- **Never** trust Codex's recommendation when its `old_string` and `new_string` are semantically identical (e.g. just whitespace differences) — reject as no-op in Step 5.
-- **Never** modify files outside the Step 1 review scope, even if Codex suggests it. Scope is scope.
-- **Never** auto-revert a Step 6 edit silently — if Step 7.5 validation fails post-edit, log the revert in BLOCK 2 explicitly so Michael sees what happened.
+- **Never** auto-apply HIGH-risk recommendations. The whole point of the skill is the safety gate — behavioral changes, SQL rewrites, and trigger phrase edits always surface to Michael first.
+- **Never** auto-apply a LOW recommendation whose `old_string` isn't unique in the target file. Demote to PROPOSE with reason "ambiguous anchor — needs manual review."
+- **Never** apply a recommendation that touches YAML frontmatter (lines 1 through the second `---`). Frontmatter contains trigger phrases and descriptions — too load-bearing to auto-edit.
+- **Never** invoke Codex on more than 10 files in one call — split into batches of ≤10 and merge recommendations in the report.
+- **Never** include Codex's verbatim output text in commit messages — paraphrase. Avoids ToS questions on derivative content from the OpenAI API.
+- **Never** trust a Codex recommendation when `old_string` and `new_string` are semantically identical (e.g. whitespace-only differences) — reject as no-op in Step 5.
+- **Never** modify files outside the Step 1 review scope, even if Codex suggests it. The scope set in Step 1 is absolute.
+- **Never** auto-revert a Step 6 edit silently — log every revert in BLOCK 2 explicitly so Michael sees what failed Step 7.5 validation and why.
+- **Never** run codex-review on an empty diff — confirm the Step 1 target resolves to at least one changed file before invoking Codex.
+- **Never** skip the Step 5 schema validation pass — unvalidated Codex output can contain file paths outside the review scope or risk values outside the allowed enum.

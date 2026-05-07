@@ -8,9 +8,9 @@ description: >
   description: 145–160 characters, primary keyword first, brand and
   category mention, action verb. Outputs a CSV ready for BigCommerce
   store-cwqiwcjxes bulk import. Use this skill when Michael says:
-  "generate meta descriptions", "bulk meta", "write meta for [product
-  list]", "Eugene's CSV is ready", "fill in meta descriptions",
-  "M15 batch", "do meta descriptions for [vendor]", or any phrasing
+  "generate meta descriptions", "bulk meta", "write meta for" plus any
+  product list, "Eugene's CSV is ready", "fill in meta descriptions",
+  "M15 batch", "do meta descriptions for" plus any vendor name, or any phrasing
   that asks for batch SEO meta description generation. Do not use for
   product titles (separate skill) or for full product descriptions
   (use product-self-knowledge instead). Always produces a CSV with
@@ -30,9 +30,9 @@ Stolen from: Universal SEO Skill meta-tag-generation primitive + product-self-kn
 
 Run when Michael says:
 - "generate meta descriptions" / "bulk meta"
-- "write meta for [product list]"
+- "write meta for ..." (any product list or SKU range)
 - "Eugene's CSV is ready" / "M15 batch"
-- "do meta descriptions for [vendor name]"
+- "do meta descriptions for ..." (any vendor name)
 - "fill in meta descriptions"
 
 ---
@@ -46,6 +46,11 @@ The input is one of:
 - Vendor name (resolves to all that vendor's BC products)
 
 If the input is ambiguous, ask once: "Source — paste IDs, /path/to/csv, or vendor name?"
+
+Output: a confirmed, deduplicated product ID list with source label, e.g.:
+```
+Source: Eugene's CSV (M15) — 87 product IDs loaded, 3 duplicates removed → 84 to process
+```
 
 ---
 
@@ -94,7 +99,7 @@ If a product has too few attributes (< 2) for a quality description, flag it as 
 ## Step 4 — Validate per row
 
 Per generated description, check:
-1. **Char count** in [145, 160] — if outside, regenerate with template variant
+1. **Char count** must land in 145–160 — if outside, regenerate with template variant
 2. **No HTML / weird unicode** — strip if present
 3. **No duplicate from existing meta** — if `current_meta_description` matches generated, mark `NO_CHANGE` (skip row)
 4. **No vendor name confused with brand** — vendor (e.g. "Acme Lighting Co.") is not the same as brand
@@ -133,8 +138,9 @@ product_id,sku,current_meta,new_meta,char_count,status
 ...
 
 ═══ BLOCK 3: FLAGGED ROWS ═══
-For each INSUFFICIENT_DATA row:
-  - sku, what attribute is missing, what to add upstream
+sku,missing_attribute,upstream_action
+ACME-007,finish,"Add finish field in BC product editor → save → re-run"
+MFG-099,lumens + dimensions,"Request spec sheet from vendor; add to product attributes"
 
 ═══ BLOCK 4: PASTE TARGET ═══
 BC bulk product import:
@@ -145,7 +151,8 @@ https://store-cwqiwcjxes.mybigcommerce.com/manage/products/import
 
 ## Anti-patterns
 
-- **Never** generate meta descriptions outside [145, 160] chars. If a product can't fit, regenerate with a tighter template.
+- **Never** generate meta descriptions outside the 145–160 character target range. If a product can't fit, regenerate with a tighter template.
+- **Never** run this skill on a product batch without first checking existing meta quality — skip rows where `current_meta_description` is already 145–160 chars and contains the brand name.
 - **Never** use clickbait language. Accent Lighting voice is informative.
 - **Never** confuse vendor with brand — they're different fields.
 - **Never** overwrite a meta that's already within length AND mentions brand — skip it as `NO_CHANGE`.

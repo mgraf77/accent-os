@@ -30,9 +30,7 @@ description: >
 
 # prompt-queue
 
-**Purpose:** Michael keeps a notes app full of prompts he wants to send "later." Pasting them mid-session derails current work; forgetting them loses signal. This skill gives Claude Code a persistent prompt-stack that survives session boundaries, supports priority reordering, and auto-pulls the next item when the current session completes.
-
-Origin: Anthropic Agent Skills compounding execution pattern + the existing PROMPT_QUEUE.md AccentOS convention. Formalizes operations and expands the storage format to support priority + structured fields.
+**Purpose:** Michael keeps a notes app full of prompts he wants to send "later." Pasting them mid-session derails current work; forgetting them loses signal. This skill gives Claude Code a persistent prompt-stack at /home/user/accent-os/PROMPT_QUEUE.md that survives session boundaries, supports priority reordering, and surfaces the next item at natural completion points — without auto-executing.
 
 ---
 
@@ -413,11 +411,12 @@ Do not auto-execute without explicit confirmation. The "I don't want to interrup
 
 ## Anti-patterns
 
-- **Never** auto-execute a queued prompt without explicit Michael trigger. The whole point is non-interruption — including non-surprise execution.
-- **Never** drop the COMPLETED graveyard. It's audit + searchable history.
-- **Never** delete IN PROGRESS rows on session interrupt. Leave them; next session sees "this was running, what happened?"
-- **Never** modify the prompt_text of a queued item. If Michael wants to edit a prompt, he removes + re-adds.
-- **Never** queue a prompt that's already in IN PROGRESS or recently COMPLETED (within 24h, >80% text match) without flagging the duplicate.
-- **Never** hold queue state in memory. Every operation writes to PROMPT_QUEUE.md immediately.
-- **Never** strip Michael's verbatim phrasing from the prompt — execute it as he wrote it, not a paraphrase.
-- **Never** auto-promote a queued prompt to higher priority based on "what Claude thinks is important." Priority is Michael's call.
+- **Never** auto-execute a queued prompt without an explicit Michael trigger. Non-interruption is the core guarantee — including no surprise execution.
+- **Never** drop the COMPLETED graveyard from /home/user/accent-os/PROMPT_QUEUE.md. It is the audit trail and searchable history.
+- **Never** delete IN PROGRESS rows on session interrupt. Leave them intact; the next session reads "this was running" and offers recovery options.
+- **Never** modify the prompt_text of a queued item. When Michael wants to edit a prompt, he removes it and re-adds with the corrected text.
+- **Never** queue a prompt that is already IN PROGRESS or was COMPLETED within the last 24h with >80% text match — surface the duplicate and ask Michael before queuing.
+- **Never** hold queue state in memory. Every ADD, REORDER, RESOLVE, and EXECUTE operation writes back to /home/user/accent-os/PROMPT_QUEUE.md before the response is sent.
+- **Never** strip Michael's verbatim phrasing from the prompt_text field — execute the prompt exactly as he wrote it, not a paraphrase.
+- **Never** auto-promote a queued prompt to higher priority based on Claude's judgment. Priority order is Michael's call exclusively.
+- **Never** auto-promote a WAITING item on `schema:` type conditions when the SQL evidence is ambiguous. Leave the item WAITING and add a `SCHEMA_PARSE_UNCERTAIN` note rather than risking a false promotion.

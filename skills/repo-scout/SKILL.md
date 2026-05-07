@@ -1,15 +1,21 @@
 ---
 name: repo-scout
 description: >
-  Autonomous GitHub/MCP/skill repository intelligence for AccentOS. Use this skill any time
-  Michael asks to find, evaluate, or vet new repos, skills, MCPs, CLIs, or tools — whether 
-  he says "find new skills", "what's worth installing", "scout repos", "anything new worth
-  grabbing", "what tools should I add", or any variation. Also triggers when Michael mentions
-  a specific tool he's heard about and wants a verdict on. Skill does three things in one pass:
-  (1) discovers and filters candidates against AccentOS + Accent Lighting projects, (2) produces
-  a scan-optimized verdict table, and (3) generates a customized install snippet or SKILL.md
-  adaptation for everything rated INSTALL. Never just returns a list — always delivers a verdict
-  + customization.
+  Autonomous GitHub/MCP/skill repository intelligence for AccentOS at
+  /home/user/accent-os/. Use this skill any time Michael asks to find,
+  evaluate, or vet new repos, skills, MCPs, CLIs, or tools — whether he says
+  "find new skills", "what's worth installing", "scout repos", "anything new
+  worth grabbing", "what tools should I add", "is [tool X] worth it", "update
+  my stack", or any variation. Also triggers when Michael mentions a specific
+  tool he's heard about and wants a verdict on. Filters every candidate
+  against the live AccentOS stack (BigCommerce store-cwqiwcjxes, Supabase
+  hsyjcrrazrzqngwkqsqa, Cloudflare Pages, vanilla JS, Anthropic API) and
+  Accent Lighting ecommerce priorities. Skill does three things in one pass:
+  (1) discovers and filters candidates against AccentOS + Accent Lighting
+  projects, (2) produces a scan-optimized INSTALL/EVALUATE/WATCH/SKIP verdict
+  table, and (3) generates a customized install snippet or SKILL.md adaptation
+  for everything rated INSTALL. Always delivers a verdict + AccentOS-specific
+  customization — never returns a raw list without action items.
 ---
 
 # repo-scout
@@ -91,31 +97,51 @@ For each candidate, run in order. First FAIL stops evaluation.
 
 ## Step 4 — Assign verdicts
 
-INSTALL — Real gap, fits stack, clear ROI. Include customized install snippet.
-EVALUATE — Promising but needs credential/cost check.
-WATCH — Not useful now but directionally relevant.
-SKIP — Redundant or irrelevant. One-line reason only.
+Produce a verdict for every surviving candidate. Output a verdict table:
+
+| Candidate | Verdict | One-line reason |
+|---|---|---|
+| [name] | INSTALL | [gap closed + friction level] |
+| [name] | EVALUATE | [what's blocking] |
+| [name] | WATCH | [future relevance signal] |
+| [name] | SKIP | [redundancy or irrelevance reason] |
+
+Verdict definitions:
+- **INSTALL** — real gap, fits AccentOS stack, clear ROI, customized snippet ready.
+- **EVALUATE** — promising but blocked by credential check, cost question, or missing compatibility data.
+- **WATCH** — not useful now but directionally relevant for AccentOS or Accent Lighting.
+- **SKIP** — redundant with existing stack or irrelevant to AccentOS/Accent Lighting. One-line reason only; do not expand.
 
 ---
 
 ## Step 5 — Format output
 
-### REPO SCOUT — [Date]
+Output the full scout report as a scan-optimized block. Concrete output shape:
 
-Searched: [sources]
-Candidates: X | Filtered to: Y | INSTALL: Z | EVALUATE: W
+```
+REPO SCOUT — [YYYY-MM-DD]
 
-#### INSTALL
-[Name] — what it does, which gap it closes, friction level, paste-ready install block
+Searched: [N sources — list names]
+Candidates: X | Filtered to: Y | INSTALL: Z | EVALUATE: W | WATCH: V | SKIP: U
 
-#### EVALUATE
-[Name] — what it does, what is blocking
+══ INSTALL ══
+[Tool name] ([URL])
+  Gap closed: [specific AccentOS gap]
+  Friction: LOW | MEDIUM | HIGH
+  Install:
+    [paste-ready bash block referencing /home/user/accent-os/ and store-cwqiwcjxes / hsyjcrrazrzqngwkqsqa]
 
-#### WATCH
-Brief list only.
+══ EVALUATE ══
+[Tool name] — [what it does]
+  Blocking: [credential check | cost | compatibility issue]
+  Next step: [single action to unblock]
 
-#### SKIP
-Brief list — name + one-line reason.
+══ WATCH ══
+- [Tool name]: [one-line future-relevance note]
+
+══ SKIP ══
+- [Tool name]: [one-line reason]
+```
 
 ---
 
@@ -133,9 +159,11 @@ For every INSTALL item:
 
 ## Anti-patterns
 
-- **Never** return a raw list without verdicts
-- **Never** suggest installing something that overlaps current MCP stack
-- **Never** rate INSTALL without a customized snippet
-- **Never** surface a tool requiring more than 5 min of Michael's attention — pre-chew it
-- **Never** skip filtering because a repo has high stars
-- **Never** ask Michael to read the README
+- **Never** return a raw candidate list without INSTALL/EVALUATE/WATCH/SKIP verdicts — Michael scans and acts, he does not read.
+- **Never** suggest installing something that overlaps the current MCP stack (Notion, Supabase, GitHub, Gmail, Google Calendar, Make, Canva, Vercel, Google Drive, Indeed are already connected).
+- **Never** rate INSTALL without a customized snippet — generic install instructions that reference "your project" instead of AccentOS or store-cwqiwcjxes are not accepted.
+- **Never** surface a tool requiring more than 5 minutes of Michael's attention without pre-chewing it — summarize, extract the relevant config, and paste it ready.
+- **Never** skip the filter pass because a repo has high stars — star count is not a relevance signal for AccentOS + Accent Lighting stack fit.
+- **Never** ask Michael to read the README — extract what he needs and present it in the verdict block.
+- **Never** run Step 2 searches without first loading the AccentOS context from `references/project-profiles.md` — blind searches produce irrelevant candidates.
+- **Never** omit the candidate count summary line ("Candidates: X | Filtered to: Y | INSTALL: Z") — it lets Michael verify the filter pass ran correctly.

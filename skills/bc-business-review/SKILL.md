@@ -31,6 +31,7 @@ Run when Michael says:
 - "what happened this week" / "Accent Lighting weekly"
 - "weekly digest" / "WoW delta"
 - "anomaly check on revenue"
+- "show me the numbers" / "revenue recap" / "how did we do this week"
 
 ---
 
@@ -41,6 +42,11 @@ Defaults:
 - **Comparison window** = previous 7 days (week-over-week)
 
 Overrides: "last week", "last 30 days", "Q4 to date", explicit date range. If Michael specifies a custom window, also pick a comparison window of equal length.
+
+Confirm the window before running queries:
+```
+Window: 2024-04-24 → 2024-04-30 (this week) vs 2024-04-17 → 2024-04-23 (last week)
+```
 
 ---
 
@@ -93,9 +99,24 @@ LIMIT 10;
 ```
 
 **Top 10 categories by revenue:**
-Run the same query structure against `products.category` joined through deals.
+```sql
+SELECT p.category, SUM(d.unit_price * d.quantity) AS revenue,
+       COUNT(DISTINCT d.order_id) AS orders
+FROM deals d
+JOIN products p ON p.bc_sku = d.sku
+WHERE d.status = 'completed'
+  AND d.completed_at BETWEEN $1 AND $2
+GROUP BY p.category
+ORDER BY revenue DESC
+LIMIT 10;
+```
 
-**Concentration risk callout:** if top 3 vendors > 50% of weekly revenue, flag.
+**Concentration risk callout:** if top 3 vendors > 50% of weekly revenue, append to BLOCK 1:
+
+```
+CONCENTRATION FLAG: top 3 vendors = 63% of weekly revenue (Acme 31%, BrightCo 19%, Luxor 13%)
+Pair with vendor-risk-register to evaluate exposure.
+```
 
 ---
 
@@ -127,9 +148,19 @@ JOIN this_week_rev tw USING (vendor_id)
 WHERE ABS((this_week_rev - mean_rev) / NULLIF(std_rev, 0)) > 2.0;
 ```
 
-Anomaly flags fire on |z| > 2.0. Output direction (UP / DOWN) and magnitude.
+Anomaly flags fire on |z| > 2.0. For each qualifying vendor output a one-line flag:
 
-**Insufficient history.** If fewer than 4 vendors qualify (i.e. AccentOS hasn't been live long enough OR the deals table is sparse), do NOT silently produce an empty anomaly section. Output explicitly: "Anomaly detection unavailable — needs ≥4 weeks of vendor-level deal history. Currently: [N] qualifying vendors." This appears in BLOCK 3 instead of zero rows.
+```
+↑ Acme Lighting   z=+2.7   $18,400 this week vs $9,200 ± $3,400 historical (8-week baseline)
+↓ BrightCo        z=-2.1   $1,200 this week vs $6,800 ± $2,700 historical
+```
+
+**Insufficient history.** If fewer than 4 vendors qualify (i.e. AccentOS hasn't been live long enough OR the deals table is sparse), do NOT silently produce an empty anomaly section. Output explicitly in BLOCK 3:
+
+```
+Anomaly detection unavailable — needs ≥4 weeks of vendor-level deal history.
+Currently: 2 qualifying vendors (minimum: 4).
+```
 
 ---
 
@@ -179,3 +210,4 @@ For each anomaly:
 - **Never** include forecasting in this skill — backward-looking only. Forecasting lives in js/demand_forecast.js.
 - **Never** use `SELECT *` against deals — large table with PII; only pull needed columns.
 - **Never** auto-snapshot the digest. Output the suggested filename in BLOCK 4; Michael invokes analysis-snapshot if he wants to preserve it.
+- **Never** join deals to vendors without filtering `status = 'completed'` — open/cancelled deals in the Supabase deals table will inflate revenue figures.

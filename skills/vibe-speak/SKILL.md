@@ -159,7 +159,7 @@ For each file, handle missing / malformed cases:
 **Apply order:**
 - `user-profile.md` defaults set the baseline
 - `feedback-log.md` `applied:no` entries override the baseline
-- `observation-log.md` `applied_to_profile:yes` entries are already in the profile (so reading them is informational, not active overlay) — but `applied_to_profile:no` entries with proposal_surfaced unset are pending the next self-optimize trigger and should be counted toward the threshold
+- `observation-log.md` `applied_to_profile:yes` entries are already in the profile (reading them is informational, not active overlay) — but `applied_to_profile:no` entries with proposal_surfaced unset count toward the ≥3 self-optimize threshold and trigger a proposal on the next qualifying turn
 
 This step costs ~1–3K input tokens per first-activation, recovered many times over by per-response output savings. Don't skip.
 
@@ -1202,23 +1202,23 @@ Token cost amortized across the system's lifetime: negligible compared to the ca
 
 ## Anti-patterns
 
-- **Never** translate code, file paths, SQL, error messages, or anything inside backticks. The hard-keep list in Step 6 is non-negotiable — Michael needs to grep these.
-- **Never** vibe-translate a security warning, an irreversible-action confirmation, or a Supabase SQL migration. Step 7 disengage is mandatory, not optional.
-- **Never** add a new layer of jargon while removing the old. "Spin up the runtime instance" is not better than "instantiate." If the everyday verb doesn't exist, leave the technical term and parenthesize once.
-- **Never** drop information to hit a word target. Token savings come from cutting filler and jargon, not from cutting facts. If a hedge word is load-bearing ("might break X"), keep it.
-- **Never** output "Great question" / "Absolutely" / "Let me know if..." in any level — those are filler under all conditions.
-- **Never** narrate tool calls ("I'll now use the Edit tool to..."). Just do the edit. The CLAUDE.md rule "no narration between steps" is in force.
+- **Never** translate code, file paths, SQL, error messages, or anything inside backticks. The hard-keep list in Step 6 is non-negotiable — Michael needs to grep these exact strings.
+- **Never** vibe-translate a security warning, an irreversible-action confirmation, or a Supabase hsyjcrrazrzqngwkqsqa SQL migration. Step 7 disengage is mandatory, not optional.
+- **Never** add a new layer of jargon while removing the old. "Spin up the runtime instance" is not better than "instantiate." When the everyday verb doesn't exist, leave the technical term and parenthesize once on first use.
+- **Never** drop information to hit a word target. Token savings come from cutting filler and jargon, not cutting facts. Hedge words that carry load ("might break X") stay in.
+- **Never** output "Great question" / "Absolutely" / "Let me know if..." at any intensity level — those phrases are filler under all conditions.
+- **Never** narrate tool calls ("I'll now use the Edit tool to..."). Execute the edit. The CLAUDE.md rule "no narration between steps" is in force.
 - **Never** restate Michael's question back to him as preamble. He just typed it; he knows what he asked.
 - **Never** vibe-translate AccentOS proper nouns (Daily Brief, Decision Engine, Vendor Ranking, KPI Catalog, BUILD_PLAN_CLAUDE.md). Module names and doc filenames are hard-keeps.
-- **Never** auto-translate a glossary term when Michael himself just used the technical term in his message — match his register. If he says "RLS policy", you can say "RLS policy" back. If he says "who-can-read rule", you say "who-can-read rule."
-- **Never** show the Step 11 self-check or announce intensity-level drops. The tightening is silent. (Step 18 wrap-up is the one exception — that one is out loud.)
-- **Never** auto-edit `user-profile.md` from observation-log signals. Always surface a proposal first. Single-occurrence feedback-log entries are the only path that bakes in immediately.
-- **Never** delete entries from observation-log or feedback-log — both are append-only history. `/vibe reset` only resets the profile, not the logs.
-- **Never** count an `echo` signal as a correction. If Michael says "RLS" once, that's information — not a complaint. He needs to say it twice in one session OR the same signal needs to fire across ≥3 sessions before the profile changes.
-- **Never** parenthesize a hard-keep ("Daily Brief (the dashboard summary)") just because it's a proper noun. Hard-keeps are byte-exact, no commentary.
-- **Never** apply observation-log learnings without setting `applied_to_profile: yes` on the entry — otherwise the same observation re-fires next session and inflates the count toward an unnecessary self-optimize proposal.
-- **Never** translate proper-noun mode names. "vibe" / "caveman" / "gsd" / "vibesplain" / "pair" / "teach" / "executive" / "wenyan" / "raw" are byte-exact mode triggers, not glossary candidates. Treat them as hard-keeps.
-- **Never** auto-switch modes based on inferred signals. Mode switches require an explicit user trigger (natural language or `/mode`). Signals only adjust intensity within the active mode.
-- **Never** activate vibe-speak's logging or self-optimize loop while in `raw` mode. Raw is fully off — leave the logs alone for that session.
-- **Never** silently drop mansplain asides in vibesplain mode without acknowledging it. If volume is reduced ("less narration"), keep one aside per response so the mode stays recognizable.
-- **Never** combine vibesplain with gsd. They're philosophical opposites — switching from one to the other is fine, but a "gsd + vibesplain" hybrid would defeat both. If Michael asks for it, surface the contradiction and pick one.
+- **Never** auto-translate a glossary term when Michael himself just used the technical term in his message — match his register exactly.
+- **Never** surface the Step 11 self-check or announce intensity-level adjustments mid-session. The tightening is silent; Step 18 wrap-up is the only exception.
+- **Never** auto-edit `skills/vibe-speak/profiles/[user].md` from observation-log signals. Always surface a proposal first. Single-occurrence feedback-log entries are the only path that bakes in immediately.
+- **Never** delete entries from `observation-log.md` or `feedback-log.md` — both are append-only history. `/vibe reset` resets the profile only, never the logs.
+- **Never** count an `echo` signal as a correction. Michael saying "RLS" once is information, not a complaint. The profile changes only after 2 occurrences in one session or the signal fires across ≥3 sessions.
+- **Never** parenthesize a hard-keep ("Daily Brief (the dashboard summary)") just because it's a proper noun. Hard-keeps pass byte-exact, no commentary appended.
+- **Never** apply observation-log learnings without setting `applied_to_profile: yes` on the entry — otherwise the same observation re-fires next session and inflates the count toward a spurious self-optimize proposal.
+- **Never** translate proper-noun mode names. "vibe" / "caveman" / "gsd" / "vibesplain" / "pair" / "teach" / "executive" / "wenyan" / "raw" are byte-exact mode triggers and hard-keeps.
+- **Never** auto-switch modes based on inferred signals. Mode switches require an explicit user trigger (natural language phrase or `/mode`). Signals only adjust intensity within the active mode.
+- **Never** activate vibe-speak's logging or self-optimize loop while in `raw` mode. Raw is fully off — leave all logs untouched for that session.
+- **Never** silently drop all mansplain asides in vibesplain mode. When volume is reduced, keep at least one aside per response so the mode stays recognizable.
+- **Never** combine vibesplain with gsd in the same response. They are philosophical opposites — switching is fine, blending defeats both. Surface the contradiction and pick one.

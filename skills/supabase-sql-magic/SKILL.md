@@ -48,7 +48,9 @@ Read every `M*_*.sql` file in `/home/user/accent-os/sql/` (currently M01, M02, M
 TABLE → primary key, foreign keys, columns relevant to the question
 ```
 
-Cache table names in working memory for this run. Never rely on guesses about column names — every column referenced in the output SQL must exist in one of the loaded files.
+Cache table names in working memory for this run. Every column referenced in the output SQL must exist in one of the loaded files — never rely on guesses.
+
+Output artifact: a working table inventory in the form `TABLE → primary key, foreign keys, columns relevant to the question`.
 
 If a referenced table or column does not exist, output "Schema gap: table/column [X] not found in /home/user/accent-os/sql/" and stop. Do not invent fields.
 
@@ -67,7 +69,9 @@ ORDERING:  [column + direction]
 LIMIT:     [explicit or default 100]
 ```
 
-If the question is ambiguous on any dimension, pick the most defensible default and note it in the output. Never ask Michael to clarify — he wrote the question fast; clarifying defeats the point.
+When the question is ambiguous on any dimension, pick the most defensible default and note it in the output under "Defaults applied". Never ask Michael to clarify — he wrote the question fast; clarifying defeats the point.
+
+Output artifact: a structured decomposition block (INTENT / ENTITIES / FILTERS / GROUPING / ORDERING / LIMIT) for internal use in Step 3.
 
 ---
 
@@ -81,7 +85,7 @@ Compose the query in this order, always:
 5. ORDER BY
 6. LIMIT (always include — default 100 unless aggregation)
 
-Format as paste-ready SQL with one clause per line for scan-readability:
+Format as paste-ready SQL with one clause per line for scan-readability. Output artifact: the final SQL block delivered in BLOCK 1 of Step 5:
 
 ```sql
 SELECT
@@ -117,13 +121,15 @@ COST NOTE
 - Run cost: [cheap|moderate|run-during-quiet]
 ```
 
-If the cost is "run-during-quiet" or higher, suggest an indexed alternative or a CTE-based reformulation.
+If the cost is "run-during-quiet" or higher, output an indexed alternative or a CTE-based reformulation immediately below the COST NOTE block.
+
+Output artifact: a 4-line COST NOTE block (see Step 5 BLOCK 2 for exact shape).
 
 ---
 
 ## Step 5 — Output
 
-Three blocks:
+Output artifact: three blocks printed in-session — SQL, COST NOTE, and PASTE TARGET URL for `hsyjcrrazrzqngwkqsqa`.
 
 ```
 ═══ BLOCK 1: SQL ═══
@@ -156,3 +162,4 @@ Defaults applied:
 - **Never** return query results inline — Michael runs the SQL himself; the skill's job ends at the query.
 - **Never** modify data (no INSERT, UPDATE, DELETE). This skill is read-only. Mutations route through priority-articulation, vendor-cascade, or AccentOS modules.
 - **Never** ask Michael to clarify ambiguity. Pick a default, run with it, list the default chosen.
+- **Never** reference tables from BigCommerce store-cwqiwcjxes REST API as if they were Supabase tables — the BC integration feeds into Supabase tables via M04; query the Supabase side only.

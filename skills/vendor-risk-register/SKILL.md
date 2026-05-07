@@ -45,6 +45,12 @@ Defaults (override if Michael specifies):
 
 If Michael says "top 5" or "top 20", use that N. If he says "this quarter," use 90 days. If he says "this year," use 365.
 
+Echo the resolved parameters before running SQL:
+
+```
+RUN PARAMETERS: N=10 | lookback=90d | concentration=pct_of_revenue
+```
+
 ---
 
 ## Step 2 — Compute the four risk dimensions
@@ -70,7 +76,7 @@ CROSS JOIN total
 WHERE total.t IS NOT NULL
 ORDER BY pct_of_revenue DESC;
 ```
-If `total.t` is NULL (no completed deals in the window), output: "No deals completed in [window]; concentration cannot be computed. Re-run after the next deal-batch lands or extend the window." Do not proceed with dimension A.
+If `total.t` is NULL (no completed deals in the window), output: "No deals completed in the 90-day window (or whichever lookback was set); concentration cannot be computed. Re-run after the next deal-batch lands or extend the window." Do not proceed with dimension A.
 
 **Dimension B — Score volatility:**
 ```sql
@@ -201,3 +207,4 @@ Next review: +90 days.
 - **Never** skip the concentration cap check. >15% revenue from a single vendor is the most common AccentOS risk pattern and must always surface.
 - **Never** rank vendors that have zero data in all four dimensions — those are out-of-scope for this register, not "low risk."
 - **Never** invent normalization denominators when a dimension's data is missing — flag the missing dimension and weight the others.
+- **Never** use the composite score alone to define severity — always apply the override rule (HIGH if revenue % ≥15% regardless of composite), because a single concentrated vendor at Accent Lighting can represent existential risk even when its BC store-cwqiwcjxes score looks stable.

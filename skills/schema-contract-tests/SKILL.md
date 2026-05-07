@@ -32,6 +32,9 @@ Run when Michael says:
 - "data quality tests" / "dbt-style tests"
 - "test the [table] schema"
 - "lock in the [table] contract"
+- "generate test suite for [table]"
+- "nightly test for [table]"
+- "what invariants does [table] have"
 
 ---
 
@@ -45,6 +48,8 @@ Read the relevant `M*.sql` file(s) and extract:
 - Explicit FK constraints (REFERENCES clauses)
 - Check constraints
 - Enum types (CREATE TYPE) and which columns use them
+
+Output artifact: a structured table manifest listing `(table, pk, fk_list, enum_columns, not_null_columns)` — consumed by Steps 2 and 3 to drive test generation.
 
 ---
 
@@ -88,6 +93,8 @@ WHERE status NOT IN ('active', 'inactive', 'pending', 'archived');
 
 Pull enum values from `CREATE TYPE` statements in the schema files.
 
+Output artifact: a set of SQL SELECT statements (one per test class A–D) that each return `test_name, failures` — assembled into the CTE in Step 4.
+
 ---
 
 ## Step 3 — Generate singular cross-model tests
@@ -125,11 +132,13 @@ WHERE d.vendor_id IS NOT NULL AND v.id IS NULL;
 
 Generate 3–5 cross-model tests per table set, focused on AccentOS Accent Lighting business rules — never generic database-level checks that belong in schema constraints instead.
 
+Output artifact: 3–5 named singular test SQL blocks, each following the `SELECT 'singular:[name]' AS test_name, COUNT(*) AS failures FROM (...)` pattern, ready to UNION ALL into Step 4's CTE.
+
 ---
 
 ## Step 4 — Compose the test runner artifact
 
-Write to `/home/user/accent-os/sql/tests/[table]_contracts.sql` (create the `tests/` dir if missing).
+Output artifact: `/home/user/accent-os/sql/tests/[table]_contracts.sql` — written to disk, containing the UNION ALL CTE + drill-down section. Create the `tests/` dir if missing.
 
 Structure:
 
@@ -210,4 +219,6 @@ These need either: (a) the schema file updated, or (b) the test removed.
 - **Never** generate a test that mutates data (no INSERT/UPDATE/DELETE in tests).
 - **Never** generate a test that depends on data volume (test must work on empty tables — failures = 0 means PASS).
 - **Never** assert business rules without surfacing them as singular tests; never bury them in the schema as silent CHECK constraints.
-- **Never** auto-run the test SQL. Output the artifact; Michael executes when ready.
+- **Never** auto-run the test SQL. Output the artifact to `/home/user/accent-os/sql/tests/`; Michael executes when ready.
+- **Never** write contract tests for a table that does not exist in `/home/user/accent-os/sql/M*.sql` — if the table is expected but missing from the schema files, flag it as a schema gap and stop.
+- **Never** reuse enum values from memory. Pull accepted values from the `CREATE TYPE` statements in the M-schema files every run — enum definitions drift.

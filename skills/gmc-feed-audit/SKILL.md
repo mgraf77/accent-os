@@ -33,6 +33,7 @@ Run when Michael says:
 - "what's broken in GMC" / "GMC missing images report"
 - "scan the feed" / "feed audit"
 - "what products are failing GMC"
+- "M14 sprint" / "run the feed audit" / "Feedenomics report"
 
 ---
 
@@ -46,7 +47,11 @@ Determine the source for this audit (in preference order):
 - **Supabase mirror** — if `marketing.feed_status` exists in `/home/user/accent-os/sql/M29_marketing_schema.sql`, prefer for cached data
 - **BC product list as proxy** — fallback when above unavailable
 
-Output the chosen source up front so the rest of the audit is reproducible.
+Output the chosen source up front so the rest of the audit is reproducible:
+
+```
+Audit source: Supabase hsyjcrrazrzqngwkqsqa → marketing.feed_status (M29 schema, last synced 2024-05-01)
+```
 
 ---
 
@@ -94,7 +99,7 @@ Sort by:
 2. Vendor revenue tier (top vendors first — from `vendors.revenue_tier` if available)
 3. SKU age descending (newer SKUs first per Feedenomics M17 rule)
 
-Chunk into **fix sprints** of 50–100 SKUs per fix type so Michael can work them serially.
+Chunk into **fix sprints** of 50–100 SKUs per fix type so Michael can work them serially. Each sprint gets a numbered ID: `SPRINT_001`, `SPRINT_002`, etc. The sprint-to-SKU mapping feeds directly into Step 5 BLOCK 3.
 
 ---
 
@@ -131,3 +136,4 @@ SPRINT_002 — next 50 HIGH
 - **Never** rank without revenue-tier weighting when data is available.
 - **Never** silently skip ambiguous rows — flag as `UNKNOWN`.
 - **Never** invent severity. Use the explicit table in Step 3.
+- **Never** run this skill on a Feedenomics export older than 7 days without flagging staleness — GMC status changes daily and a stale audit produces misleading sprint queues for Accent Lighting's 20K+ SKU catalog.

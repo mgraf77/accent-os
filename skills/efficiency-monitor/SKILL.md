@@ -1,27 +1,42 @@
 ---
 name: efficiency-monitor
 description: >
-  Always-on observer that watches Michael <> Claude back-and-forth in
-  AccentOS build sessions for inefficiencies (retries, redundant reads,
-  recurring multi-step patterns, skill bypass, long clarification loops,
-  redone WIP) and flags patterns that should be promoted to a real skill.
-  Surfaces findings ONLY at session boundaries (start = replay last
-  session's flags; end = write this session's flags). Never interrupts
-  mid-flow. Auto-active per .claude/CLAUDE.md AUTO-EXECUTE step 1.j and
-  step 8. Pairs with skill-forge to promote candidates into real skills.
-  Always surfaces findings at session boundaries only — never interrupts
-  mid-flow, never flags without a cited skill-index entry as evidence.
+  Always-on observer that watches Michael and Claude back-and-forth in
+  AccentOS build sessions at /home/user/accent-os/ for inefficiencies
+  (retries, redundant reads, recurring multi-step patterns, skill bypass,
+  long clarification loops, redone WIP) and flags patterns ready for
+  promotion to a real skill via skill-forge. Surfaces findings only at
+  session boundaries — boot replays last session's top 3 flags and any
+  PROMOTE-status candidates; wrap writes this session's flags to
+  skills/efficiency-monitor/efficiency-log.md and overwrites
+  session-end-summary.md. Auto-active per .claude/CLAUDE.md AUTO-EXECUTE
+  steps 1.j and 8. Always surfaces findings at session boundaries only —
+  never interrupts mid-flow, never flags a skill-bypass without citing the
+  exact skills/_index.md entry that would have matched.
 ---
 
 # efficiency-monitor
 
-**Purpose:** Solo Claude builds drift slowly. Same multi-step pattern run 3× before anyone notices it should be a skill. Same file re-read 4× in a session. Same retry loop. This skill catches that without interrupting the work.
+**Purpose:** Solo Claude builds drift slowly. The same multi-step pattern runs 3× before anyone notices it belongs in a dedicated skill. The same file gets re-read 4× in a session. This skill catches those patterns without interrupting the work.
 
 **Hybrid design:**
 - **Path A (in-flight, instruction-driven):** Claude tracks signals in working memory while working. Does not speak about them mid-session.
 - **Path B (post-hoc, hook-driven):** `scripts/efficiency-aggregate.sh` runs at session end via Stop hook, parses `efficiency-log.md`, updates `skill-candidates.md` cross-session counts.
 
 **Hard rule:** Never interrupt. Surface only at session start (boot) and session end (wrap-up). Never mid-flow.
+
+---
+
+## Trigger Recognition
+
+Auto-active — no invocation needed. Also run explicitly when Michael says:
+- "efficiency report" / "what's inefficient"
+- "end session" / "wrap up" / "we're done" (fires Step 2 wrap-up)
+- "/efficiency end" (explicit Step 2 trigger)
+- "what patterns do you see" / "show efficiency flags"
+- "skill candidates" / "what should we forge next"
+
+For mid-session manual queries ("what patterns do you see"), surface the scratch-file count only — never the detail — then continue silently.
 
 ---
 
@@ -199,9 +214,10 @@ This is the single most-valuable signal — catching when we're brute-forcing wo
 
 ## Anti-patterns
 
-- **Never** interrupt Michael mid-flow with efficiency observations. Surface only at session start (boot replay) and session end (wrap-up). Mid-session flags go to `_session-scratch.md` silently.
+- **Never** interrupt Michael mid-flow with efficiency observations. Surface only at session start (boot replay) and session end (wrap-up). All mid-session flags go to `skills/efficiency-monitor/_session-scratch.md` silently.
 - **Never** flag a skill-bypass without citing the exact `skills/_index.md` entry that would have matched. Vague "could have used a skill" is not actionable.
-- **Never** auto-promote a skill candidate without the aggregator script confirming the threshold (3+ sessions or cross-session savings > 10 min/occurrence). SKILL.md only writes raw flags.
-- **Never** include assistant responses in signal analysis — only track patterns in the Michael → Claude direction. Analyzing Claude's own output inflates counts.
-- **Never** create standalone commits for efficiency-monitor file writes. Always bundle into the session-end commit per CLAUDE.md batch-doc-update rule.
-- **Never** surface INFO-level flags at boot. Boot output shows only top 3 inefficiencies and PROMOTE-status candidates.
+- **Never** auto-promote a skill candidate without `scripts/efficiency-aggregate.sh` confirming the threshold (3+ separate sessions or cross-session savings > 10 min/occurrence). SKILL.md writes raw flags only; the script owns promotion logic.
+- **Never** include assistant responses in signal analysis — track patterns in the Michael → Claude direction only. Mixing Claude's output into the count inflates every signal type.
+- **Never** create standalone commits for efficiency-monitor file writes. Bundle all writes (efficiency-log.md, session-end-summary.md, skill-candidates.md) into the session-end commit per CLAUDE.md batch-doc-update rule.
+- **Never** surface INFO-level flags at boot. Boot output lists only the top 3 inefficiencies and any PROMOTE-status skill candidates.
+- **Never** clear `_session-scratch.md` before Step 2d runs the aggregator. The scratch file is the aggregator's input; deleting it early loses the session's signal data.

@@ -30,7 +30,8 @@ Run when Michael says:
 - "broken link rescue" / "find broken product URLs"
 - "URL audit" / "404 check"
 - "GMC re-index pending" / "M16 batch"
-- "P053-077" (or any product batch identifier)
+- "P053-077" / any product batch identifier (e.g. "P100-150 batch")
+- "canonical issues" / "fix canonical tags" / "check canonicals"
 
 ---
 
@@ -42,7 +43,11 @@ Input one of:
 - A direct list of URLs in the prompt
 - Default: top 500 products by revenue from `vendors.revenue_tier` (sample mode)
 
-Output the chosen URL set count up front so the run scope is explicit.
+Output the chosen URL set count up front so the run scope is explicit:
+
+```
+Scope: P053-077 batch → 25 URLs from Supabase hsyjcrrazrzqngwkqsqa (gmc_status = 'pending', last_checked_at > 14 days)
+```
 
 ---
 
@@ -55,7 +60,7 @@ For each URL, capture:
 - Meta robots directive (noindex/nofollow flags)
 - Page title (for redirect-target sanity check)
 
-Use `WebFetch` for direct probes when the URL set is ≤20. Above 20, generate a Firecrawl batch payload as paste-ready output for Michael to run externally — sequential WebFetch calls hit rate limits fast and cost compounds.
+Use `WebFetch` for direct probes when the URL set is ≤20 — capture results into a per-URL crawl record (url, http_status, redirect_hops, canonical, robots_directive, page_title). Above 20, generate a Firecrawl batch payload as paste-ready JSON output for Michael to run externally — sequential WebFetch calls hit rate limits fast and cost compounds.
 
 ---
 
@@ -78,13 +83,13 @@ Use `WebFetch` for direct probes when the URL set is ≤20. Above 20, generate a
 
 For each non-OK row, output one concrete next step:
 
-- **HARD_404** → "Retire product in BC OR set 301 to /category/[name]"
-- **REDIRECT_CHAIN** → "Add direct 301 in BC redirect manager: /[old] → /[final]"
-- **CANONICAL_MISMATCH** → "Edit BC product canonical to: [final URL]"
+- **HARD_404** → "Retire product in BC OR set 301 to the matching category page path"
+- **REDIRECT_CHAIN** → "Add direct 301 in BC redirect manager from the original slug to the final destination slug"
+- **CANONICAL_MISMATCH** → "Edit BC product canonical to match the final resolved URL"
 - **GMC_NOINDEX** → "Remove `<meta name='robots' content='noindex'>` from product template"
-- **PENDING_REINDEX** → "Submit URL to GMC re-index queue: [URL]"
+- **PENDING_REINDEX** → "Submit the product URL to GMC re-index queue"
 
-Pair each with the BC admin path or the relevant Feedenomics rule when applicable.
+Pair every fix line with the BC admin path (e.g. `/manage/products/12345` or `/manage/redirects`) and the Feedenomics re-index rule number if the product is in the M16 batch.
 
 ---
 
@@ -121,3 +126,4 @@ For PENDING_REINDEX rows that were P053-077:
 - **Never** flag a redirect chain of length 1 (single 301) as broken — that's intentional.
 - **Never** classify a URL as HARD_404 on a single failed probe. Retry once after 60s.
 - **Never** silently ignore the canonical tag — it's the single most common GMC issue after missing images.
+- **Never** mix URL sets from different batches (e.g. P053-077 and P100-150) in a single crawl run — keep batch IDs separate so the M16 close-out CSV maps cleanly to one batch at a time.

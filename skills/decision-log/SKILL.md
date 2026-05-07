@@ -19,9 +19,7 @@ description: >
 
 # decision-log
 
-**Purpose:** Solo autonomous-Claude builds lose decision provenance fast. PROMPT_LOG captures *what was asked*, SESSION_LOG captures *what happened*, but neither captures *why a non-obvious choice was made*. This skill fills that gap so resume-after-Codespace-stop carries forward the reasoning, not just the state.
-
-Origin: Cascade c-level-advisor / virtual board decision logging. Rebuilt as a simple file artifact, no board-meeting wrapper.
+**Purpose:** Solo autonomous-Claude builds lose decision provenance fast. PROMPT_LOG captures *what was asked*, SESSION_LOG captures *what happened*, but neither captures *why a non-obvious choice was made*. This skill fills that gap so resume-after-Codespace-stop carries forward the reasoning, not just the state. Always writes a file to /home/user/accent-os/decisions/ and updates INDEX.md in the same operation — never one without the other.
 
 ---
 
@@ -29,11 +27,12 @@ Origin: Cascade c-level-advisor / virtual board decision logging. Rebuilt as a s
 
 Run when Michael says:
 - "log this decision"
-- "decision: [topic]"
+- "decision: X" (where X is a topic)
 - "save this go/no-go"
 - "document this choice"
 - "record this call"
 - "decided" (when followed by a decision statement)
+- "capture this tradeoff" / "save the reasoning"
 
 Also fire automatically (with one-line confirmation prompt) after any conversation where Claude observed a non-trivial architectural, vendor, or process choice.
 
@@ -150,8 +149,9 @@ Cite as: "per decision-NNN" in future PROMPT_LOG entries or commit messages.
 
 ## Anti-patterns
 
-- **Never** log a "decision" that wasn't actually a decision — if Michael never picked between options, there's nothing to log.
-- **Never** invent reasoning. If the conversation context didn't capture why, ask once.
-- **Never** skip the INDEX.md update. Un-indexed decisions are findable only by accident.
+- **Never** log a "decision" that wasn't actually a decision — if Michael never picked between options, there is nothing to log.
+- **Never** invent reasoning. When the conversation context didn't capture why, ask once and wait for Michael's answer before writing the file.
+- **Never** skip the /home/user/accent-os/decisions/INDEX.md update. Un-indexed decisions are findable only by accident.
 - **Never** classify reversal cost optimistically. When in doubt, bump up — HIGH that turns out to be MEDIUM is fine; MEDIUM that turns out to be HIGH is a problem.
-- **Never** edit a prior decision file's question / options / choice / reasoning. The single allowed Edit on a prior decision is to add a `## Superseded by decision-NNN — YYYY-MM-DD` line at the bottom when a later decision overrides it. Always make that back-link Edit when superseding so the old file points forward.
+- **Never** edit a prior decision file's question / options / choice / reasoning. The only permitted post-write edit on a prior decision file is appending a `## Superseded by decision-NNN — YYYY-MM-DD` line. Always write that back-link when superseding so the old file points forward.
+- **Never** write a decision file without running through the HIGH-reversal-cost check in Step 2. Supabase hsyjcrrazrzqngwkqsqa schema changes and BC store-cwqiwcjxes integration choices always require a reopen trigger and worst-case line.

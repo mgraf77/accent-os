@@ -1,28 +1,27 @@
 ---
 name: doc-drift
 description: >
-  Cross-check that AccentOS planning and state documents agree on stated
-  priorities, active tracks, vendor-scoring rules, and queue items. Loads
-  SESSION_LOG.md, MASTER.md, BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md,
-  PROMPT_LOG.md, WORK_IN_PROGRESS.md, and skills/repo-scout/references/
-  project-profiles.md, then surfaces any disagreement as a delta table
-  with paste-ready fixes. Use this skill when Michael says: "check for
-  doc drift", "are my docs consistent", "verify priorities are aligned",
-  "do my plans agree", "audit my docs", "drift check", "consistency
-  check on plans", or any phrasing that asks whether AccentOS source-
-  of-truth files agree on what's being built and why. Do not use this
-  skill for code consistency (use the repo's own type-check / lint) or
-  vendor-scoring math (that's vendor-cascade). Always produces a delta
-  table plus paste-in suggested edits — never returns prose-only.
-  Always recommends a source-of-truth doc for each drift row —
-  never flags a disagreement without a resolution path.
+  Cross-check that AccentOS planning and state documents at
+  /home/user/accent-os/ agree on stated priorities, active tracks,
+  vendor-scoring rules, and queue items. Loads SESSION_LOG.md, MASTER.md,
+  BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md, PROMPT_LOG.md,
+  WORK_IN_PROGRESS.md, and skills/repo-scout/references/project-profiles.md,
+  then surfaces any disagreement as a delta table with paste-ready Edit
+  commands. Use this skill when Michael says: "check for doc drift", "are
+  my docs consistent", "verify priorities are aligned", "do my plans agree",
+  "audit my docs", "drift check", "consistency check on plans", "are the
+  plans in sync", "cross-check the docs", or any phrasing that asks whether
+  AccentOS source-of-truth files agree on what's being built and why. Do
+  not use for code consistency (use the repo's own type-check / lint) or
+  vendor-scoring math (that's vendor-cascade). Always produces a delta table
+  plus paste-ready Edit commands with a named source-of-truth per drift row
+  — never returns prose-only, never flags a disagreement without a
+  resolution path.
 ---
 
 # doc-drift
 
-**Purpose:** Solo autonomous-Claude builds drift between planning docs as sessions accumulate. This skill catches when MASTER says one thing, BUILD_PLAN says another, and project-profiles says a third — before that drift turns into a wrong-priority build session.
-
-Origin: Cascade strategic-alignment communication gap analysis. Rebuilt for cross-doc alignment in a solo build rather than cross-team alignment.
+**Purpose:** Solo autonomous-Claude builds drift between planning docs as sessions accumulate. This skill catches when MASTER says one thing, BUILD_PLAN says another, and project-profiles says a third — before that drift turns into a wrong-priority build session. Always produces a delta table plus paste-in Edit commands with a named source-of-truth for each drift row — never flags a disagreement without a resolution path.
 
 ---
 
@@ -35,6 +34,7 @@ Run when Michael says:
 - "do my plans agree"
 - "audit my docs"
 - "drift check" / "consistency check on plans"
+- "are the plans in sync" / "cross-check the docs"
 
 ---
 
@@ -65,7 +65,15 @@ For each doc, extract these claim classes:
 | **Stated capability gap** | "not built", "TODO", "M-task pending", "known capability gaps" headers |
 | **Resume point** | Last clean checkpoint, next pending item |
 
-Output a per-doc claim list. Quote source lines.
+Produce a per-doc claim list in this format:
+
+```
+[doc name]:
+  - [claim class]: "[quoted source line]"
+  - [claim class]: "[quoted source line]"
+```
+
+Quote source lines exactly — no paraphrase.
 
 ---
 
@@ -119,9 +127,10 @@ If no drift exists, output: "All docs agree on priorities, active tracks, and st
 
 ## Anti-patterns
 
-- **Never** silently auto-apply the suggested edits. Output them as paste-ready Edit commands; Michael runs them.
-- **Never** flag drift on docs that are intentionally divergent (e.g. PROMPT_LOG captures asks, MASTER captures shipped state — those won't match by design). Only flag actual contradictions.
+- **Never** silently auto-apply the suggested edits. Output paste-ready Edit commands targeting /home/user/accent-os/ files; Michael runs them.
+- **Never** flag drift on docs that are intentionally divergent (PROMPT_LOG captures asks, MASTER captures shipped state — they diverge by design). Flag only actual contradictions.
 - **Never** treat "silent" (one doc doesn't mention something) as drift. Silence is the default, not a contradiction.
-- **Never** report drift without a recommended source-of-truth. "These disagree, you figure it out" is not useful.
-- **Never** load files that don't exist as if they were empty — flag the missing file explicitly.
-- **Never** flag a `[x]` in BUILD_PLAN_MICHAEL.md that doesn't yet appear in BUILD_PLAN_CLAUDE.md as drift. Michael's plan and Claude's plan diverge by design during active Michael work; sync happens at session end.
+- **Never** report drift without a recommended source-of-truth. Flagging a disagreement with no resolution path leaves Michael with more work, not less.
+- **Never** load files that don't exist as if they were empty — flag each missing file explicitly in BLOCK 1 before proceeding.
+- **Never** flag a `[x]` in BUILD_PLAN_MICHAEL.md that doesn't yet appear in BUILD_PLAN_CLAUDE.md as drift. Michael's plan and Claude's plan diverge by design during active M-task work; sync happens at session end.
+- **Never** expand SESSION_LOG.md to full file without first confirming the claim isn't resolved in the 200-line window. Full-file reads are expensive — confirm the need before expanding.

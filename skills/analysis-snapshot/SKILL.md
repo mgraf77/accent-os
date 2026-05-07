@@ -11,7 +11,7 @@ description: >
   context. Fires when Michael says: "save this analysis", "snapshot
   this", "I want to re-run this later", "make this re-runnable", "name
   this query", "preserve this", "snapshot this query", "keep this one",
-  or "save it as [name]". Fires automatically (with confirmation) after
+  or "save it as vendor-rank-drops" (any kebab-case name). Fires automatically (with confirmation) after
   any vendor-cascade or supabase-sql-magic run against
   hsyjcrrazrzqngwkqsqa that produced a re-runnable result shape. Skip
   for one-time throwaway questions, code changes (use git), and docs
@@ -22,7 +22,7 @@ description: >
 
 # analysis-snapshot
 
-**Purpose:** Stop losing valuable AccentOS analyses in chat scrollback. Every meaningful vendor-cascade trace, supabase-sql-magic query, or GMC feed audit becomes a named artifact that can be re-run with new parameters in a future session.
+**Purpose:** Stop losing valuable AccentOS analyses in chat scrollback. Every meaningful vendor-cascade trace, supabase-sql-magic query, or GMC feed audit becomes a named artifact — re-runnable with new parameters in any future session.
 
 Stolen from: the notebook-as-artifact pattern in Hex (hex.tech). Rebuilt as a single-purpose AccentOS skill — no notebook UI, no multiplayer, just file-on-disk + INDEX.md, version-controlled in the AccentOS repo.
 
@@ -39,7 +39,7 @@ Run this skill when Michael says anything like:
 - "preserve this"
 - "snapshot this query"
 - "keep this one"
-- "save it as [name]"
+- "save it as vendor-rank-drops" (any kebab-case name)
 
 Fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run against `hsyjcrrazrzqngwkqsqa` where the result has re-runnable value: a recurring report shape, a diagnostic that will be needed again, or a query Michael spent time refining.
 
@@ -53,6 +53,8 @@ Before writing any file, verify the analysis earns a snapshot. Reject with a one
 - It is a code change (use git) or a doc change (use the root docs)
 
 When unclear, default to capturing — a slightly redundant snapshot beats losing a useful one.
+
+Output artifact: a binary PROCEED / SKIP decision with one-line rationale if SKIP.
 
 ---
 
@@ -84,31 +86,34 @@ snapshot-003-deal-velocity-by-trade-partner.md
 snapshot-004-bc-store-cwqiwcjxes-sku-gaps.md
 ```
 
-If Michael said "save it as [name]", use that name (kebab-cased). Otherwise, infer from the originating prompt. Reject generic names like `snapshot-001-vendors.md` — specificity is what makes the file findable in 6 months.
+If Michael gave a name ("save it as vendor-rank-drops"), kebab-case it and use it verbatim. Otherwise, infer from the originating prompt. Reject generic names like `snapshot-001-vendors.md` — specificity is what makes the file findable in 6 months.
+
+Output artifact: the canonical filename string (e.g. `snapshot-007-gmc-missing-images-by-brand.md`) used in Steps 4, 5, and 6.
 
 ---
 
 ## Step 4 — Write the snapshot file
 
-Write to `/home/user/accent-os/analyses/snapshot-NNN-[name].md`:
+Output artifact: `/home/user/accent-os/analyses/snapshot-NNN-[name].md` — a new file written to disk, content matching the template below (every field filled from Step 2's component list).
 
 ```markdown
 # snapshot-NNN — [name]
 
 **Created:** YYYY-MM-DD
-**Originating prompt:** [verbatim or paraphrased]
-**Re-run cadence:** [weekly | monthly | quarterly | ad-hoc]
+**Originating prompt:** [verbatim or paraphrased question]
+**Re-run cadence:** weekly | monthly | quarterly | ad-hoc
 
 ## Parameters
-- [param 1]: [value used in this run] — [type/range for re-runs]
+- [param 1]: [value used in this run] — [type/range valid for re-runs]
 - [param 2]: [value] — [type/range]
 
 ## Query
 ```sql
+-- Against Supabase hsyjcrrazrzqngwkqsqa
 [the literal SQL — parameterized where applicable]
 ```
 
-(or, for vendor-cascade runs:)
+(For vendor-cascade runs, replace Query with:)
 
 ## Cascade input
 - Priorities: [list]
@@ -120,54 +125,59 @@ Write to `/home/user/accent-os/analyses/snapshot-NNN-[name].md`:
 3. [step]
 
 ## Output shape
-[table | list | single value | chart spec]
+table | list | single value | chart spec
 
 ## Re-run instructions
-"Re-run snapshot-NNN with [new param values]"
+> "Re-run snapshot-NNN with [new param values]"
 ```
 
 ---
 
 ## Step 5 — Update the index
 
-Append to `/home/user/accent-os/analyses/INDEX.md` (create if missing):
+Append a row to `/home/user/accent-os/analyses/INDEX.md` (create the file if missing). Sort by NNN descending (newest first):
 
 ```markdown
 | NNN | name | created | cadence | last re-run |
 |-----|------|---------|---------|-------------|
+| 004 | bc-store-cwqiwcjxes-sku-gaps | 2026-05-07 | ad-hoc | — |
+| 003 | deal-velocity-by-trade-partner | 2026-05-06 | monthly | — |
+| 002 | gmc-missing-images-by-brand | 2026-05-05 | weekly | — |
 | 001 | vendor-rank-drops-weekly | 2026-05-05 | weekly | — |
 ```
 
-Sort by NNN descending (newest first).
+Output artifact: the updated INDEX.md with the new row at position 1 (top of the table, after headers).
 
 ---
 
 ## Step 6 — Output
 
-Confirmation block to Michael:
+Print this exact confirmation block:
 
 ```
 ANALYSIS SNAPSHOT — saved
 
-File: /home/user/accent-os/analyses/snapshot-NNN-[name].md
-Indexed: yes
+File:    /home/user/accent-os/analyses/snapshot-NNN-[name].md
+Indexed: yes (/home/user/accent-os/analyses/INDEX.md row NNN added)
+Originating skill: [vendor-cascade | supabase-sql-magic | kpi-data-audit | manual]
 
-Re-run any time with:
+Re-run any time:
   > "Re-run snapshot-NNN with [param: value, param: value]"
 
-Or list all snapshots with:
+List all snapshots:
   > "Show analyses/INDEX.md"
 ```
 
-If the snapshot was created off the back of a vendor-cascade or supabase-sql-magic run, also note: "Originating skill: [name]" so the chain is traceable.
+Output artifact: the confirmation block above plus the file path of the written snapshot.
 
 ---
 
 ## Anti-patterns
 
-- **Never** snapshot something that has no re-runnable value. Throwaway questions don't belong in `analyses/`.
-- **Never** snapshot something that's already a feature in an AccentOS module — those have their own UI re-run.
-- **Never** invent parameters. If the original run didn't specify a date range, capture "no range / all-time" rather than guessing one.
-- **Never** modify the originating SQL or cascade input when snapshotting. Capture-as-is. Improvements happen on the next re-run.
-- **Never** skip the INDEX.md update. An un-indexed snapshot is invisible.
-- **Never** name a snapshot generically (`snapshot-001-vendors.md`). Specificity is what makes it findable in 6 months.
+- **Never** snapshot something that has no re-runnable value. Throwaway questions don't belong in `/home/user/accent-os/analyses/`.
+- **Never** snapshot something that is already a feature in an AccentOS module — those have their own re-run path.
+- **Never** invent parameters. If the original run did not specify a date range, capture "no range / all-time" rather than guessing one.
+- **Never** modify the originating SQL or cascade input when snapshotting. Capture-as-is against `hsyjcrrazrzqngwkqsqa`; improvements happen on the next re-run.
+- **Never** skip the INDEX.md update. An un-indexed snapshot is invisible to future sessions.
+- **Never** name a snapshot generically (`snapshot-001-vendors.md`). The kebab-name must describe the question, not just the table.
+- **Never** write a snapshot without the Supabase project ID or cascade source reference in the Query or Cascade input section — a query stripped of its target is not re-runnable.

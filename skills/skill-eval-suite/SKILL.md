@@ -1,20 +1,24 @@
 ---
 name: skill-eval-suite
 description: >
-  For any AccentOS skill in /home/user/accent-os/skills/, generate a
-  Promptfoo-compatible eval YAML containing 5–8 test cases (canonical
-  happy path + edge cases drawn from the skill-forge gotcha-log) with
-  assertions on output shape, required field presence, AccentOS
-  stack-substitution count, and trigger-phrase coverage. Turns
-  skill-forge Step 8 Ralph loop from mental → automated regression
-  testing. Runnable locally and in CI. Use this skill when Michael
-  says: "eval suite for [skill]", "test [skill name]", "promptfoo
-  for [skill]", "regression tests for [skill]", "automate the Ralph
-  loop", "lock in [skill] behavior", or any phrasing that asks for
-  automated tests against an existing skill. Do not use for code
-  tests (use the AccentOS test runner) or for stress-testing skill-
-  forge itself (that's still Ralph-loop manual). Always produces a
-  promptfooconfig.yaml + run command — never returns prose-only.
+  For any AccentOS skill under /home/user/accent-os/skills/, generate a
+  Promptfoo-compatible eval YAML containing 5–8 test cases: canonical
+  happy path, alternate trigger phrase, empty-prereq edge case, gotcha-log
+  edge case, anti-pattern violation attempt, AccentOS stack-substitution
+  check, output-shape regression, and SKILL.md frontmatter parse meta-test.
+  Assertions target output shape, required field presence, AccentOS
+  stack-substitution count (Supabase hsyjcrrazrzqngwkqsqa, BC store
+  store-cwqiwcjxes, AccentOS), and trigger-phrase coverage. Turns the
+  skill-forge Step 8 Ralph loop from mental simulation into automated
+  regression protection. Runnable locally via npx promptfoo or in CI.
+  Use when Michael says: "eval suite for [skill]", "test [skill name]",
+  "promptfoo for [skill]", "regression tests for [skill]", "automate the
+  Ralph loop", "lock in [skill] behavior", "make sure [skill] doesn't
+  break", or any phrasing requesting automated tests against an AccentOS
+  skill. Do not use for code tests (use the AccentOS test runner) or for
+  stress-testing skill-forge itself (Ralph-loop manual only). Always
+  produces a promptfooconfig.yaml written to the skill directory plus a
+  paste-ready run command — never returns prose-only.
 ---
 
 # skill-eval-suite
@@ -33,6 +37,9 @@ Run when Michael says:
 - "regression tests for [skill]"
 - "automate the Ralph loop"
 - "lock in [skill] behavior"
+- "make sure [skill] doesn't break"
+- "write evals for [skill]"
+- "coverage for [skill]"
 
 ---
 
@@ -46,6 +53,15 @@ Read:
 - Recent `gotcha-log.md` entries that mention this skill — for known edge cases
 
 If the skill doesn't exist in `/home/user/accent-os/skills/`, output "Skill not found" and stop.
+
+Output of Step 1: a confirmed skill inventory note listing the files read and the count of gotcha-log entries found for this skill:
+```
+Step 1: Located skill at /home/user/accent-os/skills/[skill-name]/
+  Files read: SKILL.md, references/[N files]
+  Gotcha-log entries for this skill: [N]
+  Trigger phrases found: [N]
+  Workflow steps: [N]
+```
 
 ---
 
@@ -161,8 +177,11 @@ Add to .github/workflows/skill-eval.yml:
 
 ## Anti-patterns
 
-- **Never** generate evals that test implementation details that could legitimately change. Test behaviors, not specific phrasings of internal text.
-- **Never** assert on exact LLM output strings — use `contains` / `regex` / `contains-any` instead. LLM outputs vary; tests should pass on equivalent outputs.
-- **Never** skip the gotcha-log edge case test. That's the regression-protection point.
-- **Never** generate fewer than 5 test cases — coverage matters.
-- **Never** auto-run the eval suite. Output the command; Michael runs it (cost + token budget control).
+- **Never** generate evals that test implementation details that could legitimately change — test behaviors (output blocks, verdict values, required fields), not exact internal phrasing.
+- **Never** assert on exact LLM output strings — use `contains` / `regex` / `contains-any` instead. LLM outputs vary; tests must pass on equivalent outputs.
+- **Never** skip the gotcha-log edge case test — that is the regression-protection point for skill-forge Step 8 fixes.
+- **Never** generate fewer than 5 test cases — trigger coverage, output shape, edge case, anti-pattern compliance, and stack-substitution are all mandatory.
+- **Never** auto-run the eval suite — output the run command and stop; Michael controls cost and token budget for promptfoo invocations against Supabase hsyjcrrazrzqngwkqsqa or Anthropic API.
+- **Never** write a promptfooconfig.yaml without the AccentOS provider block (`anthropic:messages:claude-sonnet-4-6`) — generic provider defaults produce untargeted results.
+- **Never** omit the SKILL.md frontmatter parse test (Step 3, case 8) — that meta-test catches description-length regressions before they land in `/home/user/accent-os/skills/`.
+- **Never** generate evals for a skill path that does not exist under `/home/user/accent-os/skills/` — output "Skill not found" and stop rather than generating a config that can't run.

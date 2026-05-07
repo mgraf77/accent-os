@@ -33,6 +33,9 @@ Run when Michael says:
 - "is this skill safe"
 - "should I install [skill]"
 - "review before install" / "skill audit for [name]"
+- "check this before I add it to AccentOS"
+- "community skill check for [name]"
+- "is [skill name] trustworthy"
 
 ---
 
@@ -160,8 +163,10 @@ For REJECT:
 
 ## Anti-patterns
 
-- **Never** install a skill that fails Step 3 with any HIGH-risk pattern unjustified.
-- **Never** verdict INSTALL without checking permissions (Step 2). The skill-quality signals don't substitute for permission audit.
-- **Never** trust a SKILL.md description alone — read the actual workflow and any included scripts.
-- **Never** auto-install. Output the install command; Michael executes.
-- **Never** REJECT without proposing the skill-forge alternative — the concept is usually still worth stealing.
+- **Never** verdict INSTALL on a skill that fails Step 3 with any HIGH-risk pattern unjustified — one unreviewed shell-injection vector can exfiltrate Supabase hsyjcrrazrzqngwkqsqa credentials.
+- **Never** verdict INSTALL without completing the Step 2 permissions audit. Skill-quality signals (good description, clean formatting) do not substitute for permission scope review.
+- **Never** trust a SKILL.md description alone — read every workflow step and any included scripts or reference files for hidden tool calls.
+- **Never** auto-install. Write the install command to BLOCK 4; Michael executes it against `/home/user/accent-os/skills/`.
+- **Never** REJECT without proposing the skill-forge alternative — "look into [original target]" lets Michael capture the concept safely.
+- **Never** vet a skill blind when the source requires auth — ask Michael to paste the SKILL.md once; do not guess at contents.
+- **Never** issue a HOLD verdict without listing the specific issues to resolve — "HOLD — see above" is not actionable.

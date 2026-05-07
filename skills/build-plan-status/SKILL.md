@@ -1,26 +1,25 @@
 ---
 name: build-plan-status
 description: >
-  Auto-sync BUILD_PLAN_CLAUDE.md and BUILD_PLAN_MICHAEL.md [x]/[ ]
-  markers from recent git commit messages and SESSION_LOG.md entries.
-  Catches the recurring drift between "what shipped to AccentOS" and
-  "what's marked shipped in the plan." Outputs paste-ready Edit
-  commands; never auto-applies. Use this skill when Michael says:
+  Auto-sync /home/user/accent-os/BUILD_PLAN_CLAUDE.md and
+  BUILD_PLAN_MICHAEL.md [x]/[ ] markers from recent git commit messages
+  and SESSION_LOG.md entries for the AccentOS project. Catches the
+  recurring drift between "what shipped to AccentOS" and "what's marked
+  shipped in the plan." Outputs paste-ready Edit commands targeting exact
+  file lines; never auto-applies. Use this skill when Michael says:
   "sync the build plan", "update the plan markers", "what's actually
   shipped", "build plan status", "update [x]/[ ] from git", "audit
   the build plan", or any phrasing that asks to reconcile planning
   doc state against shipped reality. Do not use for cross-doc drift
-  (use doc-drift) or for vendor scoring drift (use vendor-clarity-
-  test). Always produces a paste-ready Edit command list — never returns
-  prose-only. Always cites exact commit SHAs and source lines —
-  never invents evidence or marks [x] from LOW-confidence signals.
+  (use doc-drift) or for vendor scoring drift (use vendor-clarity-test).
+  Always produces a paste-ready Edit command list with exact commit SHAs
+  and source file lines — never returns prose-only, never invents
+  evidence, never marks [x] from LOW-confidence signals.
 ---
 
 # build-plan-status
 
-**Purpose:** During autonomous AccentOS builds, modules ship and commits land but BUILD_PLAN_CLAUDE markers don't always update — especially when Michael completes things outside the Claude session (M-tasks). This skill closes the gap between git history and plan state.
-
-Origin: AccentOS-internal recurring drift pattern. Pairs with doc-drift but scoped specifically to plan markers.
+**Purpose:** During autonomous AccentOS builds, modules ship and commits land but BUILD_PLAN_CLAUDE markers don't always update — especially when Michael completes M-tasks outside the Claude session. This skill closes the gap between git history and plan state, producing paste-ready Edit commands so every stale `[ ]` marker gets corrected to `[x]` in one pass.
 
 ---
 
@@ -31,6 +30,7 @@ Run when Michael says:
 - "what's actually shipped"
 - "build plan status" / "audit the build plan"
 - "update [x]/[ ] from git"
+- "reconcile the plan" / "plan drift"
 
 ---
 
@@ -75,8 +75,8 @@ Read BUILD_PLAN_CLAUDE.md and BUILD_PLAN_MICHAEL.md. Cross-reference each eviden
 
 | Identifier | Plan marker | Evidence | Drift? |
 |---|---|---|---|
-| 5.5 | `[ ]` | shipped v6.10.13 | ✗ DRIFT — should be [x] |
-| 6.9 | `[ ]` | shipped v6.10.25 | ✗ DRIFT — should be [x] |
+| 5.5 | `[ ]` | shipped v6.10.13 | ✗ DRIFT — mark [x] |
+| 6.9 | `[ ]` | shipped v6.10.25 | ✗ DRIFT — mark [x] |
 | M21 | `[x]` | confirmed | ✓ in sync |
 | M22 | `[ ]` | "ran clean" in SESSION_LOG | ✗ DRIFT |
 
@@ -152,8 +152,9 @@ This closes the loop: the moment a BUILD_PLAN marker flips, any prompt deferred 
 
 ## Anti-patterns
 
-- **Never** auto-apply the Edits. Output only — Michael runs them.
-- **Never** mark a track [x] based on LOW-confidence evidence. Surface ambiguous rows for manual review.
-- **Never** invent ship dates or commit SHAs. Cite exact source.
-- **Never** modify BUILD_PLAN_MICHAEL items based on Claude commits — Michael's plan reflects Michael's work, not Claude's.
-- **Never** skip the WORK_IN_PROGRESS.md source — it's often the most recent signal.
+- **Never** auto-apply the generated Edits. Output commands only — Michael runs them against /home/user/accent-os/ files.
+- **Never** mark a track [x] based on LOW-confidence evidence. Surface all ambiguous rows in BLOCK 4 for manual review.
+- **Never** invent ship dates or commit SHAs. Every evidence cell must cite its exact git log line or SESSION_LOG excerpt.
+- **Never** modify BUILD_PLAN_MICHAEL.md items based on Claude commits — Michael's plan reflects Michael's M-task completions, not Claude's work.
+- **Never** skip the WORK_IN_PROGRESS.md source — the "Step:" line is often the most recent shipped-module signal in the repo.
+- **Never** skip the prompt-queue RESOLVE hook at the end of a run. Every build-plan-status run must check /home/user/accent-os/PROMPT_QUEUE.md for items newly unblocked by flipped markers.

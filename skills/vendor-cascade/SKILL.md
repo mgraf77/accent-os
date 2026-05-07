@@ -176,10 +176,15 @@ When Michael asks "why is vendor Y ranked there" (rank-surprise mode), invert th
 1. Pull vendor Y's per-metric values from BC store-cwqiwcjxes / Supabase
 2. Multiply each metric value by its weight from the cascade map
 3. Group contributions by priority (sum metric × weight per priority)
-4. Output: "Vendor Y's score is X. Priority breakdown: P1 contributes [a], P2 contributes [b], ..."
+4. Output: "Vendor Y's score is X. Priority breakdown: P1 contributes 0.42, P2 contributes 0.18, ..." (actual computed values, not placeholders)
 5. Highlight the largest contributor and the largest underperformer for that vendor
 
-This variant uses Steps 1–3 then branches; Steps 4–5 are skipped, Step 6 produces only Block 1 with vendor-Y-specific contribution numbers added as a 5th column.
+This variant uses Steps 1–3 then branches; Steps 4–5 are skipped, Step 6 produces only Block 1 with a 5th column added:
+
+| Priority | Metric | Metric weight | Vendor data field | Vendor Y contribution |
+|----------|--------|---------------|-------------------|-----------------------|
+| P1 — Q4 margin | M3 — gross margin % | 0.40 | BC: `gross_margin` | 0.40 × 0.82 = 0.328 |
+| P1 — Q4 margin | M7 — discount frequency | 0.10 | BC: `promo_count_90d` | 0.10 × 0.45 = 0.045 |
 
 ---
 
@@ -190,4 +195,5 @@ This variant uses Steps 1–3 then branches; Steps 4–5 are skipped, Step 6 pro
 - **Never** modify `/home/user/accent-os/index.html`, `js/*.js`, or any scoring code. Output proposals only.
 - **Never** skip the sum-check. Drift in weights is the single most common source of vendor-rank surprises.
 - **Never** skip the SQL stub. The point of this skill is paste-readiness for `vendor_scores` — prose-only output is a failed run.
-- **Never** ask Michael to disambiguate a metric — pick the highest-weight match and state which one in the output.
+- **Never** ask Michael to disambiguate a metric — pick the highest-weight match from the AccentOS scoring formula and state which one was selected in the output header.
+- **Never** run this skill against a vendor in BC store-cwqiwcjxes whose `vendor_id` does not exist in Supabase `hsyjcrrazrzqngwkqsqa` vendors table — flag the cross-store ID mismatch instead.

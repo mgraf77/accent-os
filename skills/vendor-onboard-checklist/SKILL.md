@@ -10,8 +10,8 @@ description: >
   is in accepted enum), and consistency with sibling vendors in the
   same brand category. Outputs missing-field list + paste-ready SQL
   UPDATE stubs. Use this skill when Michael says: "vendor onboarding
-  check", "is this vendor complete", "audit [vendor] record",
-  "onboarding checklist", "vendor complete?", "verify [vendor] data",
+  check", "is this vendor complete", "audit Acme Lighting record",
+  "onboarding checklist", "vendor complete?", "verify Bright Co data",
   or any phrasing that asks whether a vendor record meets the
   AccentOS completeness contract. Do not use to populate missing
   data (that's manual or requires API access to Windward) or to
@@ -33,8 +33,8 @@ Stolen from: B2B partner-onboarding workflow patterns common across Crossbeam, A
 Run when Michael says:
 - "vendor onboarding check" / "onboarding checklist"
 - "is this vendor complete" / "vendor complete?"
-- "audit [vendor name or ID] record"
-- "verify [vendor] data"
+- "audit Acme Lighting record" / "audit V123 record"
+- "verify Bright Co data" / "verify this vendor data"
 
 ---
 
@@ -46,7 +46,15 @@ Input one of:
 - All vendors that just had `rep_group_id` set (after rep-group-matchmaker run)
 - `--all-incomplete` flag → every vendor row
 
-Output the chosen scope up front.
+Output the chosen scope up front:
+
+```
+SCOPE: 1 vendor — V123 (Acme Lighting)
+  — or —
+SCOPE: 7 vendors onboarded in the last 7 days
+  — or —
+SCOPE: ALL vendors where rep_group_id IS NULL (N=243)
+```
 
 ---
 
@@ -124,7 +132,7 @@ WHERE v.id IN ($1, ...)
 
 Flag outliers — e.g. "Acme Lighting has Net60; every other Pendant-category vendor has Net30 — verify."
 
-**When sibling check is skipped:** if the vendor's `brand_category` has fewer than 3 sibling vendors with complete records, output explicitly per affected vendor: "Cross-vendor consistency check skipped — `brand_category` [name] has only [N] siblings (need ≥3)." Do not silently produce zero outliers.
+**When sibling check is skipped:** if the vendor's `brand_category` has fewer than 3 sibling vendors with complete records, output explicitly per affected vendor: "Cross-vendor consistency check skipped — `brand_category` Pendants has only 2 siblings (need ≥3)." Do not silently produce zero outliers.
 
 ---
 
@@ -169,3 +177,4 @@ UPDATE vendors SET moq_dollars = [VALUE]
 - **Never** flag a "DESIRED" field as a failure. Required vs. desired is the contract.
 - **Never** mark a vendor "complete" just because all required columns are non-null — also run the cross-vendor consistency check.
 - **Never** modify the contract definition (Step 2 table) from inside this skill. Updates to the contract live in this SKILL.md, not at runtime.
+- **Never** skip the cross-vendor consistency check (Step 4) even if all required fields pass — lead time and payment term outliers are invisible without sibling comparison, and Supabase hsyjcrrazrzqngwkqsqa `vendors` table drift is the most common source of silent data quality failures in AccentOS.
