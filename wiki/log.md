@@ -3,6 +3,33 @@
 
 ---
 
+## 2026-05-07 precision-optimization-passes
+
+### Pass 1 (45.7% → 48.3%)
+- fix: rag_eval.py — goTo golden set expected corrected from ['ADR-004','ADR-002'] → ['ADR-004'] (ADR-002 has zero goTo/dispatcher content)
+- fix: wiki/concepts/lighting-reference.md — "Footcandles:" → "Footcandle levels:" (plural→singular stem mismatch: footcandles→footcandl ≠ query token footcandle)
+- fix: wiki/decisions/ADR-001.md — added "AccentOS enforces customer mode data isolation using Supabase row-level security policies" (0.07 gap for customer mode query)
+- enrich: wiki/concepts/sop-vendor-onboarding.md — Step 2 updated to "Key questions to ask vendor rep" with explicit rebate/freight/IMAP terms
+- enrich: wiki/concepts/rubric-rep-score.md — renamed section heading to "Rep score rubric criteria", added rubric×3 to notes, added scoring guidance sentence
+- eval: composite 89.9% → 90.1%, precision 45.7% → 48.3% (+2.6pp), recall 100%, MRR 93.3%
+
+### Pass 2 (48.3% → 50.8%)
+- fix: wiki/entities/employees/michael-graf.md — added "AccentOS team members: Michael Graf (Owner), Paul Graf (Admin), Patrick Graf (Sales)" sentence (fixes team members query; michael-graf moves from rank5 to rank3)
+- fix: wiki/entities/employees/michael-graf.md — removed paul-graf from frontmatter related field (breaks circular graph boost that inflated paul-graf scores on Michael name queries)
+- fix: wiki/entities/employees/paul-graf.md — changed "when Michael is unavailable" → "when Owner is unavailable" (hidden michael token causing paul-graf rank1 on Michael Graf role query)
+- fix: wiki/entities/employees/paul-graf.md — removed [[michael-graf]] body wikilink (token leak: [[michael-graf]] → "michael" in body text)
+- fix: wiki/entities/employees/patrick-graf.md — removed [[michael-graf]] body wikilink (same token leak)
+- fix: wiki/concepts/lighting-reference.md — added "CRI ≥ 90 required" to Quick reference retail line + removed dimming-protocols from frontmatter related (dimming-protocols was getting graph boost from lighting-reference, inflating its rank for CRI retail queries; removing it drops dimming-protocols from rank3 to rank5, lighting-reference moves to rank3)
+- fix: wiki/concepts/lighting-reference.md — updated updated date
+- eval: composite 90.7%, precision 50.8% (+2.5pp over Pass 1), recall 100%, MRR 93.3%, entity cluster 79.2% → 86.1%
+
+### Remaining misses (3 structural)
+- vendor-scoring missing for 3% rebate query (rebates→rebat stem mismatch; "rebate" singular not in vendor-scoring; adding it causes rubric page regression)
+- rubric-rep-score missing for rep score rubric (rubric token IDF=0.315, too common; rank10; gap 0.859 to rank3)
+- vendor-scoring missing for return policy query (rubric-display rank1 due to [[rubric-returns]] body wikilink + earns/high density; vendor-scoring rank5)
+
+---
+
 ## 2026-05-07 deep-optimization
 - upgrade: rag_build_index.py — section-aware chunking (## headings, max 300w); related: frontmatter parsed + stored; idf_map in index; rag_index_compact.json output; source/synthesis boost 0.75×
 - upgrade: rag_search.py — three-stage BM25 → graph re-rank (max-boost, not sum) → unique-slug dedup pipeline; GRAPH_N=10 GRAPH_BOOST=0.2

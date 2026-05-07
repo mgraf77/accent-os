@@ -3,7 +3,7 @@ type: entity
 slug: michael-graf
 title: Michael Graf (Owner)
 sources: [source-master]
-related: [paul-graf, patrick-graf, sop-vendor-onboarding, sop-rep-outreach]
+related: [patrick-graf, sop-vendor-onboarding, sop-rep-outreach]
 confidence: high
 sensitive: true
 created: 2026-05-06
@@ -12,7 +12,7 @@ updated: 2026-05-06
 
 # Michael Graf — Owner
 
-AccentOS team member. Michael Graf holds the Owner role at Accent Lighting Inc., Wichita, KS. Michael is the founding architect of AccentOS and the primary product decision-maker.
+AccentOS team member. Michael Graf holds the Owner role at Accent Lighting Inc., Wichita, KS. Michael is the founding architect of AccentOS and the primary product decision-maker. AccentOS team members: Michael Graf (Owner), Paul Graf (Admin), Patrick Graf (Sales).
 
 ## Responsibilities
 

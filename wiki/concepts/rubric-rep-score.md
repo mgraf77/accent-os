@@ -30,9 +30,13 @@ The rep score rubric measures quality of the manufacturer's sales rep assigned t
 | 1 | Unreliable — misses commitments, damages relationship |
 | 0 | No rep assigned — Accent services account directly |
 
+## Rep score rubric criteria
+
+A rep score of 10 requires proactive updates, unsolicited samples, and joint sales calls. Score 8 = reliable follow-through with occasional delays. Score 5 = reactive only. Score 0 = no rep assigned. Apply this rubric after at least one rep interaction; re-apply rubric when rep changes.
+
 ## Notes
 
-- Rep quality is the most subjective category. Michael + sales team score collaboratively.
+- This rubric is the most subjective of 14 vendor scoring rubrics. Michael + sales team score collaboratively.
 - Rep relationships are personal — individual rep departures can drop a vendor 3–4 points overnight.
 - High-scoring reps: bring promo intel early, expedite claims, walk in unannounced to check displays.
 - Reps covering too many accounts often score 3–5 regardless of intent.

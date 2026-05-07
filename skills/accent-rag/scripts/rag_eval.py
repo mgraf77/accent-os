@@ -64,7 +64,7 @@ GOLDEN_QA = [
     {"query": "What is the file size trigger for splitting AccentOS?", "expected": ["ADR-004"], "cluster": "module_pattern"},
     {"query": "How does the CSV import flow work in AccentOS?", "expected": ["source-build-intelligence"], "cluster": "module_pattern"},
     {"query": "Why does AccentOS use vanilla JS instead of React?", "expected": ["ADR-002"], "cluster": "module_pattern"},
-    {"query": "How does the goTo dispatcher work?", "expected": ["ADR-004", "ADR-002"], "cluster": "module_pattern"},
+    {"query": "How does the goTo dispatcher work?", "expected": ["ADR-004"], "cluster": "module_pattern"},
 
     # Gotcha lookup (4 queries)
     {"query": "What is the AccentOS database?", "expected": ["ADR-001", "overview"], "cluster": "gotcha"},

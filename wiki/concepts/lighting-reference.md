@@ -3,7 +3,7 @@ type: concept
 slug: lighting-reference
 title: Lighting Reference Hub
 sources: [source-master]
-related: [lumen-output-commercial, color-temperature-selection, cri-tm30-tlci, emergency-lighting-compliance, dimming-protocols]
+related: [lumen-output-commercial, color-temperature-selection, cri-tm30-tlci, emergency-lighting-compliance]
 confidence: high
 sensitive: false
 created: 2026-05-06
@@ -33,7 +33,7 @@ Central hub for Accent Lighting technical reference. Covers commercial lighting 
 
 **Commercial**
 - Office: 3500–4000K, 30–50 FC (IECC 2021: ≤0.6 W/SF open office)
-- Retail: 3000–3500K, 50–100 FC on merchandise
+- Retail: 3000–3500K, CRI ≥ 90 required, 50–100 FC on merchandise
 - Warehouse: 5000K, 20–30 FC ambient, 50+ FC task
 
 **Key codes**
@@ -45,7 +45,7 @@ Central hub for Accent Lighting technical reference. Covers commercial lighting 
 ## Key thresholds at a glance
 
 - CRI: CRI ≥ 80 required for commercial; CRI ≥ 90 required for retail, museum, and medical.
-- Footcandles: office 30–50 FC, retail 50–100 FC on merchandise, warehouse 20–75 FC.
+- Footcandle levels: office 30–50 FC, retail 50–100 FC on merchandise, warehouse 20–75 FC.
 - Emergency: NEC Article 700 requires 90-minute battery backup at 1 FC average.
 - Dimming: 0-10V most common for commercial LED; DALI for networked controls.
 

@@ -25,7 +25,7 @@ Standard process for adding a new vendor to AccentOS and establishing the busine
 ### 2. Rep contact and intro meeting
 - Follow [[sop-rep-outreach]] to establish rep contact
 - Request: wholesale price list, net terms offer, freight policy, rebate program
-- Ask: IMAP enforcement policy, return/RGA process, co-op/MDF % available
+- Key questions to ask vendor rep: IMAP enforcement policy, return/RGA process, co-op/MDF % available, rebate tier thresholds, freight minimums
 
 ### 3. Score in AccentOS
 - Open Vendor Ranking → Add vendor

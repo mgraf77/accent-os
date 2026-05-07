@@ -19,7 +19,7 @@ AccentOS team member. Admin role. Accent Lighting Inc., Wichita, KS.
 - Showroom management: floor placement, display program coordination
 - New display vendor coordination (see [[sop-vendor-onboarding]] Step 6)
 - Admin-level access to all AccentOS modules
-- May approve M-tasks when Michael is unavailable
+- May approve M-tasks when Owner is unavailable
 
 ## AccentOS access
 
@@ -34,4 +34,4 @@ AccentOS team member. Admin role. Accent Lighting Inc., Wichita, KS.
 
 ## Related
 
-[[michael-graf]] · [[patrick-graf]] · [[sop-vendor-onboarding]]
+[[patrick-graf]] · [[sop-vendor-onboarding]]

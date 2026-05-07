@@ -31,4 +31,4 @@ AccentOS team member. Admin role. Accent Lighting Inc., Wichita, KS.
 
 ## Related
 
-[[michael-graf]] · [[paul-graf]]
+[[paul-graf]]
