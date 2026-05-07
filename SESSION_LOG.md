@@ -13,6 +13,36 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-07 — Quote Pro v1 (AI takeoff + national-account templates) — SHIPPED
+**Why:** Michael's live workflow (read blueprints → takeoff → build quote in Windward → send invoice) for national accounts like Homegrown / Thrive Restaurant Group was begging for a "train once per brand, reuse forever" pattern. He needed it live ASAP for a current Homegrown job.
+
+**Built/Changed:**
+- **`js/quote_pro.js`** (new, 935 lines, v6.10.75) — 4 tabs (New Quote / Templates / Saved Quotes / Help). Vision-based blueprint takeoff via Anthropic API (`claude-sonnet-4-5-20250929`) — accepts PDF + image multi-file uploads, returns JSON fixture array (tag, description, qty, rooms, mounting, lamping, notes, page_refs). Template-match autofills vendor/SKU/unit_price for repeating fixtures. Editable line grid with live ext/total. Outputs: Windward-friendly CSV (PartNumber, Description, Qty, UnitPrice, ExtPrice, Vendor, Tag, Notes) + printable invoice + persistence into existing `quotes` / `quote_lines`.
+- **`sql/M42_quote_templates_schema.sql`** (new) — `quote_templates` table for national-account training pairs. Columns: brand, parent_company, source_location, blueprint_notes, fixture_signature JSONB, invoice_lines JSONB, totals JSONB, ai_summary, fixture_count, invoice_total, use_count, last_used_at, notes. Idempotent. RLS authed read + Sales+ writes (matches M02 quotes/quote_lines policy).
+- **`index.html`** (4 surgical edits) — sidebar entry "Quote Pro" (◆, Owner/Admin/Manager/Sales) right after Quote Generator; `PAGE_META.quotepro`; pages dispatch; script tag at v6.10.75. Existing inline `quote()` page completely untouched (additive, not replacement).
+- **`BUILD_PLAN_MICHAEL.md`** — added M42 (run quote_templates schema).
+
+**How it works:**
+1. **Train:** Templates tab → upload prior-location blueprints + final invoice for a brand. Claude reconciles the two into a `fixture_signature` (canonical fixture pattern) + `invoice_lines` (exact prior invoice). Saved as a reusable template.
+2. **Build:** New Quote tab → pick brand template → upload new-location blueprints → Run AI takeoff. Claude lists every fixture; matched lines pull SKU/vendor/price from the template signature; unmatched lines stay editable.
+3. **Ship:** Review/edit grid; add freight + tax + notes; Save (writes to existing quotes table — appears in regular Quote Generator + Daily Brief + Decision Engine), Export CSV (Windward-ready), or Print (customer-facing PDF).
+
+**Decisions:**
+- **Additive, not replacement.** Left the inline `quote()` function intact. Quote Pro is its own page with its own sidebar entry. Less risk of breaking the live one for a feature still in pilot use.
+- **Reuse the existing schema for output.** Saving a Quote Pro quote writes to `quotes` + `quote_lines` so it shows up everywhere AccentOS already looks for quotes (Daily Brief, Decision Engine, customer detail timeline, pipeline linkage). Only the *templates* are net new schema.
+- **Model choice:** Sonnet 4.5 (`claude-sonnet-4-5-20250929`) — vision-capable, faster than Opus, cheaper, sufficient for fixture-schedule reading. Easy to switch later via the `model` arg in `qpCallAnthropic`.
+- **No file storage yet.** Blueprints get base64-encoded and sent inline to Anthropic; not persisted in Supabase. If Michael wants source-blueprint archive later, add a Storage bucket + signed URLs (sub-1 day work).
+
+**Open loops resolved:**
+- Track 1.2 expansion (AI quoting from blueprints) — was a vision-state line in MASTER §14 ("Sales quotes are auto-generated from a takeoff photo, refined with one voice note, submitted without touching a keyboard"). v1 of that capability is now live.
+
+**Next up:**
+- Michael runs M42 SQL → first Homegrown training pair → first Homegrown reuse on the new location.
+- Optional polish: multi-page PDF preview, template diff view, vendor_id auto-match against VD_RAW.
+
+---
+
+
 ### 2026-05-06 — efficiency-monitor v1 (always-on session observer) — SHIPPED
 **Skill:** `skills/efficiency-monitor/` — silent during work, surfaces only at session boundaries.
 **Built/Changed:**

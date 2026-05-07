@@ -406,6 +406,16 @@ After each landed M-task: re-invoke `"audit the KPI data"` to track coverage ris
   - Then: paste to Claude → `M40 done — user_module_overrides table live. Wire UI to read+write the table.`
   - Unlocks: real cross-device per-user module access. Today (v1) overrides only affect Owner's own browser; this M-task makes them effective for the actual user being granted/denied access.
 
+- [ ] **M42** — Run `quote_templates` schema (Quote Pro)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `sql/M42_quote_templates_schema.sql` from the repo (already written by Claude). Copy its contents.
+    2. Paste into the SQL Editor → click **Run**.
+    3. The verification SELECT at the bottom should return one row with `rls_enabled=true`.
+    4. Reload `https://accent-os.pages.dev` → click **Quote Pro** in the sidebar → Templates tab → **+ New training pair** to ingest your first Homegrown training pair (upload prior-location blueprints + the final invoice you sent).
+  - Then: paste to Claude → `M42 done — quote_templates schema live. First Homegrown training pair ingested.`
+  - Unlocks: Quote Pro full workflow — train once per national-account brand (Homegrown / Thrive Restaurant Group / etc.), reuse on every future location with AI blueprint takeoff.
+
 ---
 
 ## CATEGORY: KPI DASHBOARDS — also-easy already-written files (just run them)

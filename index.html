@@ -392,6 +392,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('pipeline')"><span class="ni-icon">◈</span><span class="ni-label">Sales Pipeline</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('customers')"><span class="ni-icon">☻</span><span class="ni-label">Customers</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('quotes')"><span class="ni-icon">◻</span><span class="ni-label">Quote Generator</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('quotepro')"><span class="ni-icon">◆</span><span class="ni-label">Quote Pro</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('jobs')"><span class="ni-icon">▤</span><span class="ni-label">Job Tracker</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('purchaseorders')"><span class="ni-icon">⌧</span><span class="ni-label">Purchase Orders</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('tradepartners')"><span class="ni-icon">◆</span><span class="ni-label">Trade Partners</span></div>
@@ -833,6 +834,7 @@ const PAGE_META={
   pipeline:  {t:'Sales Pipeline',s:''},
   customers: {t:'Customers',s:'CRM · RFM · Lifecycle'},
   quotes:    {t:'Quote Generator',s:''},
+  quotepro:  {t:'Quote Pro',s:'AI takeoff · National-account templates'},
   jobs:      {t:'Job Tracker',s:'Project work tracking'},
   purchaseorders: {t:'Purchase Orders',s:'Vendor POs · Receipt tracking'},
   tradepartners: {t:'Trade Partners',s:'Designers · Contractors · Architects'},
@@ -871,7 +873,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,internalmeetings};
+  const pages={dashboard,pipeline,customers,quotes,quotepro,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,internalmeetings};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -6763,5 +6765,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
 <script src="js/internal_meetings.js?v=6.10.74"></script>
+<script src="js/quote_pro.js?v=6.10.75"></script>
 </body>
 </html>

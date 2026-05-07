@@ -37,6 +37,8 @@
 
 - [x] **1.2** — Quote Generator — Persistence + Save/Retrieve
   - Shipped v6.10.0: quotes + quote_lines tables wired; load/save/delete; Saved Quotes modal with per-row Delete; quote.notes JSONB packs the type/sqft/budget/contact extras until schema gets first-class columns; QUOTE_ID seeded from highest-seen QT-#### number.
+  - **v6.10.75 — Quote Pro expansion (2026-05-07).** New "Quote Pro" sidebar entry alongside the original Quote Generator. AI vision takeoff from PDF+image blueprints (Anthropic `claude-sonnet-4-5-20250929`), national-account template training (`quote_templates` table — M42 SQL), template-match autofill of vendor/SKU/unit_price, editable line grid with live recalc, Windward-friendly CSV export, printable invoice, save → existing `quotes`+`quote_lines`. New module `js/quote_pro.js` (935 lines). Existing inline `quote()` page untouched. Closes the "auto-generate quote from takeoff" line item in MASTER §14 vision.
+  - BLOCKS ON MICHAEL: **M42** (run quote_templates schema)
 
 - [x] **1.3** — Daily Command Center (phase 1 + phase 2)
   - Phase 1 (v6.9.8): role-aware "📌 Today" card with 6 tiles (unverified scores, tier C, 24h activity, unassigned reps, mixed-rep parents, avg score gauge).

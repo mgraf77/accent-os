@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-07 — Quote Pro (AI takeoff + national-account templates)
+**Prompt:** "lets build out the functionality of the quote generator that i need to use right now. here is my typical process: 1. the quote request is sent to me 2. i read all of the notes on the electrical and architectural pages and confirm what i am supposed to quote 3. i do a takeoff and count all the fixtures i am supposed to supply 4. i build a quote in windward 5. i double check everything 6. i send the quote to the customer in the form of an invoice from windward that is specific to the quote itself. sometimes, i can just reuse some or all of a template when this is a national account or something like that. this specific example is for a national account resturant called homegrown owned by a company called thrive resurant group. I would like to be able to train this skill by giving it the blueprints from the previous location (the input) and then giving the final invoice that we sent once the whole package was delivered to the customer. then the skill needs to reconstruct and automate this process for me. I want this live and functional on accentos asap"
+**Context:** Live use case starting now. National account = Homegrown / Thrive Restaurant Group. Workflow: train once on a prior-location pair (blueprints + final invoice) → reuse template for the next location (blueprints → AI takeoff → match against signature → review → save/export). Built as new sidebar entry "Quote Pro" alongside the existing inline Quote Generator (didn't touch the existing one — separate, additive).
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"
