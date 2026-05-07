@@ -109,3 +109,33 @@ CLEAN — Step 2 backend detection, Step 4 invocation paths, and Step 7 apply-mo
 - Two anti-patterns: generic principles → AccentOS-specific failure modes with named components (Supabase ID, skill names, shared file paths)
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+
+**L1 specificity check:** 10 anti-patterns, all with specific AccentOS context (project IDs, file paths, enum values). Clean — no rewrites needed. Body had no behavioral commitment; added: "Always run Step 5 schema validation before applying any recommendation — never apply a Codex suggestion to `/home/user/accent-os` files without confirming `old_string` is unique in the target file and `risk` is exactly 'LOW' or 'HIGH'."
+
+**L2 commitment check:** YAML commitment "always produces an auto-applied diff summary plus a surfaced-for-review list — never returns prose-only" — no vague words. New body commitment names `/home/user/accent-os`, "unique in the target file", and exact enum values. Clean.
+
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases), M10 (no placeholders). M5: trigger "peer review the last commit" and "cross-review" — verified against skill-eval-suite (no overlap; skill-eval-suite uses "eval suite", "promptfoo", "regression tests" triggers). M10: Found bracket placeholders outside fenced code blocks: (1) line 277 `[target]` in prose, (2) trigger section lines 37/40/41 had `[target]`, `[skill/file/branch]`, `[skill/file]` in non-backtick prose. (3) Step 6 output template had `[recommendation N]` and `[validation point]` in a quoted string outside a fence. All fixed.
+
+**Cold-read check:** Passive voice found on line 80: "Record which backend will be used" → rewrote to "Record the chosen backend name". Step 2 probe commands (`which codex`, `printenv OPENAI_API_KEY`) are executable. Step 3 saves to `/tmp/codex-review-prompt.md` — concrete path. No undefined variables.
+
+**Cross-skill trigger audit:** "peer review" and "cross-review" verified against skill-eval-suite — no collision. skill-eval-suite triggers: "eval suite for", "promptfoo for", "regression tests for", "automate the Ralph loop", "lock in behavior", "write evals for", "add promptfoo tests to" — completely orthogonal. "sanity check the last commit" — unique to codex-review. No collisions.
+
+### Round 6 — Second pass
+
+**L1 check:** All 10 anti-patterns name specific AccentOS artifacts. Body commitment names `/home/user/accent-os` and exact enum values. Clean.
+
+**L2 check:** New body commitment: "Always run Step 5 schema validation" (names specific step), "risk is exactly 'LOW' or 'HIGH'" (exact string values). No vague words. No regression from Round 5 edits.
+
+**Adversarial check:** Dimensions sampled: M9 (stack reference), M6 (concrete outputs). M9: Supabase project `hsyjcrrazrzqngwkqsqa`, BC store `store-cwqiwcjxes`, GMC merchant ID `687520574` appear in Step 3 context prompt. Clean. M6: Step 8 output blocks show all 5 BLOCKs with concrete formats inside code fences. Step 5 shows survivors/rejects format. Clean.
+
+**Cold-read check:** Trigger section now uses prose descriptions instead of bare bracket templates. Step 7 apply-mode commands all use backtick spans for command templates. Step 6 revert log example now uses a concrete example ("Rec #3") instead of `[recommendation N]`. No session-context-only instructions.
+
+**Cross-skill trigger audit:** No trigger phrase changes in Round 6. Confirmed no collisions with skill-eval-suite.
+
+### Final: 7 sub-dimension edits across 2 rounds

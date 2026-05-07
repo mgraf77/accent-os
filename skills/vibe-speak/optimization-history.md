@@ -113,3 +113,22 @@ CLEAN — no additional changes needed. Step 1 reads 7 files in defined order wi
 - Trigger phrases: 11 entries (with heavy overlap) reduced to 7 entries covering ≥5 distinct user mental models
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** Anti-patterns lacked AccentOS-specific failure mode examples for mode-compression risk. Generic "never misidentify mode" not present but no AP named the concrete failure of using gsd/caveman during a Supabase SQL migration or a multi-step M-task sequence. Added two new AccentOS-specific APs: (1) gsd/caveman during `hsyjcrrazrzqngwkqsqa` SQL migrations citing `ALTER TABLE`/`CREATE POLICY`/Step 7 Rule 3; (2) gsd/caveman during multi-step AccentOS sequences with order dependencies, citing `BUILD_PLAN_CLAUDE.md`, `BLOCKS ON MICHAEL`, `rep-group-matchmaker → vendor-onboard-checklist` pipeline example, and Step 7 Rule 4.
+**L2 commitment check:** Description commitment "Always translates jargon on output and keeps hard-keep identifiers byte-exact — never drops facts to hit a word-count target" — specific to the skill's primary output guarantee. Sufficient.
+**Adversarial check:** Dimensions sampled: M13 (adaptive learning signal types), M7 (auto-disengage). M13: "revert" signal had no collision rule when combined with "bump-up" — both can fire when Michael uses a technical term in a question. Added "Revert + bump-up → Revert wins" row to multi-signal collision table. M7: Rule 11 `hsyjcrrazrzqngwkqsqa` — fires for ALL non-raw modes, not just gsd/caveman. The new APs name gsd/caveman because they're highest risk; Rule 11 still covers all modes. No contradiction.
+**Cold-read check:** Step 7 Rule 3 and Rule 4 are the auto-disengage rules cited in the new APs. Both rules are present in Step 7 at lines 394 and 395. Cross-reference verified. New AP formatting matches existing AP register voice (Never X — Y). ✓
+**Cross-skill trigger audit:** "default mode" → vibe trigger does not collide with any vendor skill trigger phrase. "back to vibe" — unique. "drop the jargon" — unique. "human mode" — unique. No collisions detected.
+
+### Round 6 — Second pass
+**L1 re-check:** New AP#1 (gsd/caveman + SQL migration) names `ALTER TABLE`, `CREATE POLICY`, `hsyjcrrazrzqngwkqsqa`, and "migration filename" — all concrete AccentOS artifacts. ✓ New AP#2 (gsd/caveman + multi-step sequence) names `BUILD_PLAN_CLAUDE.md`, `BLOCKS ON MICHAEL`, `rep-group-matchmaker → vendor-onboard-checklist` — all real AccentOS artifacts. ✓
+**L2 re-check:** Collision table row "Revert + bump-up → Revert wins" is consistent with feedback-log immediate-write behavior for revert (logs immediately per Step 13). Bump-up has no log (per signal types table). Absorption is clean. ✓
+**Adversarial re-check:** "pair mode running SQL migration" — Step 7 Rule 3 fires for pair mode too (not just gsd/caveman). New AP only names gsd/caveman; pair mode is a lower-compression risk but still covered by Rule 3. Acceptable — APs name the highest-risk modes without contradicting the general rule.
+**Cold-read re-check:** Multi-signal collision table now has 6 rows. All combos listed are plausible in real sessions. Revert+bump-up combo is the most likely uncovered case. ✓
+
+### Final: 3 sub-dimension edits across 2 rounds
