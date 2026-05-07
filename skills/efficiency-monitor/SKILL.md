@@ -118,22 +118,22 @@ Read `_session-scratch.md`. Group entries by signal type, total count per type, 
 ### 2b. Append to `efficiency-log.md`
 
 ```markdown
-## [YYYY-MM-DD HH:MM] session [shortsha]
+## 2026-05-07 14:52 session a3f9c12
 
 ### Inefficiencies
-- retry-loop ×N — [detail]
-- redundant-read ×N — [detail]
-- ...
+- retry-loop ×3 — npm install failed 3 times; root cause was missing node_modules after branch switch
+- redundant-read ×4 — re-read js/csv_import.js at 14:08, 14:22, 14:35, 14:51
+- skill-bypass ×1 — ran weekly review manually; bc-business-review skill would have handled it
 
 ### Recurring sequences (in-session)
-- [step1 → step2 → step3] ×N
+- read js/customers.js → grep vendor_scores → edit → test ×3 this session
 
 ### Skill bypass
-- task: [description]
-  matched-skill: [skills/_index.md entry that would have handled it]
+- task: manually built weekly vendor review report
+  matched-skill: bc-business-review (trigger: "weekly review", "vendor performance this week")
 
 ### Notes
-- [any qualitative obs worth keeping]
+- M27 ran clean; no corresponding BUILD_PLAN_MICHAEL.md update seen this session
 ```
 
 ### 2c. Overwrite `session-end-summary.md`

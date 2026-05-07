@@ -172,14 +172,14 @@ Use this v2 format (extends the prior simple format with `defer_until` + `execut
 - ... (newest first)
 ```
 
-After writing, output a confirmation:
+After writing, output a confirmation (substitute actual values):
 
 ```
-✓ QUEUED #N — "[truncated prompt 60 chars]..."
-  priority: [n] (chronological default; reorder anytime)
-  source:   [src]
-  Queue depth: [total queued]
-  
+✓ QUEUED #3 — "backfill customers.segment for top 100 by revenue..."
+  priority: 3 (chronological default; reorder anytime)
+  source:   iOS
+  Queue depth: 3 ready, 1 waiting
+
   Will execute at session-end OR on "execute next queued".
 ```
 

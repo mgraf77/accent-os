@@ -68,9 +68,14 @@ For each doc, extract these claim classes:
 Produce a per-doc claim list in this format:
 
 ```
-[doc name]:
-  - [claim class]: "[quoted source line]"
-  - [claim class]: "[quoted source line]"
+MASTER.md:
+  - Active priority: "Q4 margin improvement via vendor scoring"
+  - Active track: "Track 5.7 — vendor cascade v2"
+BUILD_PLAN_CLAUDE.md:
+  - Track status: "- [ ] **5.7** — Vendor Cascade v2"
+  - Active priority: "priority: high — Q4 margin"
+SESSION_LOG.md:
+  - Track status: "5.7 Vendor Cascade ran clean in Supabase 2026-05-04"
 ```
 
 Quote source lines exactly — no paraphrase.
