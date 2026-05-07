@@ -1903,7 +1903,7 @@ function imRenderAiNotes(el, id){
 
   el.innerHTML = `
     <div class="alert alert-info" style="margin-bottom:14px;">
-      <strong>Native AI Note-Taking (no paid recorder needed):</strong> Record with any free tool (Otter free, Google Meet, Fireflies free, phone voice memo). Paste the transcript below — AccentOS natively extracts action items (with owner + due date), decisions, open questions, topics, blockers, metrics, deadlines, talk-share, key quotes, and a verbatim summary. Powered by the <code>transcript-intelligence</code> skill. 100% local — no external API spend, works offline.
+      <strong>Native AI Note-Taking (recorder + intelligence built-in):</strong> Click <code>🎤 Record Live</code> to capture meeting audio directly in your browser — no Otter, no Fireflies, no app install. Or paste a transcript from any source. AccentOS natively extracts action items (with owner + due date), decisions, open questions, topics, blockers, metrics, deadlines, talk-share, key quotes, and a verbatim summary. Powered by the <code>transcript-intelligence</code> skill. 100% local — no external API spend, works offline. <em>Live recording uses the Web Speech API (Chrome, Edge, Safari).</em>
     </div>
 
     <div style="font-size:13px;font-weight:700;margin:18px 0 10px;">🎙️ Connect Your Recorder</div>
@@ -1922,10 +1922,11 @@ function imRenderAiNotes(el, id){
           </select>
         </div>
       </div>
-      <div class="field"><label>Paste Transcript</label>
-        <textarea id="im-tx-text" rows="8" placeholder="Paste the full transcript here…&#10;&#10;Tips that help extraction:&#10;• Action items: 'will do', 'needs to', 'todo:', 'follow up'&#10;• Decisions: 'decided', 'agreed', 'we will', 'plan is to'"></textarea>
+      <div class="field"><label>Paste Transcript <span class="muted sm">— or click 🎤 below to record live in-browser</span></label>
+        <textarea id="im-tx-text" rows="8" placeholder="Paste a transcript here, or click 🎤 Record Live to capture audio in-browser (Chrome/Edge/Safari).&#10;&#10;Cues that boost extraction:&#10;• Action items: 'will do', 'needs to', 'I'll', 'follow up'&#10;• Decisions: 'decided', 'agreed', 'we will', 'plan is to'"></textarea>
       </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+        <button id="im-rec-btn" class="btn btn-outline btn-sm" onclick="imToggleRecording('${esc(id)}')">🎤 Record Live</button>
         <button class="btn btn-accent btn-sm" onclick="imParseTranscript('${esc(id)}')">🔍 Extract Key Items</button>
       </div>
     </div>
@@ -1937,38 +1938,114 @@ function imRenderAiNotes(el, id){
 // ── transcript-intelligence skill (skills/transcript-intelligence/SKILL.md) ─
 // Native replacement for Otter/Fireflies/Granola/Plaud post-meeting AI.
 // 100% local string parsing. No external API. Verbatim — never paraphrase.
+// v2: Pass-1 quality (negation/question/past-tense filters, Jaccard near-dedup,
+// speaker-name normalization, filler stripping). Pass-2 perf (pre-compiled
+// regex, single-pass loop, cached tokenization, Map for talkMap).
+
+const _TI_RX = {
+  source: {
+    webvtt:  /^WEBVTT/m,
+    firefly: /^\s*Speaker \d+\s*\(\d{2}:\d{2}/m,
+    granolaT:/^##\s+Transcript/m,
+    granolaN:/^##\s+Notes/m,
+    plaud:   /^\[\d{2}:\d{2}:\d{2}\]\s*[^:]+:/m,
+    otterH:  /^[A-Z][\w .'-]{1,40}\s{2,}\d{1,2}:\d{2}/m
+  },
+  // categories
+  action: [
+    /\b(action item|todo|to[- ]?do|task)\s*[:\-]?\s*(.{6,240})/i,
+    /\b(I|you|he|she|they|we)['']?ll\s+(.{6,240})/i,
+    /\b(?:will|need(?:s)? to|going to|plan to|should|must|let'?s)\s+(.{6,240})/i,
+    /\b(follow[- ]?up|circle back|loop in|get back to)\s+(.{6,240})/i,
+    /\b(?:assigned? to|owner:?)\s+([A-Z][a-z]+)\b\s*(.{0,240})/i
+  ],
+  decision: /\b(?:decided|decision|we'?ve decided|the decision is|agreed|consensus|approved|chose|going with|the plan is|locked in|signed off)\b\s*[:\-]?\s*(.{6,240})/i,
+  blocker:  /\b(?:blocked|blocker|stuck|risk|concern|worried|problem|issue|can'?t|won'?t work|breaking)\b\s+(.{6,240})/i,
+  due:      /\b(today|tomorrow|by (?:next )?(?:mon|tue|wed|thu|fri|sat|sun)\w*|EOW|EOM|end of (?:week|month)|in \d{1,3} days?|by \w+ \d{1,2})\b/i,
+  name:     /\b([A-Z][a-z]{2,})\s+(?:will|should|needs to|is going to|to)\s+/,
+  ownerExp: /\b(?:assigned? to|owner:?)\s+([A-Z][a-z]+)/i,
+  firstP:   /^\s*(?:I|I'?ll|I am|I'?m)\b/i,
+  question: /\?\s*$/,
+  // disqualifiers
+  negation: /\b(?:won'?t|will not|shouldn'?t|should not|can'?t|cannot|don'?t|do not|no longer)\b/i,
+  pastRecap:/\b(?:already|yesterday|last week|did|completed|finished|done with)\b/i,
+  // numbers
+  money:    /\$[\d,]+(?:\.\d+)?[KMB]?\b/g,
+  pct:      /\b\d{1,3}(?:\.\d+)?%/g,
+  // deadlines
+  monthDate:/\b(?:by\s+)?(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{1,2}(?:,\s*\d{4})?/i,
+  // formats
+  vttHeader:/^WEBVTT|^\d+$|-->/,
+  otterLine:/^([A-Z][\w .'-]{1,40})\s{2,}(\d{1,2}:\d{2}(?::\d{2})?)\s*$/,
+  ffLine:   /^Speaker (\d+)\s*\((\d{2}:\d{2}(?::\d{2})?)\)\s*:?\s*(.*)$/,
+  granolaB: /^\*\*([^*]+):\*\*\s*(.+)$/,
+  granolaA: /^([A-Z][\w .'-]{1,40})[:—-]\s*(.+)$/,
+  plaudLine:/^\[(\d{2}:\d{2}:\d{2})\]\s*([^:]+):\s*(.+)$/,
+  manualSpk:/^([A-Z][a-zA-Z .'-]{1,40})[:—-]\s*(.+)$/,
+  manualTs: /^\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s*/,
+  // filler
+  filler:   /\b(?:um+|uh+|er+|like|you know|i mean|kind of|sort of|basically|literally|honestly|actually)\b[, ]*/gi,
+  trailPunc:/[.,;]+$/,
+  affirm:   /^\s*(?:yes|no|yeah|nope|i think|sure|correct|right|exactly|agreed)\b/i
+};
+
+const _TI_STOP = new Set('the and a an of to in is are was were be been have has had do does did for on at by with from this that it as or but if so we you i he she they our your their not no yes ok okay just like really very also will would could should can may might shall must about into over under more most than then there here what when where which while who whom whose how why all any some such only own same too very can'.split(/\s+/));
 
 function _tiDetectSource(text){
   const head = text.slice(0, 2000);
-  if(/^WEBVTT/m.test(head)) return 'otter';
-  if(/^\s*Speaker \d+\s*\(\d{2}:\d{2}/m.test(head)) return 'firefly';
-  if(/^##\s+Transcript/m.test(head) && /^##\s+Notes/m.test(head)) return 'granola';
-  if(/^\[\d{2}:\d{2}:\d{2}\]\s*[^:]+:/m.test(head)) return 'plaud';
-  if(/^[A-Z][\w .'-]{1,40}\s{2,}\d{1,2}:\d{2}/m.test(head)) return 'otter';
+  const r = _TI_RX.source;
+  if(r.webvtt.test(head)) return 'otter';
+  if(r.firefly.test(head)) return 'firefly';
+  if(r.granolaT.test(head) && r.granolaN.test(head)) return 'granola';
+  if(r.plaud.test(head)) return 'plaud';
+  if(r.otterH.test(head)) return 'otter';
   return 'manual';
 }
 
 function _tiHmsToSec(s){
   if(!s) return null;
-  const p = s.split(':').map(Number);
-  if(p.length===3) return p[0]*3600+p[1]*60+p[2];
-  if(p.length===2) return p[0]*60+p[1];
+  const p = s.split(':');
+  if(p.length===3) return (+p[0])*3600 + (+p[1])*60 + (+p[2]);
+  if(p.length===2) return (+p[0])*60 + (+p[1]);
   return null;
 }
 
-// Normalise raw text → [{speaker, ts_sec, text}]
+// Normalise into a single speaker registry — collapse "Michael Graf" / "Michael" / "michael" → "Michael Graf"
+function _tiSpeakerCanon(){
+  const seen = new Map(); // first-token → fullName
+  return (raw) => {
+    if(!raw) return null;
+    const name = raw.trim();
+    const first = name.split(/\s+/)[0].toLowerCase();
+    if(!first) return name;
+    const existing = seen.get(first);
+    if(existing){
+      // Prefer the longer (fuller) name
+      if(name.length > existing.length) seen.set(first, name);
+      return seen.get(first);
+    }
+    seen.set(first, name);
+    return name;
+  };
+}
+
 function _tiNormalize(text, source){
   const out = [];
   const lines = text.split(/\r?\n/);
+  const canon = _tiSpeakerCanon();
+  const push = (speaker, ts_sec, txt) => {
+    const clean = txt.replace(_TI_RX.filler, '').replace(/\s{2,}/g,' ').trim();
+    if(clean) out.push({speaker: speaker ? canon(speaker) : null, ts_sec, text: clean});
+  };
 
   if(source==='otter'){
     let curSpeaker = null, curTs = null, buf = [];
-    const flush = () => { if(buf.length){ out.push({speaker:curSpeaker, ts_sec:curTs, text:buf.join(' ').trim()}); buf=[]; } };
-    for(const raw of lines){
-      const line = raw.trim();
+    const flush = () => { if(buf.length){ push(curSpeaker, curTs, buf.join(' ')); buf.length = 0; } };
+    for(let i=0;i<lines.length;i++){
+      const line = lines[i].trim();
       if(!line) continue;
-      if(/^WEBVTT/.test(line) || /^\d+$/.test(line) || /-->/.test(line)) continue;
-      const m = line.match(/^([A-Z][\w .'-]{1,40})\s{2,}(\d{1,2}:\d{2}(?::\d{2})?)\s*$/);
+      if(_TI_RX.vttHeader.test(line)) continue;
+      const m = _TI_RX.otterLine.exec(line);
       if(m){ flush(); curSpeaker = m[1].trim(); curTs = _tiHmsToSec(m[2]); continue; }
       buf.push(line);
     }
@@ -1978,11 +2055,11 @@ function _tiNormalize(text, source){
 
   if(source==='firefly'){
     let curSpeaker=null, curTs=null, buf=[];
-    const flush = () => { if(buf.length){ out.push({speaker:curSpeaker, ts_sec:curTs, text:buf.join(' ').trim()}); buf=[]; } };
-    for(const raw of lines){
-      const line = raw.trim();
+    const flush = () => { if(buf.length){ push(curSpeaker, curTs, buf.join(' ')); buf.length = 0; } };
+    for(let i=0;i<lines.length;i++){
+      const line = lines[i].trim();
       if(!line) continue;
-      const m = line.match(/^Speaker (\d+)\s*\((\d{2}:\d{2}(?::\d{2})?)\)\s*:?\s*(.*)$/);
+      const m = _TI_RX.ffLine.exec(line);
       if(m){ flush(); curSpeaker = 'Speaker '+m[1]; curTs = _tiHmsToSec(m[2]); if(m[3]) buf.push(m[3]); continue; }
       buf.push(line);
     }
@@ -1991,40 +2068,39 @@ function _tiNormalize(text, source){
   }
 
   if(source==='granola'){
-    // Only parse content under ## Transcript section
     const m = text.match(/##\s+Transcript[\s\S]+$/i);
-    const body = m ? m[0] : text;
-    for(const raw of body.split(/\r?\n/)){
-      const line = raw.trim();
-      if(!line || /^##/.test(line)) continue;
-      const sm = line.match(/^\*\*([^*]+):\*\*\s*(.+)$/);
-      if(sm){ out.push({speaker:sm[1].trim(), ts_sec:null, text:sm[2].trim()}); continue; }
-      const sm2 = line.match(/^([A-Z][\w .'-]{1,40})[:—-]\s*(.+)$/);
-      if(sm2){ out.push({speaker:sm2[1].trim(), ts_sec:null, text:sm2[2].trim()}); continue; }
-      out.push({speaker:null, ts_sec:null, text:line});
+    const body = (m ? m[0] : text).split(/\r?\n/);
+    for(let i=0;i<body.length;i++){
+      const line = body[i].trim();
+      if(!line || line.startsWith('##')) continue;
+      const sm = _TI_RX.granolaB.exec(line);
+      if(sm){ push(sm[1], null, sm[2]); continue; }
+      const sm2 = _TI_RX.granolaA.exec(line);
+      if(sm2){ push(sm2[1], null, sm2[2]); continue; }
+      push(null, null, line);
     }
     return out;
   }
 
   if(source==='plaud'){
-    for(const raw of lines){
-      const line = raw.trim();
+    for(let i=0;i<lines.length;i++){
+      const line = lines[i].trim();
       if(!line) continue;
-      const m = line.match(/^\[(\d{2}:\d{2}:\d{2})\]\s*([^:]+):\s*(.+)$/);
-      if(m){ out.push({speaker:m[2].trim(), ts_sec:_tiHmsToSec(m[1]), text:m[3].trim()}); continue; }
-      out.push({speaker:null, ts_sec:null, text:line});
+      const m = _TI_RX.plaudLine.exec(line);
+      if(m) push(m[2], _tiHmsToSec(m[1]), m[3]);
+      else push(null, null, line);
     }
     return out;
   }
 
   // manual
-  for(const raw of lines){
-    const line = raw.trim();
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i].trim();
     if(!line) continue;
-    const stripped = line.replace(/^\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s*/, '');
-    const m = stripped.match(/^([A-Z][a-zA-Z .'-]{1,40})[:—-]\s*(.+)$/);
-    if(m){ out.push({speaker:m[1].trim(), ts_sec:null, text:m[2].trim()}); }
-    else { out.push({speaker:null, ts_sec:null, text:stripped}); }
+    const stripped = line.replace(_TI_RX.manualTs, '');
+    const m = _TI_RX.manualSpk.exec(stripped);
+    if(m) push(m[1], null, m[2]);
+    else push(null, null, stripped);
   }
   return out;
 }
@@ -2036,83 +2112,113 @@ function _tiResolveDue(cue, meetingDateStr){
   const addDays = n => { const d = new Date(base); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
   if(/\btoday\b/.test(c)) return addDays(0);
   if(/\btomorrow\b/.test(c)) return addDays(1);
-  if(/\beow\b|\bend of week\b/.test(c)){ const d = new Date(base); const off = (5 - d.getDay() + 7) % 7; return addDays(off||7); }
+  if(/\beow\b|\bend of week\b/.test(c)){ const off = (5 - base.getDay() + 7) % 7; return addDays(off||7); }
   if(/\beom\b|\bend of month\b/.test(c)){ const d = new Date(base.getFullYear(), base.getMonth()+1, 0); return d.toISOString().slice(0,10); }
-  const dayM = c.match(/by (next )?(mon|tue|wed|thu|fri|sat|sun)\w*/);
+  const dayM = /by (next )?(mon|tue|wed|thu|fri|sat|sun)\w*/.exec(c);
   if(dayM){
     const map = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
-    const target = map[dayM[2]];
-    let off = (target - base.getDay() + 7) % 7;
+    let off = (map[dayM[2]] - base.getDay() + 7) % 7;
     if(off===0 || dayM[1]) off += 7;
     return addDays(off);
   }
-  const inM = c.match(/in (\d{1,3}) days?/);
-  if(inM) return addDays(parseInt(inM[1],10));
+  const inM = /in (\d{1,3}) days?/.exec(c);
+  if(inM) return addDays(+inM[1]);
   return null;
 }
 
-function _tiScoreLine(line){
-  const t = line.text;
-  let s = 0;
-  if(/\b(decided|decision|agreed|approved|going with|the plan is)\b/i.test(t)) s += 3;
-  if(/\b(must|critical|huge|never|always|key|important|biggest)\b/i.test(t)) s += 2;
-  if(/\?\s*$/.test(t)) s += 1;
-  if(t.length>=50 && t.length<=180) s += 1;
-  if(/\$[\d,]+|\b\d+%/.test(t)) s += 2;
-  return s;
+function _tiTokens(text, cache){
+  let v = cache.get(text);
+  if(v) return v;
+  v = [];
+  const lower = text.toLowerCase();
+  const re = /[a-z]{4,}/g;
+  let m;
+  while((m = re.exec(lower))){ if(!_TI_STOP.has(m[0])) v.push(m[0]); }
+  cache.set(text, v);
+  return v;
 }
 
-function _tiTopics(lines){
-  if(!lines.length) return [];
-  const STOP = new Set('the and a an of to in is are was were be been have has had do does did for on at by with from this that it as or but if so we you i he she they our your their not no yes ok okay just like really very also'.split(' '));
-  const tokenize = t => t.toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w && w.length>3 && !STOP.has(w));
-  const window = 20;
-  const chapters = [];
-  let curStart = 0, curKeys = new Set(), curLines = [];
-  const winKeys = (from, to) => {
-    const counts = {};
-    for(let i=from;i<to && i<lines.length;i++){
-      for(const w of tokenize(lines[i].text)) counts[w] = (counts[w]||0)+1;
+// Jaccard near-dedup so "follow up with vendor" and "follow up vendor" collapse.
+function _tiDedupe(items, threshold = 0.75){
+  const out = [];
+  const seenTokens = [];
+  for(const it of items){
+    const text = (typeof it==='string' ? it : it.text || '').toLowerCase();
+    if(!text) continue;
+    const toks = new Set(text.match(/[a-z]{3,}/g) || []);
+    let dup = false;
+    for(const prev of seenTokens){
+      const inter = [...toks].filter(t => prev.has(t)).length;
+      const uni = new Set([...toks, ...prev]).size || 1;
+      if(inter / uni >= threshold){ dup = true; break; }
     }
-    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+    if(!dup){ out.push(it); seenTokens.push(toks); }
+  }
+  return out;
+}
+
+function _tiTopics(lines, tokCache){
+  if(!lines.length) return [];
+  const W = 20;
+  const winKeys = (from, to) => {
+    const counts = new Map();
+    const end = Math.min(to, lines.length);
+    for(let i=from;i<end;i++){
+      for(const w of _tiTokens(lines[i].text, tokCache)) counts.set(w, (counts.get(w)||0)+1);
+    }
+    return [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
   };
-  for(let i=0;i<lines.length;i+=window){
-    const keys = winKeys(i, i+window);
+  const chapters = [];
+  let curStart = 0, curKeys = new Set(), curCount = 0;
+  for(let i=0;i<lines.length;i+=W){
+    const keys = winKeys(i, i+W);
     const overlap = curKeys.size ? keys.filter(k => curKeys.has(k)).length / Math.max(1, keys.length) : 0;
     if(i===0 || overlap < 0.3){
-      if(curLines.length){
+      if(curCount){
         chapters.push({
           title: [...curKeys].slice(0,3).join(' / ') || 'Discussion',
           start_sec: lines[curStart].ts_sec,
-          end_sec: lines[Math.min(i,lines.length)-1]?.ts_sec ?? null,
-          line_count: curLines.length
+          end_sec: lines[Math.min(i, lines.length)-1]?.ts_sec ?? null,
+          line_count: curCount
         });
       }
       curStart = i;
       curKeys = new Set(keys);
-      curLines = [];
+      curCount = 0;
     }
-    for(let j=i;j<i+window && j<lines.length;j++) curLines.push(lines[j]);
+    curCount += Math.min(W, lines.length - i);
   }
-  if(curLines.length){
+  if(curCount){
     chapters.push({
       title: [...curKeys].slice(0,3).join(' / ') || 'Discussion',
       start_sec: lines[curStart].ts_sec,
       end_sec: lines[lines.length-1].ts_sec,
-      line_count: curLines.length
+      line_count: curCount
     });
   }
-  // cap at 8
-  while(chapters.length>8){
+  // drop noise chapters (< 3 lines), then cap at 8 by merging smallest into neighbour
+  const filtered = chapters.filter(c => c.line_count >= 3);
+  const final = filtered.length ? filtered : chapters;
+  while(final.length > 8){
     let minIdx=0;
-    for(let i=1;i<chapters.length;i++) if(chapters[i].line_count < chapters[minIdx].line_count) minIdx=i;
-    const merged = chapters[minIdx];
-    const into = chapters[Math.max(0,minIdx-1)] === merged ? chapters[minIdx+1] : chapters[minIdx-1];
+    for(let i=1;i<final.length;i++) if(final[i].line_count < final[minIdx].line_count) minIdx=i;
+    const merged = final[minIdx];
+    const into = minIdx>0 ? final[minIdx-1] : final[minIdx+1];
     into.line_count += merged.line_count;
     if(merged.end_sec!=null) into.end_sec = merged.end_sec;
-    chapters.splice(minIdx,1);
+    final.splice(minIdx, 1);
   }
-  return chapters;
+  return final;
+}
+
+function _tiScoreLine(text){
+  let s = 0;
+  if(/\b(?:decided|decision|agreed|approved|going with|the plan is)\b/i.test(text)) s += 3;
+  if(/\b(?:must|critical|huge|never|always|key|important|biggest)\b/i.test(text)) s += 2;
+  if(/\?\s*$/.test(text)) s += 1;
+  if(text.length>=50 && text.length<=180) s += 1;
+  if(/\$[\d,]+|\b\d+%/.test(text)) s += 2;
+  return s;
 }
 
 function imParseTranscript(id){
@@ -2132,113 +2238,139 @@ function imParseTranscript(id){
   const blockers = [];
   const metrics = [];
   const deadlines = [];
-  const talkMap = {};
+  const talk = new Map();
+  const tokCache = new Map();
+  const scores = new Array(lines.length);
 
-  const aCues = [
-    /\b(action item|todo|to[- ]?do|task)\s*[:\-]?\s*(.{6,240})/i,
-    /\b(I|you|he|she|they|we)['']?ll\s+(.{6,240})/i,
-    /\b(will|need(?:s)? to|going to|plan to|should|must|let'?s)\s+(.{6,240})/i,
-    /\b(follow[- ]?up|circle back|loop in|get back to)\s+(.{6,240})/i,
-    /\b(?:assigned? to|owner:?)\s+([A-Z][a-z]+)\b\s*(.{0,240})/i
-  ];
-  const dCue = /\b(decided|decision|we'?ve decided|the decision is|agreed|consensus|approved|chose|going with|the plan is|locked in|signed off)\b\s*[:\-]?\s*(.{6,240})/i;
-  const bCue = /\b(blocked|blocker|stuck|risk|concern|worried|problem|issue|can'?t|won'?t work|breaking)\b\s+(.{6,240})/i;
-  const dueCue = /(today|tomorrow|by (?:next )?(?:mon|tue|wed|thu|fri|sat|sun)\w*|EOW|EOM|end of (?:week|month)|in \d{1,3} days?|by \w+ \d{1,2})/i;
-  const nameCue = /\b([A-Z][a-z]{2,})\s+(?:will|should|needs to|is going to|to)\s+/;
-
+  // ── single-pass extraction ────────────────────────────────────────────────
   for(let i=0;i<lines.length;i++){
     const ln = lines[i];
     const t = ln.text;
     if(!t) continue;
     const sp = ln.speaker || 'unknown';
-    talkMap[sp] = talkMap[sp] || {speaker:sp, lines:0, words:0};
-    talkMap[sp].lines++;
-    talkMap[sp].words += t.split(/\s+/).length;
+    let bucket = talk.get(sp);
+    if(!bucket){ bucket = {speaker:sp, lines:0, words:0}; talk.set(sp, bucket); }
+    bucket.lines++;
+    bucket.words += t.split(/\s+/).length;
+    scores[i] = _tiScoreLine(t);
 
-    // action items
-    for(const re of aCues){
-      const m = t.match(re);
-      if(m){
-        const phrase = (m[2] || m[1] || '').toString().replace(/[.,;]+$/,'').trim();
-        if(phrase.length<6) continue;
-        // owner inference
-        let owner = 'unassigned';
-        if(/^\s*(I|I'?ll|I am|I'?m)\b/i.test(t) && ln.speaker) owner = ln.speaker;
-        else {
-          const nm = t.match(nameCue);
-          if(nm) owner = nm[1];
-          const am = t.match(/\bassigned? to\s+([A-Z][a-z]+)/i) || t.match(/\bowner:?\s+([A-Z][a-z]+)/i);
-          if(am) owner = am[1];
+    const isQuestion = _TI_RX.question.test(t);
+    const isNegated = _TI_RX.negation.test(t);
+    const isPastRecap = _TI_RX.pastRecap.test(t);
+
+    // action items — skip questions, negations, past-tense recaps
+    if(!isQuestion && !isNegated && !isPastRecap){
+      for(let r=0;r<_TI_RX.action.length;r++){
+        const m = _TI_RX.action[r].exec(t);
+        if(m){
+          let phrase = (m[2] || m[1] || '').replace(_TI_RX.trailPunc,'').trim();
+          if(phrase.length<6) continue;
+          let owner = 'unassigned';
+          if(_TI_RX.firstP.test(t) && ln.speaker) owner = ln.speaker;
+          else {
+            const am = _TI_RX.ownerExp.exec(t);
+            if(am) owner = am[1];
+            else { const nm = _TI_RX.name.exec(t); if(nm) owner = nm[1]; }
+          }
+          const dueM = _TI_RX.due.exec(t);
+          action_items.push({
+            text: phrase,
+            owner,
+            due: dueM ? _tiResolveDue(dueM[1], meetingDate) : null,
+            source_line: t,
+            ts_sec: ln.ts_sec
+          });
+          break;
         }
-        const dueM = t.match(dueCue);
-        const due = dueM ? _tiResolveDue(dueM[1], meetingDate) : null;
-        action_items.push({ text: phrase, owner, due, source_line: t, ts_sec: ln.ts_sec });
-        break; // one action per line
       }
     }
 
     // decisions
-    const dm = t.match(dCue);
-    if(dm) decisions.push({ text: dm[2].replace(/[.,;]+$/,'').trim(), source_line: t, ts_sec: ln.ts_sec });
+    const dm = _TI_RX.decision.exec(t);
+    if(dm) decisions.push({ text: dm[1].replace(_TI_RX.trailPunc,'').trim(), source_line: t, ts_sec: ln.ts_sec });
 
-    // questions
-    if(/\?\s*$/.test(t) && t.length>=12){
+    // questions w/ near-future answer detection (≥2 noun overlap or affirm starter)
+    if(isQuestion && t.length>=12){
       let answered = false;
-      const qNouns = (t.toLowerCase().match(/\b[a-z]{4,}\b/g)||[]).slice(0,5);
-      for(let j=i+1;j<Math.min(i+9,lines.length);j++){
+      const qNouns = _tiTokens(t, tokCache).slice(0,5);
+      const stop = Math.min(i+9, lines.length);
+      for(let j=i+1;j<stop;j++){
         const lt = lines[j].text;
-        if(/^\s*(yes|no|yeah|nope|i think|sure|correct|right)/i.test(lt)){ answered=true; break; }
-        const overlap = qNouns.filter(n => lt.toLowerCase().includes(n)).length;
-        if(overlap>=2){ answered=true; break; }
+        if(_TI_RX.affirm.test(lt)){ answered = true; break; }
+        let overlap = 0;
+        const ltLower = lt.toLowerCase();
+        for(const n of qNouns){ if(ltLower.includes(n)){ overlap++; if(overlap>=2) break; } }
+        if(overlap>=2){ answered = true; break; }
       }
       questions.push({ text: t, answered, source_line: t, ts_sec: ln.ts_sec });
     }
 
     // blockers
-    const bm = t.match(bCue);
-    if(bm) blockers.push({ text: bm[2].replace(/[.,;]+$/,'').trim(), source_line: t, ts_sec: ln.ts_sec });
+    const bm = _TI_RX.blocker.exec(t);
+    if(bm) blockers.push({ text: bm[1].replace(_TI_RX.trailPunc,'').trim(), source_line: t, ts_sec: ln.ts_sec });
 
-    // metrics
-    const moneyMatches = t.match(/\$[\d,]+(?:\.\d+)?[KMB]?\b/g) || [];
-    moneyMatches.forEach(v => metrics.push({ value: v, unit:'currency', context: t, ts_sec: ln.ts_sec }));
-    const pctMatches = t.match(/\b\d{1,3}(?:\.\d+)?%/g) || [];
-    pctMatches.forEach(v => metrics.push({ value: v, unit:'percent', context: t, ts_sec: ln.ts_sec }));
+    // metrics — reset lastIndex for /g regex
+    _TI_RX.money.lastIndex = 0;
+    let mm;
+    while((mm = _TI_RX.money.exec(t))) metrics.push({ value: mm[0], unit:'currency', context: t, ts_sec: ln.ts_sec });
+    _TI_RX.pct.lastIndex = 0;
+    while((mm = _TI_RX.pct.exec(t))) metrics.push({ value: mm[0], unit:'percent', context: t, ts_sec: ln.ts_sec });
 
-    // deadlines (outside actions — capture date phrases anywhere)
-    const dlM = t.match(/\b(?:by\s+)?(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{1,2}(?:,\s*\d{4})?/i);
+    // deadlines (calendar dates)
+    const dlM = _TI_RX.monthDate.exec(t);
     if(dlM) deadlines.push({ date: dlM[0], context: t, ts_sec: ln.ts_sec });
   }
 
-  // dedupe
-  const dedupe = (arr, key) => { const seen = new Set(); return arr.filter(x => { const k = (typeof x==='string'?x:x[key]||JSON.stringify(x)).toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; }); };
-  const action_items_d = dedupe(action_items,'text').slice(0,40);
-  const decisions_d = dedupe(decisions,'text').slice(0,40);
-  const questions_d = dedupe(questions,'text').slice(0,30);
-  const blockers_d = dedupe(blockers,'text').slice(0,20);
+  // ── filter actions duplicating decisions (avoid double-counting) ──────────
+  const decisionTexts = new Set(decisions.map(d => d.text.toLowerCase()));
+  const actionsFiltered = action_items.filter(a => !decisionTexts.has(a.text.toLowerCase()));
 
-  // talk share
-  const totalWords = Object.values(talkMap).reduce((s,x)=>s+x.words,0) || 1;
-  const talk_share = Object.values(talkMap).map(x => ({...x, pct: Math.round(100*x.words/totalWords)})).sort((a,b)=>b.pct-a.pct);
+  // ── Jaccard near-dedup ────────────────────────────────────────────────────
+  const action_items_d = _tiDedupe(actionsFiltered).slice(0,40);
+  const decisions_d = _tiDedupe(decisions).slice(0,40);
+  const questions_d = _tiDedupe(questions, 0.85).slice(0,30);
+  const blockers_d = _tiDedupe(blockers).slice(0,20);
 
-  // topics
-  const topics = _tiTopics(lines);
+  // ── talk share ────────────────────────────────────────────────────────────
+  let totalWords = 0;
+  for(const v of talk.values()) totalWords += v.words;
+  totalWords = totalWords || 1;
+  const talk_share = [...talk.values()]
+    .map(x => ({...x, pct: Math.round(100*x.words/totalWords)}))
+    .sort((a,b)=>b.pct-a.pct);
 
-  // key quotes
-  const scored = lines.map(l => ({l, s:_tiScoreLine(l)})).filter(x => x.s>=3 && x.l.text.length>=30);
-  scored.sort((a,b)=>b.s-a.s);
-  const key_quotes = scored.slice(0,5).map(x => ({ text: x.l.text, speaker: x.l.speaker, ts_sec: x.l.ts_sec }));
+  // ── topics (uses cached tokens) ───────────────────────────────────────────
+  const topics = _tiTopics(lines, tokCache);
 
-  // summary — top scored verbatim lines, ordered by ts/index
-  const sumPool = lines.map((l,idx) => ({l, idx, s:_tiScoreLine(l) + (l.text.length>=40 && l.text.length<=200 ? 1 : 0)}));
+  // ── key quotes & summary using cached scores ──────────────────────────────
+  const ranked = [];
+  for(let i=0;i<lines.length;i++){
+    const s = scores[i] || 0;
+    if(s >= 3 && lines[i].text.length>=30) ranked.push({i, s});
+  }
+  ranked.sort((a,b)=>b.s-a.s);
+  const key_quotes = ranked.slice(0,5).map(x => ({
+    text: lines[x.i].text, speaker: lines[x.i].speaker, ts_sec: lines[x.i].ts_sec
+  }));
+
+  const sumPool = [];
+  for(let i=0;i<lines.length;i++){
+    const len = lines[i].text.length;
+    const bonus = (len>=40 && len<=200) ? 1 : 0;
+    const s = (scores[i]||0) + bonus;
+    if(s>0) sumPool.push({i, s});
+  }
   sumPool.sort((a,b)=>b.s-a.s);
-  const summary = sumPool.slice(0,8).filter(x=>x.s>0).sort((a,b)=>a.idx-b.idx).map(x => x.l.text);
+  const summary = sumPool.slice(0,8).sort((a,b)=>a.i-b.i).map(x => lines[x.i].text);
 
-  const durationSec = lines.reduce((mx,l)=> l.ts_sec!=null && l.ts_sec>mx ? l.ts_sec : mx, 0) || null;
+  let durationSec = 0;
+  for(let i=0;i<lines.length;i++){ const ts = lines[i].ts_sec; if(ts!=null && ts>durationSec) durationSec = ts; }
+  if(!durationSec) durationSec = null;
 
   const parsed_json = {
     source,
     parsed_at: new Date().toISOString(),
-    stats: { lines: lines.length, speakers: Object.keys(talkMap).length, duration_sec: durationSec, words: totalWords },
+    stats: { lines: lines.length, speakers: talk.size, duration_sec: durationSec, words: totalWords },
     action_items: action_items_d,
     decisions: decisions_d,
     questions: questions_d,
@@ -2270,6 +2402,77 @@ function imParseTranscript(id){
   if($('im-tx-text')) $('im-tx-text').value = '';
   toast(`Extracted ${action_items_d.length} actions · ${decisions_d.length} decisions · ${questions_d.length} questions · ${topics.length} topics`,'ok');
   imRenderSub(id);
+}
+
+// ── Native browser recorder (skill: transcript-intelligence — Step "Live capture")
+// Uses Web Speech API (Chrome/Edge/Safari). No external service. Streams interim
+// results into the transcript textarea with [HH:MM:SS] timestamps so the existing
+// parser sees a manual-format transcript. On stop → auto-runs imParseTranscript.
+let _TI_REC = null;
+
+function _tiRecSupported(){
+  return typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+function imToggleRecording(id){
+  const btn = $('im-rec-btn');
+  if(_TI_REC){
+    try { _TI_REC.stop(); } catch(_){}
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    toast('Live recording requires Chrome, Edge, or Safari','err');
+    return;
+  }
+  const ta = $('im-tx-text');
+  if(!ta) return;
+  const rec = new SR();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = navigator.language || 'en-US';
+  const startedAt = Date.now();
+  let interim = '';
+  const finalized = [];
+  const ts = () => {
+    const s = Math.floor((Date.now() - startedAt)/1000);
+    return `[${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}]`;
+  };
+  rec.onresult = (e) => {
+    interim = '';
+    for(let i = e.resultIndex; i < e.results.length; i++){
+      const r = e.results[i];
+      const txt = r[0].transcript.trim();
+      if(!txt) continue;
+      if(r.isFinal) finalized.push(`${ts()} You: ${txt}`);
+      else interim = txt;
+    }
+    ta.value = (finalized.join('\n') + (interim ? `\n${ts()} You: ${interim}…` : '')).trim();
+    ta.scrollTop = ta.scrollHeight;
+  };
+  rec.onerror = (e) => {
+    if(e.error === 'not-allowed') toast('Mic permission denied','err');
+    else if(e.error !== 'no-speech') console.warn('[recorder]', e.error);
+  };
+  rec.onend = () => {
+    _TI_REC = null;
+    if(btn){ btn.textContent = '🎤 Record Live'; btn.classList.remove('btn-danger'); btn.classList.add('btn-outline'); }
+    if(ta.value.trim().length > 40){
+      // Auto-extract once recording stops
+      const srcSel = $('im-tx-source'); if(srcSel) srcSel.value = 'manual';
+      imParseTranscript(id);
+    } else {
+      toast('Recording too short to extract','warn');
+    }
+  };
+  try {
+    rec.start();
+    _TI_REC = rec;
+    if(btn){ btn.textContent = '⏹ Stop Recording'; btn.classList.remove('btn-outline'); btn.classList.add('btn-danger'); }
+    toast('Recording — speak normally. Click stop to extract.','ok');
+  } catch(err){
+    toast('Could not start mic: '+err.message,'err');
+  }
 }
 
 async function imAddTranscriptToTodos(id, tid){

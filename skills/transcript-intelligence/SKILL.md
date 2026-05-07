@@ -199,9 +199,43 @@ Plus a one-line stats banner under the transcript header showing speaker count +
 
 ---
 
-## Future (out of scope for v1)
+## Live capture (v2 — shipped)
 
-- Live mic capture using `MediaRecorder` + `webkitSpeechRecognition` to skip the recorder app entirely.
+Native in-browser recording via the Web Speech API. The "🎤 Record Live" button on the AI Notes tab calls `imToggleRecording(meetingId)`:
+
+- Uses `window.SpeechRecognition || window.webkitSpeechRecognition` (Chrome / Edge / Safari).
+- Streams interim results into the transcript textarea live, with `[HH:MM:SS] You: …` timestamps so the canonical manual-format parser handles them.
+- Click the same button (now red `⏹ Stop Recording`) to end. On stop the captured text auto-runs `imParseTranscript()` if ≥40 chars.
+- No external API, no upload, no recurring cost. Audio never leaves the device — only the recogniser-produced text is kept.
+- Browser without Web Speech support → toast points user to paste fallback.
+
+This eliminates the manual "open Otter → record → export → copy → paste" loop entirely for solo / one-device meetings.
+
+## v2 quality + perf hardening
+
+**Pass 1 (quality):**
+- Filler-word stripping at normalisation (`um`, `uh`, `you know`, `kind of`, `like`, `honestly`, etc).
+- Speaker-name canonicalisation: `Michael` and `Michael Graf` collapse to the longest seen form.
+- Disqualifiers on action extraction: questions, negations (`won't`, `can't`, `shouldn't`), past-tense recaps (`already`, `yesterday`, `did`, `completed`) excluded so we don't capture "we won't ship by Friday" as an action.
+- Decision-deduplication: action items whose text already appears as a decision are dropped to avoid double-booking the same item into both lists.
+- Jaccard near-dedup (token-set overlap ≥ 0.75): "follow up with vendor" / "follow up vendor" collapse.
+- Topic chapters with `< 3` lines are dropped as noise; cap-at-8 merger now prefers the previous chapter to avoid index-out-of-bounds on edges.
+- Question answer detection short-circuits on first 2-noun overlap instead of full scan.
+
+**Pass 2 (perf):**
+- All regex pre-compiled once into `_TI_RX` registry (was being re-built per call).
+- Stop-word list expanded and cached as `Set` (faster than array `.includes`).
+- Tokenization cached per-line (`tokCache`) — topics + question-answer detection share the same parsed tokens.
+- Single-pass loop: `_tiScoreLine` runs once per line, results cached in a flat `scores[]` array reused for both key-quotes and summary.
+- `talkMap` switched from object-literal to native `Map` for O(1) ops without prototype lookups.
+- `metrics` regex use `.exec()` with explicit `lastIndex` reset instead of repeated `.match()` allocations.
+- Speaker grouping uses `for` loops + early-`break`; no array spreads or sorts inside the hot loop.
+
+Net effect: ~3× faster on a 5,000-line transcript locally (informal bench), and noticeably tighter action/decision lists.
+
+## Future (out of scope for v2)
+
+- `MediaRecorder` audio archive + post-meeting Whisper-on-device for browsers without Web Speech.
 - Vector search across all transcripts (Supabase pgvector, once Phase 1 budget approved).
 - Mind-map visualisation of topics (Plaud parity).
 - Per-attendee follow-up email draft (Fireflies parity).
