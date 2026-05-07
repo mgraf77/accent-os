@@ -1,6 +1,15 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-07 — ai-task-router optimization loops 4+5
+**Prompts (chronological, this session):**
+1. "do 2 optimization passes and report the results and changes implemented"
+2. "is this session wrapped and pushed?"
+
+**Context:** ai-task-router skill was built in the prior session. This session completed optimization loops 4+5 (13 issues found and fixed across SKILL.md, tool-registry.md, scoring-matrix.md, task-taxonomy.md). All changes committed and pushed to `claude/ai-task-router-7iRmZ`.
+
+---
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"

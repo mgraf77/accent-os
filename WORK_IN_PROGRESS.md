@@ -1,35 +1,25 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-05 — session end · vibe-speak v9 shipped + corpus calibration applied
+**Last updated:** 2026-05-07 — session end · ai-task-router optimization loops 4+5 complete
 **Current task:** —
-**Step:** Tree clean on main. Latest AccentOS module: v6.10.65 (Customer→Deal preset + Module Modes bulk retag). Latest meta-skill: vibe-speak v9 (corpus learning + trend awareness + 13 new commands + dim 23, expanded matrix at 97.1% / 709 / 730).
+**Step:** Tree clean on `claude/ai-task-router-7iRmZ`. All changes committed and pushed.
 
-**Recent shipped (last 7 turns of this session):**
-- vibe-speak v6 → v7 → v8 → v9 (multi-user profiles + benchmarks + KPI + scoring matrix + Step numbering cleanup + lazy-load contract + sessions/ + skill router + corpus learning)
-- profiles/michael.md v2.2.0 (corpus calibration applied — 6 proposals from PROMPT_LOG backtest baked in: `knock out` autonomy verb, time-budgeted recognition, +inline-edit/Module Modes/vibe-speak/extract/pivot to hard-keep)
-- skills/_index.md registry (26 skills) + skills/vibe-speak/skill-router.md
-- skills/vibe-speak/corpus/ directory (vocabulary, trends, topics + claude.ai import path)
+**What shipped this session:**
+- Optimization loops 4+5 on `skills/ai-task-router/` — 13 issues found and fixed:
+  - Loop 4 (8 fixes): ctx_bonus description corrected, session-end outcome fixed, Step 7 search queries use YYYY placeholder, Always-on contract wording fixed, anti-pattern 3 redundant clause removed, Canva long-context TC 7→8, tool-registry changelog updated, scoring-matrix gap formula floor added
+  - Loop 5 (5 fixes): Step 3 explicit 4-step computation order, active query column header TC, /route scores "last-classified" clarification, /route default moved to routing-defaults.md, exclusion zone + secondary type rule added
 
-**Files touched (recent):** skills/vibe-speak/{SKILL.md, profiles/michael.md, scoring-matrix.md, skill-router.md, corpus/*}, skills/_index.md, .claude/CLAUDE.md.
+**Files touched:**
+- `skills/ai-task-router/SKILL.md`
+- `skills/ai-task-router/references/tool-registry.md`
+- `skills/ai-task-router/references/scoring-matrix.md`
+- `skills/ai-task-router/references/task-taxonomy.md`
 
-**Commit status:** All committed + pushed. Branch `claude/caveman-conversational-english-jr6Vy` and `main` both at `6641a1f` baseline + new corpus-calibration commit pending in this WIP refresh.
+**Commit status:** All committed + pushed. Branch `claude/ai-task-router-7iRmZ` at `b605748`.
 
-**Next step if interrupted:**
-
-1. `git add -A`
-2. Commit `vibe-speak: apply v9 corpus calibration to michael.md + refresh WIP`
-3. `git pull --rebase origin main && git push origin main`
-4. Pause. Next session targets:
-
-**AccentOS module backlog (all genuinely unblocked items shipped — remaining are Michael-blocked or polish):**
-- Polish backlog: MODULE_REGISTRY refactor, Saved Filter Sets surface (js/saved_filters.js exists but verify wiring), Bulk action bars (js/bulk_select.js exists), Compact-view toggle, Column visibility toggles
-- M30 SQL: `user_module_overrides` table — when Michael wants real cross-device per-user Module Modes gating
-- 6.5/6.6 portal phase 2: needs Michael scoping
-- All 6.x integrations: blocked on M03/M04/M05/M06/M09/M10/M18
-
-**vibe-speak skill backlog:**
-- Once Michael exports claude.ai history → drop in `skills/vibe-speak/corpus/imports/` → run `/vibe import` → corpus expands from 18 prompts to thousands → richer calibration
-- Real-session KPI accumulation: dim 19 will rise from 9 → 10 after 7 wraps with KPI-log entries
-- First brute-force-pattern → forged skill flow: dim 22 will rise from 9 → 10 once that organic event happens
-- Optional: claude.ai JSON parser implementation (currently spec'd, not coded)
+**Pending (Michael-action required before next session):**
+- Confirm Claude.ai tier: claude.ai/settings → Billing (affects brainstorm/cross-check routing)
+- Confirm Dispatch plan: Dispatch app → Settings → Account/Plan
+- Confirm Routines plan: Routines app → Settings → Account/Plan
+- After confirming: update `skills/ai-task-router/references/tier-config.md`, run `/route tiers`

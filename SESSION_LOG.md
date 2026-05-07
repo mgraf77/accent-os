@@ -13,6 +13,16 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-07 — ai-task-router optimization loops 4+5 — SHIPPED
+**Version:** ai-task-router skill (post-loop-5)
+**Built/Changed:**
+- Optimization loops 4+5 — 13 issues found and fixed across SKILL.md, tool-registry.md, scoring-matrix.md, task-taxonomy.md
+- Key fixes: computation order ambiguity in Step 3 (ctx_bonus before composite, switching multipliers after), session-end outcome bug (was auto-marking as accepted), search query year hardcode, /route default now writes to routing-defaults.md, exclusion zone + secondary type rule
+- All changes committed to `claude/ai-task-router-7iRmZ` at `b605748`
+**Decisions:** Skill considered at threshold — no further structural issues detected across 5 optimization loops (23 total fixes)
+**Open loops:** Claude.ai / Dispatch / Routines tier confirmation still pending (Michael action)
+**Next prompt:** Confirm tiers (see WORK_IN_PROGRESS.md), then update tier-config.md and run `/route tiers`
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9) — SHIPPED
 **Version:** vibe-speak v0 → v9 (23-dim matrix at 97.1% / 709 of 730)
 **Built/Changed:**
