@@ -316,6 +316,7 @@ Score the current skill against the dimension registry from Step 2. **Read `refe
 **Evidence requirements:**
 - Score > 7.5: must cite specific evidence from the SKILL.md. Quote the section, don't describe it.
 - Score > 8.0: Contrarian + Methodologist Perspective Sweep required. Both must confirm. Cap at 8.0 if either raises an unresolved objection.
+- Score ≥ 8.5: evidence from 2+ independent sessions required (different sessions — same-session citations do not qualify). Contrarian + Methodologist Perspective Sweep required and must confirm with no unresolvable objection. Cap at 8.0 if evidence is same-session only; cap at 8.5 if sweep objects.
 - Score > 9.0: must cite formal validation (passing test suite or 3+ documented real sessions). Label "PROVISIONAL 9.X" if informal only. Provisional scores do not count toward threshold.
 
 **Floor penalty:** Any dimension at Score < 3.0 → apply −5 pts to total. Multiple dims below 3.0 stack.
