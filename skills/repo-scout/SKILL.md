@@ -78,6 +78,13 @@ MCP discovery:
 
 Use web_fetch on high-signal pages when snippets are insufficient.
 
+Output of Step 2: a raw candidate list — name, source URL, one-line description — before filtering. Example:
+```
+Raw candidates ([N] found):
+- [Tool name] ([URL]) — [one-line description]
+- ...
+```
+
 ---
 
 ## Step 3 — Filter candidates

@@ -7,7 +7,7 @@ description: >
   /home/user/accent-os/decisions/. Each entry preserves the question,
   options considered, choice made, reasoning, reversal cost, and any
   future trigger that should reopen the decision. Use this skill when
-  Michael says: "log this decision", "decision: [topic]", "save this
+  Michael says: "log this decision", "decision: auth model", "save this
   go/no-go", "document this choice", "record this call", "decided", or
   after any conversation where a non-trivial architectural / vendor
   / process choice was made. Do not use for code changes (use git) or
@@ -27,7 +27,7 @@ description: >
 
 Run when Michael says:
 - "log this decision"
-- "decision: X" (where X is a topic)
+- "decision: auth model" / "decision: vendor scoring" (topic form)
 - "save this go/no-go"
 - "document this choice"
 - "record this call"
