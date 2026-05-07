@@ -1,35 +1,29 @@
 # Wiki Hot State
-> Updated: 2026-05-07 — Module enrichment batch 5
+> Updated: 2026-05-07 — Module enrichment COMPLETE (35/35)
 
 ## Current task
-Module-page enrichment in progress (15 of 35 done — 43%). Operational + analytics + workflow clusters all linked. Remaining 20 stubs follow the same recipe.
+IDLE — ALL 35 wiki/modules/ stubs enriched in 6 batches (5 sequential + 1 parallel). Confidence: medium → high across the board. Lint clean (0 errors, 2 unrelated pre-existing warnings).
 
 ## What shipped (this session)
 
-### Module enrichment batch 5 (3 pages)
-- **wiki/modules/jobs.md** — Track 5.2 Job Tracker: full CRUD on `jobs` (M21), auto `J-####` numbering, status workflow with auto-`completed_at`, Quote→Job + Deal→Job preset converters with priority derivation. Confidence medium → high.
-- **wiki/modules/deliveries.md** — Track 5.10 6-state workflow, auto `DLV-####` numbering, customer dropdown auto-fills address (preserves manual edits), unique `when` filter (upcoming/today/past/all). Confidence medium → high.
-- **wiki/modules/warranty.md** — Track 5.11 7-state workflow, 3 severity levels (cosmetic/functional/safety), auto `W-####` numbering, `csvImportFlow` integration, alerts/customers/vendor cross-module surfaces. Confidence medium → high.
+### Module enrichment — full backlog cleared
+- **Batches 1–5 (sequential, 15 pages)**: wiki, digest, vendor-score-import, alerts, customers, inventory, pipeline-analytics, purchase-orders, price-book, deal-optimizer, demand-forecast, decision-engine, jobs, deliveries, warranty
+- **Batch 6 (parallel — 4 general-purpose subagents, 5 modules each, 20 pages)**:
+  - **Vendor cluster**: trade-partners, bulk-vendor-ops, competitive-pricing, commission, showroom-displays
+  - **External + Knowledge**: portal-preview, marketing, calendar, labels, module-modes
+  - **Cross-cut UX helpers**: activity-feed, bulk-select, global-search, quick-actions, saved-filters
+  - **System + Ops**: health, inventory-analytics, my-tasks, reports, employees
 
-### Module enrichment batch 4 (3 pages)
-- **wiki/modules/deal-optimizer.md** — Track 5.7 vendor-side recs from `VD` + `CHANGELOG`: 5 kinds (renegotiate / investigate / replace / upgrade / cut) with impact heuristics, `getAdaptiveTier` percentile bucketing. Confidence medium → high.
-- **wiki/modules/demand-forecast.md** — Track 6.9 velocity-based reorder recs over `INVENTORY` + `PO_LINES`: explicit constants (4w lead + 2w safety = 6w threshold, 14w target, 90d window), 5 kinds, CSV reorder-list export. Confidence medium → high.
-- **wiki/modules/decision-engine.md** — Track 5.15 rep-side "do this next" recs over `DEALS` + `QUOTES` + `CUSTOMERS`: 5 kinds (chase / followup / atrisk / retain / upsell) with $-impact and click-through nav, RFM integration. Confidence medium → high.
+Pattern proven across all 9+ module shapes (BM25 engine, plaintext export, CSV bulk import, signal aggregator, RFM CRM, inline-edit grid, pure-compute analytics, header+lines workflow, helper registries, role-gated diagnostics, scorecard pivots).
 
-### Module enrichment batch 3 (3 pages)
-- **wiki/modules/pipeline-analytics.md** — pure-compute modal: 4-panel dashboard (funnel, stage-conversion, time-in-stage, lost-reason), `pipeline_events`-derived metrics with graceful empty states, 5-window selector. Confidence medium → high.
-- **wiki/modules/purchase-orders.md** — Track 5.4 header+lines CRUD: auto `PO-####` numbering, line editor with live ext-cost, Quote→PO multi-vendor splitter, `receivePO` writes through to `inventory_items.qty_on_hand` by `(vendor_id, sku)` match. Confidence medium → high.
-- **wiki/modules/price-book.md** — Track 5.6 pure-compute over `INVENTORY` + `VD`: margin/markup formulas, vendor-tier join, 4-bucket distribution, tier + vendor + in-stock filters, 500-row render cap. Confidence medium → high.
-
-### Module enrichment batch 2 (3 pages)
-- **wiki/modules/alerts.md** — Track 6.8 cross-module signal aggregator: 9 generators with per-type severity rules, `(type, source_id)` dedupe, dismissed-can-resurface semantics, bell-icon `goTo()` wrapper. Confidence medium → high.
-- **wiki/modules/customers.md** — Track 1.4 CRM hub: RFM compute thresholds, 5-segment classifier, 6-source name-match activity timeline, allow-listed inline edits, customer→deal preset with valueSeed, role-gate (Warehouse blocked). Confidence medium → high.
-- **wiki/modules/inventory.md** — Track 5.3 phase 1: paginated 1000-row load, bulk upsert with `on_conflict (vendor_id, sku)`, inline-edit dependent-cell recompute (`qty_available` + low-stock styling), role-gated edits, inline RFC-4180 CSV parser shared with customers. Confidence medium → high.
-
-### Module enrichment batch 1 (3 pages)
-- **wiki/modules/wiki.md** — full BM25 grounding engine: 12 functions documented, 13-rule stemmer, `GRAPH_BOOST=0.2` graph re-rank, slug dedup, customer-mode entity exclusion, fallback path. Confidence medium → high.
-- **wiki/modules/digest.md** — Daily Brief email export: 4 functions, role-aware `computeDailyBrief` reuse, plaintext output shape, `mailto:` export, failure modes. Confidence medium → high.
-- **wiki/modules/vendor-score-import.md** — wide → long CSV import via `csvImportFlow` helper: `sbBulkSaveVendorScores`, `_buildVendorScoreAliasMap` auto-derivation from `CAT_DEFS`, `postProcess` vendor_id resolution, 0–10 score validation. Confidence medium → high.
+### Methodology (reusable for future stub backlogs)
+1. Read js/<name>.js source (read full file, no skim)
+2. Read existing stub for frontmatter shape
+3. Read 2-3 reference enriched pages for tone match
+4. Write: frontmatter (high confidence + today's date) + Purpose + Functions table + domain-specific section(s) + State + Read deps + Shell touchpoints + Related cross-links
+5. Stay ≤700 words (lint warn threshold)
+6. Verify all `[[wikilinks]]` resolve to real slugs
+7. Lint after each batch — 0 errors required before commit
 
 ## What shipped (prior sessions, retained for context)
 
@@ -40,7 +34,7 @@ Module-page enrichment in progress (15 of 35 done — 43%). Operational + analyt
 - rag-eval-matrix-v1.json committed
 
 ### Documentation
-- RAG-EXPLAINER.md — beginner-friendly guide to the full RAG system (what it is, BM25, chunking, graph re-ranking, stemmer gotchas, 3 Python scripts, how to add knowledge, how to tune)
+- RAG-EXPLAINER.md — beginner-friendly guide to the full RAG system
 
 ## Remaining precision misses (structural ceiling — do not retry)
 
@@ -67,23 +61,10 @@ Precision 50.8% = ~94% of achievable ceiling. Do not attempt further passes with
 
 ## What Claude can build without Michael
 
-1. **Wiki enrichment**: 20 module pages remaining in wiki/modules/ (15 of 35 enriched so far — 43%). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
-2. **Vendor page enrichment**: wiki/entities/vendors/ has 30 pages — can be fleshed out as vendor data becomes available.
-3. **pgvector path** (M42/M43): optional embedding upgrade — not started, not blocked.
-
-## Suggested next enrichment batch
-
-The remaining 20 modules cluster into:
-1. **External-facing**: `portal-preview`, `marketing`
-2. **Knowledge / docs**: `knowledge-hub`, `calendar`
-3. **Vendor / partners**: `trade-partners`, `bulk-vendor-ops`, `competitive-pricing`
-4. **Operations utilities**: `commission`, `showroom-displays`, `labels`, `module-modes`
-5. **System / cross-cut**: `activity-feed`, `bulk-select`, `csv-import` (no slug yet — js/csv_import.js is helper-only), `global-search`, `health`, `inventory-analytics`, `my-tasks`, `quick-actions`, `reports`, `saved-filters`, `employees`
-
-Recommended next batch (cluster 3 — vendor side, complements vendor-scoring + price-book):
-1. **trade-partners** (`js/trade_partners.js`) — Track 5.5 designer/contractor network
-2. **bulk-vendor-ops** (`js/bulk_vendor_ops.js`) — sister-brand sync + parent-company propagation
-3. **competitive-pricing** (`js/competitive_pricing.js`) — Track 5.14 SKU price observations
+1. ~~**Wiki module enrichment**~~ — DONE (35/35 in this session).
+2. **Vendor entity enrichment**: wiki/entities/vendors/ has 30 medium-confidence stub pages. Same 4-agent parallel pattern as batch 6 would clear them in one session once vendor data sources are stable.
+3. **Concept page expansion**: wiki/concepts/ may have under-detailed pages (lighting-reference is the hub with low CRI/TM-30 density per the eval matrix).
+4. **pgvector path** (M42/M43): optional embedding upgrade — not started, not blocked.
 
 ## Next-session entry point
 
@@ -92,4 +73,4 @@ Recommended next batch (cluster 3 — vendor side, complements vendor-scoring + 
 3. If M04 done: build 5.13 E-Commerce Command Center (BigCommerce REST + GMC)
 4. If M06 done: build 6.1 (GA4) + 6.2 (GSC) integrations
 5. If M09 done: build 6.4 Klaviyo integration
-6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (trade-partners → bulk-vendor-ops → competitive-pricing). Read `js/<name>.js` first, then write following the batch-1 through batch-5 pattern.
+6. If nothing done: pick from "What Claude can build without Michael" above. Vendor entity enrichment (item 2) is the most direct continuation of this session's pattern.

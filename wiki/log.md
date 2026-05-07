@@ -3,6 +3,18 @@
 
 ---
 
+## 2026-05-07 module-enrichment-batch-6 (final — 4-agent parallel)
+- spawn: 4 parallel general-purpose subagents, 5 modules each = 20 stubs in flight at once
+- enrich: trade-partners, bulk-vendor-ops, competitive-pricing, commission, showroom-displays (vendor cluster)
+- enrich: portal-preview, marketing, calendar, labels, module-modes (external + knowledge cluster)
+- enrich: activity-feed, bulk-select, global-search, quick-actions, saved-filters (cross-cut UX helpers cluster — added Consumers section per agent prompt; bulk-select + saved-filters retitled with "Helper Module" suffix)
+- enrich: health, inventory-analytics, my-tasks, reports, employees (system + ops cluster — employees marked sensitive: true since rows serialize full_name/user_id/notes)
+- update: wiki/index.md — bumped 20 module rows to confidence:high, updated:2026-05-07; titles include Track refs where present in JS comments
+- ship: 9 of 20 module pages landed in commit f658f45 (partial, agents in flight); remaining 11 + tracking files in this commit
+- note: ALL 35 module stubs now enriched (15 prior + 20 this batch). Module-page stub backlog cleared from 2026-05-06 session-2. Pattern + 4-agent parallelism documented for future stub batches (e.g. wiki/entities/vendors/ has 30 medium-confidence stubs that could be enriched the same way once vendor data sources are stable).
+
+---
+
 ## 2026-05-07 module-enrichment-batch-5
 - enrich: jobs — Track 5.2 Job Tracker: full CRUD on jobs (M21), auto J-#### numbering, status workflow with auto completed_at, customer dropdown + free-text fallback, Quote→Job + Deal→Job preset converters with priority derivation by total/value, CSV bulk import; confidence medium → high
 - enrich: deliveries — Track 5.10 6-state workflow (scheduled/out_for_delivery/delivered/failed/rescheduled/cancelled), auto DLV-#### numbering, customer dropdown auto-fills address from c.address (preserves manual edits), unique 'when' filter (upcoming/today/past/all), signature capture; confidence medium → high

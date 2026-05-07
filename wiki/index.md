@@ -87,38 +87,38 @@
 
 | slug | title | confidence | updated |
 |------|-------|-----------|---------|
-| activity-feed | Activity Feed Module | medium | 2026-05-06 |
+| activity-feed | Activity Feed Module | high | 2026-05-07 |
 | alerts | Alerts Module (Track 6.8 Intelligent Alerts) | high | 2026-05-07 |
-| bulk-select | Bulk Select Module | medium | 2026-05-06 |
-| bulk-vendor-ops | Bulk Vendor Ops Module | medium | 2026-05-06 |
-| calendar | Calendar Module | medium | 2026-05-06 |
-| commission | Commission Module | medium | 2026-05-06 |
-| competitive-pricing | Competitive Pricing Module | medium | 2026-05-06 |
+| bulk-select | Bulk Select Helper Module | high | 2026-05-07 |
+| bulk-vendor-ops | Bulk Vendor Ops Module | high | 2026-05-07 |
+| calendar | Calendar Module (Track 5.16) | high | 2026-05-07 |
+| commission | Commission Module | high | 2026-05-07 |
+| competitive-pricing | Competitive Pricing Module (Track 5.14) | high | 2026-05-07 |
 | customers | Customers Module (Track 1.4 CRM) | high | 2026-05-07 |
 | deal-optimizer | Deal Optimizer Module (Track 5.7) | high | 2026-05-07 |
 | decision-engine | Decision Engine Module (Track 5.15) | high | 2026-05-07 |
 | deliveries | Deliveries Module (Track 5.10) | high | 2026-05-07 |
 | demand-forecast | Demand Forecast Module (Track 6.9) | high | 2026-05-07 |
 | digest | Digest Module (Daily Brief Email) | high | 2026-05-07 |
-| employees | Employees Module | medium | 2026-05-06 |
-| global-search | Global Search Module | medium | 2026-05-06 |
-| health | Health Module | medium | 2026-05-06 |
+| employees | Employees Module (Track 3.1 Scorecards · M08 Locked) | high | 2026-05-07 |
+| global-search | Global Search Module | high | 2026-05-07 |
+| health | Health Module (Owner+Admin Diagnostics) | high | 2026-05-07 |
 | inventory | Inventory Module (Track 5.3 phase 1) | high | 2026-05-07 |
-| inventory-analytics | Inventory Analytics Module | medium | 2026-05-06 |
+| inventory-analytics | Inventory Analytics Module (Vendor Ranking sub-tab) | high | 2026-05-07 |
 | jobs | Jobs Module (Track 5.2 Job Tracker) | high | 2026-05-07 |
-| labels | Labels Module | medium | 2026-05-06 |
-| marketing | Marketing Module | medium | 2026-05-06 |
-| module-modes | Module Modes Module | medium | 2026-05-06 |
-| my-tasks | My Tasks Module | medium | 2026-05-06 |
+| labels | Labels Module (Track 5.9 QR / Barcode Labeling) | high | 2026-05-07 |
+| marketing | Marketing Hub Module (Track 5.12) | high | 2026-05-07 |
+| module-modes | Module Modes Module | high | 2026-05-07 |
+| my-tasks | My Tasks Module (v6.10.38 personal to-do) | high | 2026-05-07 |
 | pipeline-analytics | Pipeline Analytics Module | high | 2026-05-07 |
-| portal-preview | Portal Preview Module | medium | 2026-05-06 |
+| portal-preview | Portal Preview Module (Tracks 6.5 + 6.6) | high | 2026-05-07 |
 | price-book | Price Book Module (Track 5.6) | high | 2026-05-07 |
 | purchase-orders | Purchase Orders Module (Track 5.4) | high | 2026-05-07 |
-| quick-actions | Quick Actions Module | medium | 2026-05-06 |
-| reports | Reports Module | medium | 2026-05-06 |
-| saved-filters | Saved Filters Module | medium | 2026-05-06 |
-| showroom-displays | Showroom Displays Module | medium | 2026-05-06 |
-| trade-partners | Trade Partners Module | medium | 2026-05-06 |
+| quick-actions | Quick Actions Module | high | 2026-05-07 |
+| reports | Reports Module (CSV Export Center) | high | 2026-05-07 |
+| saved-filters | Saved Filters Helper Module | high | 2026-05-07 |
+| showroom-displays | Showroom Displays Module (Track 5.8) | high | 2026-05-07 |
+| trade-partners | Trade Partners Module (Track 5.5) | high | 2026-05-07 |
 | vendor-score-import | Vendor Score Import Module | high | 2026-05-07 |
 | warranty | Warranty Module (Track 5.11) | high | 2026-05-07 |
 | wiki | Wiki Module | high | 2026-05-07 |
