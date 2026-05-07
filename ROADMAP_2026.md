@@ -4,11 +4,11 @@
 > Every meaningful change appends to the **Decisions Log** at the bottom.
 > Synthesized from 4 rounds of multi-stakeholder roleplay (17 agent personas total).
 
-**Document version:** v3.0 (round-4 synthesis)
+**Document version:** v3.1 (round-5 — ecom site + user-safety dimensions)
 **Last updated:** 2026-05-07
 **Status:** ✅ At threshold — ready to start Phase 0 execution
-**Threshold score:** 91% (honest matrix, see §6)
-**Compounding leverage score:** 8.0 / 10 (after round-4 missing-loops added; was 6.2)
+**Threshold score:** 93% (honest matrix, see §6)
+**Compounding leverage score:** 8.0 / 10
 
 ---
 
@@ -46,6 +46,8 @@ AccentOS is the **control panel** for Accent Lighting and the **heartbeat** of t
 9. **AI honesty for customers** *(round-4, customer voice)* — every customer-facing AI surface is labeled ("Drafted with AI, reviewed by [name]"). AI is allowed to say "I don't know" and warm-handoff to a human. No fake signatures, no synthetic personalization. One-click opt-out separate from marketing opt-out.
 10. **Compounding > linear** *(round-4, leverage analyst)* — protect the rejection→eval→retrieval loop above all else. Anti-compounding traps (per-item human review, manual threshold tuning, hand-curated evals) flip to sampled / auto-grown patterns by default.
 11. **Owner-time discipline** *(round-4, owner-time auditor)* — Michael caps at 5h/wk on AccentOS. Agent drafts → Michael edits. Office-hours pattern (Tue 7-8a + Fri 4-4:30p) for sync items only. Everything else batched async.
+12. **Safety-by-default for all users** *(round-5, user-safety officer)* — safety-critical specs (wattage / voltage / wet-rating / dimmer compatibility) rendered from structured DB tokens, never LLM free-text. No LLM-generated URLs, prices, or banking details. Outbound customer email always human-gated. Surveillance bright line: telemetry on **outputs**, not **process**. Real-inventory-only scarcity. WCAG AA + axe-core in CI.
+13. **Site is product** *(round-5, ecom UX architect)* — accentlightinginc.com is not an afterthought to AccentOS, it's a build target. Custom Cornerstone fork ("AccentOS Theme") with native AccentOS integration points (live inventory, AI Consultant inline, compatibility checker, customer panel) is Phase 1 work, not "later."
 
 ---
 
@@ -182,15 +184,15 @@ After Occam-pass merges. Nothing in Phase 1+ ships until 0.1–0.12 land.
 
 ---
 
-## 6. Threshold Score Matrix (v3)
+## 6. Threshold Score Matrix (v3.1)
 
-26 dimensions (added: customer trust, compounding loops, owner-time fit, retrofit plan).
+28 dimensions (added v3.1: ecom site UX/perf, user-safety to humans).
 
 | Pass | Partial | Fail | Total |
 |---|---|---|---|
-| 22 / 26 (85%) | 3 / 26 | 1 / 26 | 26 |
+| 24 / 28 (86%) | 3 / 28 | 1 / 28 | 28 |
 
-**Honest score: 91%** (partials count half).
+**Honest score: 93%** (partials count half).
 
 **Remaining gaps:**
 - ❌ Adoption baseline (cleared by Phase 0.1 itself — accepted)
@@ -385,7 +387,105 @@ Non-negotiable rules for every customer-facing AI surface:
 
 ---
 
-## 13. Decisions Log
+## 13. BigCommerce Site Maximization (round-5, ecom UX architect)
+
+**Mandate:** the BC site is a first-class build target, natively integrated with AccentOS.
+
+### Theme strategy: **Cornerstone fork → "AccentOS Theme"**
+- Pure embed = cosmetic only; doesn't fix PDP/perf rot. Reject.
+- Full headless (Catalyst/Next.js) = ideal end-state but 400-600h, too heavy for Phase 1.
+- **Win: fork Cornerstone** — keep BC checkout/cart, rebuild PDP/PLP/home/account templates, inject AccentOS widgets via theme handlebars + small JS SDK. ~120-180h Phase 1, upgrade-path to headless later.
+
+### Native AccentOS integration points
+- Live Windward inventory + lead-time badge on PDP (via 6.3 BC sync)
+- AI Consultant inline on PDP (sticky right-rail desktop, bottom-sheet mobile) — SKU-context-aware
+- Persona-aware nav (trade vs designer vs homeowner) from logged-in customer record
+- Compatibility checker (dimmer/smart-hub/voltage) — PDP module pulling AccentOS rules engine
+- "Add to Lighting Plan" → syncs to customer panel
+- Auto-generated PDP narratives + meta + schema + FAQ + alt-text from A4-A8
+
+### PDP redesign spec ($2K chandelier as anchor)
+- **Above fold:** hero carousel (product + 3 room mockups + scale-reference) · price + lead-time + stock badge · finish swatches · "Add to Plan" + "Add to Cart" + "Request Designer Review" trio · free-sample CTA · trust strip
+- **Below fold (sticky tabs):** Specs (structured table) · Compatibility (live check vs customer's saved system) · Dimensions (3D/AR if possible) · Installation · Reviews · FAQ (auto-gen) · Designer Notes · Related-by-room
+- **Right rail desktop / bottom-sheet mobile:** AI Consultant pinned
+
+### PLP / category pages
+Faceted filters for lighting: Room · Style · Ceiling Height (7-9/9-12/12+) · Width · Bulb type · Dimmable · Smart-compatible (Lutron/Hue/Control4) · CCT · IP rating · Finish · Price · Lead time · In-stock-now. Cards: lifestyle image hover-swap to product, lead-time badge, "Add to Plan" quick-action. Load-more pagination, not numbered.
+
+### Mobile-first
+Thumb-zone CTAs · bottom-sheet filters with apply button · swipeable image gallery + pinch-zoom · sticky add-to-cart · AR view-in-room (Phase 2) · one-tap call/text designer.
+
+### Core Web Vitals targets
+**LCP <2.0s · INP <150ms · CLS <0.05 · TTFB <400ms.** AVIF + responsive srcset · lazy below-fold · preload hero · defer non-critical JS · edge-cache PLPs.
+
+### SEO architecture
+Product / Offer / AggregateRating / FAQ / BreadcrumbList schema on every PDP. Hub-spoke: room-type pillar pages → style → product. Internal linking via "complete the room" modules. AccentOS auto-generates 500-800 word PDP narratives.
+
+### Customer control panel (logged-in BC experience)
+Tiles: **My Lighting Plan** (saved fixtures by room + share-with-designer) · **Orders & Warranty** (per-fixture warranty timer + reorder bulbs) · **My Rep** (photo, direct chat, book call) · **Compatibility Profile** (saved dimmer/hub system → auto-filters PLP) · **Sample Tracker** · **Design Reviews** (request + history).
+
+### Sequencing
+- **Phase 1 (~150h):** Theme fork · PDP redesign · PLP filters · perf pass · schema · AI Consultant embed · customer panel v1
+- **Phase 2 (~120h):** Compatibility engine · Lighting Plan persistence · AR · review widget · persona nav
+- **Phase 3+:** Headless migration if scale demands
+
+### Highest-ROI 90-day move
+**PDP redesign + perf pass + AI Consultant inline.** PDP is where the $2K decision happens; current density + speed are the conversion ceiling.
+
+### Roadmap items E1-E10
+| ID | Item |
+|---|---|
+| E1 | Fork Cornerstone → "AccentOS Theme" repo, CI/CD via Stencil CLI |
+| E2 | PDP v2: above-fold redesign, room mockups, compatibility module, designer-review CTA |
+| E3 | PLP v2: lighting-specific faceted filters (room/ceiling/smart/CCT/IP) |
+| E4 | Core Web Vitals pass: LCP<2.0s, INP<150ms, CLS<0.05 |
+| E5 | AI Consultant inline embed (PDP sticky + PLP floating), SKU-context-aware |
+| E6 | Schema.org full coverage + auto-generated PDP narratives/meta/FAQ/alt-text (A4-A8) |
+| E7 | Customer control panel: Lighting Plan, Warranty, My Rep, Compatibility Profile tiles |
+| E8 | Mobile-first refactor: bottom-sheet filters, sticky CTA, swipe gallery, AR-ready |
+| E9 | Live Windward inventory + lead-time badges via AccentOS BC sync |
+| E10 | Persona-aware nav + content (trade/designer/homeowner) from customer record |
+
+---
+
+## 14. User-Safety Charter (round-5, user-safety officer)
+
+Distinct from §5 internal security (RLS / JWT / RAG ACLs). This protects the **humans** who interact with AccentOS — customers, employees, vendors, owner — from harm caused by the system itself.
+
+### Top user-safety risks (harm × likelihood)
+| # | Risk | User | Harm | Mitigation |
+|---|---|---|---|---|
+| 1 | **Hallucinated fixture spec** | Customer | Wrong wattage/voltage/dimmer/wet-rating → fire risk, code violation, return + injury | **Spec-token system**: safety specs rendered from `product_specs` DB only; LLM cannot free-text them; refuse-to-answer if no token |
+| 2 | **AI-drafted phishing-from-trusted-domain** | Customer | Hallucinated tracking/refund link from `@accentlightinginc.com` | **Outbound email gate**: zero auto-send to customers; merge-fields only; URL allow-list scan pre-send; DKIM+DMARC enforced |
+| 3 | **Account takeover via portal** | Customer / Trade / Vendor | Credential compromise, data theft, fraud | **MFA mandatory** for trade/vendor/employee portals, nudged for retail; session rotation; rate-limited login + device anomaly alerts |
+| 4 | **Mispriced item** | Customer + Owner | Stale cached price → honor-or-eat-reputation tradeoff | **Pricing token TTL 60s**, re-resolved at render; AI never quotes a number — only renders `{price:sku}` |
+| 5 | **Employee surveillance overreach** | Employees | Sharpness Score / edit-distance reads as keystroke monitoring → morale, legal, unionization | **Bright line: outputs not process.** Telemetry on shipped drafts OK; keystrokes/idle/mouse banned. Employee-visible self-dashboard. Manager access aggregated weekly. Published policy. |
+| 6 | **Vendor pricing cross-leak** | Vendor + Owner | RAG retrieves vendor A's costs while answering vendor B → NDA breach | **Namespace isolation at retrieval** (not just prompt); cost data tagged `confidential:vendor:{id}`; pre-send $-pattern leak scanner |
+| 7 | **AI-drafted PO to hijacked vendor email** | Owner | Fraudulent banking-detail change auto-drafted | **2-person + out-of-band verify** for any banking change; allow-list of remit-to accounts; AI cannot draft POs with new payee info |
+| 8 | **Manipulation tactics on customers** | Customer | Fake scarcity, dynamic pricing on repeat visitors, dark-pattern abandoned-cart | **Real-inventory-only scarcity**; A/B on copy/layout only, never price; published dark-pattern bans |
+
+### Secondary
+- **WCAG AA + axe-core in CI** for AI Consultant + customer panel; nursery/kids PDPs require safety-cert badges
+- **CCPA/GDPR endpoints day 1** — export, delete, PII-redaction in RAG ingest; AI Consultant never promises refund/warranty outcomes
+- **Hallucination on returns/warranty** — AI must say "a human will confirm within X hours," never promise an outcome
+
+### Roadmap items S1-S10
+| ID | Item |
+|---|---|
+| S1 | **Spec-token system** — safety specs from DB only; LLM refuses if no token |
+| S2 | **Outbound customer email gate** — human-approve queue; merge-fields + allow-listed URLs only |
+| S3 | **MFA mandatory** for trade/vendor/employee portals + session rotation + device anomaly alerts |
+| S4 | **Pricing TTL 60s** + LLM-never-renders-numbers + no per-user dynamic retail pricing |
+| S5 | **Surveillance policy** — outputs not process, employee self-dashboard, weekly aggregates only |
+| S6 | **Vendor RAG namespace isolation** + pre-send cost-leak scanner |
+| S7 | **PO banking 2-person + out-of-band verify** + remit-to allow-list |
+| S8 | **Real-inventory scarcity only** + dark-pattern ban list + A/B on copy not price |
+| S9 | **WCAG AA + axe-core in CI** + safety-cert badges on nursery/kids PDPs |
+| S10 | **CCPA/GDPR endpoints** — export, delete, PII-redaction in RAG ingest; AI never promises refund/warranty |
+
+---
+
+## 15. Decisions Log
 
 This section is **append-only**. Every meaningful change to vision, plan, scope, or threshold gets a dated entry.
 
@@ -429,12 +529,23 @@ This section is **append-only**. Every meaningful change to vision, plan, scope,
 
 **Score:** 91% honest (up from 87%). 26 dimensions (added: customer trust, compounding, owner-time fit, retrofit). Holding here — further rounds risk goalpost-moving per BUILD_INTELLIGENCE #89.
 
+### 2026-05-07 — v3.1 — Round 5: ecom site + user-safety dimensions
+**Round 5** (2 fresh agents: ecom site UX/theme architect, user-safety officer for human users — distinct from internal infrastructure security).
+
+**§13 BigCommerce Site Maximization** — site is now a first-class build target. Theme strategy decided: fork Cornerstone → "AccentOS Theme" (~150h Phase 1, upgrade-path to headless later). PDP redesign anchored on $2K chandelier UX. Lighting-specific faceted filters defined (ceiling height, smart-compatible, CCT, IP). Core Web Vitals targets locked (LCP <2.0s, INP <150ms, CLS <0.05). Customer panel tiles specified. 10 ecom items E1-E10 added.
+
+**§14 User-Safety Charter** — protecting humans from harm caused by the system. 8 top risks + 3 secondary. Spec-token system mandated for safety-critical fields (wattage/voltage/dimmer/wet-rating) — LLM cannot free-text safety specs. Outbound customer email gated (no auto-send, allow-list URLs, merge-fields only). Surveillance bright line drawn: outputs not process. Vendor namespace isolation enforced at retrieval. PO banking changes need 2-person + out-of-band verify. WCAG AA + axe-core in CI. CCPA/GDPR endpoints day 1. 10 safety items S1-S10 added.
+
+**Two new principles** (#12-13): Safety-by-default for all users · Site is product (not afterthought).
+
+**Score:** 91% → 93% on 28 dimensions (added: ecom site UX/perf, user-safety to humans).
+
 ### [next entry placeholder]
 - Date · version · trigger · changes · score delta.
 
 ---
 
-## 14. Execution kickoff
+## 16. Execution kickoff
 
 Plan is **at threshold to begin Phase 0**. On Owner go-signal:
 1. Branch off `main` for each Phase 0 item (12 small PRs, not one big one).
