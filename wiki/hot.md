@@ -1,13 +1,18 @@
 # Wiki Hot State
-> Updated: 2026-05-07 — Module enrichment batch 1
+> Updated: 2026-05-07 — Module enrichment batch 2
 
 ## Current task
-Module-page enrichment in progress (3 of 35 done). Pattern proven; remaining 32 stubs follow the same recipe (read js source → enrich frontmatter + functions table + read deps + shell touchpoints + failure modes + cross-links).
+Module-page enrichment in progress (6 of 35 done). Pattern proven across 6 distinct module shapes (BM25 engine, plaintext export, CSV bulk import, signal aggregator, full CRUD with RFM, inline-edit grid). Remaining 29 stubs follow the same recipe.
 
 ## What shipped (this session)
 
+### Module enrichment batch 2 (3 pages)
+- **wiki/modules/alerts.md** — Track 6.8 cross-module signal aggregator: 9 generators with per-type severity rules, `(type, source_id)` dedupe, dismissed-can-resurface semantics, bell-icon `goTo()` wrapper. Confidence medium → high.
+- **wiki/modules/customers.md** — Track 1.4 CRM hub: RFM compute thresholds, 5-segment classifier, 6-source name-match activity timeline, allow-listed inline edits, customer→deal preset with valueSeed, role-gate (Warehouse blocked). Confidence medium → high.
+- **wiki/modules/inventory.md** — Track 5.3 phase 1: paginated 1000-row load, bulk upsert with `on_conflict (vendor_id, sku)`, inline-edit dependent-cell recompute (`qty_available` + low-stock styling), role-gated edits, inline RFC-4180 CSV parser shared with customers. Confidence medium → high.
+
 ### Module enrichment batch 1 (3 pages)
-- **wiki/modules/wiki.md** — full BM25 grounding engine: 12 functions documented, 13-rule stemmer, GRAPH_BOOST=0.2 graph re-rank, slug dedup, customer-mode entity exclusion, fallback path. Confidence medium → high.
+- **wiki/modules/wiki.md** — full BM25 grounding engine: 12 functions documented, 13-rule stemmer, `GRAPH_BOOST=0.2` graph re-rank, slug dedup, customer-mode entity exclusion, fallback path. Confidence medium → high.
 - **wiki/modules/digest.md** — Daily Brief email export: 4 functions, role-aware `computeDailyBrief` reuse, plaintext output shape, `mailto:` export, failure modes. Confidence medium → high.
 - **wiki/modules/vendor-score-import.md** — wide → long CSV import via `csvImportFlow` helper: `sbBulkSaveVendorScores`, `_buildVendorScoreAliasMap` auto-derivation from `CAT_DEFS`, `postProcess` vendor_id resolution, 0–10 score validation. Confidence medium → high.
 
@@ -47,16 +52,16 @@ Precision 50.8% = ~94% of achievable ceiling. Do not attempt further passes with
 
 ## What Claude can build without Michael
 
-1. **Wiki enrichment**: 32 module pages remaining in wiki/modules/ (3 of 35 enriched in this session). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
+1. **Wiki enrichment**: 29 module pages remaining in wiki/modules/ (6 of 35 enriched so far). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
 2. **Vendor page enrichment**: wiki/entities/vendors/ has 30 pages — can be fleshed out as vendor data becomes available.
 3. **pgvector path** (M42/M43): optional embedding upgrade — not started, not blocked.
 
 ## Suggested next enrichment batch
 
 Pick high-fanout modules first (most cross-links, highest grounding value):
-1. **alerts** (`js/alerts.js`) — 9 generators, cross-module signals (deals, coop, quotes, inventory, deliveries, warranty, showroom, POs, scores)
-2. **customers** (`js/customers.js`) — CRM hub: RFM compute, 5 segments, merged activity timeline (interactions + quotes + deals)
-3. **inventory** (`js/inventory.js`) — warehouse + price-book + Windward-sync target; CSV import via shared helper
+1. **pipeline-analytics** (`js/pipeline_analytics.js`) — pipeline forecast / win-rate analytics; pairs with the customers ↔ alerts triangle just enriched
+2. **purchase-orders** (`js/purchase_orders.js`) — PO lifecycle + receipt flow that increments `inventory_items.qty_on_hand`; consumes inventory just enriched
+3. **price-book** (`js/price_book.js`) — pure-compute over inventory + VD margin/markup; closes the inventory cluster
 
 ## Next-session entry point
 
@@ -65,4 +70,4 @@ Pick high-fanout modules first (most cross-links, highest grounding value):
 3. If M04 done: build 5.13 E-Commerce Command Center (BigCommerce REST + GMC)
 4. If M06 done: build 6.1 (GA4) + 6.2 (GSC) integrations
 5. If M09 done: build 6.4 Klaviyo integration
-6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (alerts → customers → inventory). Read `js/<name>.js` first, then write following the batch-1 pattern.
+6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (pipeline-analytics → purchase-orders → price-book). Read `js/<name>.js` first, then write following the batch-1/2 pattern.

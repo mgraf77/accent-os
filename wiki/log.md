@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-05-07 module-enrichment-batch-2
+- enrich: alerts — Track 6.8 cross-module signal aggregator: 9 generators (deal_stale, coop_deadline, quote_cold, inventory_low, delivery_overdue, warranty_expiring, showroom_expiring, po_overdue, score_dropped), per-type severity rules, dedupe via (type, source_id), bell-icon goTo() wrapper, dismissed-can-resurface semantics; confidence medium → high
+- enrich: customers — Track 1.4 CRM: full CRUD, RFM compute (recency/frequency/monetary thresholds for VIP/Active/Lapsed/Lost/Prospect), 6-source name-match activity timeline, allow-listed inline edits, customer→deal preset with valueSeed, role gates (Warehouse blocked); confidence medium → high
+- enrich: inventory — Track 5.3 phase 1: paginated 1000-row load, bulk upsert with on_conflict (vendor_id,sku), inline-edit dependent-cell recompute (qty_available + low-stock styling), role-gated edits (cost senior-only, list senior+Sales, qty/place senior+Warehouse), inline RFC-4180 CSV parser shared by customers; confidence medium → high
+- update: wiki/index.md — bumped 3 module rows to confidence:high, updated:2026-05-07; titles now include track ref
+- note: 32 → 29 stub modules remaining; cross-link density rising fast (alerts ↔ customers ↔ inventory triangle, plus inventory feeding price-book / demand-forecast / labels / purchase-orders)
+
+---
+
 ## 2026-05-07 module-enrichment-batch-1
 - enrich: wiki — full BM25 grounding engine docs (12 functions, 13-rule stemmer, GRAPH_BOOST=0.2 graph re-rank, slug dedup, customer-mode entity exclusion, fallback path); confidence medium → high
 - enrich: digest — Daily Brief email export (4 functions, role-aware computeDailyBrief reuse, plaintext output shape, mailto export, failure modes); confidence medium → high

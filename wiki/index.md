@@ -88,13 +88,13 @@
 | slug | title | confidence | updated |
 |------|-------|-----------|---------|
 | activity-feed | Activity Feed Module | medium | 2026-05-06 |
-| alerts | Alerts Module | medium | 2026-05-06 |
+| alerts | Alerts Module (Track 6.8 Intelligent Alerts) | high | 2026-05-07 |
 | bulk-select | Bulk Select Module | medium | 2026-05-06 |
 | bulk-vendor-ops | Bulk Vendor Ops Module | medium | 2026-05-06 |
 | calendar | Calendar Module | medium | 2026-05-06 |
 | commission | Commission Module | medium | 2026-05-06 |
 | competitive-pricing | Competitive Pricing Module | medium | 2026-05-06 |
-| customers | Customers Module | medium | 2026-05-06 |
+| customers | Customers Module (Track 1.4 CRM) | high | 2026-05-07 |
 | deal-optimizer | Deal Optimizer Module | medium | 2026-05-06 |
 | decision-engine | Decision Engine Module | medium | 2026-05-06 |
 | deliveries | Deliveries Module | medium | 2026-05-06 |
@@ -103,7 +103,7 @@
 | employees | Employees Module | medium | 2026-05-06 |
 | global-search | Global Search Module | medium | 2026-05-06 |
 | health | Health Module | medium | 2026-05-06 |
-| inventory | Inventory Module | medium | 2026-05-06 |
+| inventory | Inventory Module (Track 5.3 phase 1) | high | 2026-05-07 |
 | inventory-analytics | Inventory Analytics Module | medium | 2026-05-06 |
 | jobs | Jobs Module | medium | 2026-05-06 |
 | labels | Labels Module | medium | 2026-05-06 |
