@@ -2,12 +2,13 @@
 
 > **Living document.** Real-time log of vision, plan, and execution state.
 > Every meaningful change appends to the **Decisions Log** at the bottom.
-> Synthesized from 3 rounds of multi-stakeholder roleplay (12 agent personas total).
+> Synthesized from 4 rounds of multi-stakeholder roleplay (17 agent personas total).
 
-**Document version:** v2.0 (round-3 synthesis)
+**Document version:** v3.0 (round-4 synthesis)
 **Last updated:** 2026-05-07
 **Status:** ✅ At threshold — ready to start Phase 0 execution
-**Threshold score:** 87% (honest matrix, see §6)
+**Threshold score:** 91% (honest matrix, see §6)
+**Compounding leverage score:** 8.0 / 10 (after round-4 missing-loops added; was 6.2)
 
 ---
 
@@ -42,6 +43,9 @@ AccentOS is the **control panel** for Accent Lighting and the **heartbeat** of t
 6. **Cost-bounded AI** — workspace cap with kill-switch, prompt caching, model tiering (Haiku → Sonnet → Opus), per-user/action quotas.
 7. **Security as gate** — RLS regression CI, hash-chained audit_log, JWT audience split before any external-facing surface.
 8. **Recalibrate, don't ratify** — every round updates thresholds toward maximizing performance, not minimizing risk.
+9. **AI honesty for customers** *(round-4, customer voice)* — every customer-facing AI surface is labeled ("Drafted with AI, reviewed by [name]"). AI is allowed to say "I don't know" and warm-handoff to a human. No fake signatures, no synthetic personalization. One-click opt-out separate from marketing opt-out.
+10. **Compounding > linear** *(round-4, leverage analyst)* — protect the rejection→eval→retrieval loop above all else. Anti-compounding traps (per-item human review, manual threshold tuning, hand-curated evals) flip to sampled / auto-grown patterns by default.
+11. **Owner-time discipline** *(round-4, owner-time auditor)* — Michael caps at 5h/wk on AccentOS. Agent drafts → Michael edits. Office-hours pattern (Tue 7-8a + Fri 4-4:30p) for sync items only. Everything else batched async.
 
 ---
 
@@ -88,7 +92,7 @@ Four tiers, ~15 metrics. v1 ships 6; expands in Phase 2.
 - **Patrick:** RPS · Conversion Rate · Inventory Health · Fulfillment SLA · Cart→Ship
 - **Paul:** Daily Revenue · Quote→Close % · Gross Margin · AOV · Vendor Score Trend
 - **Employee:** Their role's top metric · Their Actions/Day · Empowerment pulse · One team KPI · Personal sharpness trend
-- **Customer (future):** Order status · Lighting plan · Reorder list · Their rep · Designer notes
+- **Customer (Sarah voice, round-4):** **My Lighting Plan** (every fixture per room + install status + bulbs/dimmers needed) · **Reorder + Warranty** (one-click matching bulbs years later — the Amazon moat) · **My Rep, Real Availability** (named human, real free/busy) · Order status + ETA · Compatibility check status (dimmer/driver/bulb)
 
 ---
 
@@ -135,6 +139,7 @@ After Occam-pass merges. Nothing in Phase 1+ ships until 0.1–0.12 land.
 - **Review platform** (Yotpo or equivalent) + PDP widget — unblocked
 - **GMC feed health monitor** — *blocked on M05*
 - **Public AI Consultant embed (6.10)** — UN-DEFERRED per ecom lead; biggest single CVR lever for high-consideration lighting. Internal-only first (Phase 1), public surface in Phase 2 after eval.
+- **Compatibility Checker (NEW, round-4 customer voice)** — dimmer / driver / bulb compatibility validator. Sarah's #1 unmet need; bigger moat than upsell bundler. Pure-compute over INVENTORY metadata once spec fields exist. Phase 1 internal tool, Phase 2 customer-facing.
 
 **Deferred from Phase 1:** GA4 (6.1), GSC (6.2), Klaviyo (6.4) — revisit when revenue case from Phase 0 telemetry is concrete.
 
@@ -155,7 +160,7 @@ After Occam-pass merges. Nothing in Phase 1+ ships until 0.1–0.12 land.
 | A1 | PO drafts (top-50 fast-movers) | Patrick | hours saved + cost variance |
 | A2 | Follow-up drafts (stale deals) | Paul | revenue (delayed attribution 60d) |
 | A3 | Auto call-note logging | Sales | 10-15h/wk saved |
-| A4 | Abandoned cart email drafts (Klaviyo) | Patrick | recovered revenue |
+| A4 | Abandoned cart email drafts (Klaviyo) — **REDESIGNED v3.0**: cap 1 plain-text email max, AI-labeled, from real address; kill if unsubscribe rate >2% | Patrick | recovered revenue |
 | A5 | PDP rewrite drafts (low-CVR SKUs) | Patrick | conversion lift |
 | A6 | GMC disapproval auto-fix drafts | Patrick | shopping-spend recovery |
 | A7 | Bundle/cross-sell drafts | Patrick | AOV |
@@ -177,23 +182,23 @@ After Occam-pass merges. Nothing in Phase 1+ ships until 0.1–0.12 land.
 
 ---
 
-## 6. Threshold Score Matrix (v2)
+## 6. Threshold Score Matrix (v3)
 
-22 dimensions; honest including failure dimensions.
+26 dimensions (added: customer trust, compounding loops, owner-time fit, retrofit plan).
 
 | Pass | Partial | Fail | Total |
 |---|---|---|---|
-| 18 / 22 (82%) | 3 / 22 | 1 / 22 | 22 |
+| 22 / 26 (85%) | 3 / 26 | 1 / 26 | 26 |
 
-**Honest score: 87%** (partials count half).
+**Honest score: 91%** (partials count half).
 
 **Remaining gaps:**
 - ❌ Adoption baseline (cleared by Phase 0.1 itself — accepted)
 - ⚠ Phase 1 100% creds-blocked → contingency: BC live work parallels W1-W3 if M04 lands; otherwise Phase 2 ecom surfaces lead.
-- ⚠ A5/A6 double-count → resolved via handoff contracts above.
 - ⚠ Personal/business data wall via JWT aud only; second Supabase project is Phase 4.
+- ⚠ Cross-tenant network effects absent (single-tenant by design, intentional v1).
 
-**Threshold rule (BUILD_INTELLIGENCE #89):** >95% honest score = matrix too narrow. 87% with named gaps is the right place to start.
+**Threshold rule (BUILD_INTELLIGENCE #89):** >95% honest score = matrix too narrow. Holding at 91% with named gaps; further rounds risk goalpost-moving.
 
 ---
 
@@ -225,6 +230,18 @@ After Occam-pass merges. Nothing in Phase 1+ ships until 0.1–0.12 land.
 ### W12 Gate (must show)
 - ≥1 automation promoted shadow→draft→auto with Beta-LCB evidence · RAG eval ≥80% · cost flat or down vs W4.
 - **Replan trigger:** auto-promotion blocked OR eval <70% → defer A5-A8, extend Phase 2 by 2 weeks, push live to W18.
+- **NEW v3.0 (pre-mortem distillation):** Has *anything* been killed yet? Zero kills = no honest measurement = automatic Replan.
+
+### Pre-Mortem Early-Warning Signals (round-4)
+Three signals separate best-case from worst-case path:
+- **W4 signal:** Δ-ROI ledger populated with real baselines for ≥3 manual workflows? (Worst-case: empty/synthetic.)
+- **W8 signal:** Heartbeat uptime ≥98% across all tiers? (Worst-case: gaps tolerated.)
+- **W12 signal:** Has anything been killed yet? (Worst-case: zero kills.)
+
+**Three new instrumentations** baked into Phase 0:
+1. **Δ-ROI red flag** if any automation has no baseline by W4.
+2. **Heartbeat-gap alarm** — >6hr silence on any tier pages a human.
+3. **"Manual-workaround" tag** in Friday standup notes — auto-flagged when an employee describes bypassing an automation. Three flags = mandatory review.
 
 ### Top scheduling risk
 **150-pair eval set authoring** could underestimate Michael's 6h commitment. **Contingency:** agent drafts 100 pairs from existing tickets/quotes in W3; Michael reviews 20/wk. Hard-gate W7 surfaces on eval pass.
@@ -249,7 +266,126 @@ After Occam-pass merges. Nothing in Phase 1+ ships until 0.1–0.12 land.
 
 ---
 
-## 9. Decisions Log
+## 9. Compounding Loops (round-4 leverage analyst)
+
+**Plan-wide leverage score: 8.0 / 10** (was 6.2 before round 4 missing-loops added).
+
+### Existing loops (protect)
+| Loop | Input | Output | Latency to compound |
+|---|---|---|---|
+| **★ Rejection → eval set → retrieval tuning** *(THE keystone — protect above all)* | Human "reject" on AI draft | Hard-negative retrieval signal | ~2 weeks visible lift |
+| Δ-ROI per automation → threshold auto-tune | Outcome ledger | Confidence cutoffs drift with reality | ~30 runs per automation |
+| Heartbeat anomaly history → predictive alerting | Heartbeat misses + recovery time | Pre-failure warnings | ~6 weeks baseline |
+| PROMPT_LOG + BUILD_INTELLIGENCE + efficiency-monitor (meta) | Every Claude session | Cheaper future sessions | Already compounding |
+| vibe-speak feedback-log → mode calibration | applied/not-applied tags | Tighter persona fit per user | ~20 sessions per user |
+
+### Missing loops to add (Phase 2-4)
+| # | Loop | Phase | Win |
+|---|---|---|---|
+| L1 | **Closed quotes → vendor pricing intelligence → better next quote** | Phase 2 | Every won/lost quote fingerprints vendor cost vs final margin |
+| L2 | **Customer-question corpus → FAQ + PDP rewrites → fewer questions** | Phase 2 | Inbound emails/SMS feed content layer |
+| L3 | **Cross-employee task patterns → skill extraction** | Phase 3 | When 3 employees do the same manual sequence, auto-propose an automation |
+| L4 | **Failed automation runs → root-cause clusters → preventive playbooks** | Phase 4 | Errors cluster into pattern → fix-template loops |
+| L5 | **Persona × mode × task-success matrix** | Phase 4 | vibe-speak mode preference correlated to task completion quality |
+
+### Anti-compounding traps to flip
+- **Per-PDP human review** of AI rewrites scales O(SKUs) → confidence-sampled review (bottom 10% confidence + random 2%).
+- **Manual threshold tuning** per automation × persona = 40 dials → must be auto-tuned from Δ-ROI.
+- **Heartbeat dashboards humans read** → exception-only paging.
+- **Hand-curated eval sets** → auto-grown from rejections.
+- **Per-persona prompt edits** outside vibe-speak modes → leak; capture in modes.
+
+---
+
+## 10. 36-Module Retrofit Plan (round-4 retrofit architect)
+
+**Total budget: 91 hours** across Phase 0 + Phase 2.
+
+### Bucket triage
+| Bucket | Modules | Per-module | Total | When |
+|---|---|---|---|---|
+| (A) Conforming, event-hook only | 8 (KPIs, Goals, Module Modes, Global Search, My Tasks, Reports Center, Alerts, Labels) | 15min | 2h | W3-W4 sweep |
+| (B) Light retrofit (event emit + thumbs on AI surfaces) | 14 (Daily Brief, Pipeline, Quotes, CRM, Job Tracker, Inventory, POs, Trade Partners, Price Book, Deliveries, Warranty, Showroom, Calendar, Employee Scorecards) | 1.5h | 21h | W3-W4 |
+| (C) Heavy retrofit (AI Gateway routing + dynamic thresholds + explain-mode) | 7 (Vendor Intelligence, Deal Optimizer, Decision Engine, Demand Forecast, AI Consultant, Marketing, Competitive Pricing) | 6h | 42h | W6-W9 interleaved |
+| (D) Skip → defer to Phase 4 kill list | 7 lowest-traffic (Knowledge Hub + 6 TBD via heartbeat) | 0 | 0 | Decided W4 |
+
+### Shared retrofit kit (ships Phase 0.1, 6 primitives, ~20h)
+```
+logEvent(action_id, {cost_cents, value_cents, persona, module})
+aiCall(prompt, {tier, cache_key, kill_switch_id, explain})  // wraps AI Gateway
+<thumbs-row event-id="..."></thumbs-row>                    // web component
+<explain-link output-id="..."></explain-link>
+threshold(key, default)                                      // dynamic threshold reader
+registerCmdK({id, label, run, persona})
+```
+Per-module retrofit becomes 4-8 lines.
+
+### First 5 pattern validators (W2)
+1. **Daily Brief** — highest visibility, simplest event surface, proves dashboard read-path
+2. **Quotes** — money-touching, validates `automation_events` value-tracking
+3. **Pipeline** — exercises Cmd-K wiring (stage moves)
+4. **Vendor Intelligence** — bucket-C token, forces Gateway + thumbs + explain-mode together
+5. **Employee Scorecards** — proves heartbeat-from-existing-data with zero new persistence
+
+### Cmd-K v1 — 10 actions (covers all 5 personas)
+New Quote · Move Pipeline Stage · Add CRM Note · Create PO · Mark Job Milestone · Check Inventory · Open Daily Brief · Ask AI Consultant · Schedule Delivery · Run Global Search.
+
+### Cutover ordering (must be sequenced, not gradual)
+- Bundler cutover (Phase 0.6): ship retrofit kit as globals first, swap to ESM in one commit.
+- AI Gateway switch: env-flag shim through W2, hard-cut W3.
+- `automation_events` schema: lock shape before any module writes.
+- Dynamic threshold table: must exist before any C-bucket retrofit.
+
+### Semantic-drift defense
+Per-module contract test: fixture harness fires every action, snapshots `automation_events` row, asserts shape (`action_id` enum, `cost_cents` int, `persona` enum, `module` slug). CI-gated. JSON-schema validation server-side as belt-and-suspenders.
+
+---
+
+## 11. Owner-Time Discipline (round-4 owner-time auditor)
+
+**Cap: 5 hrs/week.** Plan as written had 3 overrun weeks (W1, W4, W8-W10). Mitigations baked in:
+
+### Office Hours pattern
+**Tue 7-8a + Fri 4-4:30p = 90 min/wk fixed sync window.** Agent queues all async items into one decision-doc; Michael clears in batch. Cuts context-switch tax ~40%.
+
+### Offload matrix
+| Task | Owner |
+|---|---|
+| Eval pair drafting | Agent (mines PROMPT_LOG + SESSION_LOG → 200 candidates) |
+| Eval pair scoring/edit | Michael (~90 sec/pair = 3.75h, was 12-15h) |
+| Threshold overrides | Agent proposes, Michael ratifies async |
+| Friday demo prep | Agent generates Loom + bullet list; Michael watches + reacts (8 min) |
+| Persona dashboard math | Agent |
+| Persona dashboard interpretation | Michael (monthly, not weekly) |
+| Employee win detection | Agent surfaces, Michael delivers recognition |
+| Credential request packaging | Agent (single batched W1 form) |
+| Architecture surprise triage | Michael (real-time only) |
+
+### Cuts and adds
+- **CUT:** Weekly persona-dashboard tuning → monthly (saves ~30 min/wk).
+- **ADD:** Weekly 5-min "kill anything?" prompt in Friday slot — closes the silent-dud-feature gap.
+- **SPREAD:** A1-A3 shadow reviews W7/W9/W11 (was W8-W10 cluster) to flatten Michael's spike.
+
+---
+
+## 12. Customer Trust Charter (round-4 customer voice / Sarah)
+
+Non-negotiable rules for every customer-facing AI surface:
+
+1. **Disclose AI** on every AI-generated touchpoint. "Drafted with AI, reviewed by [name]" is acceptable. Fake personal signatures are not.
+2. **AI is allowed to say "I don't know"** and warm-handoff to a named human without making the customer re-type.
+3. **Compatibility checker before upsell bundler** — Sarah's words: "this is where I screw up." Build the moat first.
+4. **Photo + room mockup beats chatbot** — defer pure-chat surfaces; prioritize image-grounded interactions.
+5. **Reorder + warranty tile** in customer panel = the Amazon moat.
+6. **Cap A4 abandoned-cart at 1 plain-text email max.** From a real address, AI-labeled. Kill if unsubscribe rate >2%.
+7. **One-click AI opt-out** separate from marketing opt-out.
+8. **Show sources** for AI claims (dimensions, specs, compatibility). One hallucinated dimension destroys trust on a return-cost-$200+ category.
+9. **No A/B-tested pricing** on logged-in customers.
+10. **Designer-review-my-cart button** (human review for high-ticket carts) — differentiator vs Amazon.
+
+---
+
+## 13. Decisions Log
 
 This section is **append-only**. Every meaningful change to vision, plan, scope, or threshold gets a dated entry.
 
@@ -274,12 +410,31 @@ This section is **append-only**. Every meaningful change to vision, plan, scope,
 
 **Score:** 87% honest (up from 73%). At threshold to start Phase 0 execution.
 
+### 2026-05-07 — v3.0 — Round 4 optimization
+**Round 4** (5 agents: customer voice / Sarah, retrofit architect, owner-time auditor, 12-month pre-mortem, compounding-leverage analyst).
+
+**Owner pre-commitment baked in:** A1-A8 kill thresholds set. A8 + A4 most likely to die; A3 is keystone (Paul's #1 ask). Threshold service auto-flags via `v_kill_candidates`; Owner has 7-day veto window before automatic retirement.
+
+**Customer trust charter (§12)** — Sarah flagged A4 abandoned cart needs major rework (capped to 1 plain-text email max, AI-labeled, real address). Compatibility checker (dimmer/driver/bulb) added to Phase 1 — bigger moat than upsell bundler. Customer control panel tiles redesigned per Sarah: My Lighting Plan, Reorder+Warranty (Amazon moat), My Rep real availability.
+
+**Compounding loops (§9)** — leverage score 6.2 → 8.0 after adding 5 missing loops: closed-quotes→vendor-pricing-intel, customer-questions→FAQ/PDP, cross-employee-patterns→skill-extraction, failed-runs→playbook-clusters, persona×mode×task-success matrix. Keystone loop identified: rejection→eval→retrieval (protect above all). 5 anti-compounding traps flagged for sampled/auto-grown patterns.
+
+**36-module retrofit (§10)** — 91-hour budget across Phase 0+2. Triaged into 4 buckets (8 conforming + 14 light + 7 heavy + 7 skip). 6 shared primitives ship in Phase 0.1; per-module retrofit becomes 4-8 lines. First 5 pattern validators chosen (Daily Brief, Quotes, Pipeline, Vendor Intelligence, Employee Scorecards). Cmd-K v1's 10 actions specified.
+
+**Owner-time discipline (§11)** — Michael's 5h/wk cap protected via Office Hours pattern (Tue 7-8a + Fri 4-4:30p), agent-drafted/Michael-edited eval set (3.75h vs 12-15h), batched W1 credential form, monthly persona tuning (was weekly), A1-A3 shadow reviews spread W7/W9/W11.
+
+**Pre-mortem signals** baked into schedule: W4 Δ-ROI baseline check, W8 heartbeat uptime ≥98% check, W12 "anything been killed?" check. Three new instrumentations: Δ-ROI red flag, heartbeat-gap alarm (>6hr silence pages human), manual-workaround tag in standups.
+
+**Three new principles added** (#9-11): AI honesty for customers, compounding > linear, owner-time discipline.
+
+**Score:** 91% honest (up from 87%). 26 dimensions (added: customer trust, compounding, owner-time fit, retrofit). Holding here — further rounds risk goalpost-moving per BUILD_INTELLIGENCE #89.
+
 ### [next entry placeholder]
 - Date · version · trigger · changes · score delta.
 
 ---
 
-## 10. Execution kickoff
+## 14. Execution kickoff
 
 Plan is **at threshold to begin Phase 0**. On Owner go-signal:
 1. Branch off `main` for each Phase 0 item (12 small PRs, not one big one).
