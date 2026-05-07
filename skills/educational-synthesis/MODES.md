@@ -43,9 +43,32 @@
 
 ## Combining modes
 
-Modes generally do not stack. If Michael asks for both `deep-dive` and `podcast`, generate the full deep-dive artifact set AND the podcast prompt — but treat the deep-dive as primary and the podcast as derived.
+Modes can stack within these explicit rules. The combination matrix:
 
-`exec-briefing` and `concept-map` can be paired ("brief me with a system map") — produces the exec file plus a relationship diagram, nothing else.
+| primary mode | + secondary mode | result | example trigger |
+|--------------|------------------|--------|-----------------|
+| `deep-dive` | `+ podcast` | full deep-dive artifact set + `notebooklm-prompt.md` | "deep dive on X — and podcast it" |
+| `deep-dive` | `+ visual-thinking` | full deep-dive + slide-deck + infographic + mind-map | "deep dive on X — and produce a deck" |
+| `deep-dive` | `+ concept-map` | full deep-dive + Mermaid relationship graph as primary | "deep dive on X — show the system map" |
+| `exec-briefing` | `+ concept-map` | exec file + relationship diagram, nothing else | "brief me with a system map" |
+| `exec-briefing` | `+ podcast` | exec file + notebooklm-prompt | "brief me, and make a podcast version" |
+| `teach-me` | `+ visual-thinking` | teach-me deep-dive + slide-deck (with beginner pacing) | "teach me X from scratch — and a deck I can show others" |
+| `concept-map` | `+ deep-dive` | full deep-dive with concept-map's relationship graph as the primary | "concept map for X with full teaching" |
+
+### Illegal combinations (do not stack)
+
+| primary | + | reason |
+|---------|---|--------|
+| `exec-briefing` | `+ deep-dive` | Conflicting depth — exec is 1-page, deep-dive is layered teaching. Pick one. |
+| `exec-briefing` | `+ teach-me` | Conflicting audience — exec is decision-grade, teach-me is beginner-from-zero. Pick one. |
+| `podcast` | `+ visual-thinking` | Conflicting consumption channel — audio vs. visual. Run separately if both needed. |
+| `concept-map` | `+ teach-me` | Conflicting structural assumption — concept-map assumes the reader knows the parts and wants the whole; teach-me assumes neither. |
+
+### When the combination is ambiguous
+
+Default to **primary mode = the first mode named**. Treat secondary as derived (generate its files alongside but do not promote them to primary status in INDEX.md).
+
+If Michael's phrasing is ambiguous (e.g., "do everything"), default to `deep-dive + visual-thinking` — the broadest legal combo.
 
 ---
 

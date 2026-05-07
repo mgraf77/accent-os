@@ -41,12 +41,15 @@ When tradeoffs surface (depth vs. brevity, layered vs. flat, analytical vs. punc
 ## Lazy-load contract (token budget)
 
 **HOT path** (~3K tokens, always loaded): this SKILL.md + `MODES.md` + `references/tone-rules.md`. Steps 0–6 always run.
+→ Cache breakpoint #1 (after `references/tone-rules.md` final byte)
 
 **WARM path** (~3K, load on first generation): the active mode file from `modes/[mode].md` + `templates/concept-inventory.md` + `templates/output-skeleton.md`. Steps 7–10 use these.
+→ Cache breakpoint #2 (after `templates/output-skeleton.md` final byte)
 
-**COLD path** (~4K, load on explicit invocation): `prompts/notebooklm-podcast.md`, `prompts/slide-deck.md`, `prompts/infographic.md`, `prompts/discussion-questions.md`, `references/adaptive-difficulty.md`, `references/educational-architecture.md`, `examples/*`. Step 11 picks only the prompts the chosen output formats need.
+**COLD path** (~4K, load on explicit invocation): `prompts/notebooklm-podcast.md`, `prompts/slide-deck.md`, `prompts/infographic.md`, `prompts/discussion-questions.md`, `references/adaptive-difficulty.md`, `references/educational-architecture.md`, `examples/*`. Step 12 (write outputs) picks only the prompts the chosen output formats need.
+→ Cache breakpoint #3 (after final cold-path file)
 
-With Anthropic prompt caching markers between paths, second+ run on the same topic hits ~95% cache.
+With Anthropic prompt caching markers placed at the three breakpoints above, second+ run on the same topic hits ~95% cache. The HOT path stays cached across sessions; WARM path is cached per-mode; COLD path caches per format selection.
 
 ---
 
@@ -66,6 +69,9 @@ Run this skill when Michael says anything like:
 - "mental model for [X]" / "concept map for [X]"
 - "produce a course on [X]"
 - "turn this into a learning module"
+- "show me how [X] works" / "explain how [X] works"
+- "trace this through" / "walk me through [X]"
+- "I want to understand [X] deeply"
 
 Also fire automatically (with confirmation) after:
 - Any AccentOS architecture decision worth >1 month memory (Module Modes registry, probability model recalibration, score gating cascade)
@@ -104,7 +110,12 @@ For each input source:
 - **Transcript** — read in full; mark speaker turns explicitly.
 - **Multi-source** — process each source separately, then cross-reference in Step 4.
 
-Output: a one-block summary of what was ingested. Sources listed by name with token-count estimate.
+**Sparse-input fallback** — if the topic is a pure name AND no AccentOS context grep finds it AND no source file was provided:
+1. Run WebSearch for the topic with at least 2 distinctive query variants (e.g., "[topic] explained", "[topic] mechanism").
+2. WebFetch the top 2–3 authoritative results (academic / official / well-known explainer sources — NOT random blog SEO).
+3. If WebSearch returns nothing useful (rare for non-trivial topics), pause and ask Michael for one source URL or a 1-paragraph primer. Do not guess content.
+
+Output: a one-block summary of what was ingested. Sources listed by name with token-count estimate. Note explicitly whether sparse-input fallback was triggered.
 
 ---
 
@@ -137,18 +148,22 @@ The hierarchy IS the spine of the deep-dive output. Everything downstream uses i
 
 ---
 
-## Step 4 — Map relationships
+## Step 4 — Map relationships (conditional)
 
-For each Core concept, identify:
+**Skip-condition:** If the topic has <2 Core concepts OR Core concepts have no meaningful causal/compositional relationships (e.g., a single isolated principle, a definition-only topic), skip this step. Note "relationships not applicable to this topic shape" in the output.
+
+When the step applies, for each Core concept identify:
 - **Upstream causes** — what produces it
 - **Downstream effects** — what it produces
 - **Feedback loops** — circular causation paths (often the most important insight)
 - **Antagonists** — concepts it competes with or replaces
 - **Composes with** — concepts it combines with to produce 1+1=3 effects
 
-Output a relationship graph in Mermaid format. Concepts as nodes, relationship type as edge labels. Save this file to `/knowledge/[topic]/relationships.mmd` for downstream rendering.
+Output a relationship graph in Mermaid format. Concepts as nodes, relationship type as edge labels. Save to `/knowledge/[topic]/relationships.mmd` for downstream rendering.
 
 If the topic has feedback loops, **flag them in bold** in the graph. Feedback loops are the highest-leverage insight category — they explain why systems behave non-linearly.
+
+**When skipped**, the `concept-map` mode is also unavailable for this topic (it requires Step 4 output). Re-route to `deep-dive` mode if the user originally requested `concept-map`.
 
 ---
 
@@ -266,6 +281,23 @@ These four files are what makes the topic stick. Skip reinforcement and the deep
 
 ---
 
+## Step 10.5 — Pre-write validation gate
+
+Before writing any file, run this 6-check validation pass. The anti-pattern list at the bottom of this skill is descriptive; this gate is **enforcement**.
+
+1. **Forbidden-phrase scan** — read the full `references/tone-rules.md` forbidden list (15 phrases). Grep every drafted file for each phrase. Any hit → rewrite the offending sentence before write.
+2. **Mandatory file presence** — for the active mode, verify the mode's "files generated" list (in `modes/[mode].md`) is fully populated. Missing file → generate before write, never ship a partial set.
+3. **Layer word-budget enforcement** — for `deep-dive.md`, count words per layer. Foundational/Intermediate/Advanced/Strategic each within ±20% of mode's budget. Over → trim. Under → expand or document why (some Strategic layers are legitimately short).
+4. **Analogy coverage** — every Core concept (Step 3 tier 1) has ≥2 analogies in `analogies.md` from different domain classes. Missing → generate before write.
+5. **Reinforcement coverage** — `faq.md` has ≥10 entries, `misconceptions.md` has ≥5 entries, `discussion-questions.md` has ≥5 prompts. Below threshold → generate before write.
+6. **Audience calibration consistency** — every file in the artifact set uses the same audience calibration (per `references/adaptive-difficulty.md`). The `executive-summary.md` is allowed to be tighter than the deep-dive (different consumption shape, same audience tier), but a beginner-tier deep-dive should not produce an advanced-tier FAQ.
+
+Each check produces a pass/fail. Any fail → fix in place; do NOT proceed to Step 11. Re-run the failed check after fix.
+
+If a check fails twice in a row on the same item, log the topic + check + cause to `feedback-log.md` and ship anyway with the failure noted in `INDEX.md`. Don't loop indefinitely.
+
+---
+
 ## Step 11 — Write outputs to /knowledge
 
 File structure target:
@@ -309,7 +341,9 @@ Sort by created descending (newest first). The index is what Michael consults to
 
 ---
 
-## Step 13 — Output the report
+## Step 13 — Output the report + companion-skill handoff
+
+### Report
 
 Confirmation block to Michael:
 
@@ -320,6 +354,7 @@ Topic: [name]
 Mode: [active mode]
 Audience: [calibration]
 Files written: [count]
+Validation: [pass/fail summary from Step 10.5]
 
 Folder: /home/user/accent-os/knowledge/[slug]/
 Indexed: yes
@@ -334,6 +369,38 @@ Re-synthesize any time with:
 ```
 
 If invoked from another skill (skill-forge, analysis-snapshot), note the originating skill in the report so the chain is traceable.
+
+### Companion-skill handoff (auto-trigger)
+
+After the report, scan the synthesis output for these handoff conditions:
+
+| condition | handoff to | action |
+|-----------|------------|--------|
+| Synthesis surfaced a re-runnable SQL or vendor-cascade query | `analysis-snapshot` | Surface: "this synthesis includes a re-runnable query — want me to snapshot it?" |
+| Synthesis surfaced a reusable pattern that could become a skill | `skill-forge` | Surface: "the [pattern name] pattern is reusable — want me to forge a skill from it?" |
+| Synthesis concluded with a go/no-go decision | `decision-log` | Surface: "the [decision] is decision-grade — want me to log it?" |
+| Synthesis flagged ≥2 BUILD_INTELLIGENCE-worthy lessons | `build-plan-status` (drift check) | Surface: "this synthesis added lessons — run doc-drift to verify alignment?" |
+
+Do NOT auto-invoke the companion skill. Surface the offer; let Michael decide. The handoff protocol prevents skill-cascade churn — each skill stays user-triggered or single-handoff.
+
+### Self-improvement logging
+
+If the synthesis encountered any non-trivial issue (sparse input, validation retry, analogy gap, mode re-routing), append a 1-line entry to `skills/educational-synthesis/feedback-log.md` per its schema. Log writes happen at the end of Step 13, not mid-flow.
+
+### Self-score (4 dimensions, 0–10 each)
+
+Before closing the run, score the synthesis on these four dimensions. Output the scores in the report block above and append a row to `skills/educational-synthesis/synthesis-log.md`.
+
+| dim | what it measures | 10/10 | 5/10 | 0/10 |
+|-----|------------------|-------|------|------|
+| **Depth** | Did Step 5 (10 internal questions) get answered in 2+ sentences each, with the answers shaping the deep-dive? | Every question shaped a section | Half answered superficially | Skipped or one-line answers |
+| **Coverage** | Did every Core concept get its full treatment (≥2 analogies, mention in deep-dive layers, glossary entry, FAQ entry)? | Every Core concept fully treated | Some Core concepts absent from FAQ or analogies | Missing tier-1 concepts entirely |
+| **Reinforcement** | Did `faq.md` (≥10 entries), `misconceptions.md` (≥5), `discussion-questions.md` (≥5) hit the targets, AND are they non-trivially distinct from the deep-dive? | All three full, distinct, and useful | Threshold met but content rehashes deep-dive | Below threshold |
+| **Calibration** | Does the artifact set hold the stated audience tier consistently across all files? | Vocabulary + analogy density + competency markers all consistent | One file off-tier (e.g., advanced-tier FAQ in beginner synthesis) | Mixed tier across the set |
+
+Score honestly. A 7/10 average is normal; a 10/10 is rare. Scores below 6/10 on any dimension = the synthesis is shallow → write a `shallow-output` entry to `feedback-log.md` proactively (don't wait for Michael to flag it).
+
+Self-scores accumulate in `synthesis-log.md` as a trend signal. After 5+ runs, scan for dimensions persistently below 7 — those are the calibration gaps to fix in the skill itself.
 
 ---
 

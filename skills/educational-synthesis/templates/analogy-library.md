@@ -37,6 +37,25 @@ For every Core concept, draw analogies from **at least 2 different domain classe
 
 Mix at least 2 different classes. Two analogies from the same class produce redundant teaching.
 
+## Domain-class router (pick by topic domain)
+
+Not every topic warrants AccentOS-native analogies. Match the topic's domain to the right analogy classes:
+
+| topic domain | required class | optional class | avoid class |
+|--------------|----------------|----------------|-------------|
+| AccentOS internals (vendor scoring, modules, RFM, probability model, role gating) | 5 (AccentOS-native) | 2 (business), 1 (operational) | 3 (historical — usually doesn't map) |
+| Software engineering / API design / system architecture | 6 (adjacent technical) | 1 (operational), 4 (visualizable) | 5 (AccentOS-native — only when explicitly relevant) |
+| Business strategy / vendor relationships / distribution | 2 (business comparison) | 5 (AccentOS-native), 1 (operational) | 6 (technical — usually misfits) |
+| Economics / finance / investing | 1 (operational), 3 (historical) | 2 (business) | 6 (technical) |
+| Psychology / cognitive science / behavior | 4 (visualizable systems) | 6 (adjacent technical when the concept is computational) | 5 (AccentOS-native — almost never applies) |
+| History / philosophy / law / geopolitics | 3 (historical parallel) | 1 (operational), 4 (visualizable) | 5 (AccentOS-native — never), 6 (technical — never) |
+| Science / engineering / physics / biology | 4 (visualizable systems), 6 (adjacent technical) | 1 (operational) | 5 (AccentOS-native — never), 2 (business — only when motivation/funding is the angle) |
+| Health / medicine / fitness | 1 (operational), 4 (visualizable) | 6 (adjacent technical when the topic is mechanism-heavy) | 5 (AccentOS-native — never) |
+
+**Rule:** required class must produce ≥1 analogy per Core concept. Optional class produces the second analogy. Avoid class is hard-blocked — never reach for it for this domain.
+
+If the topic crosses domains (e.g., "behavioral economics in vendor pricing"), pick the most-applicable required class and document the domain choice in the run's preflight output.
+
 ## "Where it breaks" is mandatory
 
 Every analogy has limits. Naming the limits prevents the reader from over-extending the analogy.

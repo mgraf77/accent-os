@@ -52,7 +52,7 @@ risks-limitations.md
 
 ## INDEX.md schema (per topic)
 
-Every `[topic-slug]/INDEX.md` follows this structure:
+Every `[topic-slug]/INDEX.md` follows this structure. Files are tagged **PRIMARY** (must-read on first engagement) or **SECONDARY** (reference / re-engagement / specialty consumption). When Michael returns 6 months later, primary tells him what to read first; secondary is the deep library.
 
 ```markdown
 # [Topic name] — knowledge artifact
@@ -62,13 +62,25 @@ Every `[topic-slug]/INDEX.md` follows this structure:
 **Audience:** [calibration]
 **Source(s):** [file paths or URLs]
 **Originating skill:** [if invoked from skill-forge / analysis-snapshot, name it]
+**Self-score:** depth N/10 · coverage N/10 · reinforcement N/10 · calibration N/10
 
 ## Files
 
+### PRIMARY (read these first)
 - `executive-summary.md` — [1-line description]
 - `deep-dive.md` — [1-line description]
-- `notebooklm-prompt.md` — [1-line description]
-- ...
+
+### SECONDARY (for re-engagement or specialty use)
+- `notebooklm-prompt.md` — [audio: drop into NotebookLM]
+- `slide-deck.md` — [share-out: present to a non-reader audience]
+- `concept-glossary.md` — [reference: when you forget a term]
+- `analogies.md` — [reference: when teaching this to someone else]
+- `relationships.mmd` — [diagnostic: when debugging system behavior]
+- `faq.md` — [re-engagement: skim before resuming the topic]
+- `misconceptions.md` — [diagnostic: when someone holds the wrong model]
+- `discussion-questions.md` — [debate: solo journaling or group discussion]
+- `practical-applications.md` — [doing: when you're about to act on this]
+- `risks-limitations.md` — [decisions: before betting on this synthesis]
 
 ## Re-synthesize
 
@@ -82,6 +94,17 @@ Every `[topic-slug]/INDEX.md` follows this structure:
 - Related knowledge artifacts: [/knowledge/other-slug/ if any]
 - Related skills: [skills/X/ if any]
 ```
+
+### Primary-file mapping per mode
+
+| mode | PRIMARY files | SECONDARY files (rest) |
+|------|---------------|------------------------|
+| deep-dive (default) | `executive-summary.md` + `deep-dive.md` | all others |
+| exec-briefing | `executive-summary.md` | (only file generated; no secondary) |
+| podcast | `notebooklm-prompt.md` | `executive-summary.md` + `analogies.md` |
+| visual-thinking | `slide-deck.md` + `infographic.md` | all others |
+| teach-me | `deep-dive.md` + `misconceptions.md` (front-loaded per mode) | all others |
+| concept-map | `relationships.mmd` + `concept-glossary.md` | all others |
 
 ## Top-level INDEX.md schema
 

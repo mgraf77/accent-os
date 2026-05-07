@@ -42,6 +42,44 @@
 
 **Branch:** `claude/educational-synthesis-skill-nC3K7` — pushed to origin, NOT merged to main.
 
+### 2026-05-07 — educational-synthesis v1.1 + v1.2 (2 optimization passes) — SHIPPED
+
+**Pass 1 (v1.1) — Hard correctness/completeness gaps:**
+- SKILL.md Step 1: sparse-input fallback (WebSearch → WebFetch → ask Michael only if zero useful)
+- SKILL.md Step 4: conditional execution — skip when <2 Core concepts or no relationships; auto-reroute concept-map → deep-dive
+- SKILL.md Step 10.5 INSERTED: pre-write validation gate (6 checks: forbidden-phrase scan / mandatory files / layer word-budget / analogy coverage / reinforcement coverage / calibration consistency); 2-retry cap
+- SKILL.md Step 13: companion-skill handoff protocol (4 conditions → analysis-snapshot / skill-forge / decision-log / build-plan-status; offered, not auto-invoked)
+- SKILL.md trigger recognition: 3 phrases added ("show me how X works", "trace this through", "I want to understand X deeply")
+- SKILL.md lazy-load contract: explicit cache-marker breakpoints specified
+- NEW `quickstart.md`: fast-path entry with 3 invocation methods, smallest-possible-run examples, mode picker
+- NEW `feedback-log.md`: append-only ledger with canonical issue_class + prevention_rule strings; threshold-3 rule for SKILL.md edit proposals
+
+**Pass 2 (v1.2) — Quality scaffolding & ergonomics:**
+- SKILL.md Step 13: 4-dimension self-score added (depth / coverage / reinforcement / calibration on 0-10); <6 auto-writes shallow-output entry to feedback-log
+- templates/output-skeleton.md: PRIMARY/SECONDARY file distinction + per-mode primary-file mapping table
+- MODES.md: formalized 7 legal mode combinations + 4 illegal combinations with reasons
+- templates/analogy-library.md: 8-domain × 3-tier (required/optional/avoid) analogy-class router added
+- NEW `synthesis-log.md`: per-run trend ledger with self-scores; 4 trend-detection rules
+
+**Total files:** 23 (was 20 at v1.0). SKILL.md: 3,525 words.
+
+**Decisions:**
+- **Validation gate as enforcement of anti-patterns.** v1.0's anti-patterns were descriptive ("never X"); v1.1 inserted Step 10.5 as runtime enforcement. Cap at 2 retries to prevent infinite loops on edge-case topics — third failure ships with failure noted.
+- **Conditional Step 4 with auto-reroute.** Forcing a relationship graph on every topic produces artificial graphs for non-system topics. Better: skip + reroute concept-map mode requests to deep-dive when Step 4 skips.
+- **Sparse-input fallback as defined behavior.** v1.0 had undefined behavior for pure-topic-name inputs with no AccentOS context. v1.1 made the fallback explicit (WebSearch → WebFetch → ask) and logs the occurrence to feedback-log so we can see how often it triggers.
+- **4-dim self-score, not 23-dim matrix.** vibe-speak's 23-dim matrix was right for a meta-skill (its purpose IS measurement); educational-synthesis is a generator, not a measurer. 4 dims (depth / coverage / reinforcement / calibration) is right-sized.
+- **Domain-class router with avoid-list.** v1.0 leaned hard on AccentOS-native analogies (class 5). For non-AccentOS topics this misfits. v1.2 router has required/optional/avoid tiers per domain — the avoid list is more valuable than required because it prevents accidental misfits.
+- **Combination matrix at v1.2, not deferred.** Mode combinations are the most likely user-discovered behavior. Formalizing legal AND illegal combos at v1.2 prevents one-off brittle rules.
+
+**Watchlist (first real invocation):**
+- Does Step 10.5 validation catch shallow output, or fire false positives?
+- Does the 4-dim self-score correlate with Michael's perception of quality?
+- Does the domain-class router pick correctly on first non-AccentOS topic?
+- Does sparse-input fallback produce AccentOS-grade output for external topics?
+- Does companion-skill handoff actually surface useful offers?
+
+**Branch:** `claude/educational-synthesis-skill-nC3K7` — pushed to origin, NOT merged.
+
 ---
 
 ### 2026-05-06 — efficiency-monitor v1 (always-on session observer) — SHIPPED
