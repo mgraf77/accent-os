@@ -29,6 +29,7 @@ Six phases in order: **preflight → extract → assess → propose-and-approve 
 | Michael says | Entry point |
 |---|---|
 | "look into [X]" / "build me a skill based on [X]" | Full run, Step 0 → 10 |
+| "look into [URL]" (direct URL given) | Fast-extract: skip Steps 0.3 + 1.5; anchor Step 2 on URL directly |
 | "extract concepts from [X]" / "what can we steal from [X]" | Steps 2–4 only — surface concept table, stop before Step 5 gate |
 | "build [name1] and [name2] from [X]" | Step 5 pre-approved; skip gate, use named list as approval |
 
@@ -52,7 +53,10 @@ Run this skill when Michael says anything like:
 
 Also trigger when repo-scout returns an EVALUATE verdict and Michael says "build it custom" or similar.
 
-**"Look into" disambiguation:** "Look into" is overloaded — Michael also uses it for repo-scout-style "is this worth installing." Default reading: when the target is a specific tool/URL/repo/concept and Michael's intent looks like build-or-adapt, run skill-forge. When the target is a category ("look into MCPs for ecommerce") or the question is install-or-skip, run repo-scout instead. If genuinely ambiguous, run repo-scout first (cheaper) and chain into skill-forge if the verdict is EVALUATE-with-customization.
+**"Look into" disambiguation:**
+- Specific tool/URL/repo + build-or-adapt intent → **skill-forge** (this skill)
+- Category search or install-or-skip intent → **repo-scout** instead
+- Ambiguous: run repo-scout first (cheaper); chain to skill-forge if verdict is EVALUATE or FORGE
 
 ---
 
@@ -136,6 +140,7 @@ Harvest concept by concept, not summarized. List every named primitive, workflow
 Consolidate the Step 2 harvest into one structured table. Group near-duplicates only when they're literally the same thing (e.g. "Magic AI" and "AI assistant" → one row). Do not aggressively dedupe — keep concepts separate when they have distinct inputs/outputs.
 
 | # | Concept / feature | Best source | Freq | AccentOS relevance | Community? |
+|---|---|---|---|---|---|
 
 Relevance values: **HIGH** (direct fit), **MEDIUM** (needs translation), **LOW** (interesting only), **NONE** (drop).
 `Community?` column: **Y** if found in Step 1.8 sweep, **N** otherwise. Community=Y concepts are STEAL-eligible regardless of how the primary target packages them.
@@ -244,6 +249,7 @@ Decide before writing:
 - **Workflow** — 4–7 numbered steps. Each step has a concrete output. Imperatives only.
 - **Output format** — paste-ready blocks. Tables when scanning is the use case.
 - **References** — split overflow into `references/*.md`. Keep SKILL.md under ~5000 tokens.
+- **Composability contracts** — if the skill outputs structured data (IDs, tables, scores), declare the output schema in one line (e.g. `Output: vendor_id list, sorted by score desc`). If it reads another skill's output, name the expected input. This makes skills chain cleanly without ambiguity.
 
 ### Step 6.1 — Prereq-redirect analysis (mandatory for every skill)
 
@@ -251,7 +257,7 @@ Answer these before writing a single workflow step:
 
 1. **Inputs** — What data or prior-skill output must exist before this skill is useful? List each dependency by name.
 2. **Outputs** — What skills or workflows consume this skill's result? List each.
-3. **Pre-check block** — For every identified input dependency, add a pre-check + redirect to the forged SKILL.md:
+3. **Pre-check block** — For every identified input dependency, add a pre-check + redirect to the forged SKILL.md. Place it as Step 0 or the opening of Step 1 in the forged skill's workflow — not buried mid-document:
 
 ```
 Pre-check: If [prereq condition not met]:
@@ -301,7 +307,7 @@ For **each forged skill** that passed Step 7.5, run a Ralph loop before committi
 **Per skill:**
 
 1. **Mental dry-run** — pick 2 plausible Michael phrasings that should trigger this skill. For each, walk through every workflow step and ask: what's missing, what's ambiguous, what could fail silently?
-2. **Edge cases** — list the 3 most likely failure modes (no input, malformed input, missing dependency file, ambiguous result, conflict with another skill).
+2. **Edge cases** — list the 4 most likely failure modes: (a) no/malformed input, (b) missing dependency file, (c) ambiguous result or conflict with another skill, (d) **community-duplicate check** — does a community skill found in Step 1.8 already do this better? If yes, should the forged skill redirect to it instead of running?
 3. **Apply fixes** in the skill's SKILL.md via Edit. Re-run Step 7.5 validation after fixes.
 4. **Repeat** until a pass surfaces 0 new issues OR 4 iterations have run (cap to prevent over-iteration).
 5. **Log Ralph notes** as a comment in the commit message: "Ralph: N iterations, M issues fixed, [one-line summary of biggest fix]".
@@ -327,7 +333,7 @@ SKILL FORGED — [skill-name]
 
 Source: [target name + URL]
 Sources mined: [count]
-Concepts harvested: [count]  →  KEEP: X  DROP: Y  ADD: Z
+Concepts harvested: [count]  →  STEAL: X  DROP: Y  ADD: Z
 
 Files written:
   skills/[skill-name]/SKILL.md
@@ -383,7 +389,7 @@ NNN is sequential. Same `prevention_rule` wording across entries is what lets th
 - **Never** skip the Step 5 approval gate. Building before Michael approves means producing skills he didn't sign off on.
 - **Never** skip the Step 8 Ralph loop. A skill that hasn't been stress-tested ships hidden gotchas.
 - **Never** stop at the gap analysis. Either produce proposals (Step 5) or an explicit WATCH abort with reasoning.
-- **Never** include concepts in KEEP that don't tie to a named AccentOS gap.
+- **Never** DROP a concept solely because AccentOS already does something similar — overlap is not disqualifying; a tighter AccentOS-native version is the point of the skill.
 - **Never** generate a skill with <3 concrete AccentOS substitutions.
 - **Never** ship a skill where the description is generic enough to also fit a non-AccentOS user.
 - **Never** copy SKILL.md prose verbatim from the target. Forge means rewrite from concepts, not paraphrase.

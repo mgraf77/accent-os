@@ -5,11 +5,12 @@ description: >
   Michael asks to find, evaluate, or vet new repos, skills, MCPs, CLIs, or tools — whether 
   he says "find new skills", "what's worth installing", "scout repos", "anything new worth
   grabbing", "what tools should I add", or any variation. Also triggers when Michael mentions
-  a specific tool he's heard about and wants a verdict on. Skill does three things in one pass:
-  (1) discovers and filters candidates against AccentOS + Accent Lighting projects, (2) produces
-  a scan-optimized verdict table, and (3) generates a customized install snippet or SKILL.md
-  adaptation for everything rated INSTALL. Never just returns a list — always delivers a verdict
-  + customization.
+  a specific tool he's heard about and wants a verdict on ("is [X] worth it"). In one pass:
+  discovers candidates, filters against AccentOS stack + prior runs, checks overlap with
+  existing skills, sweeps community patterns, produces verdicts (INSTALL/EVALUATE/FORGE/WATCH/SKIP),
+  and generates customized install snippets with relevance scores. Never returns a raw list
+  — always delivers verdict + customization + community patterns. Writes a dated run file so
+  prior-run memory accumulates across sessions.
 ---
 
 # repo-scout
@@ -30,6 +31,8 @@ Run this skill when Michael says anything like:
 - "what am I missing"
 - "find me tools for [project]"
 
+**Single-tool mode:** When Michael names exactly ONE specific tool ("is Ahrefs MCP worth it", "what about [X]?"), skip Steps 2–3 (broad search + filter). Go directly to Steps 3.5 → 3.8 → 4 → 5 → 6 for that tool only. Output takes < 1 min instead of a full scout run.
+
 ---
 
 ## Step 1 — Load Context
@@ -43,7 +46,7 @@ Before searching, load two sources in parallel:
 - Filter rule: Does this reduce Michael's attention drain on AccentOS or Accent Lighting ecommerce? If not, skip.
 - Complexity budget: Setup > 2 min = HIGH FRICTION — flag but still report.
 
-**2. Prior run memory** — load the most recent `/home/user/accent-os/skills/repo-scout/repo-scout-run-*.md` file (newest date in filename). Extract the full list of all candidates already evaluated (any verdict). Any candidate that appears in a prior run is **pre-filtered** in Step 3 unless that run is >30 days old. Skip silently — do not re-evaluate unless explicitly asked.
+**2. Prior run memory** — load ALL `/home/user/accent-os/skills/repo-scout/repo-scout-run-*.md` files from the last 30 days (multiple topic-specific runs can coexist). Extract the union of all candidates evaluated (any verdict) across those files. Any candidate appearing in any run ≤30 days old is **pre-filtered** in Step 3. Skip silently — do not re-evaluate unless explicitly asked or the run is expired.
 
 ---
 
@@ -64,6 +67,8 @@ Generate search strings from Michael's request, then run parallel web_search cal
 4. If AccentOS-specific domain: add `supabase [domain] claude`, `bigcommerce [domain] MCP`
 
 Use web_fetch on high-signal pages when search snippets are insufficient. Skip pages already fetched in the loaded prior run.
+
+**Parallelism guide:** Steps 1+2 run in parallel. Steps 3.5 and 3.8 run in parallel after Step 3. Steps 4→5→6→7 are sequential. Batch all web_search calls in Step 2 into one parallel block — do not fetch one at a time.
 
 ---
 
@@ -133,7 +138,18 @@ Searched: [sources] | Prior run loaded: [date or "none"]
 Candidates: X | Filtered to: Y | INSTALL: Z | EVALUATE: W | FORGE: F | WATCH: V | SKIP: S
 
 #### INSTALL
-[Name] [HIGH/MEDIUM] — what it does, which AccentOS gap it closes, friction level, paste-ready install block, community patterns found
+**[Name] [HIGH/MEDIUM]** — [one sentence what it does + which AccentOS gap it closes] | Friction: LOW/HIGH
+Relevance: [1-10] — [one sentence]
+Community patterns: [N found — pattern names] (or "0 found")
+```
+# [Name] — AccentOS install
+[install command]
+# settings.json (MCP only):
+"[key]": { ... }
+# Verify:
+[verification command]
+# AccentOS use case: [one concrete invocation Michael would run]
+```
 
 #### EVALUATE
 [Name] — what it does, specific blocker, community patterns found (if any)
@@ -141,6 +157,8 @@ Candidates: X | Filtered to: Y | INSTALL: Z | EVALUATE: W | FORGE: F | WATCH: V 
 #### FORGE
 [Name] — [one sentence: what a custom AccentOS skill does better than generic install]
 Invoke: `look into [name] for AccentOS`
+
+_After listing FORGE items, ask Michael: "Want me to run skill-forge on any of these now?"_
 
 #### WATCH
 Brief list — name + revisit trigger.
@@ -173,6 +191,21 @@ For every INSTALL item, apply substitutions and meet the quality bar:
 - 7-8: Clear indirect value for AccentOS or Accent Lighting ops
 - 5-6: Useful but non-critical
 - <5: Consider downgrading to WATCH
+
+---
+
+## Step 7 — Write run file
+
+After outputting results, write a dated run file to persist the prior-run memory that Step 1 reads. Without this step, prior-run deduplication never accumulates.
+
+File: `/home/user/accent-os/skills/repo-scout/repo-scout-run-[YYYY-MM-DD].md`
+
+Include:
+- Header: `# REPO SCOUT — [Date] | [topic/trigger phrase]`
+- `Searched:` line (sources used)
+- Complete candidate list — every candidate evaluated, any verdict, one line each: `[Name] — [verdict] — [one-sentence reason]`
+
+If a run file for today already exists (multiple scouts in one day), append to it with a `---` separator rather than overwriting.
 
 ---
 
