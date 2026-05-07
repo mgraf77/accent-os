@@ -1,20 +1,23 @@
 ---
 name: analysis-snapshot
 description: >
-  Capture an ad-hoc AccentOS analysis (vendor query, deal investigation,
-  GMC feed audit, supabase-sql-magic result, vendor-cascade trace, etc.)
-  as a named, re-runnable artifact stored in /home/user/accent-os/analyses/
-  — preserving parameters, the SQL or query pattern, the Claude reasoning
-  template, and the expected output format so Michael can re-run identically
-  next week or next quarter without re-explaining context. Use this skill
-  when Michael says: "save this analysis", "snapshot this", "I want to
-  re-run this later", "make this re-runnable", "name this query",
-  "preserve this", "save it as [name]", or after any meaningful
-  vendor-cascade or supabase-sql-magic run that produced a useful result.
-  Do not use for one-time throwaway questions, for code (use git), or for
-  documentation (use the AccentOS root docs). Always produces a named file
-  in analyses/ plus an INDEX.md update — never returns a prose summary
-  in lieu of the artifact.
+  Capture any AccentOS ad-hoc analysis — vendor query, deal investigation,
+  GMC feed audit, supabase-sql-magic result, vendor-cascade trace — as a
+  named, re-runnable artifact stored in /home/user/accent-os/analyses/.
+  Preserves the originating prompt, all parameters (vendor IDs, date
+  ranges, thresholds), the literal SQL or cascade input, the Claude
+  reasoning template, and the expected output format so Michael can
+  re-run identically next week or next quarter without re-explaining
+  context. Fires when Michael says: "save this analysis", "snapshot
+  this", "I want to re-run this later", "make this re-runnable", "name
+  this query", "preserve this", "snapshot this query", "keep this one",
+  or "save it as [name]". Fires automatically (with confirmation) after
+  any vendor-cascade or supabase-sql-magic run against
+  hsyjcrrazrzqngwkqsqa that produced a re-runnable result shape. Skip
+  for one-time throwaway questions, code changes (use git), and docs
+  (use AccentOS root docs). Always writes a named file to analyses/ and
+  updates INDEX.md — never returns a prose summary in lieu of the
+  artifact.
 ---
 
 # analysis-snapshot
@@ -34,33 +37,35 @@ Run this skill when Michael says anything like:
 - "make this re-runnable"
 - "name this query"
 - "preserve this"
+- "snapshot this query"
+- "keep this one"
 - "save it as [name]"
 
-Fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run where the result clearly has re-runnable value (a recurring report shape, a diagnostic that'll be needed again, a query Michael spent time refining).
+Fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run against `hsyjcrrazrzqngwkqsqa` where the result has re-runnable value: a recurring report shape, a diagnostic that will be needed again, or a query Michael spent time refining.
 
 ---
 
 ## Step 1 — Confirm re-runnable value
 
-Before writing any file, confirm the analysis has re-run value. Skip this skill (and tell Michael why) when:
-- The analysis was a one-time investigation that won't recur
+Before writing any file, verify the analysis earns a snapshot. Reject with a one-line reason when:
+- The analysis was a one-time investigation that will not recur
 - The result is already captured by an existing AccentOS module
-- It's a code change (use git) or a doc change (use the root docs)
+- It is a code change (use git) or a doc change (use the root docs)
 
-If unclear, default to capturing — better to have a slightly redundant snapshot than lose a useful one.
+When unclear, default to capturing — a slightly redundant snapshot beats losing a useful one.
 
 ---
 
 ## Step 2 — Extract the analysis components
 
 Pull from the current conversation context:
-- **Originating prompt** — what Michael actually asked
-- **Parameters** — vendor IDs, date ranges, thresholds, filters that were specific to this run
+- **Originating prompt** — the verbatim or paraphrased question Michael asked
+- **Parameters** — vendor IDs, date ranges, thresholds, filters specific to this run
 - **Query / SQL** — the literal SQL or vendor-cascade input that produced the result
-- **Reasoning pattern** — if Claude did interpretation, capture the steps as bullets
-- **Output shape** — what format the result took (table, list, single number)
+- **Reasoning pattern** — if Claude interpreted the result, capture the steps as bullets
+- **Output shape** — the format the result took (table, list, single number, chart spec)
 
-If any component is missing from context (rare), ask Michael for it once — never invent.
+Output artifact: a structured component list used verbatim in Step 4. If any component is missing from context, ask Michael once — never invent a value.
 
 ---
 
