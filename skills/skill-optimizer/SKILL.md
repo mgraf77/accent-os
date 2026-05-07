@@ -4,14 +4,16 @@ description: >
   Iterative multi-agent optimizer for AccentOS skill files. Reads every target
   SKILL.md, computes a numeric matter score (0–100) before and after each
   optimization round, runs parallel Ralph-loop agents until all skills reach
-  the high threshold, logs every technique that did and did not move the score,
-  and learns from that history to prioritize highest-delta techniques in future
-  runs. Use this skill when Michael says: "optimize the skills", "run the
-  optimizer", "Ralph loop the skills", "skill quality pass", "score the skills",
-  "how good are our skills", "improve the skill files", or any phrasing that
-  asks to improve SKILL.md quality across the AccentOS library. Always produces
-  a per-round matter-score summary plus a combined cross-round review — never
-  exits without committing changes and updating run-log.md.
+  the high threshold, writes a per-skill optimization-history.md capturing
+  every change made with reasoning and score deltas, logs every technique that
+  did and did not move the score, and learns from that history to prioritize
+  highest-delta techniques in future runs. Use this skill when Michael says:
+  "optimize the skills", "run the optimizer", "Ralph loop the skills", "skill
+  quality pass", "score the skills", "how good are our skills", "improve the
+  skill files", or any phrasing that asks to improve SKILL.md quality across
+  the AccentOS library. Always produces a per-skill history file, a per-round
+  matter-score summary, and a combined cross-round review — never exits without
+  committing changes and updating run-log.md and each skill's history file.
 ---
 
 # skill-optimizer
@@ -134,7 +136,68 @@ END LOOP
 ```
 
 Each agent returns: per-skill edit log with dimension tags, final matter score, stuck
-dimensions, and techniques that did/didn't move the score.
+dimensions, techniques that did/didn't move the score, and a completed
+`optimization-history.md` for each skill it touched.
+
+**Per-skill history file — written by each agent as it finishes each skill:**
+
+Path: `/home/user/accent-os/skills/[skill-name]/optimization-history.md`
+
+If the file already exists, append a new run block. If it does not exist, create it.
+
+```markdown
+# [skill-name] — optimization history
+
+---
+
+## Run [date]  branch: [branch]
+
+### Baseline matter score: [N]/100
+
+| Dim | Name | Score | Reason failed (if 0) |
+|---|---|---|---|
+| M1 | Description length | 10/0 | [why if 0] |
+| M2 | AccentOS named | 10/0 | |
+| M3 | Behavioral commitment | 10/0 | |
+| M4 | Anti-patterns ≥5 "Never" | 10/0 | |
+| M5 | Trigger phrases ≥5 | 10/0 | |
+| M6 | Concrete step outputs | 10/0 | |
+| M7 | Zero passive voice | 10/0 | |
+| M8 | No prose walls | 10/0 | |
+| M9 | Stack reference | 10/0 | |
+| M10 | No placeholders | 10/0 | |
+| **Total** | | **[N]/100** | |
+
+---
+
+### Round [N] — [pass type]
+
+**Cycle [N] — Optimizer**
+
+| Change | Dimension targeted | Reasoning |
+|---|---|---|
+| [what changed] | M[N] | [why this edit closes the gap] |
+| [old text → new text summary] | M[N] | [Ralph finding that prompted it] |
+
+**Cycle [N] — Ralph findings**
+- [finding that triggered next cycle, or "none — converged"]
+
+**Matter score after cycle [N]:** [N]/100 (Δ [+N])
+
+---
+
+### Final score: [N]/100  (Δ from baseline: [+N])
+
+**Techniques that moved score:**
+- [technique] → closed M[N]
+
+**Techniques that didn't move score:**
+- [technique] → [reason: already passing / wrong target / no match found]
+
+**Stuck dimensions:** [list or "none"]
+
+---
+```
 
 ---
 
@@ -179,7 +242,15 @@ Round verdict: [EXCELLENT / GOOD / MARGINAL] — [one sentence on what drove the
 
 ---
 
-## Step 5 — Update run-log.md
+## Step 5 — Verify per-skill history files complete
+
+Before updating run-log.md, confirm every skill in scope has an `optimization-history.md`
+with an entry for this run. If any are missing (agent crash, edit collision), write them
+now from the collected agent results. Never proceed to Step 6 with incomplete history files.
+
+---
+
+## Step 6 — Update run-log.md
 
 Append to `/home/user/accent-os/skills/skill-optimizer/run-log.md`:
 
@@ -229,7 +300,7 @@ Run verdict: [one sentence]
 
 ---
 
-## Step 6 — Update learning-notes.md
+## Step 7 — Update learning-notes.md
 
 Read existing `/home/user/accent-os/skills/skill-optimizer/learning-notes.md`. For each
 new "What didn't work" entry from this run, check if a matching `RULE:` exists. If not,
@@ -246,7 +317,7 @@ Only write new rules; never duplicate existing ones.
 
 ---
 
-## Step 7 — Combined cross-round review
+## Step 8 — Combined cross-round review
 
 After all rounds in the session complete, output:
 
@@ -280,9 +351,10 @@ Commit pushed: [SHA]
 
 ---
 
-## Step 8 — Commit and push
+## Step 9 — Commit and push
 
-Stage all modified SKILL.md files plus `run-log.md` and `learning-notes.md`. Commit with:
+Stage all modified SKILL.md files, all `optimization-history.md` files,
+`run-log.md`, and `learning-notes.md`. Commit with:
 
 ```
 chore(skills): optimizer run [date] — fleet avg [before]→[after]
@@ -305,4 +377,6 @@ Push to current branch. Never push to main.
 - Never apply the same technique twice on the same dimension in the same cycle — if it didn't move the score the first time, log it and move on.
 - Never skip updating learning-notes.md — this is the mechanism by which the optimizer gets smarter across sessions; skipping it resets all learned constraints.
 - Never spawn more than 6 agents in parallel — beyond 6, coordination overhead exceeds parallelism gain and edit conflicts increase.
-- Never commit without running Step 5 (run-log update) first — a commit with no log entry loses the learning signal for that run permanently.
+- Never commit without running Step 6 (run-log update) first — a commit with no log entry loses the learning signal for that run permanently.
+- Never skip writing per-skill optimization-history.md — this is the per-skill memory that shows Michael exactly what changed, why, and whether it worked; a skill with no history file is opaque to future runners.
+- Never overwrite an existing optimization-history.md — always append a new run block so the full lineage is preserved across sessions.
