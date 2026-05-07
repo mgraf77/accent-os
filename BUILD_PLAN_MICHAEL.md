@@ -440,3 +440,76 @@ When Michael has time:
 5. Claude will pick up from BUILD_PLAN_CLAUDE.md and build whatever was unlocked.
 
 Items can be done **in any order within a category**. Categories are roughly ordered by "what unlocks the most downstream work".
+
+---
+
+## CATEGORY: ROADMAP_2026 v3.1 — Phase 0+ NEW M-TASKS
+
+> Added 2026-05-07 from ROADMAP_2026.md v3.1 task expansion. These unlock Tracks 7-12.
+
+- [ ] **M30** — Run automation_events schema (Track 7.1)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action: Open `sql/M30_automation_events.sql` (Claude will write). Paste → Run. Verification SELECT returns `automation_events` row with `rls_enabled=true`.
+  - Then: paste to Claude → `M30 done — automation_events live. Continue Track 7 Phase 0.`
+  - Unlocks: Track 7.1 (the spine for ΔROI, adoption, edit-distance, thumbs telemetry). Gates Phase 1+.
+
+- [ ] **M31** — Configure Anthropic workspace billing cap + 80% kill-switch
+  - Where: `https://console.anthropic.com/settings/billing` (Owner-only)
+  - Action: Set monthly workspace spend cap. Enable email + webhook alert at 80% of cap. Document the cap value in `MASTER.md §10`.
+  - Then: paste to Claude → `M31 done — Anthropic cap set at $X/mo with 80% alert. AI Gateway can ship.`
+  - Unlocks: Track 7.2 (AI Gateway). Without this, no cost-bounded AI feature ships.
+
+- [ ] **M32** — Enable GitHub Actions CI runner + Supabase test creds
+  - Where: GitHub repo settings → Actions; Supabase dashboard → API → service_role key
+  - Action: Create a `SUPABASE_TEST_URL` + `SUPABASE_TEST_SERVICE_KEY` repo secret pair pointing at a separate ephemeral Supabase project (or branch). Enable GH Actions on the repo.
+  - Then: paste to Claude → `M32 done — CI runner + test Supabase ready. Ship security gate CI.`
+  - Unlocks: Track 7.5 (Security gate CI). Without this, RLS regression tests can't run on PR.
+
+- [ ] **M33** — Run user_personas schema (Track 7.10)
+  - Where: Supabase SQL Editor
+  - Action: Run `sql/M33_user_personas.sql` when Claude writes it. Verifies `user_personas` table exists with RLS.
+  - Then: paste to Claude → `M33 done — user_personas live. Continue persona scaffold.`
+  - Unlocks: Track 7.10 (per-persona control panel scaffold).
+
+- [ ] **M34** — Choose + provision review platform (Yotpo OR Stamped OR Judge.me)
+  - Where: vendor signup; recommend Yotpo for BC-native integration
+  - Action: Sign up, add API key to Cloudflare Worker env, install BC app, import any historical reviews from existing sources.
+  - Then: paste to Claude → `M34 done — [vendor] review API key in Worker env. Ship Track 8.3.`
+  - Unlocks: Track 8.3 (Review platform integration + PDP widget). Sarah called this out as table stakes vs Amazon.
+
+- [ ] **M35** — Audit inventory_items spec coverage (one-time data review)
+  - Where: AccentOS Inventory page → Reports Center → CSV export
+  - Action: Export inventory CSV. Identify SKUs missing wattage / voltage / dimmer-list / wet-rating. Flag top-100 revenue SKUs for manual fill-in or vendor-rep request.
+  - Then: paste to Claude → `M35 done — top-100 SKUs have safety specs. Ship Compatibility Checker (Track 8.6) and Spec-Token system (Track 12.1).`
+  - Unlocks: Tracks 8.6 (Compatibility Checker) + 12.1 (Spec-Token system). Without specs, neither can ship safely.
+
+- [ ] **M36** — Enable pgvector extension + run kb_documents/kb_chunks schema (Track 9.1)
+  - Where: Supabase SQL Editor
+  - Action: Run `CREATE EXTENSION IF NOT EXISTS vector;` then `sql/M36_kb_schema.sql`. Verify HNSW index params (m=16, ef_construction=64) per AI/ML lead recommendation.
+  - Then: paste to Claude → `M36 done — pgvector live, kb_documents + kb_chunks ready. Ship Phase 2 RAG.`
+  - Unlocks: All of Track 9 (Phase 2 inline retrieval + ecom RAG surfaces).
+
+- [ ] **M37** — Google Ads API access (gates Track 10.8 / A8)
+  - Where: Google Ads → Tools → API Center
+  - Action: Apply for developer token (24-72h approval typical). If declined, A8 negative-keyword automation auto-kills in W12 per pre-committed survival probability.
+  - Then: paste to Claude → `M37 done — Google Ads token approved.` OR `M37 declined — auto-kill A8.`
+  - Unlocks: Track 10.8 (A8 negative-keyword drafts). Most likely first kill if not unlocked.
+
+- [ ] **M38** — BigCommerce theme dev access + Stencil CLI auth (Track 11.1)
+  - Where: BC Dashboard → Storefront → Themes → Customize, plus Stencil CLI install per BC docs
+  - Action: Install Stencil CLI locally. Create a `stencil-cli.json` token via BC dashboard. Add token to repo `.env.local` (gitignored).
+  - Then: paste to Claude → `M38 done — Stencil CLI authed. Fork Cornerstone → AccentOS Theme.`
+  - Unlocks: Track 11.1-11.10 (entire BC site maximization).
+
+- [ ] **M39** — Enable Supabase Auth MFA at project level (Track 12.3)
+  - Where: Supabase Dashboard → Authentication → Providers → enable TOTP (mandatory for portals, optional for retail)
+  - Action: Toggle MFA TOTP on. Set per-role policy: trade/vendor/employee = required; retail = nudged. Add MFA enrollment flow to login UI.
+  - Then: paste to Claude → `M39 done — MFA enabled. Wire enrollment UI.`
+  - Unlocks: Track 12.3 (S3 user-safety MFA). Required before any external-facing portal opens.
+
+- [ ] **M40** — Publish employee surveillance / telemetry policy (Track 12.5)
+  - Where: Internal HR doc + employee acknowledgment
+  - Action: Draft 1-page policy stating: telemetry on outputs (drafts, edit-distance on sent content) is collected; process telemetry (keystrokes, idle time, mouse) is not; employees can see their own dashboard; manager access is weekly aggregates only; opt-out of non-performance use available. Get acknowledgment from each employee. Check CA notice law if any employees are CA-based.
+  - Then: paste to Claude → `M40 done — surveillance policy published, all employees acknowledged. Ship Sharpness Score telemetry.`
+  - Unlocks: Track 12.5 (S5 surveillance bright line). Required before edit-distance / sharpness telemetry rolls to all users.
+

@@ -115,3 +115,7 @@
 ### 2026-05-07 — Roadmap v3.1 — Round 5: ecom site + user-safety
 **Prompt:** "summarize each optimization … add a dimension solely focused on maximizing the ecommerce website … another perspective is security risks to all users"
 **Output:** ROADMAP_2026.md v3.1. Spawned 2 fresh agents (ecom site UX/theme architect; user-safety officer for human users). Added §13 BigCommerce Site Maximization (Cornerstone fork strategy, PDP/PLP redesign, Core Web Vitals targets, 10 ecom items E1-E10) and §14 User-Safety Charter (8 risks + 3 secondary, spec-token system, outbound email gate, surveillance bright line, 10 safety items S1-S10). Two new principles (#12 safety-by-default, #13 site-is-product). Score 91% → 93% on 28 dimensions.
+
+### 2026-05-07 — Operationalize ROADMAP_2026 v3.1 into BUILD_PLAN
+**Prompt:** "now fill out the plan and tasks in the view panels"
+**Output:** Translated ROADMAP_2026 v3.1 into BUILD_PLAN_CLAUDE.md (Tracks 7-14, 73 new tasks) and BUILD_PLAN_MICHAEL.md (M30-M40, 11 new owner-blockers). Tracks: 7 Phase 0 Foundation (12 items + retrofit kit + 5 pilots), 8 Phase 1 Integrations + Compatibility Checker, 9 Phase 2 RAG + ecom surfaces (16 items), 10 A1-A8 Automations, 11 BC Site E1-E10, 12 User-Safety S1-S10, 13 Compounding Loops L1-L5, 14 Phase 4 Continuous. M-tasks added for: automation_events schema, Anthropic billing cap, GH Actions CI, user_personas schema, review platform, inventory spec audit, pgvector enable, Google Ads API, Stencil CLI, Supabase MFA, surveillance policy.

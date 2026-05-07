@@ -163,3 +163,175 @@ When you start a session:
 5. If multiple items completed in one session, batch the SESSION_LOG entry.
 
 When everything is `[x]`, AccentOS Phase 4 is done.
+
+---
+
+## TRACK 7 — Phase 0 Foundation Gate (ROADMAP_2026 v3.1)
+
+> Gates Phase 1+. Nothing past Track 7 ships until 7.1, 7.2, 7.4, 7.5 are green at W4 review.
+> 12 items, ~3 weeks, ~91h retrofit budget across Phase 0+2.
+
+- [ ] **7.1** — `automation_events` table (the spine for ΔROI + adoption + edit-distance + thumbs)
+  - Schema per ROADMAP §9; columns: action_id, action_version, user_id, fired_at, trigger_kind, dry_run, model, tokens_in/out (cached + uncached), compute_ms, human_approval_sec, est_cost_usd, value_kind, value_amount_usd, value_attribution_method, value_confidence, value_realized_at, outcome, linked_entity (jsonb), counterfactual_group
+  - Idempotent SQL → M30
+  - BLOCKS ON MICHAEL: **M30** (run automation_events schema)
+
+- [ ] **7.2** — AI Gateway module (`js/ai_gateway.js`)
+  - Wraps all Claude API calls. Cost telemetry per call → 7.1. Prompt caching enabled. Model-tier router (Haiku default → Sonnet on demand → Opus escalate). Workspace cap with 80% kill-switch. Per-user/action quota. Env-flag shim through W2 so legacy direct calls still work, hard-cut W3.
+  - BLOCKS ON MICHAEL: **M31** (Anthropic workspace billing cap configured)
+
+- [ ] **7.3** — Threshold service (`js/thresholds.js`)
+  - Bayesian Beta-LCB recalibration loop. Min-N=15 gate before LCB trusted (red-team fix). EMA smoothing α=0.4. Asymmetric tightening (1 round) vs loosening (3-round confirm). Step size capped ±0.10/round. `thresholds/registry.yaml` + `thresholds/history.jsonl`. Owner override via `thresholds/overrides.yaml`. Decoupling alarm: T relaxes >5pp AND downstream KPI drops >1σ same round → auto-revert + page Owner.
+
+- [ ] **7.4** — Heartbeat dashboard v1 (6 metrics)
+  - `js/heartbeat.js`. Tier 1 (Daily Revenue, Gross Margin, CR, AOV, Quote→Close, RPS — 4 deferred to v2). Tier 4 (ΔROI per automation, AI Cost Burn, Eval Score, Retrieval Relevance — 2 deferred to v2). Per-persona top-of-dashboard tiles (Michael / Patrick / Paul / Employee scaffold; Customer in §13). Single "needs-attention-now" alert lane (red-team fix vs wallpaper).
+
+- [ ] **7.5** — Security gate CI (RLS regression + JWT aud split + hash-chained audit_log)
+  - One CI job, three checks. RLS regression matrix per role × table (ephemeral DB on PR). JWT `aud` claim split (`internal` vs future `portal_*`). audit_log hash-chained — every row stores hash of prior + own contents; tamper detection job runs nightly.
+  - BLOCKS ON MICHAEL: **M32** (CI runner / GH Actions enabled with Supabase test creds)
+
+- [ ] **7.6** — Dev platform: bundler + type-gen + migration runner + Playwright harness
+  - esbuild zero-config bundler. Pre-commit hook fails build if index.html >1MB. Supabase type-gen on schema. Migration runner with version table (kills manual SQL). Playwright smoke harness: 20 tests, persistence-trio round-trip per active module. Keep old loading path behind flag through W4; cutover only after Playwright green for 1 week.
+
+- [ ] **7.7** — Cmd-K v1 (10 hardcoded actions)
+  - `js/cmdk.js`. Actions: New Quote · Move Pipeline Stage · Add CRM Note · Create PO · Mark Job Milestone · Check Inventory · Open Daily Brief · Ask AI Consultant · Schedule Delivery · Run Global Search. No fuzzy ranking yet, no plugins. Covers all 5 personas, mixes read+write+AI.
+
+- [ ] **7.8** — First-run checklist v1 (static markdown rendered in-app)
+  - Per-persona checklist (Michael / Patrick / Paul / Warehouse / Sales). Self-completion detection deferred to Phase 2.
+
+- [ ] **7.9** — Friday "what shipped" demo ritual (cadence + auto-Loom by agent)
+  - Agent generates Loom + bullet list each Friday. Michael watches + reacts (8 min target). 20-min standing slot Fri 4:00-4:20. Includes weekly 5-min "kill anything?" prompt.
+
+- [ ] **7.10** — Per-persona control-panel scaffold
+  - Each user's dashboard reads their goals + thresholds from `user_personas` table. Tile config editable by user. Owner sees aggregate.
+  - BLOCKS ON MICHAEL: **M33** (run user_personas schema)
+
+- [ ] **7.11** — Late / Short / Damaged unified board (Patrick's #1 unmet ask)
+  - Filtered view of existing orders/deliveries/warranty tables. No new schema. Single page combines: late deliveries (overdue) + short shipments (PO received qty < ordered) + damaged (warranty claims open). Defaults: senior + Warehouse access.
+
+- [ ] **7.12** — Thumbs telemetry hook (`<thumbs-row>` web component)
+  - One tap per AI output → writes to automation_events (event_id, user_id, value: +1/-1, free-text reason). Wired to AI Consultant first; rolled to all Phase 3 automations.
+
+- [ ] **7.13** — Module retrofit kit (6 shared primitives, ships in 7.1/7.2)
+  - `logEvent(action_id, opts)` · `aiCall(prompt, opts)` · `<thumbs-row>` · `<explain-link>` · `threshold(key, default)` · `registerCmdK(spec)`. Per-module retrofit becomes 4-8 lines. JSON-schema validation server-side for shape drift defense.
+
+- [ ] **7.14** — Retrofit pilots: Daily Brief · Quotes · Pipeline · Vendor Intelligence · Employee Scorecards
+  - First 5 modules wired through retrofit kit. Validates pattern. ~20h. Gates the bucket-A/B sweep in W3-W4 and bucket-C interleave in W6-W9.
+
+---
+
+## TRACK 8 — Phase 1 ROI Integrations + Compatibility Checker (W4-W10)
+
+- [ ] **8.1** — BigCommerce live integration (was 6.3) — write-back path: PDP copy, meta, schema markup, inventory pull
+  - BLOCKS ON MICHAEL: **M04** (BC API credentials)
+- [ ] **8.2** — Windward ERP live integration (was 6.11) — real inventory + sales velocity, replaces PO-line proxy in Demand Forecast
+  - BLOCKS ON MICHAEL: **M03** + **M10**
+- [ ] **8.3** — Review platform integration (Yotpo or equivalent) + PDP widget
+  - BLOCKS ON MICHAEL: **M34** (review platform account)
+- [ ] **8.4** — GMC feed health monitor (disapproval alerts, attribute audit)
+  - BLOCKS ON MICHAEL: **M05**
+- [ ] **8.5** — Public AI Consultant embed — internal first (Phase 1), public PDP/category in Phase 2 after eval ≥80%
+  - Was 6.10. Un-deferred per ecom growth lead. Customer trust charter: AI labeled, "I don't know" handoff allowed, source citations mandatory.
+- [ ] **8.6** — Compatibility Checker v1 (dimmer / driver / bulb)
+  - Sarah's #1 unmet need. Pure-compute over INVENTORY metadata once spec fields exist. Phase 1 internal tool, Phase 2 customer-facing on PDP. Spec-token system (S1) prevents LLM free-text on safety-critical fields.
+  - BLOCKS ON MICHAEL: **M35** (audit existing inventory_items spec coverage; identify SKUs missing wattage/voltage/dimmer-list/wet-rating)
+
+---
+
+## TRACK 9 — Phase 2 Inline Retrieval + Ecom RAG Surfaces (W5-W12)
+
+- [ ] **9.1** — pgvector enabled + per-source ACL columns (`tenant_id`, `vendor_id`, `sensitivity`)
+  - BLOCKS ON MICHAEL: **M36** (enable pgvector extension; run kb_documents + kb_chunks schema)
+- [ ] **9.2** — Per-source chunking pipeline (SOPs by heading, PDFs layout-aware, emails as thread-units)
+- [ ] **9.3** — Hybrid search (FTS + vector + Reciprocal Rank Fusion)
+- [ ] **9.4** — Cross-encoder reranker (top-20 → top-5)
+- [ ] **9.5** — Citation post-processor (rejects uncited LLM answers; chunk_id mandatory)
+- [ ] **9.6** — 150-pair golden eval set (agent drafts 200 from PROMPT_LOG/SESSION_LOG, Michael edits 90 sec/pair = 3.75h). Monthly auto-rebuild from real failed queries (red-team fix vs citation theater).
+- [ ] **9.7** — RAG eval CI gate (recall@5, MRR, faithfulness, citation-precision, refusal accuracy; >2pp regression blocks merge)
+- [ ] **9.8** — Internal surface: Quote → "3 similar past quotes + outcome" sidecar
+- [ ] **9.9** — Internal surface: Pipeline → stale-deal context retrieval
+- [ ] **9.10** — Internal surface: Knowledge Hub → grounded answers with citations (replace stub)
+- [ ] **9.11** — Ecom surface: PDP copy generation
+- [ ] **9.12** — Ecom surface: Meta description generation
+- [ ] **9.13** — Ecom surface: Schema markup generation (Product / Offer / AggregateRating / FAQ / BreadcrumbList)
+- [ ] **9.14** — Ecom surface: FAQ generation per PDP
+- [ ] **9.15** — Ecom surface: Alt-text generation for product images
+- [ ] **9.16** — Public AI Consultant goes live on PDP/category (gated on eval ≥80% from 9.7)
+
+---
+
+## TRACK 10 — Phase 3 Named Automations on Dynamic Ladder (W9-W16)
+
+> Promotion ladder: Shadow → Draft → Auto-with-approval → Auto. Beta-LCB gates per 7.3. 10% holdout counterfactual permanent.
+> Auto-execute allowlist: tag, status-flip, internal note, draft-save, regenerate report. **Never:** external send, BC mutation without click, pricing change, comp/scores writes, cross-tenant read.
+
+- [ ] **10.1** — A1: PO drafts (top-50 fast-movers) — Patrick's domain. Kill threshold: accept-rate <50% OR vendor errors >2%. Survival prob 80%.
+- [ ] **10.2** — A2: Follow-up drafts (stale deals) — Paul's domain. Delayed attribution 60d. Kill: revenue-attributed <2× cost. Survival 65%.
+- [ ] **10.3** — A3: Auto call-note logging — Sales-wide, 10-15h/wk saved. Keystone. Kill: accuracy <60% OR <3 active users. Survival 95%.
+- [ ] **10.4** — A4: Abandoned cart drafts (Klaviyo) — REDESIGNED v3.0: cap 1 plain-text email max, AI-labeled, real address. Kill: unsubscribe >2%. Survival 40%.
+  - BLOCKS ON MICHAEL: **M09** (Klaviyo API key)
+- [ ] **10.5** — A5: PDP rewrite drafts (low-CVR SKUs) — handoff contract with 9.11 (one generator, two trigger paths). Kill: CR lift <0.3pp. Survival 55%.
+- [ ] **10.6** — A6: GMC disapproval auto-fix drafts — handoff contract with 8.4 (monitor emits alert; A6 subscribes). Kill: disapproval volume <5/mo OR accuracy <70%. Survival 35%.
+- [ ] **10.7** — A7: Bundle / cross-sell drafts — Kill: AOV lift <3% on bundle-shown sessions. Survival 45%.
+- [ ] **10.8** — A8: Negative-keyword drafts (paid search) — Kill: wasted-spend recovery <$200/mo OR no Google Ads spend. Survival 20% (most likely first kill).
+  - BLOCKS ON MICHAEL: **M37** (Google Ads API access — historically blocked per MASTER §10; if not available, auto-kill A8 in W12)
+
+---
+
+## TRACK 11 — BigCommerce Site Maximization (E1-E10, ROADMAP §13)
+
+> Forks Cornerstone → "AccentOS Theme" repo. ~150h Phase 1, ~120h Phase 2.
+> E5/E6 overlap with Track 9 RAG surfaces — implement once, expose twice.
+
+- [ ] **11.1** — E1: Fork Cornerstone → "AccentOS Theme" repo, CI/CD via Stencil CLI
+  - BLOCKS ON MICHAEL: **M38** (BC theme dev access + Stencil CLI auth)
+- [ ] **11.2** — E2: PDP v2 redesign (above-fold, room mockups, compatibility module, designer-review CTA)
+- [ ] **11.3** — E3: PLP v2 lighting-specific faceted filters (room/ceiling-height/smart/CCT/IP/lead-time)
+- [ ] **11.4** — E4: Core Web Vitals pass (LCP <2.0s, INP <150ms, CLS <0.05, TTFB <400ms)
+- [ ] **11.5** — E5: AI Consultant inline embed (PDP sticky right-rail desktop, bottom-sheet mobile, SKU-context-aware) — depends on 8.5 + 9.16
+- [ ] **11.6** — E6: Schema.org full coverage + auto-generated PDP narratives — uses 9.11-9.15 generators
+- [ ] **11.7** — E7: Customer control panel (My Lighting Plan · Reorder+Warranty · My Rep · Compatibility Profile · Sample Tracker · Design Reviews)
+- [ ] **11.8** — E8: Mobile-first refactor (bottom-sheet filters, sticky CTA, swipe gallery, AR-ready)
+- [ ] **11.9** — E9: Live Windward inventory + lead-time badges via 8.2 BC sync
+- [ ] **11.10** — E10: Persona-aware nav + content (trade/designer/homeowner) from logged-in customer record
+
+---
+
+## TRACK 12 — User-Safety Charter (S1-S10, ROADMAP §14)
+
+> Protects humans from system-caused harm. Distinct from internal RLS/JWT security (Track 7.5).
+
+- [ ] **12.1** — S1: Spec-token system — wattage/voltage/dimmer/wet-rating rendered from `product_specs` DB only; LLM cannot free-text safety specs; refuse-to-answer if no token. Prerequisite for 8.5 public AI Consultant.
+- [ ] **12.2** — S2: Outbound customer email gate — no auto-send; merge-fields + allow-listed URLs only; DKIM+DMARC enforced. Gates A4 abandoned cart and any future customer-email automation.
+- [ ] **12.3** — S3: MFA mandatory for trade/vendor/employee portals (nudged for retail) + session rotation + device-anomaly alerts
+  - BLOCKS ON MICHAEL: **M39** (Supabase Auth MFA enabled at project level)
+- [ ] **12.4** — S4: Pricing token TTL 60s, LLM never renders numbers, no per-user dynamic retail pricing
+- [ ] **12.5** — S5: Surveillance policy — telemetry on outputs not process; employee self-dashboard; weekly aggregates only
+  - BLOCKS ON MICHAEL: **M40** (publish surveillance policy to team; CA notice law if applicable)
+- [ ] **12.6** — S6: Vendor RAG namespace isolation (retrieval-time, not just prompt) + pre-send cost-leak scanner
+- [ ] **12.7** — S7: PO banking-change gate — 2-person + out-of-band verify; allow-list of vendor remit-to accounts; AI cannot draft POs with new payee info
+- [ ] **12.8** — S8: Real-inventory scarcity only; A/B on copy/layout never price; published dark-pattern ban list
+- [ ] **12.9** — S9: WCAG AA + axe-core in CI; nursery/kids PDPs require safety-cert badges
+- [ ] **12.10** — S10: CCPA/GDPR endpoints (export, delete, PII-redaction in RAG ingest); AI never promises refund/warranty outcomes
+
+---
+
+## TRACK 13 — Compounding Loops (L1-L5, ROADMAP §9)
+
+> Plan-wide leverage 6.2 → 8.0 after these land. Keystone (rejection→eval→retrieval) is in 9.6 + 9.7; protect above all.
+
+- [ ] **13.1** — L1: Closed quotes → vendor pricing intelligence loop. Every won/lost quote fingerprints vendor cost vs final margin into `vendor_pricing_intel` table. Feeds next-quote drafting.
+- [ ] **13.2** — L2: Customer-question corpus → FAQ + PDP rewrite signal. Inbound emails/SMS/chat questions cluster monthly; high-frequency unmet questions auto-feed 9.14 FAQ generation.
+- [ ] **13.3** — L3: Cross-employee task patterns → skill extraction. When 3+ employees do the same manual sequence (detected via automation_events absence), surface as auto-proposed automation candidate to Owner.
+- [ ] **13.4** — L4: Failed automation runs → root-cause clusters → preventive playbooks. Errors clustered weekly into pattern → fix-template loops in BUILD_INTELLIGENCE.md.
+- [ ] **13.5** — L5: Persona × mode × task-success matrix. vibe-speak mode preference correlated to task completion quality; auto-suggests mode changes per persona.
+
+---
+
+## TRACK 14 — Phase 4 Continuous Ralph + Quarterly Kill (W17+)
+
+- [ ] **14.1** — Quarterly kill review automation (`v_kill_candidates` SQL view + Owner 7-day veto window + auto-retire)
+- [ ] **14.2** — Per-module 3-iter Ralph loop scheduler (proven on internal-meetings); applied to bottom 5 by ΔROI each quarter
+- [ ] **14.3** — Health gate watcher: WAU/MAU <0.4 for 2 weeks across top 10 modules → freeze new module work alarm
+- [ ] **14.4** — Anti-compounding trap conversions: per-PDP review → confidence-sampled (bottom 10% + random 2%); manual threshold tuning → auto from ΔROI; hand-curated eval → auto-grown from rejections; heartbeat dashboards → exception-only paging
+
