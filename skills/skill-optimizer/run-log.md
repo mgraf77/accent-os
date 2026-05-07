@@ -247,4 +247,96 @@ reached 100/100 across all 28 skills. M6 (concrete outputs) and M3 (behavioral c
 were the dominant gap-closers. The Ralph loop's convergence-exit was essential — without
 it, the 3-pass sweep left M3 and M6 gaps on nearly every skill.
 
+#### Technique arms (Thompson Sampling — initialized from 2026-05-07 run data)
+
+```json
+{
+  "technique_arms": {
+    "add-concrete-artifact:M6": {"alpha": 47, "beta": 0},
+    "add-behavioral-commitment:M3": {"alpha": 26, "beta": 2},
+    "expand-anti-patterns:M4": {"alpha": 14, "beta": 0},
+    "replace-placeholder:M10": {"alpha": 22, "beta": 9},
+    "add-trigger-phrases:M5": {"alpha": 11, "beta": 0},
+    "imperative-voice-conversion:M7": {"alpha": 18, "beta": 20},
+    "contraction-removal:M7": {"alpha": 0, "beta": 24},
+    "prose-wall-break:M8": {"alpha": 3, "beta": 6},
+    "path-normalization:M9": {"alpha": 3, "beta": 2},
+    "step-heading-verb-phrasing:M6": {"alpha": 8, "beta": 4}
+  },
+  "total_run_count": 1
+}
+```
+
+UCB1 priority order (exploitation = alpha/(alpha+beta), exploration bonus = sqrt(2*ln(1)/(alpha+beta)) = 0 for run 1):
+
+| Rank | Arm | alpha | beta | Exploitation score | Notes |
+|---|---|---|---|---|---|
+| 1 | add-concrete-artifact:M6 | 47 | 0 | 1.000 | 100% hit rate — always try first |
+| 2 | expand-anti-patterns:M4 | 14 | 0 | 1.000 | 100% hit rate |
+| 3 | add-trigger-phrases:M5 | 11 | 0 | 1.000 | 100% hit rate |
+| 4 | add-behavioral-commitment:M3 | 26 | 2 | 0.929 | Near-perfect |
+| 5 | replace-placeholder:M10 | 22 | 9 | 0.710 | 71% hit rate — skip if M10=10 |
+| 6 | step-heading-verb-phrasing:M6 | 8 | 4 | 0.667 | Mixed results |
+| 7 | path-normalization:M9 | 3 | 2 | 0.600 | Low sample count |
+| 8 | imperative-voice-conversion:M7 | 18 | 20 | 0.474 | 47% — only when M7=0 |
+| 9 | prose-wall-break:M8 | 3 | 6 | 0.333 | Low ROI |
+| 10 | contraction-removal:M7 | 0 | 24 | 0.000 | NEVER USE — pure style, 0 delta |
+
+Skip list for next run (0 delta when dimension already passes):
+- contraction-removal when M7 = 10
+- prose-wall-break when M8 = 10
+- imperative-voice-conversion when M7 = 10
+- path-normalization when M9 = 10
+
+---
+
+### RUN 2026-05-07 (ML upgrade — skill-optimizer self-optimization)  branch: claude/optimize-skills-agents-1u8OO  scope: 1 skill (self)
+
+#### Context
+Self-optimization pass for skill-optimizer/SKILL.md. Added hub-and-spoke architecture,
+Thompson Sampling technique selection, curriculum learning tiers, patience-based convergence,
+sub-scores for dense rewards, skill profile vectors, intra-run warm-start hints (MAML/Reptile),
+L1/L2/adversarial regularization checks, cold-read check, and process-review capability.
+
+#### Baseline scores
+
+| Skill | M1 | M2 | M3 | M4 | M5 | M6 | M7 | M8 | M9 | M10 | Total |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| skill-optimizer | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 100 |
+
+Baseline: 100/100 (maintained from prior self-optimization run)
+
+#### Changes made
+
+All 10 ML features implemented. Matter scale maintained at 100/100 throughout.
+
+Key fixes during implementation:
+- M7 table row rewritten to avoid self-referential passive phrases
+- Step 6 template restructured with ~~~ outer fence to prevent nested ``` from leaking brackets
+- Step 6 received explicit "Output artifact" label
+
+#### Technique arms updated
+
+No arm updates from this run (self-optimization does not apply techniques to other skills).
+Arm table seeded from 2026-05-07 run data above.
+
+#### END-OF-RUN REVIEW
+
+Self-optimization pass complete. skill-optimizer SKILL.md now includes:
+- Hub pre-pass planning (Step 1.5) — curriculum tiers A/B/C, wave sequencing
+- Thompson Sampling / UCB1 technique ordering (Step 0)
+- Patience-based convergence (patience=2, hard_cap=8) in Ralph loop (Step 3)
+- Sub-scores for M4/M5/M6/M7/M10 (Step 1)
+- Skill profile vector extraction (Step 1)
+- Warm-start hint broadcast with negative transfer guard (Step 3)
+- Structured SKILL RESULT schema (Step 3)
+- L1/L2/adversarial regularization + cold-read (Step 3 sub-dimension cycle)
+- Process Review block (Step 8)
+- Thompson arm update rules in Step 4
+
+Fleet score: 100/100 (self, 1 skill in scope)
+
+Run verdict: Architectural upgrade complete — optimizer now learns across runs via Thompson
+Sampling, routes warm-start hints via profile similarity, and reviews its own processes.
+
 ---
