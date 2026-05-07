@@ -42,8 +42,8 @@ Read in parallel:
 - `/home/user/accent-os/BUILD_PLAN_CLAUDE.md` — open tracks (`- [ ]`)
 - `/home/user/accent-os/BUILD_PLAN_MICHAEL.md` — open M-tasks (`- [ ] **M[NN]**`)
 - `/home/user/accent-os/WORK_IN_PROGRESS.md` — current step + next-if-interrupted
-- `/home/user/accent-os/PROMPT_QUEUE.md` — queued items
-- `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` — capability gaps
+- `/home/user/accent-os/PROMPT_QUEUE.md` — queued items (if missing, treat as empty queue; continue)
+- `/home/user/accent-os/skills/repo-scout/references/project-profiles.md` — capability gaps (if missing, skip; log "project-profiles.md not found — capability gap data unavailable")
 
 Output a one-line state summary: open tracks count, open M-tasks count, WIP status.
 

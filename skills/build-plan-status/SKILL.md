@@ -41,7 +41,7 @@ Read three sources:
 
 1. **Recent git commits** (since the last BUILD_PLAN_CLAUDE update):
    ```bash
-   git log --since="$(stat -c %y BUILD_PLAN_CLAUDE.md | cut -d' ' -f1)" --pretty='%h %s%n%b%n---END---' main
+   cd /home/user/accent-os && git log --since="$(stat -c %y BUILD_PLAN_CLAUDE.md | cut -d' ' -f1)" --pretty='%h %s%n%b%n---END---' main
    ```
    The `%n%b` includes the commit body (multi-line). Parse both subject AND body for "feat:", "ship:", "vNN.NN.NN" version markers, "Track N.N", "M[NN]" mentions. Bodies often contain the most explicit "shipped X" / "ran clean" language.
 

@@ -88,3 +88,32 @@ No new changes — all Ralph findings addressed in Cycle 2
 **Stuck dimensions:** none
 
 ---
+
+---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten to single tight verb sentence | Two-sentence plus one-word fragment ("Michael does not read. He scans and acts.") — the action was implied, not stated | Single sentence naming the search targets, the filter criterion (live AccentOS stack with both IDs), and the output contract | Purpose must be one sentence with a specific verb; the three-piece structure buried the output shape |
+| "Never skip the filter pass because a repo has high stars" given AccentOS-specific contrast | Generic — "star count is not a relevance signal for AccentOS + Accent Lighting stack fit" | Contrasts a 10k-star generic Supabase tool against a 40-star BigCommerce-native MCP that fits store-cwqiwcjxes | Anti-patterns must name a specific AccentOS failure mode; named contrast makes the rule memorable and actionable |
+| "Never run Step 2 searches without first loading AccentOS context" given concrete failure consequence | Named the file but said only "blind searches produce irrelevant candidates" | Names the specific irrelevant categories: Shopify, WooCommerce, AWS-native tools vs. the actual BigCommerce + Cloudflare + vanilla-JS stack | The consequence tells a new session *what class of noise* to expect, making the rule actionable |
+
+### Pass 2 — Ralph cold-read challenge
+
+| Change | What was ambiguous | What it became | Reasoning |
+|---|---|---|---|
+| Step 2 hardcoded search queries given explicit note that they are baseline + gap-extension terms | A new session reading Step 2 would run only the hardcoded queries and miss the Step 1 context-to-search-term mapping | Added "The queries below are the baseline set; extend with gap-specific terms pulled from the named gaps in project-profiles.md" | The connection between Step 1 context-load and Step 2 search tuning was implicit; new session had no instruction to extend the queries |
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: two-sentence-plus-fragment → single action-and-output-shape sentence with both stack IDs named
+- Two anti-patterns: generic principles → AccentOS-specific failure modes with named components (store-cwqiwcjxes, Shopify/WooCommerce contrast)
+- Step 2: hardcoded queries clarified as baseline + gap-extension set, closing the implicit Step 1→Step 2 link
+
+---
