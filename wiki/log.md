@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-05-07 module-enrichment-batch-4
+- enrich: deal-optimizer — Track 5.7 vendor-side recs from VD + CHANGELOG: 5 kinds (renegotiate, investigate, replace, upgrade, cut) with impact heuristics derived from lifetime spend × % recoverable, getAdaptiveTier percentile bucketing, renderOverview (Vendor Ranking Overview tab); confidence medium → high
+- enrich: demand-forecast — Track 6.9 velocity-based reorder recs over INVENTORY + PO_LINES: explicit constants (4w lead + 2w safety = 6w threshold, 14w target, 90d window), 5 kinds (reorder_now/soon/overstock/normal/no_data), CSV reorder-list export, Daily-Brief tile integration; confidence medium → high
+- enrich: decision-engine — Track 5.15 rep-side "do this next" recs from DEALS + QUOTES + CUSTOMERS + INTERACTIONS: 5 kinds (chase, followup, atrisk, retain, upsell) with $-impact + click-through nav, RFM integration via computeCustomerRFM; confidence medium → high
+- update: wiki/index.md — bumped 3 module rows to confidence:high, updated:2026-05-07; titles include Track refs
+- note: 26 → 23 stub modules remaining; analytics layer fully linked (deal-optimizer ↔ decision-engine ↔ pipeline-analytics ↔ alerts; demand-forecast ↔ inventory ↔ purchase-orders)
+
+---
+
 ## 2026-05-07 module-enrichment-batch-3
 - enrich: pipeline-analytics — pure-compute modal over DEALS + AF_PIPELINE: 4-panel dashboard (funnel by count/value, stage-conversion via pipeline_events from→to map, time-in-stage avg/median, lost-reason histogram), 5-window selector (7d/30d/90d/ytd/all), graceful empty states; confidence medium → high
 - enrich: purchase-orders — Track 5.4 header+lines CRUD on purchase_orders + po_lines (M23): auto PO-#### numbering, line-item editor with live ext-cost, Quote→PO multi-vendor splitter, receivePO writes through to inventory_items.qty_on_hand by (vendor_id, sku) match; confidence medium → high

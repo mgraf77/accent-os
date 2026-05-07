@@ -95,10 +95,10 @@
 | commission | Commission Module | medium | 2026-05-06 |
 | competitive-pricing | Competitive Pricing Module | medium | 2026-05-06 |
 | customers | Customers Module (Track 1.4 CRM) | high | 2026-05-07 |
-| deal-optimizer | Deal Optimizer Module | medium | 2026-05-06 |
-| decision-engine | Decision Engine Module | medium | 2026-05-06 |
+| deal-optimizer | Deal Optimizer Module (Track 5.7) | high | 2026-05-07 |
+| decision-engine | Decision Engine Module (Track 5.15) | high | 2026-05-07 |
 | deliveries | Deliveries Module | medium | 2026-05-06 |
-| demand-forecast | Demand Forecast Module | medium | 2026-05-06 |
+| demand-forecast | Demand Forecast Module (Track 6.9) | high | 2026-05-07 |
 | digest | Digest Module (Daily Brief Email) | high | 2026-05-07 |
 | employees | Employees Module | medium | 2026-05-06 |
 | global-search | Global Search Module | medium | 2026-05-06 |

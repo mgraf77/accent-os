@@ -1,10 +1,15 @@
 # Wiki Hot State
-> Updated: 2026-05-07 — Module enrichment batch 3
+> Updated: 2026-05-07 — Module enrichment batch 4
 
 ## Current task
-Module-page enrichment in progress (9 of 35 done). Pattern proven across 9 distinct module shapes. Remaining 26 stubs follow the same recipe.
+Module-page enrichment in progress (12 of 35 done). Pattern proven across all major module shapes. Remaining 23 stubs follow the same recipe.
 
 ## What shipped (this session)
+
+### Module enrichment batch 4 (3 pages)
+- **wiki/modules/deal-optimizer.md** — Track 5.7 vendor-side recs from `VD` + `CHANGELOG`: 5 kinds (renegotiate / investigate / replace / upgrade / cut) with impact heuristics, `getAdaptiveTier` percentile bucketing. Confidence medium → high.
+- **wiki/modules/demand-forecast.md** — Track 6.9 velocity-based reorder recs over `INVENTORY` + `PO_LINES`: explicit constants (4w lead + 2w safety = 6w threshold, 14w target, 90d window), 5 kinds, CSV reorder-list export. Confidence medium → high.
+- **wiki/modules/decision-engine.md** — Track 5.15 rep-side "do this next" recs over `DEALS` + `QUOTES` + `CUSTOMERS`: 5 kinds (chase / followup / atrisk / retain / upsell) with $-impact and click-through nav, RFM integration. Confidence medium → high.
 
 ### Module enrichment batch 3 (3 pages)
 - **wiki/modules/pipeline-analytics.md** — pure-compute modal: 4-panel dashboard (funnel, stage-conversion, time-in-stage, lost-reason), `pipeline_events`-derived metrics with graceful empty states, 5-window selector. Confidence medium → high.
@@ -57,16 +62,16 @@ Precision 50.8% = ~94% of achievable ceiling. Do not attempt further passes with
 
 ## What Claude can build without Michael
 
-1. **Wiki enrichment**: 26 module pages remaining in wiki/modules/ (9 of 35 enriched so far). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
+1. **Wiki enrichment**: 23 module pages remaining in wiki/modules/ (12 of 35 enriched so far). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
 2. **Vendor page enrichment**: wiki/entities/vendors/ has 30 pages — can be fleshed out as vendor data becomes available.
 3. **pgvector path** (M42/M43): optional embedding upgrade — not started, not blocked.
 
 ## Suggested next enrichment batch
 
-Pick high-fanout modules first (most cross-links, highest grounding value):
-1. **deal-optimizer** (`js/deal_optimizer.js`) — vendor-deal recommendations from score deltas; closes the vendor-scoring cluster
-2. **demand-forecast** (`js/demand_forecast.js`) — velocity-based reorder recommendations from PO history; complements purchase-orders + inventory
-3. **decision-engine** (`js/decision_engine.js`) — sales-rec engine over deals/quotes/customers/inventory; complements pipeline-analytics + customers
+Pick the operational + workflow cluster (the next obvious group after analytics):
+1. **jobs** (`js/jobs.js`) — Track 5.2 Job Tracker; auto J-#### numbering, customer/quote dropdowns, status workflow
+2. **deliveries** (`js/deliveries.js`) — Track 5.10 delivery scheduling; 6-state workflow, customer auto-fill, signature capture
+3. **warranty** (`js/warranty.js`) — Track 5.11 warranty claims; 7-state workflow, vendor + customer + quote linkage
 
 ## Next-session entry point
 
@@ -75,4 +80,4 @@ Pick high-fanout modules first (most cross-links, highest grounding value):
 3. If M04 done: build 5.13 E-Commerce Command Center (BigCommerce REST + GMC)
 4. If M06 done: build 6.1 (GA4) + 6.2 (GSC) integrations
 5. If M09 done: build 6.4 Klaviyo integration
-6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (deal-optimizer → demand-forecast → decision-engine). Read `js/<name>.js` first, then write following the batch-1/2/3 pattern.
+6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (jobs → deliveries → warranty). Read `js/<name>.js` first, then write following the batch-1/2/3/4 pattern.
