@@ -119,3 +119,7 @@
 ### 2026-05-07 — Operationalize ROADMAP_2026 v3.1 into BUILD_PLAN
 **Prompt:** "now fill out the plan and tasks in the view panels"
 **Output:** Translated ROADMAP_2026 v3.1 into BUILD_PLAN_CLAUDE.md (Tracks 7-14, 73 new tasks) and BUILD_PLAN_MICHAEL.md (M30-M40, 11 new owner-blockers). Tracks: 7 Phase 0 Foundation (12 items + retrofit kit + 5 pilots), 8 Phase 1 Integrations + Compatibility Checker, 9 Phase 2 RAG + ecom surfaces (16 items), 10 A1-A8 Automations, 11 BC Site E1-E10, 12 User-Safety S1-S10, 13 Compounding Loops L1-L5, 14 Phase 4 Continuous. M-tasks added for: automation_events schema, Anthropic billing cap, GH Actions CI, user_personas schema, review platform, inventory spec audit, pgvector enable, Google Ads API, Stencil CLI, Supabase MFA, surveillance policy.
+
+### 2026-05-07 — Live build-status dashboard
+**Prompt:** "now make a markdown file ... that works as a current status of the build vs what needs to be done and in what order ... updated at any session end or commit"
+**Output:** BUILD_STATUS.md (auto-generated dashboard) + scripts/build-status.sh (regenerator) + Stop hook entry + .git/hooks/pre-push. Dashboard shows headline progress (36/119 tasks, 30%), per-track shipped/total across tracks 0-14, current WIP, next 5 unblocked tasks, top 5 Michael blockers, ROADMAP-phase progress matrix, W4/W12 gates, recent commits. Regenerates on session-end + pre-push automatically.

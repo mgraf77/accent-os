@@ -540,6 +540,13 @@ This section is **append-only**. Every meaningful change to vision, plan, scope,
 
 **Score:** 91% → 93% on 28 dimensions (added: ecom site UX/perf, user-safety to humans).
 
+### 2026-05-07 — v3.1.1 — Live status dashboard wired
+- Added `BUILD_STATUS.md` — auto-generated dashboard showing: headline progress (X / Y tasks, percent), per-track shipped/total, current WIP, next 5 unblocked tasks, top 5 Michael blockers, vision-progress matrix per ROADMAP phase, schedule gates (W4/W12), recent commits.
+- Added `scripts/build-status.sh` — regenerates from `BUILD_PLAN_CLAUDE.md` + `BUILD_PLAN_MICHAEL.md` + `ROADMAP_2026.md` + `WORK_IN_PROGRESS.md` + git log.
+- Wired into `.claude/settings.json` Stop hook (regenerates on session end alongside efficiency-aggregate).
+- Wired into `.git/hooks/pre-push` (regenerates + amends into HEAD if HEAD is unpushed).
+- BUILD_STATUS.md is the single live "where are we vs the vision" view; ROADMAP_2026.md remains the long-term narrative + decisions log.
+
 ### [next entry placeholder]
 - Date · version · trigger · changes · score delta.
 

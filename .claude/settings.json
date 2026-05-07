@@ -10,6 +10,10 @@
           {
             "type": "command",
             "command": "bash /home/user/accent-os/scripts/efficiency-aggregate.sh >> /home/user/accent-os/skills/efficiency-monitor/_aggregator.log 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash /home/user/accent-os/scripts/build-status.sh >> /home/user/accent-os/scripts/.build-status.log 2>&1 || true"
           }
         ]
       }
