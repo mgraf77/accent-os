@@ -353,7 +353,9 @@ Gap contribution ranking (descending):
   3. ...
 ```
 
-**Perspective Sweep (auto when any score > 8.0 OR when any score differs from prior-pass score by >1.0; optional otherwise):** Run Contrarian + Methodologist. "Why is [Dim] at [X] and not lower?" Inflation is the expected failure mode. Their challenge must be resolved before finalizing the score.
+**Perspective Sweep (auto when any score > 8.0 OR when any score differs from prior-pass score by >1.0; optional otherwise):** Run Contrarian + Methodologist. "Why is [Dim] at [X] and not lower?" Inflation is the expected failure mode. Their challenge must be resolved before finalizing the score. **Exception:** On Pass 1 there is no prior-pass score — use the `score > 8.0` trigger only; the ">1.0 difference from prior pass" trigger does not apply.
+
+**BOTH scope — divergence penalty:** Score project version as primary. Each unintentional divergence between global and project versions (step count mismatch, trigger count mismatch, missing anti-pattern in one copy) applies a −0.5 pt penalty to Accuracy for that specific divergence. Intentional divergences (AccentOS-specific content in project only) do not penalize.
 
 ---
 
@@ -387,6 +389,8 @@ If no override: `CALIBRATION: Rubric v[N] weights in effect (no override)`.
 | <40 | Baseline + 25 |
 
 Pass N>1: threshold = baseline + 10 (cap 95). Accept overrides: "+10%", "+20 points", "minimum 85", "add ability to [X]", "just fix the triggers".
+
+**Realistic ceiling override:** When all active dimensions are at their session ceiling (evidence cap ≤8.0) and the formula threshold is unreachable without formal test infrastructure, substitute: `threshold = session_ceiling_score` (maximum score achievable given evidence constraints). Label in output as `CEILING THRESHOLD (formula target unreachable — evidence cap in effect)`.
 
 ```
 THRESHOLD: [X.X / 100]
@@ -612,6 +616,8 @@ For each active dimension i, compute:
 This replaces simple momentum heuristics. Weight flows toward dimensions with the highest combination of remaining gap AND realistic improvement potential. Ceilings — structural or design — receive floor weight (3%) and are no longer targeted.
 
 **Structural ceiling detection:** Flag any dim with identical score ±0.5 for 3+ consecutive passes despite targeting. Set `potential_i = 0`. Note in rubric output.
+
+**All-dims-ceiling trigger:** If ALL active dimensions have `potential_i = 0` after the formula (every dim is a structural ceiling, design ceiling, or at raw 10), skip the weight formula and auto-trigger First Principles Reset. Output: `ALL DIMS AT CEILING — auto-triggering First Principles Reset. No weight adjustment will improve targeting when no dimension has headroom.`
 
 **Check for new dimension additions** based on prediction misses, emerging patterns, or unaddressed root causes.
 
@@ -930,6 +936,8 @@ Output: `HISTORY LOGGED — [skill-name] Pass [N] appended to optimization-histo
 - **Never** score a dimension above 7.5 without citing specific evidence from the SKILL.md — "it has output blocks" is not evidence; quote the specific section that earns the score.
 - **Never** score a dimension above 8.0 without running the Contrarian + Methodologist Perspective Sweep and resolving all objections; if either raises an unresolvable objection, cap the score at 8.0.
 - **Never** report a total score above 90 without formal validation (passing promptfoo test suite or 3+ documented real sessions showing correct behavior); label as **PROVISIONAL** if citing informal evidence only — provisional scores do not count toward threshold.
+- **Never** set `potential_i = 0` for a dimension just because it failed to move in one pass — structural ceiling requires 3+ consecutive passes at the same score (±0.5) despite targeting; one pass of resistance is not a ceiling.
+- **Never** trigger First Principles Reset when a plateau is caused by an evidence ceiling (all dims capped at 8.0 by the independence constraint) — the rubric is not the problem; a new session is the correct fix, not a registry rebuild.
 
 ## Outcome Signal
 
@@ -947,4 +955,11 @@ SKILL OUTCOME: PARTIAL — skill-optimizer
   Gap:       [delta] pts below threshold [T.T] after [N] passes + 3 refinement passes
   Options:   "another pass" → continue | "done" → accept best available
   → Logged to skills/skill-feedback.md
+```
+
+**If PLATEAU (2 consecutive thin passes):**
+```
+SKILL OUTCOME: PLATEAU — reached [score]/100 ceiling. [N] consecutive thin passes.
+  Approach: "first principles reset" to rebuild rubric | "done" to accept current version
+  → Logged to optimization-history.md
 ```

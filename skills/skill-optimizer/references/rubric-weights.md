@@ -52,6 +52,7 @@ Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below des
 | **6** | All steps name a specific output. Format and field names documented. A reader can predict what they'll receive. |
 | **7 — GOOD** | Every step has a concrete, paste-ready output. Named blocks with exact field names. No ambiguity. Output shape is defined for all steps including loops and gates. |
 | **8** | Everything at 7 + cited evidence that outputs match the documented shape in real use. Edge case outputs (empty data, errors) documented. Evidence required. |
+| **8.5** | Everything at 8 + edge case outputs confirmed correct in 2+ independent real sessions (not same session). Evidence required for each edge case. No documented deviation from specified shape in practice. Contrarian + Methodologist Perspective Sweep confirms. |
 | **9** | Everything at 8 + promptfoo or equivalent tests confirm output shape across all documented cases. Zero deviations in testing. PROVISIONAL label required without test evidence. |
 | **10** | Formally verified across all edge cases and input variations by automated test suite. Zero exceptions. Unreachable without complete test coverage. |
 
@@ -70,6 +71,7 @@ Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below des
 | **6** | Steps numbered, ordered, imperative-voiced. Single-purpose. Stop conditions present but not always explicit. Parallel batching implied but not documented. |
 | **7 — GOOD** | Steps numbered, ordered, imperative-voiced, non-overlapping. Each has one purpose and an explicit stop condition. Parallel and sequential dependencies documented. Caps and limits on loops. |
 | **8** | Everything at 7 + verified to produce consistent, reproducible outputs across multiple independent runs (cited evidence). No identified ambiguities after real use. |
+| **8.5** | Everything at 8 + documented case where an independent practitioner followed the workflow without coaching and arrived at equivalent output. One confirmed instance (not 3+). Evidence required. Contrarian + Methodologist Perspective Sweep confirms no ambiguities remain. |
 | **9** | Formally verified: an independent practitioner can follow the workflow and arrive at equivalent outputs without coaching. Evidence required. |
 | **10** | Proven reproducible by automated test suite across all input variations. Unreachable without test infrastructure. |
 
@@ -88,6 +90,7 @@ Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below des
 | **6** | 4-5 triggers. Include common variants (verb swaps, rephrases). Do-not-trigger present. |
 | **7 — GOOD** | 6+ triggers; match documented real phrasing (observed, not hypothetical); include verb variants and common misspellings; explicit do-not-trigger list with at least 2 entries. |
 | **8** | Everything at 7 + validated against PROMPT_LOG.md or equivalent real invocation records. No missed phrasings from recorded use in last 30 days. Evidence required. |
+| **8.5** | Everything at 8 + validated across 30+ days of PROMPT_LOG.md records with zero missed phrasings found. At most 1-2 plausible edge phrasings remain unvalidated. Evidence cited. Contrarian + Methodologist Perspective Sweep confirms coverage. |
 | **9** | Near-comprehensive coverage validated with evidence. Near-zero miss rate on real inputs. |
 | **10** | Formally proven complete via automated trigger-detection testing. Unreachable without test infrastructure. |
 
@@ -106,6 +109,7 @@ Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below des
 | **6** | Most constraints explicit ("must"). Most foreseeable edge cases handled. Failure modes name what to do. One or two gaps remain. |
 | **7 — GOOD** | All listed edge cases handled explicitly. All validation steps named. All failure modes specify exactly what to do. All constraints are binary (pass/fail). Cap values, required-file checks, and boundary conditions present. |
 | **8** | Everything at 7 + verified correct handling of all listed cases in real use (cited evidence). No silent failures discovered in practice. |
+| **8.5** | Everything at 8 + all listed edge cases confirmed correct in 2+ independent real sessions. Adversarial review found no undetected failure paths. All constraints confirmed binary (pass/fail) in practice. Evidence required. Contrarian + Methodologist Perspective Sweep confirms. |
 | **9** | Formally verified: automated tests exercise every listed edge case, constraint, and failure mode. Evidence required. |
 | **10** | Proven correct by exhaustive formal verification or complete test coverage. Unreachable without test infrastructure. |
 
@@ -124,6 +128,7 @@ Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below des
 | **6** | No redundant reads. Steps are single-purpose. Parallel work batched where obvious. Approval gates minimal. |
 | **7 — GOOD** | No redundant reads. Every step does one thing. All parallelizable work explicitly batched with documentation. Approval gates minimal and justified. Token footprint appropriate for the task. |
 | **8** | Everything at 7 + profiled (cited evidence that no redundant tokens are spent in practice). No unnecessary context reads identified in real use. |
+| **8.5** | Everything at 8 + profiled across 2+ independent sessions showing consistent token footprint. Specific redundancy sources eliminated and documented. Not yet benchmarked against a baseline alternative. Evidence required. Contrarian + Methodologist Perspective Sweep confirms. |
 | **9** | Token-optimal for the task class. Benchmarked against a simpler alternative. Improvement headroom < 5%. |
 | **10** | Formally proven minimal. Theoretical lower bound on token usage established and achieved. |
 
@@ -144,6 +149,7 @@ Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below des
 | **6** | 3-4 refs. Correct paths (/home/user/accent-os/). Stack tools named. One Accent Lighting workflow example. |
 | **7 — GOOD** | 4-5 AccentOS substitutions; correct paths; real tool names (Supabase hsyjcrrazrzqngwkqsqa, BC store-cwqiwcjxes, GMC, Klaviyo, Anthropic API); at least one workflow example from Accent Lighting operations. |
 | **8** | Everything at 7 + examples drawn from documented real Accent Lighting use cases. Stack integration validated in practice. Evidence required. |
+| **8.5** | Everything at 8 + 2+ real Accent Lighting use case examples with documented outcomes across independent sessions. Stack integration validated in 2+ separate real sessions. Evidence required. Contrarian + Methodologist Perspective Sweep confirms. |
 | **9** | Fully integrated into AccentOS stack with tested behavior against the real environment. Evidence required. |
 | **10** | Formally integration-tested with CI against AccentOS stack. Unreachable without test infrastructure. |
 
@@ -162,6 +168,7 @@ Scores are 0–10 per dimension. **5.0 = average.** Every anchor point below des
 | **6** | 4-5 anti-patterns. Specific and binary (pass/fail). Includes do-not-trigger case. |
 | **7 — GOOD** | 5+ anti-patterns. All specific ("Never run more than 5 loops"), all binary pass/fail. Covers do-not-trigger, mutation guard, and at least 2 methodology failure modes. |
 | **8** | Everything at 7 + all anti-patterns validated (no known violation in real use, cited evidence). Each maps to a real failure mode that was observed and prevented. |
+| **8.5** | Everything at 8 + at least 3 anti-patterns have documented real failure instances they prevented (evidence cited). Adversarial review found no undetected failure modes. Contrarian + Methodologist Perspective Sweep confirms no blind spots. |
 | **9** | Formally non-violating: adversarial test inputs exercising each anti-pattern produce the correct refusal behavior. |
 | **10** | Proven non-violating by formal verification or exhaustive adversarial test coverage. |
 
