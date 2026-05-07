@@ -42,10 +42,10 @@ Run when Michael says:
 Before any work, do these in parallel:
 
 1. **Read run-log.md** — `/home/user/accent-os/skills/skill-optimizer/run-log.md`.
-   Extract the **Technique Leaderboard** from the most recent `### END-OF-RUN REVIEW`
-   block. Load the top-5 highest-delta techniques as **priority moves** for this run.
-   Load the "Didn't-move-score" list as **skip list** for skills that already pass
-   that dimension.
+   - Extract the **Technique Leaderboard** from the most recent `### END-OF-RUN REVIEW` block.
+   - From the technique performance log, compute hit-rate = `(times_moved_score / times_applied)` for each technique.
+   - Load the top-5 techniques ordered by hit-rate (not raw delta points) as **priority moves** — hit-rate predicts reliability on new skills better than total points, since high-point techniques with low hit-rates (e.g. imperative voice at 53%) waste cycles on already-passing dimensions.
+   - Load the "Didn't-move-score" list as **skip list** for skills that already pass that dimension.
 
 2. **Read learning-notes.md** — `/home/user/accent-os/skills/skill-optimizer/learning-notes.md`.
    Apply all `RULE:` entries. These are hard-learned constraints that override default
@@ -57,7 +57,14 @@ Before any work, do these in parallel:
 4. **Capture branch** — `git -C /home/user/accent-os branch --show-current`. Work on
    current branch; never push to main without explicit permission.
 
-Output of Step 0: scope list count, priority moves loaded, skip list loaded, branch name.
+**Output artifact — Step 0 preflight report (emit before Step 1):**
+```
+PREFLIGHT  [date]  branch: [branch]
+Scope: [N] skills — [comma-separated list]
+Priority moves loaded: [top-5 technique names from leaderboard]
+Skip list loaded: [dimension names already at 10 fleet-wide]
+RULE entries active: [N]
+```
 
 ---
 
@@ -74,7 +81,7 @@ For every skill in scope, read its SKILL.md and score it on the **Matter Scale**
 | M3 | Behavioral commitment | description ends with "always X — never Y" form |
 | M4 | Anti-patterns ≥5, all "Never" | ≥5 bullets starting "Never" in Anti-patterns section |
 | M5 | Trigger phrases ≥5 | ≥5 distinct phrases in Trigger Recognition section |
-| M6 | Concrete step outputs | every `## Step N` body names a file path, table, SQL block, or literal format — not "output a summary" |
+| M6 | Concrete step outputs | every `## Step N` body names a file path, table with column headers, SQL block, or literal format — disqualified by: "Output: a summary", "Output: a scorecard" with no column names, or a step with no output statement at all |
 | M7 | Zero passive voice | no "should be", "can be", "is used to", "Consider X" in prose |
 | M8 | No prose walls | no paragraph >4 sentences without a bullet or table break |
 | M9 | Stack reference present | at least one of: `hsyjcrrazrzqngwkqsqa`, `store-cwqiwcjxes`, `/home/user/accent-os/` |
@@ -96,17 +103,28 @@ Skills below 80: [list]
 
 ## Step 2 — Group and assign agents
 
-Split the scope list into groups of 4–6 skills each. Size groups so each agent handles
-a manageable load. Spawn one agent per group **in parallel** using the Ralph loop protocol
-(Step 3). Pass each agent:
+Split the scope list into groups of 4–6 skills each. Groups of 3 underuse the agent; groups of 7+ produce edit conflicts. Spawn one agent per group **in parallel** using the Ralph loop protocol (Step 3). Pass each agent:
 - Its group's file paths
-- The priority moves from Step 0 (to try first)
+- The full text of `learning-notes.md` (not a summary — agents must receive all RULE: entries verbatim)
+- The priority moves from Step 0 ordered by hit-rate `(times_moved_score / times_applied)`, highest first
 - The skip list (dimensions already 10/10 — don't waste cycles re-checking)
 - The per-skill baseline scores (so agents know which dimensions to target)
+- The `optimization-history.md` for each skill in the group (agents read it before starting that skill's loop to see which techniques already failed on that specific skill)
+
+**Output artifact — Agent dispatch table (emit before spawning):**
+```
+AGENT DISPATCH  [date]
+Agent  Skills                        Group size
+A1     analysis-snapshot, kpi-data-audit, supabase-sql-magic, table-eda    4
+A2     ...
+Agents spawned: [N]
+```
 
 ---
 
 ## Step 3 — Ralph loop protocol (per agent, per skill)
+
+**Before starting any skill's loop:** Read that skill's `optimization-history.md` at `/home/user/accent-os/skills/<skill-name>/optimization-history.md` if it exists. Extract every "Techniques that didn't move score" entry and every "Stuck dimensions" entry from prior runs. Do not re-attempt those techniques on the same dimensions — they were already tried and failed.
 
 Each agent runs this loop per skill until no new findings:
 
@@ -114,25 +132,41 @@ Each agent runs this loop per skill until no new findings:
 LOOP (minimum 3 cycles, maximum 10):
   [Optimizer pass]
     1. Re-read SKILL.md
-    2. Apply all improvements found, targeting failing dimensions first
+    2. Apply all improvements found, targeting failing dimensions first,
+       in priority order from Step 0 leaderboard (highest hit-rate first)
     3. Record every Edit made: which dimension it targeted, old text → new text
     4. Compute post-edit matter score for this skill
 
-  [Ralph pass]
+  [Ralph pass — binary dimension checks]
     Challenge every section:
-    - "Is there a step that names only 'a summary' as its output?"
-    - "Is there an anti-pattern missing for the most obvious AccentOS misuse?"
-    - "Does any trigger phrase duplicate another or remain too vague?"
-    - "Is any paragraph >4 sentences without a break?"
-    - "Does the description end with a clear always/never commitment?"
-    - "Are there ≥5 'Never' anti-patterns?"
-    - "Any [bracket] outside a code fence?"
-    - "Any passive voice remaining?"
+    - "Is there a step that names only 'a summary' as its output?" (M6)
+    - "Is there an anti-pattern missing for the most obvious AccentOS misuse?" (M4)
+    - "Does any trigger phrase duplicate another or remain too vague?" (M5)
+    - "Is any paragraph >4 sentences without a break?" (M8)
+    - "Does the description end with a clear always/never commitment?" (M3)
+    - "Are there ≥5 'Never' anti-patterns?" (M4)
+    - "Any [bracket] outside a code fence?" (M10)
+    - "Any passive voice remaining — 'should be', 'can be', 'is used to', 'Consider X'?" (M7)
+    - "Does any SQL block contain a double-WITH clause, reference an undefined table,
+       or use a column that doesn't exist in the named schema?" (M6 integrity)
 
   If Ralph finds anything → record finding → go back to Optimizer pass
-  If Ralph finds nothing AND matter score = 100 → mark DONE
+  If Ralph finds nothing AND matter score = 100 → run ONE sub-dimension cycle (below) → mark DONE
   If Ralph finds nothing AND matter score < 100 → log as "stuck dimension" → mark DONE
 END LOOP
+
+[Sub-dimension cycle — runs once after binary dimensions converge at 100/100]
+  Check:
+  - Are any "Never" anti-patterns generic rather than specific to this skill's failure modes?
+    (e.g. "Never skip validation" is generic; rewrite using actual observed failures)
+  - Do any trigger phrases overlap in meaning with another phrase in the same list?
+  - Does every Step's output block show the literal column headers of its table, not just
+    "a table" or "a scorecard"? (Disqualifier: "Output: a summary table" with no column names)
+  - Do any SQL blocks reference project IDs or table names that don't exist in the
+    hsyjcrrazrzqngwkqsqa schema?
+  - Is the purpose line one tight sentence with a specific verb (not "handles", "manages",
+    "deals with")?
+  If sub-dimension cycle finds anything → apply edits → log findings
 ```
 
 Each agent returns: per-skill edit log with dimension tags, final matter score, stuck
@@ -141,7 +175,7 @@ dimensions, techniques that did/didn't move the score, and a completed
 
 **Per-skill history file — written by each agent as it finishes each skill:**
 
-Path: `/home/user/accent-os/skills/[skill-name]/optimization-history.md`
+Path: `/home/user/accent-os/skills/<skill-name>/optimization-history.md`
 
 If the file already exists, append a new run block. If it does not exist, create it.
 
@@ -248,6 +282,16 @@ Before updating run-log.md, confirm every skill in scope has an `optimization-hi
 with an entry for this run. If any are missing (agent crash, edit collision), write them
 now from the collected agent results. Never proceed to Step 6 with incomplete history files.
 
+**Output artifact — history file verification (emit before Step 6):**
+```
+HISTORY FILE VERIFICATION  [date]
+Skill                     history written?  final score
+analysis-snapshot         yes               100
+kpi-data-audit            yes               100
+...
+Missing (will write now): [list or "none"]
+```
+
 ---
 
 ## Step 6 — Update run-log.md
@@ -282,9 +326,11 @@ Append to `/home/user/accent-os/skills/skill-optimizer/run-log.md`:
 
 #### END-OF-RUN REVIEW
 
-Technique Leaderboard (for next run's priority moves):
-1. [technique] — [total delta points contributed]
-2. ...
+Technique Leaderboard (for next run's priority moves — ordered by hit-rate, not raw points):
+| Rank | Technique | Hit-rate (moved/applied) | Total pts contributed |
+|---|---|---|---|
+| 1 | Add concrete output artifact block | 47/47 = 100% | 470 |
+| 2 | ... | ... | ... |
 
 Fleet final scores:
   Skill                  Score
@@ -315,11 +361,19 @@ Source: Run [date], skills [list]
 
 Only write new rules; never duplicate existing ones.
 
+**Output artifact — learning-notes update (emit after writing):**
+```
+LEARNING-NOTES UPDATE  [date]
+New RULE entries written: [N]
+  - RULE: [first line of each new rule]
+Skipped (already existed): [N]
+```
+
 ---
 
 ## Step 8 — Combined cross-round review
 
-After all rounds in the session complete, output:
+After all rounds in the session complete, emit this output artifact:
 
 ```
 ══════════════════════════════════════════
@@ -353,8 +407,12 @@ Commit pushed: [SHA]
 
 ## Step 9 — Commit and push
 
-Stage all modified SKILL.md files, all `optimization-history.md` files,
-`run-log.md`, and `learning-notes.md`. Commit with:
+Stage all modified files in this order:
+- All modified `SKILL.md` files: `git add skills/*/SKILL.md`
+- All `optimization-history.md` files (new and updated): `git add skills/*/optimization-history.md`
+- The optimizer's own files: `git add skills/skill-optimizer/run-log.md skills/skill-optimizer/learning-notes.md skills/skill-optimizer/optimization-history.md`
+
+Commit with:
 
 ```
 chore(skills): optimizer run [date] — fleet avg [before]→[after]
@@ -367,16 +425,25 @@ Residual gaps: [skill list if any, else "none"]
 
 Push to current branch. Never push to main.
 
+**Output artifact — commit confirmation (emit after push):**
+```
+COMMIT COMPLETE  [date]
+SHA: [git short SHA]
+Branch: [branch]
+Files staged: [N SKILL.md] + [N optimization-history.md] + run-log.md + learning-notes.md
+```
+
 ---
 
 ## Anti-patterns
 
-- Never run Step 2 (spawn agents) before reading the run-log priority moves — that's the whole point of the learning loop.
-- Never mark a skill DONE at matter score < 100 without explicitly logging the stuck dimensions in run-log.md — silent failures accumulate and block future improvement.
-- Never count a stylistic change (contraction normalization, "Stolen from" → "Origin") as a score-moving technique — it inflates the leaderboard with noise.
-- Never apply the same technique twice on the same dimension in the same cycle — if it didn't move the score the first time, log it and move on.
-- Never skip updating learning-notes.md — this is the mechanism by which the optimizer gets smarter across sessions; skipping it resets all learned constraints.
-- Never spawn more than 6 agents in parallel — beyond 6, coordination overhead exceeds parallelism gain and edit conflicts increase.
+- Never run Step 2 (spawn agents) before reading run-log.md priority moves and computing hit-rates — skipping this caused 24 wasted contraction-removal edits in the 2026-05-07 run because the low-ROI technique wasn't filtered out before agents started.
+- Never mark a skill DONE at matter score < 100 without explicitly logging the stuck dimensions in run-log.md — silent gaps accumulated across runs on bc-business-review and schema-contract-tests until the sub-dimension cycle surfaced them.
+- Never apply contraction removal ("doesn't" → "does not") or "Stolen from" → "Origin" rewrites as optimizer techniques — these produced 0 matter-score delta across all 38 applications in the 2026-05-07 run and inflate the leaderboard with noise.
+- Never apply imperative-voice rewrites (M7) when that skill's M7 already scores 10 — 53% miss rate in 2026-05-07 because remaining passive constructions are inside fenced code blocks or section headers, which are correct-as-is.
+- Never flag `[placeholder]` text inside a fenced code block as an M10 failure — fenced blocks are illustrative templates; 9 false M10 failures were logged in 2026-05-07 by scanning inside fences.
+- Never skip updating learning-notes.md — this is the mechanism by which the optimizer gets smarter across sessions; skipping it resets all learned constraints and forces re-discovery of already-known failures.
+- Never spawn more than 6 agents in parallel — in the 2026-05-07 run, Group 5 with 8 skills generated edit conflicts and required more retry loops than Group 4 with 5 skills.
 - Never commit without running Step 6 (run-log update) first — a commit with no log entry loses the learning signal for that run permanently.
-- Never skip writing per-skill optimization-history.md — this is the per-skill memory that shows Michael exactly what changed, why, and whether it worked; a skill with no history file is opaque to future runners.
-- Never overwrite an existing optimization-history.md — always append a new run block so the full lineage is preserved across sessions.
+- Never skip the sub-dimension cycle after binary dimensions converge at 100/100 — the 2026-05-07 Pass 3+4 sub-dimension audit found 115 additional edits (generic anti-patterns, shape-vague outputs, SQL errors) that the binary Ralph loop missed entirely.
+- Never overwrite an existing optimization-history.md — always append a new run block so the full lineage is preserved; overwriting destroys the record of which techniques already failed on that specific skill.
