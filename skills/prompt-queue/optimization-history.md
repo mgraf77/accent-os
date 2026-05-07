@@ -83,3 +83,26 @@ No new changes — all Ralph findings addressed in Cycle 2.
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Step 2 ADD confirmation output literal-shaped | `#N`, `[n]`, `[src]`, `[total queued]` — generic shape labels | Replaced with concrete example: `#3`, priority `3`, source `iOS`, depth `3 ready, 1 waiting` | Cold-read session sees the exact confirmation line to produce |
+| Step 4.5 RESOLVE output literal-shaped | `[N]`, `[P]`, `[W]`, `#N "..."` — generic; particularly `...` for prompt text | Replaced with full concrete RESOLVE block: 5 items evaluated, 2 promoted (with real prompt text), 3 still waiting with condition states | Output now shows real AccentOS prompts (backfill customers.segment, verify deliveries) and real condition values (M30, M27, M28) |
+
+### Pass 2 — Ralph cold-read challenge
+
+No additional changes needed. Step 5 stale-recovery logic is explicit with time thresholds (10 minutes). The `defer_until` resolver table has concrete resolver instructions per condition type. The schema: `SCHEMA_PARSE_UNCERTAIN` note path is clear. PAUSED state explanation is explicit about why auto-pull is blocked.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Step 2 ADD confirmation: all shape labels replaced with concrete example values
+- Step 4.5 RESOLVE output: generic `[N]` / `[W]` / `[P]` / `#N "..."` replaced with full AccentOS-domain example (5 items, real prompt text, real condition states)
+
+---

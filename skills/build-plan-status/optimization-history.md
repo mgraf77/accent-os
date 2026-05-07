@@ -86,3 +86,31 @@ No new changes — all Ralph findings addressed in Cycle 2.
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | "closes the gap between git history and plan state" — correct but understated the specific context | "Reconciles git commit history and SESSION_LOG.md against BUILD_PLAN_CLAUDE.md and BUILD_PLAN_MICHAEL.md markers" — names all 4 files explicitly | Purpose line now names exact files and the specific verb (reconciles) |
+| Trigger phrase "what's actually shipped" split | "what's actually shipped" and "what landed since last update" added as distinct | Retained "what's actually shipped" and added "what landed since last update" | Second phrase covers the time-bounded query form (since last update) which has distinct intent |
+| Trigger phrase "plan drift" + "markers are stale" | "plan drift" alone is a duplicate of the doc-drift trigger | "plan drift" / "markers are stale" — pair makes it more distinct | "markers are stale" is specific to BUILD_PLAN state, not doc-drift |
+| Step 1 git command | `stat -c %y BUILD_PLAN_CLAUDE.md` requires cwd = /home/user/accent-os/ — not stated | Added `cd /home/user/accent-os &&` prefix | New Claude session has cwd reset between calls; explicit cd prevents path failure |
+| Step 5 output BLOCK 2 and BLOCK 3 | `[Step 3 table]` and `[Step 4 commands grouped by file]` were pure reference labels — showed no shape | Replaced with full literal-shaped table (columns: Identifier, Plan marker, Evidence, Drift?) and full Edit command examples with real file paths | Cold-read session can now see the exact output shape without cross-referencing other steps |
+
+### Pass 2 — Ralph cold-read challenge
+
+No additional changes needed. Step 2 evidence table has full column names and example values. Step 3 drift table has correct columns. Step 4 Edit commands show exact `old:` / `new:` line format. Anti-patterns all cite specific AccentOS files. The git command now has explicit working directory.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: named all 4 source files explicitly (git history, SESSION_LOG.md, BUILD_PLAN_CLAUDE.md, BUILD_PLAN_MICHAEL.md)
+- Trigger phrases: added "what landed since last update" and "markers are stale" for distinctness
+- Step 1 git command: added explicit `cd /home/user/accent-os &&` to prevent cwd ambiguity
+- Step 5 output: BLOCK 2 and BLOCK 3 now show full literal-shaped tables and Edit command examples
+
+---

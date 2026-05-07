@@ -85,3 +85,29 @@ No new changes — all Ralph findings addressed in Cycle 2.
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Trigger phrase "document this choice" removed | Near-paraphrase of "log this decision" and "record this call" | Replaced with "why did we choose X" (retroactive capture form) | Covers the retroactive-justification use case: Michael looks back and asks why something was done |
+| Trigger phrase "record this call" replaced | Near-paraphrase of "log this decision" | Replaced with "lock in this approach" / "commit to this architecture" | These phrases signal architectural commitment — a distinct intent from logging an already-made decision |
+| Step 5 output literal-shaped | `decision-NNN`, `[name]`, `[class]`, `[cost]`, `[trigger]`, `[one line]` — all generic shape labels | Replaced with full concrete example: decision-004, auth-model-rls-vs-jwt, architecture, HIGH, real reopen trigger, real worst-case | Cold-read session sees exact output shape and AccentOS-domain example |
+| Step 3 INDEX.md bootstrap added | "create it with the standard header" — standard header not defined anywhere in the skill | Added the exact header template inline: `# AccentOS — Decision Index` + table column row | New Claude session no longer needs to guess what the standard header looks like |
+
+### Pass 2 — Ralph cold-read challenge
+
+No additional changes needed. Step 1 "1-option decision" handling is explicit (ask once, log with note if no alternative). Step 2 reversal cost rubric covers all AccentOS-relevant classes. The HIGH-cost anti-pattern explicitly cites `hsyjcrrazrzqngwkqsqa` and `store-cwqiwcjxes`. The INDEX.md bootstrap template is now fully self-contained.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Trigger phrases: 2 near-duplicate entries replaced with distinct use cases (retroactive capture, architectural commitment)
+- Step 5 output: all shape labels replaced with concrete AccentOS-domain example
+- Step 3: INDEX.md bootstrap template added inline so new Claude session can create the header without guessing
+
+---

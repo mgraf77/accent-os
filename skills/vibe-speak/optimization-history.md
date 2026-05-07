@@ -90,3 +90,26 @@ Note: vibe-speak had the most placeholder instances in the fleet (7) — all out
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | 3-sentence narrative — not a single tight verb | Single sentence: "Compresses Claude's AccentOS session output by stripping filler, jargon, and preamble while keeping code identifiers, file paths, and AccentOS proper nouns byte-exact" | Single verb (compresses), names the specific mechanism and the specific preservation guarantee |
+| Trigger phrases deduplicated | "vibe mode" / "vibe speak" / "vibe on" — all identical intent; "drop the jargon" / "no jargon" / "human mode" / "explain like I'm vibing" / "vibe coder mode" — 5 paraphrases of 1 intent | Reduced to 7 entries covering distinct activations: mode-switch, jargon-strip, length-reduction, explicit-compression, slash-style, explicit-switch form | 7 phrases now cover at least 5 distinct user mental models instead of 3 mental models in 11 phrases |
+
+### Pass 2 — Ralph cold-read challenge
+
+CLEAN — no additional changes needed. Step 1 reads 7 files in defined order with explicit missing-file handling per state table. Step 7 auto-disengage rules are numbered 1-12 with concrete trigger patterns. Rule 11 cites `hsyjcrrazrzqngwkqsqa`. Step 12 accuracy gate has 5 explicit checks with "action if fails" column. Step 19 mode catalog is complete. Anti-patterns cover 20 specific failure modes with AccentOS identifiers.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: 3-sentence narrative collapsed to 1 tight sentence with specific verb (compresses) and specific guarantees
+- Trigger phrases: 11 entries (with heavy overlap) reduced to 7 entries covering ≥5 distinct user mental models
+
+---

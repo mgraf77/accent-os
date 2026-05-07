@@ -88,3 +88,29 @@ No new changes — all Ralph findings addressed in Cycle 2
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line rewritten | Generic "keep building until exit condition triggers" — vague verb | "Runs the AccentOS work loop autonomously — committing items from BUILD_PLAN_CLAUDE.md or PROMPT_QUEUE.md, checking exit criteria between commits, and persisting state so the next session resumes exactly where this one stopped" | Purpose line now names specific verb (runs), specific files, and specific behavior |
+| Trigger phrase "stepping away, [scope]" replaced | `[scope]` placeholder read as format token, not as an example — confusing to new session | "stepping away — build Track 5.7 while I'm gone" (stepping-away + inline scope form) | Removed bracket placeholder; literal example shows scope-inline pattern |
+| Trigger phrases "work while I'm gone" / "work until I'm back" replaced | Near-paraphrases of each other and of "going to lunch / bed" triggers | "work through the build plan without stopping" / "build autonomously until I get back" | New phrases cover distinct intents: plan-walk + explicit autonomy signal |
+| Step 6 output block literal-shaped | All 5 fields used generic `[field]` labels — new Claude session couldn't verify shape | Replaced with concrete example: actual scope string, time bound, exit criteria, commit/token estimate, file path | Every field now shows a realistic value; substitution note added |
+
+### Pass 2 — Ralph cold-read challenge
+
+No additional changes needed. Step 0 parse table, Step 2 JSON shape, Step 5 exit summary, and anti-patterns all have concrete fallbacks or examples. The `if ambiguous about scope OR exit criteria, ask one clarifying question` rule covers the main ambiguity path. Step 4 work loop `etc.` reference acceptable since it cross-references skills covered in Composability section.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: generic "keep building" verb → specific "runs the work loop, committing, checking exit criteria, persisting state"
+- Trigger phrases: 2 near-duplicate pairs replaced with distinct coverage
+- Step 6 output: all fields now show concrete example values with substitution note
+
+---

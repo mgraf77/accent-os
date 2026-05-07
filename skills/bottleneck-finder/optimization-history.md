@@ -85,3 +85,31 @@ No new changes — all Ralph findings addressed in Cycle 2.
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Purpose line: stale counts removed | "AccentOS has 22 pending M-tasks and 10 open tracks" — hardcoded counts that drift as the build progresses | Replaced with "AccentOS's open BUILD_PLAN_CLAUDE.md tracks and BUILD_PLAN_MICHAEL.md M-tasks" — file-relative, always accurate | Hardcoded counts become false within weeks; file reference stays accurate permanently |
+| Trigger phrase "priority analysis" removed | Near-paraphrase of "leverage analysis" — same intent, different word | Replaced with "which M-task is blocking everything" | New phrase is query-specific and distinct from all other triggers |
+| Trigger phrase "where's the build stuck" extended | "where's the build stuck" covers blocked-progress but "why isn't the build moving" is a distinct angle | Added "/ why isn't the build moving" as alt form | Covers the "nothing seems to be progressing" phrasing vs "I know it's stuck, where?" |
+| Step 1 fallback for missing files | `project-profiles.md` had no fallback — silent missing file would skip capability gap data | Added explicit fallback: "if missing, skip; log 'project-profiles.md not found — capability gap data unavailable'" | New Claude session would not know to continue without the file; now has explicit instruction |
+| Step 6 BLOCK 1 and BLOCK 2 | BLOCK 1 had `[N]` and `[from WORK_IN_PROGRESS]`; BLOCK 2 said `[Step 4 table]` | BLOCK 1 now shows concrete state line; BLOCK 2 shows full table with M04/M05/M11 examples and cycle_warning example | Cold-read session sees exact output shape without needing to find Step 4 |
+
+### Pass 2 — Ralph cold-read challenge
+
+No additional changes needed. Step 2 dependency-graph rules have concrete examples (M04, M05, M06, M09 as API credential dependencies; M24-M29 as schema dependencies). Step 3 cycle detection rule is explicit. Step 5 `elevation_only: true` fallback handles the "no genuine exploit" path. All anti-patterns cite specific AccentOS failure modes.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Purpose line: removed stale hardcoded M-task and track counts; replaced with file-relative references that age gracefully
+- Trigger phrases: "priority analysis" replaced with "which M-task is blocking everything" (distinct intent)
+- Step 1: added explicit fallback for missing project-profiles.md
+- Step 6 output: BLOCK 1 and BLOCK 2 now show concrete example values including cycle_warning example
+
+---

@@ -92,3 +92,29 @@ Note: Largest single-skill gain in the fleet (+60 from 40 → 100).
 **Stuck dimensions:** none
 
 ---
+
+## Run 2026-05-07 (Pass 3+4)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (all dimensions passing from prior run)
+
+### Pass 1 — Deep quality audit
+
+| Change | What was weak | What it became | Reasoning |
+|---|---|---|---|
+| Trigger phrase "what's inefficient" replaced | Near-paraphrase of "efficiency report" | Replaced with "what's been repeated this session" | Names the specific pattern type (repetition) that efficiency-monitor tracks — distinct from "what's inefficient" which is broad |
+| Trigger phrase "what patterns do you see" replaced | Near-paraphrase of "show efficiency flags" | Replaced with "what patterns should become a skill" | Covers the skill-promotion intent specifically — distinct from viewing raw flags |
+| Boot output format literal-shaped | Used `[signal]`, `[count]`, `[one-line]`, `[pattern]`, `[N sessions]` — generic labels | Replaced with concrete example: actual signal types, actual counts, actual paths, bc-business-review skill as bypass example | Boot output now shows exact rendering a new Claude session can match |
+| efficiency-log.md format literal-shaped | `[detail]`, `[step1 → step2 → step3]`, `[description]`, `[skills/_index.md entry...]` — all generic | Replaced with full concrete session entry: real timestamp, shortsha, specific file name, specific skill bypass with trigger phrase | New Claude session sees exactly what to write to efficiency-log.md |
+
+### Pass 2 — Ralph cold-read challenge
+
+No additional changes needed. Step 1 scratch format has concrete examples. Step 2d aggregator invocation is explicit (`bash /home/user/accent-os/scripts/efficiency-aggregate.sh`). Step 3 promotion ladder is clear. The skill-bypass flag rule "must cite the exact `skills/_index.md` entry" is already in both the hard rules and anti-patterns sections.
+
+### Net matter score change: 100 → 100
+
+### Sub-dimension improvements:
+- Trigger phrases: 2 near-duplicate pairs replaced with intent-specific alternatives
+- Boot output: generic labels replaced with concrete example (actual signal names, counts, and bc-business-review bypass)
+- efficiency-log.md format: all generic shape labels replaced with concrete session entry example
+
+---
