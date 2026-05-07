@@ -30,13 +30,15 @@ description: >
   /vibe reset, /vibe set default mode [name], /mode list, /mode current,
   /mode [name]. Auto-disengages to vibe mode for security warnings,
   irreversible actions, Supabase SQL output, multi-step ordered sequences.
+  Always translates jargon on output and keeps hard-keep identifiers
+  byte-exact — never drops facts to hit a word-count target.
 ---
 
 # vibe-speak
 
 **Purpose:** Caveman-style token savings for Michael's AccentOS sessions, but in native conversational English instead of broken grunt speech. The same compression principles — drop filler, drop preamble, drop pleasantries — applied through a vibe-coder lens that also strips coding jargon. Output should read like a smart friend who happens to know the stack, not a CS textbook.
 
-Stolen from: [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (token-cutting skill, 5-level intensity model, hard-keep list for code identifiers, Wenyan-style classical compression idea) + AccentOS skill-forge (gotcha-log self-optimization pattern). Reworked for native English, per-user calibration, and adaptive learning across sessions. Adjacent to the AccentOS CLAUDE.md rule "no narration between steps — action and result only."
+Origin: JuliusBrussee/caveman (token-cutting skill, 5-level intensity model, hard-keep list for code identifiers, Wenyan-style classical compression idea) + AccentOS skill-forge (gotcha-log self-optimization pattern). Reworked for native English, per-user calibration, and adaptive learning across sessions. Adjacent to the AccentOS CLAUDE.md rule "no narration between steps — action and result only."
 
 ---
 

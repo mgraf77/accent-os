@@ -49,7 +49,7 @@ Fetch the SKILL.md and any `references/*.md`, scripts, or assets in the same dir
 
 ---
 
-## Step 2 — Permissions audit
+## Step 2 — Audit permissions
 
 For each tool the skill invokes (visible from SKILL.md mentions of Bash/Edit/Write/WebFetch/WebSearch/MCP-tool patterns), classify:
 
@@ -66,7 +66,7 @@ For each HIGH-risk permission, the SKILL.md must explicitly justify the use. If 
 
 ---
 
-## Step 3 — Code-pattern risks
+## Step 3 — Scan for code-pattern risks
 
 Scan the skill content for these patterns. Each match is a risk flag:
 
@@ -83,7 +83,7 @@ Scan the skill content for these patterns. Each match is a risk flag:
 
 ---
 
-## Step 4 — Author reputation
+## Step 4 — Assess author reputation
 
 For GitHub-sourced skills:
 - Account age
@@ -98,7 +98,7 @@ For plugin-marketplace skills:
 
 ---
 
-## Step 5 — Skill-quality signals
+## Step 5 — Check skill-quality signals
 
 Apply the same Step 7.5 validation that skill-forge runs on its own outputs:
 
@@ -111,7 +111,7 @@ A community skill that fails these is a quality risk, not a safety risk — but 
 
 ---
 
-## Step 6 — Verdict
+## Step 6 — Assign verdict
 
 Based on Steps 2–5:
 
@@ -125,7 +125,7 @@ For REJECT, propose an alternative: "Re-forge this concept yourself via skill-fo
 
 ---
 
-## Step 7 — Output
+## Step 7 — Format output
 
 ```
 ═══ BLOCK 1: VERDICT ═══
