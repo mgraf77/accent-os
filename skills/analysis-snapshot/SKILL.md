@@ -36,13 +36,13 @@ Run this skill when Michael says anything like:
 - "preserve this"
 - "save it as [name]"
 
-Also fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run where the result clearly has re-runnable value (a recurring report shape, a diagnostic that'll be needed again, a query Michael spent time refining).
+Fire automatically (with confirmation) after any vendor-cascade or supabase-sql-magic run where the result clearly has re-runnable value (a recurring report shape, a diagnostic that'll be needed again, a query Michael spent time refining).
 
 ---
 
 ## Step 1 — Confirm re-runnable value
 
-Before writing any file, confirm the analysis has re-run value. Skip this skill (and tell Michael) when:
+Before writing any file, confirm the analysis has re-run value. Skip this skill (and tell Michael why) when:
 - The analysis was a one-time investigation that won't recur
 - The result is already captured by an existing AccentOS module
 - It's a code change (use git) or a doc change (use the root docs)
@@ -60,7 +60,7 @@ Pull from the current conversation context:
 - **Reasoning pattern** — if Claude did interpretation, capture the steps as bullets
 - **Output shape** — what format the result took (table, list, single number)
 
-If any component is missing from context (rare), ask Michael for it once. Do not invent.
+If any component is missing from context (rare), ask Michael for it once — never invent.
 
 ---
 
@@ -74,7 +74,7 @@ Generate the filename: `snapshot-NNN-[kebab-name].md`
   - `snapshot-002-gmc-missing-images-by-brand.md`
   - `snapshot-003-deal-velocity-by-trade-partner.md`
 
-If Michael said "save it as [name]", use that name (kebab-cased). Otherwise infer from the originating prompt.
+If Michael said "save it as [name]", use that name (kebab-cased). Otherwise, infer from the originating prompt.
 
 ---
 

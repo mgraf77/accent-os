@@ -13,7 +13,7 @@ description: >
   scoring audit. Do not use for full vendor-rank explanation (that's
   vendor-cascade) or for redesigning rules (that's priority-articulation).
   Always produces a 5-row consistency table plus a pass/fail summary
-  — never returns prose-only.
+  — never returns prose-only analysis, never auto-fixes detected drift.
 ---
 
 # vendor-clarity-test
@@ -34,7 +34,7 @@ Run when Michael says:
 - "scoring sanity check"
 - "are scores explainable"
 
-Also fire as a sanity gate after any priority-articulation or vendor-cascade run that adjusted weights.
+Fire also as a sanity gate after any priority-articulation or vendor-cascade run that adjusted weights.
 
 ---
 
@@ -81,7 +81,7 @@ Parse `override_reason` to extract the cited reason → call this the **noted dr
 - Find the "Accent Lighting" section's "Known capability gaps" + any priority articulations from priority-articulation outputs
 - Map the vendor's mathematical #1 metric back to which stated priority it serves → call this the **priority driver**.
 
-If any view is empty (no overrides exist, no priority maps), record `(empty)` and continue.
+If any view is empty (no overrides exist, no priority maps), record `(empty)` and continue — do not abort.
 
 **Pre-check (View A):** if `vendor_scores` is empty for all 5 sampled vendors — i.e. no scoring has run yet — abort and output: "No vendor scores computed yet. Run vendor-cascade or the AccentOS scoring engine first, then re-run vendor-clarity-test." Redirect, not failure.
 

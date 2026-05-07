@@ -22,14 +22,16 @@ description: >
   mid-flow, or for any external-API call with billing implications
   without explicit pre-approval. Always writes mode state + scope +
   exit criteria to disk before beginning — never starts autonomously
-  without a recorded plan.
+  without a recorded plan. Always writes mode state + scope +
+  exit criteria before beginning any work — never executes
+  autonomously without a recorded, disk-persisted plan.
 ---
 
 # autonomous-mode
 
 **Purpose:** Let Michael walk away with a clear directive and have AccentOS keep building until the directive's exit condition triggers — without losing state, without overspending tokens, without making owner-only calls in his absence.
 
-Stolen from: Anthropic's own "agent loop" pattern + Claude Code's existing PROMPT_QUEUE convention. AccentOS-customized for solo-build resilience and explicit exit criteria.
+Origin: Anthropic's "agent loop" pattern + Claude Code's existing PROMPT_QUEUE convention. AccentOS-customized for solo-build resilience and explicit exit criteria.
 
 ---
 

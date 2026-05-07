@@ -40,9 +40,9 @@ Run when Michael says:
 - "what can we compute today"
 - "KPI feasibility audit"
 
-Also fire automatically (with confirmation) after any commit that modifies `/home/user/accent-os/KPI_CATALOG.md` or any `/home/user/accent-os/sql/M*.sql` — the audit results may change.
+Fire automatically (with confirmation) after any commit that modifies `/home/user/accent-os/KPI_CATALOG.md` or any `/home/user/accent-os/sql/M*.sql` — the audit results may change.
 
-**Recommended cadence:** run on demand whenever an M-task lands (schema or integration), and at minimum monthly to detect drift between catalog state and live schema. Coverage trend (% computable today) is the headline metric to watch — it should rise as M-tasks complete.
+**Recommended cadence:** Run on demand whenever an M-task lands (schema or integration), and at minimum monthly to detect drift between catalog state and live schema. Coverage trend (% computable today) is the headline metric to watch — it should rise as M-tasks complete.
 
 ---
 
@@ -100,9 +100,9 @@ Source types and how to detect:
 - `derived` — formula mentions only other KPI IDs (e.g. F11 = `F8 + F10 − F9`)
 - `manual_capture` — formula references foot-traffic counter, survey, timekeeping, cycle count, install record, phone integration
 
-**Informal-formula handling.** Catalog formulas may be informal (`SUM(deals × qty) WHERE completed` rather than fully-qualified column references). For each KPI with an informal formula, infer the likely columns from context — a `deals` revenue formula needs `deals.unit_price` (or equivalent), `deals.quantity`, `deals.status`, plus any GROUP BY columns. If the inference is ambiguous (≥2 plausible column sets), flag the KPI as `AMBIGUOUS_FORMULA` in the output and recommend catalog refinement. Do not silently guess.
+**Informal-formula handling.** Catalog formulas may be informal (`SUM(deals × qty) WHERE completed` rather than fully-qualified column references). For each KPI with an informal formula, infer the likely columns from context — a `deals` revenue formula needs `deals.unit_price` (or equivalent), `deals.quantity`, `deals.status`, plus any GROUP BY columns. If the inference is ambiguous (≥2 plausible column sets), flag the KPI as `AMBIGUOUS_FORMULA` in the output and recommend catalog refinement. Never silently guess.
 
-Use the explicit ⚠ markers in the catalog as a strong hint that a variable is missing. The skill verifies independently rather than trusting the marker blindly.
+Use the explicit ⚠ markers in the catalog as a strong hint that a variable is missing. Verify independently — never trust the marker blindly.
 
 Output of Step 2: a list of `(kpi_id, source_type, descriptor)` tuples — typically 200–400 across the full catalog — plus a separate list of `AMBIGUOUS_FORMULA` KPIs needing catalog refinement.
 

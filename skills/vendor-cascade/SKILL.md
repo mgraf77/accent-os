@@ -17,7 +17,7 @@ description: >
 
 # vendor-cascade
 
-**Purpose:** Make AccentOS vendor scores explainable end-to-end. Every score component must trace back to a named Accent Lighting priority. Anything that doesn't is an orphan — flag it.
+**Purpose:** Make AccentOS vendor scores explainable end-to-end. Every score component must trace back to a named Accent Lighting priority. Anything that does not is an orphan — flag it.
 
 Forged from: `alirezarezvani/claude-skills` `c-level-advisor/strategic-alignment` (cascade pattern only — board reporting wrapper dropped).
 
@@ -35,7 +35,7 @@ Run this skill when Michael says anything like:
 - "sum-check the weights"
 - "where does this score come from"
 
-Also trigger when Michael questions a specific vendor's rank or asks for score explainability for a partner/board/owner.
+Trigger also when Michael questions a specific vendor's rank or asks for score explainability for a partner/board/owner.
 
 ---
 
@@ -46,7 +46,7 @@ Read Accent Lighting's active priorities from one of these in order:
 2. `/home/user/accent-os/MASTER.md` → search for "priority" / "Q4" / "margin"
 3. Michael's stated input in the current prompt
 
-If no priorities are explicit, ask Michael for the top 3–5 active priorities. Do not invent them.
+If no priorities are explicit, ask Michael for the top 3–5 active priorities — do not invent them.
 
 Output a numbered priority list:
 
@@ -132,7 +132,7 @@ P2 — GMC compliance          weights sum: 0.85   ✗ underweighted by 0.15
 P3 — Stockout reduction      weights sum: 1.20   ✗ overweighted by 0.20
 ```
 
-For any drift, propose a redistribution that brings the priority back to 1.0 — but do not apply it. This skill is trace-only.
+For any drift, propose a redistribution that brings the priority back to 1.0 — do not apply it. This skill is trace-only.
 
 ---
 
