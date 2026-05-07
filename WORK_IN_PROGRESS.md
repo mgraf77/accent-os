@@ -1,37 +1,44 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-06 — session end · efficiency-monitor v1 shipped (always-on observer)
-**Current task:** —
-**Step:** Tree clean on `claude/always-on-efficiency-monitor-2LiuS`. New always-on skill `efficiency-monitor` shipped — silent in-session observer, surfaces flags only at session boundaries. Awaiting first real session to populate `efficiency-log.md`.
+**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
+**Resume trigger:** "continue last session"
 
-**Recent shipped (this session):**
-- `skills/efficiency-monitor/` — SKILL.md, `_thresholds.md` (tunable), `efficiency-log.md` (append-only ledger), `skill-candidates.md` (auto-rebuilt with semantic-diff suppression), `session-end-summary.md` (next-boot consumer)
-- `scripts/efficiency-aggregate.sh` — Stop-hook aggregator with cross-session counts + promotion ladder + timestamp-only-diff suppression
-- `.claude/settings.json` — Stop hook wired (runs aggregator → `_aggregator.log`, gitignored)
-- `.claude/CLAUDE.md` — boot step 1.j (replay last summary) + wrap-up step 8 (write findings, batched into session-end commit)
-- `skills/_index.md` — efficiency-monitor entry registered (companion: skill-forge, vibe-speak)
-- Reliability hardening: `_session-scratch.md` (gitignored mid-session journal) makes tracking crash-safe
-- Project hygiene: PROMPT_LOG entry, WIP refresh, SESSION_LOG entry
+---
 
-**Files touched:** `skills/efficiency-monitor/*`, `scripts/efficiency-aggregate.sh`, `.claude/{CLAUDE.md, settings.json}`, `.gitignore`, `skills/_index.md`, `PROMPT_LOG.md`, `WORK_IN_PROGRESS.md`, `SESSION_LOG.md`.
+## CONTEXT
+- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
+- Hit CORS blocking api.anthropic.com from browser
+- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
+- All 4 fetch calls in `index.html` now point at the worker
+- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
 
-**Commit chain:** 508a27c (build) → db533b2 (gitignore + aggregator output committed) → 74adbb5 (semantic-diff suppression) → final (project hygiene + crash-safe scratch journal).
+## CURRENT BUG
+"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
+```
+POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
+[aiParseNotes] JSON parse error
+```
+`sessionStorage['aos-api']` key IS set.
 
-**Branch status:** `claude/always-on-efficiency-monitor-2LiuS` pushed to origin. NOT merged to main.
+## NEXT STEPS PENDING
 
-**Next step if interrupted:**
-1. Verify tree clean: `git status`
-2. Open PR or merge `claude/always-on-efficiency-monitor-2LiuS` → main when Michael approves
-3. First "real" session will exercise: scratch journaling during work → wrap-up read+clear → aggregator on Stop → boot replay next session
+**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
+```js
+fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
+```
+- Old code → returns Anthropic auth error
+- New code → returns `{"error":"Missing x-api-key header"}`
 
-**Watchlist (will fill as the skill runs in real sessions):**
-- Does Claude reliably journal to `_session-scratch.md` mid-session? (the Path A reliability question)
-- Do skill-bypass flags actually catch real bypasses, or fire false positives?
-- First PROMOTE-status candidate → handoff to `skill-forge`
+If old code is still live, redeploy needed in local terminal (NOT codespace):
+```
+cd C:\Users\Michael\Desktop\accent-os
+git pull origin main
+wrangler deploy
+```
 
-**Other backlog (unchanged from prior WIP):**
-- AccentOS module: MODULE_REGISTRY refactor, Saved Filter Sets verify, Bulk action bars wiring, Compact-view toggle
-- M30 SQL: `user_module_overrides` table — when Michael wants real cross-device per-user Module Modes gating
-- 6.x integrations: blocked on M03/M04/M05/M06/M09/M10/M18
-- vibe-speak: claude.ai history export → corpus import expansion
+**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+
+**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+
+Pick up from step 1.
