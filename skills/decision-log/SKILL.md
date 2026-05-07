@@ -73,7 +73,14 @@ If the class is HIGH, also capture:
 
 ## Step 3 — Name and write the decision file
 
-If `/home/user/accent-os/decisions/` does not exist, create it (`mkdir -p`). If `decisions/INDEX.md` does not exist, create it with the standard header before appending.
+If `/home/user/accent-os/decisions/` does not exist, create it (`mkdir -p`). If `decisions/INDEX.md` does not exist, create it with this header before appending:
+
+```markdown
+# AccentOS — Decision Index
+
+| NNN | name | date | class | reversal | reopened? |
+|-----|------|------|-------|----------|-----------|
+```
 
 Filename: `decision-NNN-[kebab-name].md` in `/home/user/accent-os/decisions/`.
 
