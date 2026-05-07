@@ -49,4 +49,16 @@ If >50% shipped scores are 85–87, recommend tightening (rubric too forgiving).
 
 ## Entries
 
-_(none yet — first run will append here)_
+### forge-001 — 2026-05-07 19:18 — session-end-forge — FINAL
+- session-signature: build & iteratively extend session-end-forge SKILL.md across 3 spec rounds, then dogfood with 2 ralph passes
+- occurrences-this-session: 3
+- pass-1-score: 83/100 → 94/100 (post-fix, 5 perspective fixes applied)
+- pass-2-score: 89/100 → 93/100 (post-fix, top-3 agent fixes applied)
+- final-score: 93/100
+- passes-run: 2
+- rounds-requested: 0 (Michael requested exactly 2 passes — no "another round?" gate fired)
+- portable-variant: n/a (Step 8 skipped — Step 1 aborted before reaching it)
+- optimization-review-summary: 1 skill invoked (session-end-forge dogfood), 0 bypasses, 3 process improvements (PROMPT_LOG gap, Edit-after-Write drift, ralph fast-path)
+- outcome: aborted_duplicate (session signature matched session-end-forge itself — extending the existing skill was the right move; the 3 commits in this session are the extensions)
+- skill-path: skills/session-end-forge/ (the skill that this session built — already shipped via commits 80f926c → 94ab3a9 → 67178d3)
+- commit: 67178d3 (last optimization-pass commit; this entry's wrap-up commit will follow)

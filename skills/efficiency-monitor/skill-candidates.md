@@ -13,11 +13,14 @@
 
 ---
 
-_Last aggregated: 2026-05-06 03:11 UTC · 0 session(s) in log_
+_Last aggregated: 2026-05-07 19:18 UTC · 1 session(s) in log_
 
 ## Active candidates
 
-_(none yet — no recurring sequences logged)_
+- **CANDIDATE** — `SKILL.md change → skills/_index.md update → .claude/CLAUDE.md update → commit + push`
+  - sessions: 1 · occurrences: 3 · est. saved if skill existed: 6.0 min
+- OBSERVED — `ralph perspective walk → score → fix Edits → re-score`
+  - sessions: 1 · occurrences: 2 · est. saved if skill existed: 4.0 min
 
 ## Skill-bypass watchlist
 
