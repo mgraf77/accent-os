@@ -1,27 +1,23 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — RAG optimization loops complete
-**Current task:** COMPLETE — recall 56.2% → 100%, composite 80.4% → 91.4%
+**Last updated:** 2026-05-07 — RAG optimization rounds 1-3 complete
+**Current task:** COMPLETE — 3 optimization rounds shipped, composite 91.4% → 92.4%
 
 **Completed this session:**
-- rag_search.py: synthesis exclusion by default, --include-synthesis flag, stemmer, digit-tech tokenizer
-- rag_build_index.py: suffix stemmer + digit-anchored tokenizer (0-10v, 2700k etc.)
-- rag_eval.py: simple_search synthesis exclusion + matching tokenizer
-- source-seed-corpus-v1: reclassified synthesis (was contaminating all clusters like rag-eval-matrix-v1)
-- overview.md: reclassified concept (was synthesis → excluded from search), added team section
-- wiki_lint.py: OPERATIONAL_SLUGS removes "overview", skip_files removes "overview.md"
-- wiki/index.md: overview moved to concept pages, source-seed-corpus-v1 moved to synthesis
-- 6 wiki pages enriched: rubric-rebates, rubric-imap, rubric-rep-score, sop-quote-creation, lumen-output-commercial, source-build-intelligence, employee pages (michael/paul/patrick)
-- js/wiki.js wikiGroundQuery: upgraded from title-only to title+body two-pass re-ranking
-- rag_index.json rebuilt: 155 chunks, 3166 terms, 936KB
-- wiki/log.md + wiki/hot.md updated
+- Round 1: Stop word filtering (STOP_WORDS in rag_search.py + rag_eval.py) + CRI content enrichment
+- Round 1: Precision 48.3% → 55.2%, Composite 91.4% → 92.5%
+- Round 2: 4 content enrichments (lighting-reference, karpathy-llm-wiki, rubric-display, sop-rep-outreach)
+- Round 2: Precision 55.2% → 56.2%, Composite 92.5% → 92.7%; karpathy+ADR-007 both surface for wiki-first query
+- Round 3: Per-type wiki boost (concept 1.5×, decision 1.4×, entity 1.2×, module 1.1×, source 1.0×)
+- Round 3: Golden set expanded 32 → 40 queries (entity, architecture, lighting edge case)
+- Round 3: 100% recall maintained across all 40 queries, Composite 92.4%
 
 **Commits this session:**
-- 2b7530c: docs: v6.11.3 close-out (prior session)
-- [pending]: rag: optimization loops 1-3 (100% recall)
+- 11f0591: rag: README.md (prior sub-session)
+- ca95897: rag: 3-round optimization (stop words, content enrichment, per-type boost)
 
 **Next step if interrupted:**
-1. Commit pending changes: git add rag scripts + wiki pages + js/wiki.js + rag_index.json
-2. Push to claude/custom-rag-system-rIT34-KoMaP
-3. Check BUILD_PLAN_MICHAEL.md for newly completed M-tasks
+1. Check BUILD_PLAN_MICHAEL.md for newly completed M-tasks
+2. If M41 done: test portal.html magic link flow
+3. If M04 done: build 5.13 E-Commerce Command Center

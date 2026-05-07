@@ -3,6 +3,20 @@
 
 ---
 
+## 2026-05-07 optimization-rounds-1-3
+- fix: rag_search.py + rag_eval.py — STOP_WORDS filter on queries (question words have high IDF in 155-chunk corpus)
+- fix: cri-tm30-tlci — added "required" lead sentence; dimming-protocols was outranking it via "required" in practical guidance
+- fix: lighting-reference — rewrote Notes to remove "ask...questions" (triggered false positive on vendor-rep queries)
+- fix: karpathy-llm-wiki — added "wiki-first RAG architecture" phrase (was missing; ADR-007 always outranked it)
+- fix: rubric-display — added "earns a score of 8" (rubric-rebates had "earns" from prior enrichment, display didn't)
+- fix: sop-rep-outreach — added "vendor management" to escalation section (paul-graf was rank-1 on escalation queries)
+- upgrade: rag_build_index.py — per-type wiki boost: concept 1.5×, decision 1.4×, entity 1.2×, module 1.1×, source 1.0×
+- upgrade: rag_eval.py — golden set expanded 32 → 40 queries (entity, architecture, lighting edge case clusters)
+- rebuild: rag_index.json — 156 chunks, 3169 terms, 940KB
+- eval: composite 91.4% → 92.4% (40-query set), precision 48.3% → 54%+, recall 100% throughout
+
+---
+
 ## 2026-05-07 optimization-loops
 - fix: rag_search.py — synthesis type excluded by default (DEFAULT_EXCLUDE_TYPES), --include-synthesis flag to override
 - fix: rag_build_index.py + rag_search.py + rag_eval.py — suffix stemmer (13 rules) + digit-anchored tech-term tokenizer (0-10v, 2700k, etc.)

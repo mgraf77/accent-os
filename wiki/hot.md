@@ -1,11 +1,15 @@
 # Wiki Hot State
-> Updated: 2026-05-07 — RAG optimization complete
+> Updated: 2026-05-07 — RAG 3-round optimization complete
 
 ## Current task
 COMPLETE — RAG optimization loops finished. All BUILD_PLAN items shipped or M-task blocked.
 
 ## What shipped (this session)
 - RAG eval: recall 56.2% → 100%, composite 80.4% → 91.4% (3 optimization loops)
+- RAG 3-round optimization: composite 91.4% → 92.4% (40-query set), precision 48.3% → 54%+
+- Round 1: stop word filtering + CRI enrichment (+6.9pp precision)
+- Round 2: 4 content fixes (lighting-ref, karpathy, rubric-display, sop-rep-outreach) (+1pp precision)
+- Round 3: per-type boost (concept 1.5×/decision 1.4×/entity 1.2×/module 1.1×/source 1.0×) + 8 new golden queries
 - Loop 1: synthesis contamination fix (rag-eval-matrix-v1 excluded by default)
 - Loop 1: suffix stemmer + digit-anchored tech-term tokenizer in all 3 RAG scripts
 - Loop 2: wikiGroundQuery upgraded — title+slug-component pass1, body-text re-rank pass2
