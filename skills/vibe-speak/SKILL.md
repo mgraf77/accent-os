@@ -558,7 +558,7 @@ The skill listens for signals in Michael's messages and Claude's own behavior. W
 | **correction** | Override command OR input matches "tighter" / "shorter" / "looser" / "more detail" / "stop translating X" / "use X instead" | Apply now | Feedback-log: write **immediately in this turn** via the Edit tool, before the response goes out. |
 | **revert** | Michael's previous turn was vibe-translated; his next message uses the technical term | Move term to hard-keep for rest of session | Feedback-log: write immediately. |
 | **drift** | Step 11 self-check flags wordiness 2× in 30 messages | Tighten 1 (silent) | Observation-log: write at end of response. |
-| **filler_complaint** | Michael calls out specific filler ("stop saying X" / "drop the [phrase]") | Add X to kill list now | Feedback-log: write immediately. |
+| **filler_complaint** | Michael calls out specific filler ("stop saying X" / "drop the 'great question'" / "cut the preamble") | Add X to kill list now | Feedback-log: write immediately. |
 | **translation_pushback** | Per Step 3 "why" disambiguation rules | Hard-keep the term for this response | Observation-log: write at end of response. Threshold ≥2 for this signal (lower than ≥3 default — pushback is a stronger signal than echo). |
 | **custom_level** | Michael uses an intensity name not in the table ("medium tight", "skim mode") | Best-guess interpolate from nearest 2 levels | Observation-log: write at end of response. |
 
@@ -676,7 +676,7 @@ Michael can run any of these in plain prompt text. Each one is matched on substr
 - **Composed triggers.** `vibe mode but full grammar` / `vibe mode in tight` activates the skill AND immediately applies the composed override. Parse the trigger, then apply each composable element left-to-right.
 - **Repeated commands stack.** `tighter tighter` = tighten 2. Cap at the floor (one-liner).
 - **No-op safety.**
-  - `/vibe accept proposal` with no recent proposal → "no pending proposal to accept. Last surfaced: [date or never]."
+  - `/vibe accept proposal` with no recent proposal → "no pending proposal to accept. Last surfaced: 2026-05-01 (or never)."
   - `/vibe stop translating X` where X isn't currently active-translated → "X isn't on active translation. Already a hard-keep — no change needed."
   - `/vibe undo` with no recent change → "nothing to undo this session."
 - **`/vibe undo` scope.** Reverts the **single most recent profile or feedback-log change made in this Claude Code conversation**, regardless of how many turns ago. Does not reach back into earlier sessions. Stack depth = 1 (no chain undo). To revert further, edit the files directly.
@@ -716,7 +716,7 @@ Field mapping:
 
 ### `/vibe what is X` matcher
 
-Recognized X values: `status+`, `vibe`, `tight`, `soft`, `one-liner`, `closure signal`, `autonomy signal`, `echo signal`, `register mirror`, `hard-keep`, `self-optimize`, all 9 mode names, all 22 `/vibe` commands. For unrecognized X, surface: "Not a vibe-speak feature. Maybe you meant: [3 closest matches]?"
+Recognized X values: `status+`, `vibe`, `tight`, `soft`, `one-liner`, `closure signal`, `autonomy signal`, `echo signal`, `register mirror`, `hard-keep`, `self-optimize`, all 9 mode names, all 22 `/vibe` commands. For unrecognized X, surface: "Not a vibe-speak feature. Maybe you meant: `closure signal`, `register mirror`, `hard-keep`?" — substitute the 3 edit-distance-nearest matches from the recognized list.
 
 ### `/vibe help` output format
 
@@ -824,7 +824,7 @@ If Claude Code's conversation auto-compaction fires mid-session, working-memory 
 - **Rotation action:** at the next Step 18 wrap ritual after the threshold is crossed:
   1. Move the current file to `skills/vibe-speak/archive/observation-log-YYYY-MM.md`.
   2. Create a fresh `observation-log.md` with the schema header + a "Carried-forward summary" section that lists all `signal_target` values that have hit the self-optimize threshold but aren't yet `applied_to_profile: yes` (so the threshold-counter doesn't reset across rotations).
-  3. Surface a one-line note: "rotated observation-log: [N] entries archived to [archive path]."
+  3. Surface a one-line note: "rotated observation-log: 512 entries archived to `skills/vibe-speak/archive/observation-log-2026-05.md`."
 - **Step 1 reading after rotation:** read both the active log and the most recent archive file (last-30-day window may span both). Never read more than the 2 most recent files; older history is reference-only.
 
 `feedback-log.md` rotates the same way, threshold 200 entries / 50 KB.
@@ -926,7 +926,7 @@ To **opt out for one session:** `raw mode` after start. Session-only; next sessi
 | wenyan | floor- and ceiling-blocked at one-liner | floor-blocked |
 | raw | n/a | n/a |
 
-If Michael runs `/vibe tighter` at the floor or `/vibe looser` at the ceiling, no-op with a one-line note: "already at [mode] floor — try a different mode for more compression."
+If Michael runs `/vibe tighter` at the floor or `/vibe looser` at the ceiling, no-op with a one-line note: "already at caveman floor — try a different mode for more compression." (substitute active mode name for `caveman`.)
 
 ### Custom modes
 

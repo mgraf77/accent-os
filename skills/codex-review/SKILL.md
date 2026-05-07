@@ -177,7 +177,13 @@ Read `/tmp/codex-review-response.json`. For each item:
 | Concrete change | `old_string` and `new_string` are identical or `old_string` is empty |
 | Frontmatter touch | `old_string` or `new_string` overlaps the YAML frontmatter (lines 1–N until second `---`) — this is too risky to auto-apply |
 
-Rejected items are logged in the output but not applied or surfaced.
+Output of Step 5: two sorted lists — survivors (proceed to Step 6/7) and rejects (logged only):
+```
+Step 5 validation:
+  Survivors: [N] — [count LOW] LOW, [count HIGH] HIGH
+  Rejected: [N] — [rejection reason per item]
+    - Rec #N: [rejection reason]
+```
 
 ---
 
