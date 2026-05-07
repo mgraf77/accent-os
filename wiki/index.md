@@ -110,10 +110,10 @@
 | marketing | Marketing Module | medium | 2026-05-06 |
 | module-modes | Module Modes Module | medium | 2026-05-06 |
 | my-tasks | My Tasks Module | medium | 2026-05-06 |
-| pipeline-analytics | Pipeline Analytics Module | medium | 2026-05-06 |
+| pipeline-analytics | Pipeline Analytics Module | high | 2026-05-07 |
 | portal-preview | Portal Preview Module | medium | 2026-05-06 |
-| price-book | Price Book Module | medium | 2026-05-06 |
-| purchase-orders | Purchase Orders Module | medium | 2026-05-06 |
+| price-book | Price Book Module (Track 5.6) | high | 2026-05-07 |
+| purchase-orders | Purchase Orders Module (Track 5.4) | high | 2026-05-07 |
 | quick-actions | Quick Actions Module | medium | 2026-05-06 |
 | reports | Reports Module | medium | 2026-05-06 |
 | saved-filters | Saved Filters Module | medium | 2026-05-06 |

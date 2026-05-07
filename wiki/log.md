@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-05-07 module-enrichment-batch-3
+- enrich: pipeline-analytics — pure-compute modal over DEALS + AF_PIPELINE: 4-panel dashboard (funnel by count/value, stage-conversion via pipeline_events from→to map, time-in-stage avg/median, lost-reason histogram), 5-window selector (7d/30d/90d/ytd/all), graceful empty states; confidence medium → high
+- enrich: purchase-orders — Track 5.4 header+lines CRUD on purchase_orders + po_lines (M23): auto PO-#### numbering, line-item editor with live ext-cost, Quote→PO multi-vendor splitter, receivePO writes through to inventory_items.qty_on_hand by (vendor_id, sku) match; confidence medium → high
+- enrich: price-book — Track 5.6 pure-compute over INVENTORY + VD: margin/markup formulas, vendor-tier join, 4-bucket distribution (high/mid/low/none), tier+vendor+in-stock filters, 500-row render cap, no schema; confidence medium → high
+- update: wiki/index.md — bumped 3 module rows to confidence:high, updated:2026-05-07; titles include Track refs
+- note: 29 → 26 stub modules remaining; inventory cluster now fully linked (inventory ↔ purchase-orders ↔ price-book ↔ demand-forecast); pipeline-analytics anchors the deals/customers/alerts cluster
+
+---
+
 ## 2026-05-07 module-enrichment-batch-2
 - enrich: alerts — Track 6.8 cross-module signal aggregator: 9 generators (deal_stale, coop_deadline, quote_cold, inventory_low, delivery_overdue, warranty_expiring, showroom_expiring, po_overdue, score_dropped), per-type severity rules, dedupe via (type, source_id), bell-icon goTo() wrapper, dismissed-can-resurface semantics; confidence medium → high
 - enrich: customers — Track 1.4 CRM: full CRUD, RFM compute (recency/frequency/monetary thresholds for VIP/Active/Lapsed/Lost/Prospect), 6-source name-match activity timeline, allow-listed inline edits, customer→deal preset with valueSeed, role gates (Warehouse blocked); confidence medium → high
