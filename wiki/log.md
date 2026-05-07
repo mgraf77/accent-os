@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-05-07 module-enrichment-batch-5
+- enrich: jobs — Track 5.2 Job Tracker: full CRUD on jobs (M21), auto J-#### numbering, status workflow with auto completed_at, customer dropdown + free-text fallback, Quote→Job + Deal→Job preset converters with priority derivation by total/value, CSV bulk import; confidence medium → high
+- enrich: deliveries — Track 5.10 6-state workflow (scheduled/out_for_delivery/delivered/failed/rescheduled/cancelled), auto DLV-#### numbering, customer dropdown auto-fills address from c.address (preserves manual edits), unique 'when' filter (upcoming/today/past/all), signature capture; confidence medium → high
+- enrich: warranty — Track 5.11 7-state workflow (open → sent_to_vendor → approved/denied → replaced/refunded → closed), 3 severity levels (cosmetic/functional/safety), auto W-#### numbering, csvImportFlow integration, vendor + customer name→id resolution, alerts/customers/vendor cross-module surfaces; confidence medium → high
+- update: wiki/index.md — bumped 3 module rows to confidence:high, updated:2026-05-07; titles include Track refs
+- note: 23 → 20 stub modules remaining; operational workflow cluster fully linked (jobs ↔ deliveries ↔ warranty ↔ customers ↔ alerts); pattern variations all documented (numbered workflow, dropdown auto-fill, csvImportFlow, severity gating)
+
+---
+
 ## 2026-05-07 module-enrichment-batch-4
 - enrich: deal-optimizer — Track 5.7 vendor-side recs from VD + CHANGELOG: 5 kinds (renegotiate, investigate, replace, upgrade, cut) with impact heuristics derived from lifetime spend × % recoverable, getAdaptiveTier percentile bucketing, renderOverview (Vendor Ranking Overview tab); confidence medium → high
 - enrich: demand-forecast — Track 6.9 velocity-based reorder recs over INVENTORY + PO_LINES: explicit constants (4w lead + 2w safety = 6w threshold, 14w target, 90d window), 5 kinds (reorder_now/soon/overstock/normal/no_data), CSV reorder-list export, Daily-Brief tile integration; confidence medium → high

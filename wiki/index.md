@@ -97,7 +97,7 @@
 | customers | Customers Module (Track 1.4 CRM) | high | 2026-05-07 |
 | deal-optimizer | Deal Optimizer Module (Track 5.7) | high | 2026-05-07 |
 | decision-engine | Decision Engine Module (Track 5.15) | high | 2026-05-07 |
-| deliveries | Deliveries Module | medium | 2026-05-06 |
+| deliveries | Deliveries Module (Track 5.10) | high | 2026-05-07 |
 | demand-forecast | Demand Forecast Module (Track 6.9) | high | 2026-05-07 |
 | digest | Digest Module (Daily Brief Email) | high | 2026-05-07 |
 | employees | Employees Module | medium | 2026-05-06 |
@@ -105,7 +105,7 @@
 | health | Health Module | medium | 2026-05-06 |
 | inventory | Inventory Module (Track 5.3 phase 1) | high | 2026-05-07 |
 | inventory-analytics | Inventory Analytics Module | medium | 2026-05-06 |
-| jobs | Jobs Module | medium | 2026-05-06 |
+| jobs | Jobs Module (Track 5.2 Job Tracker) | high | 2026-05-07 |
 | labels | Labels Module | medium | 2026-05-06 |
 | marketing | Marketing Module | medium | 2026-05-06 |
 | module-modes | Module Modes Module | medium | 2026-05-06 |
@@ -120,7 +120,7 @@
 | showroom-displays | Showroom Displays Module | medium | 2026-05-06 |
 | trade-partners | Trade Partners Module | medium | 2026-05-06 |
 | vendor-score-import | Vendor Score Import Module | high | 2026-05-07 |
-| warranty | Warranty Module | medium | 2026-05-06 |
+| warranty | Warranty Module (Track 5.11) | high | 2026-05-07 |
 | wiki | Wiki Module | high | 2026-05-07 |
 
 ## source pages

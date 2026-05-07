@@ -1,10 +1,15 @@
 # Wiki Hot State
-> Updated: 2026-05-07 — Module enrichment batch 4
+> Updated: 2026-05-07 — Module enrichment batch 5
 
 ## Current task
-Module-page enrichment in progress (12 of 35 done). Pattern proven across all major module shapes. Remaining 23 stubs follow the same recipe.
+Module-page enrichment in progress (15 of 35 done — 43%). Operational + analytics + workflow clusters all linked. Remaining 20 stubs follow the same recipe.
 
 ## What shipped (this session)
+
+### Module enrichment batch 5 (3 pages)
+- **wiki/modules/jobs.md** — Track 5.2 Job Tracker: full CRUD on `jobs` (M21), auto `J-####` numbering, status workflow with auto-`completed_at`, Quote→Job + Deal→Job preset converters with priority derivation. Confidence medium → high.
+- **wiki/modules/deliveries.md** — Track 5.10 6-state workflow, auto `DLV-####` numbering, customer dropdown auto-fills address (preserves manual edits), unique `when` filter (upcoming/today/past/all). Confidence medium → high.
+- **wiki/modules/warranty.md** — Track 5.11 7-state workflow, 3 severity levels (cosmetic/functional/safety), auto `W-####` numbering, `csvImportFlow` integration, alerts/customers/vendor cross-module surfaces. Confidence medium → high.
 
 ### Module enrichment batch 4 (3 pages)
 - **wiki/modules/deal-optimizer.md** — Track 5.7 vendor-side recs from `VD` + `CHANGELOG`: 5 kinds (renegotiate / investigate / replace / upgrade / cut) with impact heuristics, `getAdaptiveTier` percentile bucketing. Confidence medium → high.
@@ -62,16 +67,23 @@ Precision 50.8% = ~94% of achievable ceiling. Do not attempt further passes with
 
 ## What Claude can build without Michael
 
-1. **Wiki enrichment**: 23 module pages remaining in wiki/modules/ (12 of 35 enriched so far). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
+1. **Wiki enrichment**: 20 module pages remaining in wiki/modules/ (15 of 35 enriched so far — 43%). Pattern: read `js/<name>.js` → write frontmatter + Functions table + Read deps + Shell touchpoints + Failure modes + cross-links to ADRs/concepts. Each page targets ≤700 words to stay below `wiki_lint.py` warning threshold.
 2. **Vendor page enrichment**: wiki/entities/vendors/ has 30 pages — can be fleshed out as vendor data becomes available.
 3. **pgvector path** (M42/M43): optional embedding upgrade — not started, not blocked.
 
 ## Suggested next enrichment batch
 
-Pick the operational + workflow cluster (the next obvious group after analytics):
-1. **jobs** (`js/jobs.js`) — Track 5.2 Job Tracker; auto J-#### numbering, customer/quote dropdowns, status workflow
-2. **deliveries** (`js/deliveries.js`) — Track 5.10 delivery scheduling; 6-state workflow, customer auto-fill, signature capture
-3. **warranty** (`js/warranty.js`) — Track 5.11 warranty claims; 7-state workflow, vendor + customer + quote linkage
+The remaining 20 modules cluster into:
+1. **External-facing**: `portal-preview`, `marketing`
+2. **Knowledge / docs**: `knowledge-hub`, `calendar`
+3. **Vendor / partners**: `trade-partners`, `bulk-vendor-ops`, `competitive-pricing`
+4. **Operations utilities**: `commission`, `showroom-displays`, `labels`, `module-modes`
+5. **System / cross-cut**: `activity-feed`, `bulk-select`, `csv-import` (no slug yet — js/csv_import.js is helper-only), `global-search`, `health`, `inventory-analytics`, `my-tasks`, `quick-actions`, `reports`, `saved-filters`, `employees`
+
+Recommended next batch (cluster 3 — vendor side, complements vendor-scoring + price-book):
+1. **trade-partners** (`js/trade_partners.js`) — Track 5.5 designer/contractor network
+2. **bulk-vendor-ops** (`js/bulk_vendor_ops.js`) — sister-brand sync + parent-company propagation
+3. **competitive-pricing** (`js/competitive_pricing.js`) — Track 5.14 SKU price observations
 
 ## Next-session entry point
 
@@ -80,4 +92,4 @@ Pick the operational + workflow cluster (the next obvious group after analytics)
 3. If M04 done: build 5.13 E-Commerce Command Center (BigCommerce REST + GMC)
 4. If M06 done: build 6.1 (GA4) + 6.2 (GSC) integrations
 5. If M09 done: build 6.4 Klaviyo integration
-6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (jobs → deliveries → warranty). Read `js/<name>.js` first, then write following the batch-1/2/3/4 pattern.
+6. If nothing done: continue wiki/modules/ enrichment in the order suggested above (trade-partners → bulk-vendor-ops → competitive-pricing). Read `js/<name>.js` first, then write following the batch-1 through batch-5 pattern.
