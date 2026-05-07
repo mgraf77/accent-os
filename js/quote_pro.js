@@ -93,7 +93,7 @@ async function sbBumpTemplateUsage(id){
 }
 
 // ── ANTHROPIC CALL HELPERS ─────────────────────────────────
-function qpApiKey(){ return getS('aos-api') || ''; }
+function qpApiKey(){ return (typeof getApi === 'function' ? getApi() : (getS('aos-api') || '')); }
 
 // Build a vision content block for the API. Accepts:
 //   {kind:'image', mediaType:'image/png'|'image/jpeg'|..., data:'base64...'}

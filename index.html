@@ -3757,7 +3757,7 @@ async function openVendorDetail(vendorId) {
 
   // AI overview via Anthropic API
   try {
-    const _vdKey = getS('aos-api');
+    const _vdKey = getApi();
     if (!_vdKey) { const el=document.getElementById('vd-overview'); if(el) el.textContent='Add your API key in Settings to enable vendor overviews.'; return; }
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -5471,7 +5471,7 @@ function showSaved(){
   `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 async function aiSummary(){
-  const key=getS('aos-api');if(!key){toast('Add API key in Settings','err');return;}
+  const key=getApi();if(!key){toast('Add API key in Settings','err');return;}
   const proj=$('q-pr')?.value,cust=$('q-cu')?.value;
   const total=LI.reduce((s,l)=>s+l.qty*l.price,0);
   const items=LI.filter(l=>l.desc).map(l=>`${l.desc} ×${l.qty} @ $${l.price}`).join(', ');
@@ -5513,7 +5513,7 @@ function getQQ(){ return chatMode === 'customer' ? QQ_CUSTOMER : QQ_INTERNAL; }
 function setChatMode(m){ chatMode = m; sessionStorage.setItem('aos-chat-mode', m); CHAT=[]; goTo('knowledge'); }
 const QQ = QQ_INTERNAL;   // legacy reference; getQQ() is used at render time
 function knowledge(el){
-  const hasKey=!!getS('aos-api');
+  const hasKey=!!getApi();
   el.innerHTML=`<div class="tab-bar" data-tabs><button class="tab-btn active" onclick="switchTab(this,'ke-chat')">Ask the Engine</button><button class="tab-btn" onclick="switchTab(this,'ke-ref')">Reference Data</button><button class="tab-btn" onclick="switchTab(this,'ke-hub')">Internal Docs</button><button class="tab-btn" onclick="switchTab(this,'ke-cfg')">Config</button></div>
   <div id="ke-chat" class="tab-pane active">
     ${!hasKey?`<div class="alert alert-warn">⚠️ No API key. <a href="#" onclick="goTo('settings')" style="color:inherit;font-weight:600;">Add in Settings →</a></div>`:''}
@@ -5546,7 +5546,7 @@ function knowledge(el){
   </div>
   <div id="ke-cfg" class="tab-pane">
     <div class="card"><div class="card-body">
-      <div class="field"><label>Anthropic API Key</label><input type="password" id="ke-ak" placeholder="sk-ant-..." value="${getS('aos-api')?'••••••••••••••••':''}"><div class="fhint">Powers AI chat and Quote AI Summary.</div></div>
+      <div class="field"><label>Anthropic API Key</label><input type="password" id="ke-ak" placeholder="sk-ant-..." value="${getApi()?'••••••••••••••••':''}"><div class="fhint">Powers AI chat and Quote AI Summary.</div></div>
       <div class="field"><label>Supabase URL</label><input id="ke-su" placeholder="https://xxx.supabase.co" value="${getS('aos-sb-url')||''}"></div>
       <div class="field"><label>Supabase Anon Key</label><input type="password" id="ke-sk" placeholder="eyJ..."></div>
       <button class="btn btn-accent btn-sm" onclick="saveKE()">Save</button>
@@ -5558,14 +5558,14 @@ function knowledge(el){
 
 function saveKE(){
   const k=$('ke-ak')?.value,u=$('ke-su')?.value,sk=$('ke-sk')?.value;
-  if(k&&!k.includes('•'))sessionStorage.setItem('aos-api',k);
+  if(k&&!k.includes('•'))setApi(k);
   if(u)sessionStorage.setItem('aos-sb-url',u);
   if(sk&&!sk.includes('•'))sessionStorage.setItem('aos-sb-key',sk);
   toast('Saved','ok');
 }
 async function sendChat(pre){
   const inp=$('ci');const msg=pre||inp?.value?.trim();if(!msg)return;
-  if(inp)inp.value='';const key=getS('aos-api');
+  if(inp)inp.value='';const key=getApi();
   CHAT.push({r:'u',c:msg});renderChat();$('ti').style.display='';scrollChat();
   if(!key){setTimeout(()=>{$('ti').style.display='none';CHAT.push({r:'a',c:'⚠️ No API key. Go to <strong>Settings</strong> to add your key.'});renderChat();scrollChat();},500);return;}
   try{
@@ -5705,7 +5705,7 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
       ${sRow('Pipeline','live','pipeline_deals · 8-factor probability model')}
       ${sRow('Quotes','live','quotes + quote_lines persistence')}
       ${sRow('Co-op Tracker','live','coop_tracker · deadline alerts')}
-      ${sRow('Anthropic API',getS('aos-api')?'live':'pending',getS('aos-api')?'Key configured':'Add in Settings')}
+      ${sRow('Anthropic API',getApi()?'live':'pending',getApi()?'Key configured':'Add in Settings')}
     </div></div>
   </div>
   <div class="g2">
@@ -6563,10 +6563,10 @@ function settings(el){
     <div>
       ${isOwner ? `
       <div class="card mb16"><div class="card-hd"><span class="card-title">API Keys</span></div><div class="card-body">
-        <div class="field"><label>Anthropic API Key</label><div style="display:flex;gap:7px;"><input type="password" id="s-ak" placeholder="sk-ant-..." value="${getS('aos-api')?'••••••••••••••••':''}" style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;"><button class="btn btn-outline btn-sm" onclick="const e=$('s-ak');e.type=e.type==='password'?'text':'password'">Show</button></div><div class="fhint">Powers Knowledge Engine AI + Quote AI Summary.</div></div>
+        <div class="field"><label>Anthropic API Key</label><div style="display:flex;gap:7px;"><input type="password" id="s-ak" placeholder="sk-ant-..." value="${getApi()?'••••••••••••••••':''}" style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-family:'Outfit',sans-serif;font-size:14px;outline:none;"><button class="btn btn-outline btn-sm" onclick="const e=$('s-ak');e.type=e.type==='password'?'text':'password'">Show</button></div><div class="fhint">Powers Knowledge Engine AI + Quote AI Summary.</div></div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <button class="btn btn-accent btn-sm" onclick="const v=$('s-ak').value;if(v&&!v.includes('•')){sessionStorage.setItem('aos-api',v);toast('API key saved','ok');goTo('settings');}else toast('Enter a valid key','err')">Save Key</button>
-          ${getS('aos-api')?`<span class="badge bg-green">✓ Configured</span>`:`<span class="badge bg-yellow">Not set</span>`}
+          <button class="btn btn-accent btn-sm" onclick="const v=$('s-ak').value;if(v&&!v.includes('•')){setApi(v);toast('API key saved','ok');goTo('settings');}else toast('Enter a valid key','err')">Save Key</button>
+          ${getApi()?`<span class="badge bg-green">✓ Configured</span>`:`<span class="badge bg-yellow">Not set</span>`}
         </div>
       </div></div>
       <div class="card mb16"><div class="card-hd"><span class="card-title">Supabase</span></div><div class="card-body">
@@ -6704,6 +6704,25 @@ async function changeMyPassword(){
 
 // ── HELPERS ───────────────────────────────────────────────
 function getS(k){return sessionStorage.getItem(k)||'';}
+// Anthropic API key persists across browser restarts (localStorage) instead
+// of dying with the tab (sessionStorage). One-time migration on read picks
+// up any key still living in sessionStorage and moves it.
+function getApi(){
+  const ls = localStorage.getItem('aos-api');
+  if(ls) return ls;
+  const ss = sessionStorage.getItem('aos-api');
+  if(ss){ try { localStorage.setItem('aos-api', ss); sessionStorage.removeItem('aos-api'); } catch{} }
+  return ss || '';
+}
+function setApi(v){
+  if(!v) return;
+  try { localStorage.setItem('aos-api', v); } catch{}
+  sessionStorage.removeItem('aos-api');
+}
+function clearApi(){
+  localStorage.removeItem('aos-api');
+  sessionStorage.removeItem('aos-api');
+}
 
 // ── BOOT (v6.9.6) ──
 // 1. Try to restore an authenticated session from the stored JWT.
