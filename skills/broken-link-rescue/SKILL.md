@@ -30,8 +30,12 @@ Run when Michael says:
 - "broken link rescue" / "find broken product URLs"
 - "URL audit" / "404 check"
 - "GMC re-index pending" / "M16 batch"
-- "P053-077" / any product batch identifier (e.g. "P100-150 batch")
+- Any product batch identifier: "P053-077", "P100-150 batch", "P200-250", or any "P[NNN]-[NNN]" range phrase
 - "canonical issues" / "fix canonical tags" / "check canonicals"
+
+---
+
+**Behavioral commitment:** Always crawl before fixing — never output a redirect recommendation without confirming the current HTTP status in this session's Step 2 crawl record.
 
 ---
 
@@ -69,8 +73,8 @@ Use `WebFetch` for direct probes when the URL set is ≤50 — capture results i
 | Status | Trigger | Severity | Recommended action |
 |---|---|---|---|
 | **OK** | 200 + canonical present + no robots block | — | None |
-| **HARD_404** | 404 final | HIGH | Retire product OR set 301 to category page |
-| **5XX** | 500/503 final | HIGH | Investigate BC origin; retry in 1h |
+| **HARD_404** | 404 final (confirmed on retry after 60s — do not classify on first probe alone) | HIGH | Retire product OR set 301 to category page |
+| **5XX** | 500/503 final | HIGH | Check BC store status at `https://store-cwqiwcjxes.mybigcommerce.com/manage/dashboard`; retry the URL crawl after 1h |
 | **REDIRECT_CHAIN** | >2 hops to reach 200 | MEDIUM | Set direct 301 from original URL to final destination |
 | **CANONICAL_MISMATCH** | canonical points to different URL than crawled | MEDIUM | Update BC product canonical OR fix redirect target |
 | **GMC_NOINDEX** | meta robots noindex on a feed-eligible product | HIGH | Remove noindex tag (likely a BC misconfig) |
@@ -121,8 +125,8 @@ For PENDING_REINDEX rows that were P053-077:
 
 ## Anti-patterns
 
-- **Never** modify BC URLs or set redirects from this skill — output the actions, Michael executes.
-- **Never** make >50 sequential WebFetch calls. Batch via Firecrawl when scope is large.
+- **Never** modify BC URLs or set redirects from this skill — output the actions, Michael executes via `https://store-cwqiwcjxes.mybigcommerce.com/manage/redirects` or the BC admin product editor.
+- **Never** make >50 sequential WebFetch calls. When URL set exceeds 50, generate a Firecrawl batch payload (Step 2 threshold) — sequential calls hit rate limits and cost compounds beyond that point.
 - **Never** flag a redirect chain of exactly 1 hop (a single 301) as broken — BC's slug migration from the 2023 store rebuild created intentional single-hop redirects for ~3,000 products; flagging them as REDIRECT_CHAIN fills the fix queue with false positives.
 - **Never** classify a URL as HARD_404 on a single failed probe. Retry once after 60s.
 - **Never** silently ignore the canonical tag — it's the single most common GMC issue after missing images.

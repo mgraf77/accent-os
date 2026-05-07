@@ -36,6 +36,8 @@ Run when Michael says:
 
 Also fire automatically (with one-line confirmation prompt) after any conversation where Claude observed a non-trivial architectural, vendor, or process choice.
 
+Do NOT fire for: ad-hoc analysis outputs, data explorations, or "what if" brainstorms where no choice was locked — use analysis-snapshot for those. Decision-log requires an actual pick between ≥1 real options.
+
 ---
 
 ## Step 1 — Identify the decision
@@ -159,7 +161,7 @@ HIGH reversal cost.
 
 - **Never** log a "decision" that wasn't actually a decision — if Michael never picked between options, there is nothing to log.
 - **Never** invent reasoning. When the conversation context didn't capture why, ask once and wait for Michael's answer before writing the file.
-- **Never** skip the /home/user/accent-os/decisions/INDEX.md update. Un-indexed decisions are findable only by accident.
+- **Never** skip the /home/user/accent-os/decisions/INDEX.md update. A decision file in `decisions/` with no INDEX.md row is invisible to `decision-log`'s own NNN sequencing — the next run picks the wrong number and creates a collision.
 - **Never** classify reversal cost optimistically. When in doubt, bump up — HIGH that turns out to be MEDIUM is fine; MEDIUM that turns out to be HIGH is a problem.
 - **Never** edit a prior decision file's question / options / choice / reasoning. The only permitted post-write edit on a prior decision file is appending a `## Superseded by decision-NNN — YYYY-MM-DD` line. Always write that back-link when superseding so the old file points forward.
 - **Never** write a decision file without running through the HIGH-reversal-cost check in Step 2. Supabase hsyjcrrazrzqngwkqsqa schema changes and BC store-cwqiwcjxes integration choices always require a reopen trigger and worst-case line.

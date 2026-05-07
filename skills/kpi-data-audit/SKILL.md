@@ -36,7 +36,7 @@ Run when Michael says:
 - "data gap audit" / "which KPIs can I ship today"
 - "check KPI dependencies"
 - "variable inventory"
-- "what's missing for [KPI ID]"
+- "what's missing for F3" / "what's missing for S-OS2" (any KPI ID from the catalog)
 - "what can we compute today"
 - "KPI feasibility audit"
 
@@ -59,6 +59,7 @@ Fire automatically (with confirmation) after any commit that modifies `/home/use
 **Out of scope — fail fast:**
 - KPI catalog missing → "KPI_CATALOG.md not found at /home/user/accent-os/KPI_CATALOG.md. Commit it first OR pass an alternative path: 'audit data using path/to/catalog.md'"
 - Auditing against a SQL file outside `/home/user/accent-os/sql/` → "Schema files must live under /home/user/accent-os/sql/ to be audited"
+- "Query for KPI data" or "pull the KPI numbers" → use supabase-sql-magic, not this skill. This skill audits which KPIs are computable; it does not run queries to retrieve the actual values.
 
 ---
 
@@ -70,6 +71,7 @@ Detect from Michael's prompt:
 |---|---|---|
 | KPI ID present (e.g. `F3`, `S-OS2`) | scoped audit | Steps 2–6 run only for that KPI; Step 7 produces a single-KPI report |
 | `full` or `--full` keyword | full remediation list | Step 7 BLOCK 4 expands to all gaps, no top-10 cap |
+| KPI ID + `--full` together (e.g. `audit data F3 --full`) | scoped + full | Steps 2–6 run only for F3; `--full` expands the remediation section for F3's gaps only — it does NOT expand the audit to all KPIs |
 | `snapshot` keyword | implies snapshot intent | Step 8 enabled, with `--full` auto-applied |
 | (none of the above) | full-catalog audit, top-10 default | standard run |
 

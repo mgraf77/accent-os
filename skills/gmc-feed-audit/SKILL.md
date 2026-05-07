@@ -31,7 +31,7 @@ Stolen from: Universal SEO Skill technical-audit pattern + Firecrawl MCP structu
 Run when Michael says:
 - "audit the GMC feed" / "GMC remediation queue"
 - "what's broken in GMC" / "GMC missing images report"
-- "scan the feed" / "feed audit"
+- "scan the feed" / "GMC feed audit" / "feed audit" (only when GMC context is clear — a standalone "feed audit" about RSS/Atom or site crawl goes elsewhere)
 - "what products are failing GMC"
 - "M14 sprint" / "run the feed audit" / "Feedenomics report"
 
@@ -85,7 +85,7 @@ Per row, assign one fix type (in priority order — first match wins):
 |---|---|---|
 | **MISSING_PRIMARY** | `images_per_sku = 0` OR `primary_image_url IS NULL` | HIGH |
 | **DISAPPROVED** | `gmc_status = 'disapproved'` | HIGH |
-| **BROKEN_URL** | `canonical_url` returns 404/5xx (run broken-link-rescue first if not done) | HIGH |
+| **BROKEN_URL** | `canonical_url` returns 404/5xx — this is a GMC feed `canonical_url` check only; standalone site-wide 404 audits use broken-link-rescue, not this skill | HIGH |
 | **PENDING_REINDEX** | `gmc_status = 'pending'` AND `last_checked_at` > 14 days | MEDIUM |
 | **LOW_IMAGE_COUNT** | `images_per_sku = 1` (best-practice is 3+) | LOW |
 | **STALE_CHECK** | `last_checked_at` > 30 days | LOW |
@@ -135,7 +135,7 @@ SPRINT_002 — next 50 HIGH
 
 - **Never** modify GMC or BC data from this skill — read+report only.
 - **Never** dump 20K rows as a single block. Sprint chunking is the point.
-- **Never** rank without revenue-tier weighting when data is available.
-- **Never** silently skip ambiguous rows — flag as `UNKNOWN`.
+- **Never** rank without revenue-tier weighting when `vendors.revenue_tier` is present in the schema — omitting it causes top-revenue vendors to appear behind low-revenue ones in the sprint queue.
+- **Never** silently skip rows where both `gmc_status IS NULL` and `images_per_sku IS NULL` — flag these as `UNKNOWN` fix type with severity TBD and include them in the sprint count.
 - **Never** invent severity. Use the explicit table in Step 3.
 - **Never** run this skill on a Feedenomics export older than 7 days without flagging staleness — GMC status changes daily and a stale audit produces misleading sprint queues for Accent Lighting's 20K+ SKU catalog.

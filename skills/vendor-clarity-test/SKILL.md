@@ -29,11 +29,13 @@ Stolen from: Cascade `strategic-alignment` "5-people-from-5-teams test." Rebuilt
 Run when Michael says:
 - "5-vendor clarity check"
 - "verify vendor scoring consistency"
-- "test the cascade"
 - "do my vendors agree"
 - "scoring sanity check"
 - "are scores explainable"
 - "spot-check vendor scores"
+- "test the scoring consistency" / "sanity-check the scores"
+
+Do **not** trigger on "test the cascade" or "cascade the scores" alone — those route to vendor-cascade (top-down score explainability for a specific vendor). This skill is a cross-table consistency audit across 5 random vendors, not a single-vendor cascade trace.
 
 Fire as a sanity gate after any priority-articulation or vendor-cascade run that adjusted weights.
 
@@ -141,9 +143,9 @@ vendor_overrides.set_by          — missing from /home/user/accent-os/sql/M*.sq
 
 ## Anti-patterns
 
-- **Never** test fewer than 5 vendors when sampling randomly — small samples don't surface patterns.
-- **Never** treat "(empty) notes" as drift. Empty notes are normal, not a failure.
-- **Never** auto-fix scoring weights from this skill. The job is detection, not remediation.
-- **Never** sample the same 5 vendors twice in a row when running periodically — random-seed each invocation so coverage rotates.
-- **Never** conflate priority drift with override-staleness. They're different problems with different fixes.
+- **Never** test fewer than 5 vendors when sampling randomly — a sub-5 sample from `vendors` misses the rotation patterns that only emerge across the full pool.
+- **Never** treat "(empty) notes" as drift. `vendor_overrides` rows with no `override_reason` are normal post-M19 — an empty View B is not a ✗ drift verdict.
+- **Never** auto-fix scoring weights from this skill — do not write to `vendor_scores.weight` or `vendor_overrides`. The job is detection; remediation lives in priority-articulation.
+- **Never** sample the same 5 vendors twice in a row when running periodically — random-seed each `SELECT … ORDER BY RANDOM()` invocation so `vendors` table coverage rotates across runs.
+- **Never** conflate priority drift (Math #1 ≠ Priority #1 in `vendor_scores` vs `project-profiles.md`) with override-staleness (`vendor_overrides.set_at` is old). They're different problems: drift → re-run priority-articulation; staleness → run write-an-override.
 - **Never** run this skill if `vendor_scores` is empty for all sampled vendors — redirect to vendor-cascade or the AccentOS scoring engine first; do not produce a clarity table on phantom data.

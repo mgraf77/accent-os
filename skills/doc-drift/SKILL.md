@@ -36,6 +36,8 @@ Run when Michael says:
 - "MASTER.md vs BUILD_PLAN" (cross-doc comparison form)
 - "cross-check the docs" / "which doc is right"
 
+Do NOT fire for: code-level consistency checks (run the repo's own lint/type-check), schema-contract validation (that's schema-contract-tests), or vendor-scoring math verification (that's vendor-cascade). Doc-drift compares planning prose only — MASTER.md, BUILD_PLAN files, SESSION_LOG.md, project-profiles.md.
+
 ---
 
 ## Step 1 — Load all source-of-truth docs
@@ -144,7 +146,7 @@ If no drift exists, output: "All docs agree on priorities, active tracks, and st
 - **Never** silently auto-apply the suggested edits. Output paste-ready Edit commands targeting /home/user/accent-os/ files; Michael runs them.
 - **Never** flag drift on docs that are intentionally divergent (PROMPT_LOG captures asks, MASTER captures shipped state — they diverge by design). Flag only actual contradictions.
 - **Never** treat "silent" (one doc doesn't mention something) as drift. Silence is the default, not a contradiction.
-- **Never** report drift without a recommended source-of-truth. Flagging a disagreement with no resolution path leaves Michael with more work, not less.
+- **Never** report drift without a recommended source-of-truth. Flagging a MASTER.md vs. BUILD_PLAN_CLAUDE.md contradiction with no named winner forces Michael to re-read both docs himself — defeating the point of the skill.
 - **Never** load files that don't exist as if they were empty — flag each missing file explicitly in BLOCK 1 before proceeding.
 - **Never** flag a `[x]` in BUILD_PLAN_MICHAEL.md that doesn't yet appear in BUILD_PLAN_CLAUDE.md as drift. Michael's plan and Claude's plan diverge by design during active M-task work; sync happens at session end.
-- **Never** expand SESSION_LOG.md to full file without first confirming the claim isn't resolved in the 200-line window. Full-file reads are expensive — confirm the need before expanding.
+- **Never** expand SESSION_LOG.md to full file without first confirming the claim isn't resolved in the 200-line window. SESSION_LOG.md regularly exceeds 1,000 lines — a full read burns the context window and may cause truncation of other docs loaded in the same pass.

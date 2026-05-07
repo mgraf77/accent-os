@@ -9,9 +9,10 @@ description: >
   reasoning template, and the expected output format so Michael can
   re-run identically next week or next quarter without re-explaining
   context. Fires when Michael says: "save this analysis", "snapshot
-  this", "I want to re-run this later", "make this re-runnable", "name
-  this query", "preserve this analysis for later", "snapshot this query",
-  "turn this into a re-runnable report", or "save it as vendor-rank-drops"
+  this analysis", "I want to re-run this later", "make this re-runnable",
+  "name this query", "preserve this analysis for later", "snapshot this
+  query", "turn this into a re-runnable report", or "save it as
+  vendor-rank-drops"
   (any kebab-case name). Fires automatically (with confirmation) after
   any vendor-cascade or supabase-sql-magic run against
   hsyjcrrazrzqngwkqsqa that produced a re-runnable result shape. Skip
@@ -33,7 +34,7 @@ Stolen from: the notebook-as-artifact pattern in Hex (hex.tech). Rebuilt as a si
 
 Run this skill when Michael says anything like:
 - "save this analysis"
-- "snapshot this"
+- "snapshot this analysis"
 - "I want to re-run this later"
 - "make this re-runnable"
 - "name this query"
@@ -76,7 +77,7 @@ Output artifact: a labeled 5-field list (originating_prompt, parameters, query_o
 
 Generate the filename: `snapshot-NNN-[kebab-name].md`
 
-- `NNN` = next sequential 3-digit number (read `/home/user/accent-os/analyses/INDEX.md` for current max; start at `001` if the file is missing)
+- `NNN` = next sequential 3-digit number (read `/home/user/accent-os/analyses/INDEX.md` for current max; start at `001` if the file or directory is missing, or if INDEX.md exists but contains no data rows — create `/home/user/accent-os/analyses/` if it doesn't exist)
 - `[kebab-name]` = short, descriptive, action-oriented kebab-case noun phrase
 
 Concrete filename examples:
@@ -176,9 +177,9 @@ Output artifact: the confirmation block above plus the file path of the written 
 ## Anti-patterns
 
 - **Never** snapshot a one-shot throwaway question (e.g. "how many rows does vendors have right now") — re-runnable value requires parameterizable inputs, not a single hardcoded answer. Throwaway questions don't belong in `/home/user/accent-os/analyses/`.
-- **Never** snapshot something that is already a feature in an AccentOS module — those have their own re-run path.
-- **Never** invent parameters. If the original run did not specify a date range, capture "no range / all-time" rather than guessing one.
+- **Never** snapshot something that is already a feature in an AccentOS module — e.g. a vendor-cascade run is always re-runnable through vendor-cascade itself; a kpi-data-audit result lives in the audit trail. Snapshotting them creates a stale duplicate outside the skill's own re-run path.
+- **Never** invent parameters. If the original run against hsyjcrrazrzqngwkqsqa did not specify a date range, capture "no range / all-time" rather than guessing one — a snapshot with an invented `completed_at BETWEEN` clause will silently return different results on re-run.
 - **Never** modify the originating SQL or cascade input when snapshotting. Capture-as-is against `hsyjcrrazrzqngwkqsqa`; improvements happen on the next re-run.
-- **Never** skip the INDEX.md update. An un-indexed snapshot is invisible to future sessions.
+- **Never** skip the INDEX.md update. An un-indexed snapshot at `/home/user/accent-os/analyses/INDEX.md` is invisible to future sessions — "Show analyses/INDEX.md" returns nothing and the snapshot is effectively lost until someone manually scans the analyses/ directory.
 - **Never** name a snapshot generically (`snapshot-001-vendors.md`). The kebab-name must describe the question, not just the table.
 - **Never** write a snapshot without the Supabase project ID or cascade source reference in the Query or Cascade input section — a query stripped of its target is not re-runnable.

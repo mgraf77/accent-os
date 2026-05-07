@@ -60,7 +60,7 @@ Extract three things:
 
 If `time_bound` is ambiguous, default to **2-hour soft cap with token-budget hard stop**.
 
-If `scope` is "until I'm back" without further context, default to **drain prompt-queue if non-empty, else BUILD_PLAN_CLAUDE walk in priority order**.
+If `time_bound` is "until I'm back" and `scope` is also unstated, default to **drain prompt-queue if non-empty, else BUILD_PLAN_CLAUDE walk in priority order**.
 
 ---
 
@@ -91,7 +91,7 @@ Before writing the mode-state file:
 1. Walk through every item in scope; classify each as auto-approved OR needs-Michael
 2. If any item is needs-Michael AND it's the next item in priority order → halt with `BLOCKED: cannot operate autonomously on [item] — needs Michael present`
 3. If a needs-Michael item is encountered mid-loop → finish current commit, log the block, exit cleanly
-4. Estimate scope: how many discrete commits? How many tokens approximately?
+4. Estimate scope: how many discrete commits? How many tokens approximately? (These estimates populate `estimated_commits` and `estimated_tokens` in the Step 2 JSON — write them here before touching the file.)
 
 ---
 
@@ -140,7 +140,7 @@ Append to `/home/user/accent-os/PROMPT_LOG.md`:
 **Estimated work:** [N commits, ~Ktokens]
 ```
 
-And to `/home/user/accent-os/SESSION_LOG.md`:
+And to `/home/user/accent-os/SESSION_LOG.md` (create if missing):
 
 ```
 ### Autonomous mode started YYYY-MM-DD HH:MM
@@ -247,7 +247,7 @@ Going dark. Will surface a summary in SESSION_LOG.md on exit.
 ## Anti-patterns
 
 - **Never** start autonomous work without writing /home/user/accent-os/.claude/autonomous_mode.json first. The file IS the directive; missing it means no record of scope exists.
-- **Never** silently extend the time_bound. When a soft cap hits, stop and let Michael decide whether to extend.
+- **Never** silently extend the time_bound. When `soft_cap_at` in autonomous_mode.json is passed, stop immediately and set status to `time_capped` — do not add 30 extra minutes because "the task is almost done." Let Michael decide whether to extend by re-invoking the skill.
 - **Never** push to main when the soft cap fires mid-commit. Finish the current commit on its branch, then stop — no half-finished work on main.
 - **Never** make billing-implication external-API calls in autonomous mode without prior approval. Codex-review LOW-risk auto-apply is pre-approved; every new API integration requires Michael present.
 - **Never** auto-rebase or auto-resolve merge conflicts in autonomous mode. Stop, flag the conflict in SESSION_LOG.md, and await Michael.

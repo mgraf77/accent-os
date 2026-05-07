@@ -12,8 +12,8 @@ description: >
   phrasing that asks to populate the rep_group_id field on vendors.
   Do not use to override existing assignments — this skill only
   proposes for vendors where rep_group_id IS NULL. Always produces a
-  CSV with confidence scoring + evidence per row — never returns
-  prose-only.
+  CSV with columns vendor_id, suggested_rep_group_id, confidence_score,
+  classification, evidence — never returns prose-only.
 ---
 
 # rep-group-matchmaker
@@ -71,6 +71,14 @@ JOIN rep_groups rg ON rg.id = v.rep_group_id;
 
 This is the labeled ground-truth set. Use these patterns to suggest assignments for unassigned vendors.
 
+Output before proceeding:
+
+```
+GROUND-TRUTH SET: 89 vendors already assigned
+  rep_groups active: 12
+  brand_categories covered: Pendants, Chandeliers, Flush Mount, Outdoor, ...
+```
+
 ---
 
 ## Step 3 — Build the rep_group profile
@@ -117,7 +125,13 @@ Where:
 - **price_tier_match** — 1.0 if exact, 0.5 if adjacent tier, 0 otherwise
 - **state_proximity** — 1.0 if same state as cluster, 0.5 if a state sharing a border with the cluster's modal state (use US contiguous-border adjacency), 0 otherwise
 
-Return top 3 candidates per vendor (sorted by score descending).
+Return top 3 candidates per vendor (sorted by score descending). Output a preview before proceeding to Step 5:
+
+```
+SCORING COMPLETE: 243 vendors scored against 12 rep_groups
+  Top-1 score range: 0.31–0.94   Avg: 0.67
+  Unscoreable (INSUFFICIENT_DATA): 8 vendors → BLOCK 5
+```
 
 ---
 
@@ -171,7 +185,7 @@ For each vendor missing both brand_category AND region:
 
 - **Never** propose for vendors where `rep_group_id` is already set — read-only on populated rows.
 - **Never** auto-execute the bulk-update SQL. Always require Michael's spot-check.
-- **Never** suggest a rep_group with confidence < 0.50 — flag as LOW for manual review.
+- **Never** suggest a rep_group with confidence < 0.50 as actionable — write these to BLOCK 2 of the CSV with classification=LOW and a "consider creating new group" evidence note; do not omit them from output.
 - **Never** ignore the state_proximity dimension — geography matters in B2B distribution.
 - **Never** invent rep_groups. If LOW confidence, suggest "consider creating new group" rather than picking a wrong one.
 - **Never** skip the INSUFFICIENT_DATA block (BLOCK 5) — vendors missing both `brand_category` and `region` in Supabase `hsyjcrrazrzqngwkqsqa` are silently excluded from scoring, and omitting them from the output hides the true M19 completion gap from Michael.

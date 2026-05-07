@@ -109,3 +109,31 @@ No new changes — all Ralph findings addressed in Cycle 1. The "Never mix" phra
 - Step 4: BC admin URLs fully qualified with store-cwqiwcjxes domain
 
 ---
+
+## Run 2026-05-07 (Round 5+6 — sub-dimension quality)  branch: claude/optimize-skills-agents-1u8OO
+
+### Baseline matter score: 100/100 (binary — maintained)
+
+### Round 5 — Sub-dimension quality + regularization
+**L1 specificity check:** Trigger Recognition section listed "P053-077" without generalizing to other batch ID patterns, even though the YAML description notes "any product batch identifier". Cold-read executor would not fire on "P100-150 batch". Fixed by rewriting the trigger line to explicitly generalize the P[NNN]-[NNN] range pattern.
+
+**L2 commitment check:** Description commitment "Always produces a per-row fix recommendation table — never returns prose-only" contains no vague words (no "properly", "ensure", "high-quality"). Clean — no rewrite needed.
+
+**Adversarial check:** Dimensions sampled: M5 (trigger phrases), M4 (anti-patterns). M5 finding: batch ID trigger was too narrow — the parenthetical generalization existed only in YAML, not in the Trigger Recognition body. Fixed. M4 finding: anti-pattern 4 ("Never classify as HARD_404 on a single probe — retry after 60s") created a behavioral expectation without a corresponding in-step instruction. Fixed by embedding the retry requirement directly in the Step 3 HARD_404 classification row.
+
+**Cold-read check:** Step 3 5XX row said "Investigate BC origin" — insufficient for a cold-read executor who doesn't know which BC tool to use. Replaced with specific BC dashboard URL (`https://store-cwqiwcjxes.mybigcommerce.com/manage/dashboard`). HARD_404 retry now appears at the classification point. All step output blocks remain concrete and complete.
+
+**Cross-skill trigger audit:** "URL audit" / "404 check" — scope-differentiated from gmc-feed-audit via description gate ("Do not use for general SEO audits"). "canonical issues" — does not overlap with bulk-meta-description (different artifact type). "GMC re-index pending" — unique. No collisions found.
+
+### Round 6 — Second pass
+**L1 check:** 5XX classification row refined — "Investigate BC origin" → specific BC dashboard URL. Anti-patterns all name specific AccentOS artifacts (store-cwqiwcjxes, P053-077, 2023 slug migration). Clean.
+
+**L2 check:** No vague words introduced by Round 5 edits. All three edits use imperative language with specific URLs or pattern descriptions.
+
+**Adversarial check:** Dimensions sampled: M9 (stack reference), M3 (behavioral commitment). Both clean — Supabase project ID and BC store ID appear in description and step bodies. Commitment is in YAML and output section consistently.
+
+**Cold-read check:** Step 3 classification table is now fully self-contained — retry logic for HARD_404 is inline, 5XX recovery path is specific. No undefined variables or context-only instructions found.
+
+**Cross-skill trigger audit:** No changes to trigger phrases in Round 6. Prior audit confirmed no collisions.
+
+### Final: 3 sub-dimension edits across 2 rounds

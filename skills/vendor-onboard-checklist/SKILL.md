@@ -174,9 +174,9 @@ UPDATE vendors SET moq_dollars = [VALUE]
 
 ## Anti-patterns
 
-- **Never** auto-execute the UPDATE stubs. Output them as paste-ready; Michael fills values.
-- **Never** invent default values for missing fields (e.g. don't assume Net30 if NULL).
-- **Never** flag a "DESIRED" field as a failure. Required vs. desired is the contract.
-- **Never** mark a vendor "complete" just because all required columns are non-null — also run the cross-vendor consistency check.
-- **Never** modify the contract definition (Step 2 table) from inside this skill. Updates to the contract live in this SKILL.md, not at runtime.
-- **Never** skip the cross-vendor consistency check (Step 4) even if all required fields pass — lead time and payment term outliers are invisible without sibling comparison, and Supabase hsyjcrrazrzqngwkqsqa `vendors` table drift is the most common source of silent data quality failures in AccentOS.
+- **Never** auto-execute the UPDATE stubs — output them as paste-ready SQL against `hsyjcrrazrzqngwkqsqa`; Michael fills `[VALUE]` then runs in the SQL Editor.
+- **Never** invent default values for missing `vendors` fields (e.g. don't assume `payment_terms = 'Net30'` if NULL — only Michael or the vendor contact can confirm).
+- **Never** flag a "DESIRED" field (`hq_city`, `hq_state`, `revenue_tier`) as a ✗ failure. The contract in Step 2 is the authority: required = ✗ if missing, desired = ⚠ only.
+- **Never** mark a vendor "complete" just because all required `vendors` columns are non-null — also run the Step 4 cross-vendor sibling consistency check against `brand_category` peers.
+- **Never** modify the contract definition (Step 2 table) from inside this skill at runtime — the authoritative contract lives in this SKILL.md; changes require editing SKILL.md directly.
+- **Never** skip the cross-vendor consistency check (Step 4) even if all required fields pass — `lead_time_days` and `payment_terms` outliers vs `brand_category` siblings are invisible without the sibling query, and `vendors` table drift in `hsyjcrrazrzqngwkqsqa` is the most common source of silent data quality failures in AccentOS.

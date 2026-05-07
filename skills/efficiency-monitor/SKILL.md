@@ -218,7 +218,7 @@ This is the single most-valuable signal — catching when we're brute-forcing wo
 - **Never** interrupt Michael mid-flow with efficiency observations. Surface only at session start (boot replay) and session end (wrap-up). All mid-session flags go to `skills/efficiency-monitor/_session-scratch.md` silently.
 - **Never** flag a skill-bypass without citing the exact `skills/_index.md` entry that would have matched. Vague "could have used a skill" is not actionable.
 - **Never** auto-promote a skill candidate without `scripts/efficiency-aggregate.sh` confirming the threshold (3+ separate sessions or cross-session savings > 10 min/occurrence). SKILL.md writes raw flags only; the script owns promotion logic.
-- **Never** include assistant responses in signal analysis — track patterns in the Michael → Claude direction only. Mixing Claude's output into the count inflates every signal type.
+- **Never** include assistant responses in signal analysis — track patterns in the Michael → Claude direction only. Counting Claude's own `_session-scratch.md` writes, tool calls, or summary paragraphs as "redundant-read" or "retry-loop" signals inflates every count and produces meaningless promotion candidates in `skill-candidates.md`.
 - **Never** create standalone commits for efficiency-monitor file writes. Bundle all writes (efficiency-log.md, session-end-summary.md, skill-candidates.md) into the session-end commit per CLAUDE.md batch-doc-update rule.
 - **Never** surface INFO-level flags at boot. Boot output lists only the top 3 inefficiencies and any PROMOTE-status skill candidates.
 - **Never** clear `_session-scratch.md` before Step 2d runs the aggregator. The scratch file is the aggregator's input; deleting it early loses the session's signal data.
