@@ -73,13 +73,18 @@ Output artifact: a structured component list used verbatim in Step 4. If any com
 
 Generate the filename: `snapshot-NNN-[kebab-name].md`
 
-- `NNN` is the next sequential 3-digit number (read `analyses/INDEX.md` to find current max)
-- `[kebab-name]` is short, descriptive, action-oriented. Examples:
-  - `snapshot-001-vendor-rank-drops-weekly.md`
-  - `snapshot-002-gmc-missing-images-by-brand.md`
-  - `snapshot-003-deal-velocity-by-trade-partner.md`
+- `NNN` = next sequential 3-digit number (read `/home/user/accent-os/analyses/INDEX.md` for current max; start at `001` if the file is missing)
+- `[kebab-name]` = short, descriptive, action-oriented kebab-case noun phrase
 
-If Michael said "save it as [name]", use that name (kebab-cased). Otherwise, infer from the originating prompt.
+Concrete filename examples:
+```
+snapshot-001-vendor-rank-drops-weekly.md
+snapshot-002-gmc-missing-images-by-brand.md
+snapshot-003-deal-velocity-by-trade-partner.md
+snapshot-004-bc-store-cwqiwcjxes-sku-gaps.md
+```
+
+If Michael said "save it as [name]", use that name (kebab-cased). Otherwise, infer from the originating prompt. Reject generic names like `snapshot-001-vendors.md` — specificity is what makes the file findable in 6 months.
 
 ---
 

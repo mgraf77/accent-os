@@ -67,7 +67,11 @@ Before any search, do these in parallel:
 3. **Mine Michael's phrasing** — read the last ~50 entries of `/home/user/accent-os/PROMPT_LOG.md` and tail of `/home/user/accent-os/SESSION_LOG.md`. Note recurring phrases for use as trigger candidates in Step 5. If either file is absent or empty, skip silently and fall back to phrases from existing `skills/*/SKILL.md` description blocks for tone.
 4. **Capture branch state** — `git -C /home/user/accent-os branch --show-current`. Note the current branch for Step 7. If on `main`, Step 7 will auto-create a `claude/forge-[skill-name]-[short-hash]` branch before committing — do not push to main without explicit permission.
 
-Output of Step 0: a short pre-run note: gotcha rules applied, profile source used, branch.
+Output of Step 0: a pre-run note in this exact format:
+```
+Preflight: [N] gotcha rules applied | profile source: [file used] | branch: [branch-name]
+Gotcha rules active: [list prevention_rule texts, or "none"]
+```
 
 ---
 
@@ -359,12 +363,13 @@ NNN is sequential. Same `prevention_rule` wording across entries is what lets th
 - **Never** skip the Step 5 approval gate. Building before Michael approves means producing skills he didn't sign off on.
 - **Never** skip the Step 8 Ralph loop. A skill that hasn't been stress-tested ships hidden gotchas.
 - **Never** stop at the gap analysis. Either produce proposals (Step 5) or an explicit WATCH abort with reasoning.
-- **Never** include concepts in KEEP that don't tie to a named AccentOS gap.
-- **Never** generate a skill with <3 concrete AccentOS substitutions.
-- **Never** ship a skill where the description is generic enough to also fit a non-AccentOS user.
+- **Never** include concepts in KEEP that don't tie to a named AccentOS gap — not even if the concept is interesting in isolation.
+- **Never** generate a skill with fewer than 3 concrete AccentOS substitutions (AccentOS, Accent Lighting, store-cwqiwcjxes, hsyjcrrazrzqngwkqsqa, vendor_scores, vendor_overrides, GMC, Klaviyo).
+- **Never** ship a skill where the description is generic enough to also fit a non-AccentOS user — every description must name AccentOS or Accent Lighting explicitly.
 - **Never** copy SKILL.md prose verbatim from the target. Forge means rewrite from concepts, not paraphrase.
 - **Never** write a skill longer than the source's docs. If it's longer, it's bloated.
-- **Never** add "Future enhancements" or "Roadmap" sections — skills are shipped state.
-- **Never** ask Michael which trigger phrases to use — mine PROMPT_LOG.md, infer from his actual phrasing.
+- **Never** add "Future enhancements", "Roadmap", or "TODO" sections — skills represent shipped state only.
+- **Never** ask Michael which trigger phrases to use — mine `/home/user/accent-os/PROMPT_LOG.md`, infer from his actual phrasing.
 - **Never** auto-edit this SKILL.md from the gotcha-log without surfacing the proposed Edit in the report first.
 - **Never** push to main without explicit permission.
+- **Never** run Step 2 extraction on only one source class — all five source classes (GitHub, official site, social, review/blog, pricing) must be attempted before saturation is declared.

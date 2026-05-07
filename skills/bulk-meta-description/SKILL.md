@@ -99,6 +99,16 @@ Per generated description, check:
 3. **No duplicate from existing meta** — if `current_meta_description` matches generated, mark `NO_CHANGE` (skip row)
 4. **No vendor name confused with brand** — vendor (e.g. "Acme Lighting Co.") is not the same as brand
 
+Output the validation result for every row as a one-line status entry:
+
+```
+product_id | sku       | char_count | status
+-----------|-----------|------------|------------------
+12345      | ACME-001  | 157        | OK
+67890      | BC-002    | 143        | REGEN (too short)
+11111      | MFG-007   | —          | INSUFFICIENT_DATA
+```
+
 ---
 
 ## Step 5 — Output
