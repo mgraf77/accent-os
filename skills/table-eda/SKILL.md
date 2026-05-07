@@ -172,7 +172,7 @@ If no flags fire, output: "No outlier flags. Data shape looks clean."
 ═══ BLOCK 4: NEXT-STEP HINTS ═══
 For each fired flag, suggest a follow-up:
   - HIGH_NULL on [col] → check the writer module at js/[module].js
-  - HEAVY_SKEW on [col] → consider whether this should be split into multiple columns
+  - HEAVY_SKEW on [col] → evaluate whether this should be split into multiple columns or treated as a derived flag
   - NULL_DROP on [col] → vendor-cascade or vendor-clarity-test would surface affected rows
 ```
 
