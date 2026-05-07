@@ -3,6 +3,13 @@
 
 ---
 
+## 2026-05-07 session-close
+- create: RAG-EXPLAINER.md — beginner-friendly guide to BM25, chunking, graph re-ranking, stemmer, 3 Python scripts, add-knowledge workflow
+- update: wiki/hot.md — session closed, all open loops documented, next-session entry points updated
+- note: all Claude-buildable features complete; 5 tracks (5.13, 6.1-6.4, 6.11, 6.12) blocked on Michael M-tasks; wiki/modules/ enrichment available as unblocked work
+
+---
+
 ## 2026-05-07 precision-optimization-passes
 
 ### Pass 1 (45.7% → 48.3%)
