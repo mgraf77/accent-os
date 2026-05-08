@@ -1,0 +1,35 @@
+{
+  "bottlenecks": [
+    { "where": "AirlockGate per-action check on filesystem reads",  "why": "every Read tool call from a quarantined skill incurs a policy lookup", "mitigation": "cache compiled policy in memory at session start; lookup is O(1)" },
+    { "where": "ObservationLedger append on every action",          "why": "high-action skills could write the ledger thousands of times per run",  "mitigation": "buffer ledger appends in memory and flush once at run end" }
+  ],
+  "ambiguity_risks": [
+    { "surface": "policy.yaml.invoke_skills",          "ambiguity": "wildcards versus explicit list",                                "fix": "explicit list only in MVP; wildcards deferred" },
+    { "surface": "promotion threshold semantics",      "ambiguity": "consecutive clean runs versus total clean runs",                "fix": "policy.threshold_clean_streak captures consecutive runs explicitly" },
+    { "surface": "shadow filesystem visibility",       "ambiguity": "is the shadow read by future runs of the same skill",           "fix": "shadow is per-run and discarded at run end; documented in PolicyManifest contract" }
+  ],
+  "token_explosions": [
+    { "surface": "ObservationLedger printed to operator on /airlock status",  "trigger": "skill with a long ledger requested verbosely",  "cap": "/airlock status truncates to last 50 entries; full ledger is git-readable" },
+    { "surface": "Propagation chain dumped on cross-skill invocation",        "trigger": "deeply nested skill router calls",              "cap": "chain truncated at 8 hops; deeper chains recorded as truncated_chain entry" }
+  ],
+  "orchestration_drift": [
+    { "actor": "AirlockGate",      "drift_mode": "interception bypass when a skill imports its own fs module",      "guardrail": "policy.yaml requires sdk-only file access; non-sdk reads fail loudly" },
+    { "actor": "AirlockOperator",  "drift_mode": "promotion granted without ledger review",                          "guardrail": "/airlock promote requires --reason flag captured in promotion-log.md" }
+  ],
+  "governance_gaps": [
+    { "rule": "policy.yaml must exist", "gap": "skill installed manually with cp may skip the scaffold step",       "owner": "AirlockGate session-start check raises policy-missing on encountered orphan skill" },
+    { "rule": "ledger append-only",     "gap": "operator could git rebase to rewrite history",                       "owner": "promotion-log.md records ledger sha at promotion; mismatch triggers warning" }
+  ],
+  "sync_problems": [
+    { "surface": "concurrent runs of two quarantined skills",     "race": "ledger writes interleave",                          "resolution": "single-process AccentOS guarantees serial run; documented invariant" },
+    { "surface": "promotion mid-run",                              "race": "operator promotes while skill is mid-execution",   "resolution": "promotion takes effect on next run; current run finishes under quarantine policy" }
+  ],
+  "scalability_cliffs": [
+    { "axis": "quarantined skill count", "cliff_at": "100 skills with active ledgers",  "next_step": "monthly archive rotation per skill" },
+    { "axis": "interception surfaces",   "cliff_at": "outbound-http or shell required", "next_step": "extend AirlockGate with new interceptor; one surface per release" }
+  ],
+  "maintainability": [
+    { "surface": "policy.yaml schema evolution",  "decay_mode": "fields added without migration break older skills",     "preventer": "schema-version field in policy.yaml; AirlockGate emits warning on mismatch" },
+    { "surface": "AirlockGate hook contract",     "decay_mode": "AccentOS skill SDK changes Read/Write signatures",       "preventer": "AirlockGate is versioned alongside skill SDK; integration test pins both" }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "entities": [
+    { "name": "QuarantinedSkill", "owns": "policy.yaml + observation ledger", "lifecycle": "registered → observed → promoted | demoted | uninstalled" },
+    { "name": "PolicyManifest",   "owns": "per-skill allow lists and promotion thresholds", "lifecycle": "authored once on install → versioned by git commit" },
+    { "name": "ObservationLedger","owns": "append-only run records per quarantined skill", "lifecycle": "appended each run → archived on promotion" },
+    { "name": "AirlockOperator",  "owns": "promotion + demotion decisions", "lifecycle": "interactive across sessions" },
+    { "name": "AirlockGate",      "owns": "filesystem and router interception logic", "lifecycle": "loaded at session start, evaluated per skill action" }
+  ],
+  "orchestration": [
+    { "trigger": "skill installed via skill-forge or repo-scout", "actor": "AirlockGate", "effect": "PolicyManifest scaffold created in airlock/<skill>/policy.yaml", "traces_to_goal": "Track per-skill run outcomes against a promotion threshold" },
+    { "trigger": "quarantined skill reads a file", "actor": "AirlockGate", "effect": "read recorded; allowed if path matches policy.read_paths", "traces_to_goal": "Intercept every file read and write a quarantined skill performs" },
+    { "trigger": "quarantined skill writes a file", "actor": "AirlockGate", "effect": "write redirected to airlock/<skill>/shadow/ unless path matches policy.write_paths", "traces_to_goal": "Intercept every file read and write a quarantined skill performs" },
+    { "trigger": "quarantined skill triggers another skill via vibe-speak", "actor": "AirlockGate", "effect": "propagation chain recorded; nested skill inherits caller policy", "traces_to_goal": "Intercept every cross-skill invocation a quarantined skill triggers" },
+    { "trigger": "quarantined skill issues an outbound HTTP call", "actor": "AirlockGate", "effect": "blocked by default; recorded as policy violation if attempted", "traces_to_goal": "Block external network calls from quarantined skills by default" },
+    { "trigger": "run completes without violations", "actor": "AirlockGate", "effect": "ObservationLedger.success_count incremented; promotion check runs", "traces_to_goal": "Track per-skill run outcomes against a promotion threshold" },
+    { "trigger": "operator runs /airlock promote <skill>", "actor": "AirlockOperator", "effect": "policy.status flipped to trusted; ledger archived", "traces_to_goal": "Promote a skill to trusted on threshold met or explicit override" },
+    { "trigger": "operator runs /airlock demote <skill>", "actor": "AirlockOperator", "effect": "policy.status flipped back to quarantined; observation_window reset", "traces_to_goal": "Demote a trusted skill on policy violation or operator command" }
+  ],
+  "state": [
+    { "key": "policy.yaml",       "shape": "{status, read_paths[], write_paths[], invoke_skills[], threshold_runs, threshold_clean_streak}", "owner": "PolicyManifest",   "persistence": "git" },
+    { "key": "ledger.jsonl",      "shape": "one JSON object per run: {ts, skill, action, target, allowed, violation_kind|null}",            "owner": "ObservationLedger","persistence": "git" },
+    { "key": "shadow/<paths>",    "shape": "redirected file writes mirroring real paths under skill scope",                                  "owner": "AirlockGate",      "persistence": "ephemeral" },
+    { "key": "promotion-log.md",  "shape": "human-readable log of promotion + demotion decisions with operator + reason",                    "owner": "AirlockOperator",  "persistence": "git" }
+  ],
+  "dependencies": [
+    { "upstream": "skill-forge",          "downstream": "PolicyManifest",   "kind": "data" },
+    { "upstream": "PolicyManifest",       "downstream": "AirlockGate",      "kind": "data" },
+    { "upstream": "AirlockGate",          "downstream": "ObservationLedger","kind": "data" },
+    { "upstream": "ObservationLedger",    "downstream": "AirlockOperator",  "kind": "data" },
+    { "upstream": "AirlockOperator",      "downstream": "PolicyManifest",   "kind": "control" }
+  ],
+  "governance": [
+    { "rule": "Every quarantined skill must have a policy.yaml before its first run",        "enforced_by": "AirlockGate session-start check", "failure_mode": "skill load aborts with policy-missing error" },
+    { "rule": "Trusted-status flip requires either threshold met or operator command",       "enforced_by": "AirlockOperator promotion path",  "failure_mode": "promotion command rejected with insufficient-evidence error" },
+    { "rule": "Ledger entries are append-only and never edited",                              "enforced_by": "AirlockGate write path",          "failure_mode": "rewrite rejected; new appended entry annotates the prior one" },
+    { "rule": "Policy violations halt the current run before any observable side effect",    "enforced_by": "AirlockGate per-action check",    "failure_mode": "skill returns violation error, run marked failed in ledger" }
+  ],
+  "scaling_axes": [
+    { "axis": "quarantined skill count", "current_limit": "10 concurrent",                   "future_limit": "100 with archived ledgers" },
+    { "axis": "ledger size per skill",   "current_limit": "1 MB JSONL",                       "future_limit": "10 MB with monthly archive rotation" },
+    { "axis": "interception surfaces",   "current_limit": "filesystem + skill-router",        "future_limit": "filesystem + router + outbound-http + shell" }
+  ],
+  "interop_surface": [
+    { "protocol": "AccentOS skill SDK Read/Write hooks", "consumer": "AirlockGate",        "format": "Node module exporting interceptors" },
+    { "protocol": "vibe-speak router invocation event", "consumer": "AirlockGate",        "format": "router emits {caller, callee, args}" },
+    { "protocol": "operator slash commands /airlock *", "consumer": "AirlockOperator",   "format": "markdown command set in skill router" },
+    { "protocol": "git commit hook",                     "consumer": "PolicyManifest",     "format": "pre-commit checks policy.yaml schema" }
+  ]
+}

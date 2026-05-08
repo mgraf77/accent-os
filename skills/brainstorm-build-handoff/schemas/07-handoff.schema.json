@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/07-handoff",
+  "title": "Build-Ready Handoff (markdown sections contract)",
+  "description": "Validates that the assembled 07-HANDOFF.md contains all required H2 sections in order. Validator parses headings — schema is documentation of the contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["required_sections"],
+  "properties": {
+    "required_sections": {
+      "type": "array",
+      "const": [
+        "Objective",
+        "Scope Boundary",
+        "Architecture",
+        "Implementation Phases",
+        "Validation Gates",
+        "Operating Rules",
+        "Out of Scope",
+        "Next Phases",
+        "Source Artifacts"
+      ]
+    }
+  }
+}

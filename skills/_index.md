@@ -42,6 +42,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: when next item is obvious
 - companion: build-plan-status, priority-articulation
 
+### brainstorm-build-handoff
+- summary: Convert raw ideas / fragmented brainstorms / partial system visions into a deterministic, build-ready handoff (markdown + JSON artifacts) suitable for Claude Code, Codex, autonomous agents, or an engineering team. Runs a fixed seven-phase pipeline (extract → systems → failures → 3-pass Ralph → MVP → plan → assemble) with one JSON artifact per phase plus a final HANDOFF.md.
+- triggers: "turn this into a build plan", "make this build-ready", "structure this idea", "generate a handoff", "stop the prompt soup", "design the architecture for X", "ralph this idea", "convert this transcript into a system"
+- when_to_use: unstructured thinking that needs to become an executable spec for another AI or engineer
+- when_NOT: external-tool ingestion (use skill-forge), decision questions (use priority-articulation), single-file edits, pure data work
+- companion: skill-forge, priority-articulation, decision-log, efficiency-monitor
+
 ### broken-link-rescue
 - summary: Crawl Accent Lighting product URLs and flag 404s, 5xx, redirect chains.
 - triggers: "check broken links", "404 audit", "site crawl", "URL health"

@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/02-systems",
+  "title": "Systems Thinking",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entities",
+    "orchestration",
+    "state",
+    "dependencies",
+    "governance",
+    "scaling_axes",
+    "interop_surface"
+  ],
+  "properties": {
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "owns", "lifecycle"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "owns": { "type": "string" },
+          "lifecycle": { "type": "string" }
+        }
+      }
+    },
+    "orchestration": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trigger", "actor", "effect"],
+        "additionalProperties": false,
+        "properties": {
+          "trigger": { "type": "string" },
+          "actor": { "type": "string" },
+          "effect": { "type": "string" },
+          "traces_to_goal": { "type": "string" }
+        }
+      }
+    },
+    "state": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "shape", "owner", "persistence"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string" },
+          "shape": { "type": "string" },
+          "owner": { "type": "string" },
+          "persistence": { "type": "string", "enum": ["ephemeral", "session", "durable", "git", "external"] }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["upstream", "downstream", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "upstream": { "type": "string" },
+          "downstream": { "type": "string" },
+          "kind": { "type": "string", "enum": ["data", "control", "time"] }
+        }
+      }
+    },
+    "governance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "enforced_by", "failure_mode"],
+        "additionalProperties": false,
+        "properties": {
+          "rule": { "type": "string" },
+          "enforced_by": { "type": "string" },
+          "failure_mode": { "type": "string" }
+        }
+      }
+    },
+    "scaling_axes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["axis", "current_limit", "future_limit"],
+        "additionalProperties": false,
+        "properties": {
+          "axis": { "type": "string" },
+          "current_limit": { "type": "string" },
+          "future_limit": { "type": "string" }
+        }
+      }
+    },
+    "interop_surface": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["protocol", "consumer", "format"],
+        "additionalProperties": false,
+        "properties": {
+          "protocol": { "type": "string" },
+          "consumer": { "type": "string" },
+          "format": { "type": "string" }
+        }
+      }
+    }
+  }
+}

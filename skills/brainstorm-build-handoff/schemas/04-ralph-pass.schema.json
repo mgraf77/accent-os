@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/04-ralph-pass",
+  "title": "Ralph Loop Pass (delta)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pass", "focus", "removals", "merges", "renames", "additions", "determinism_wins", "open_issues"],
+  "properties": {
+    "pass":  { "type": "integer", "enum": [1, 2, 3] },
+    "focus": { "type": "string", "enum": ["simplify", "de-risk", "unify"] },
+    "removals": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["target", "reason"],
+        "additionalProperties": false,
+        "properties": { "target": {"type":"string"}, "reason": {"type":"string"} }
+      }
+    },
+    "merges": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["targets", "into", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "targets": { "type": "array", "minItems": 2, "items": {"type":"string"} },
+          "into":    { "type": "string" },
+          "reason":  { "type": "string" }
+        }
+      }
+    },
+    "renames": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "reason"],
+        "additionalProperties": false,
+        "properties": { "from": {"type":"string"}, "to": {"type":"string"}, "reason": {"type":"string"} }
+      }
+    },
+    "additions": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["target", "value", "reason"],
+        "additionalProperties": false,
+        "properties": { "target": {"type":"string"}, "value": {"type":"string"}, "reason": {"type":"string"} }
+      }
+    },
+    "determinism_wins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["surface", "before", "after"],
+        "additionalProperties": false,
+        "properties": { "surface": {"type":"string"}, "before": {"type":"string"}, "after": {"type":"string"} }
+      }
+    },
+    "open_issues": { "type": "array", "items": { "type": "string" } }
+  }
+}

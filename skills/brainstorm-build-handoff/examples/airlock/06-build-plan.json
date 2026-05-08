@@ -1,0 +1,47 @@
+{
+  "directory_structure": [
+    { "path": "skills/airlock/SKILL.md",                   "purpose": "skill contract for AccentOS skill router" },
+    { "path": "skills/airlock/gate.js",                    "purpose": "AirlockGate runtime: preflight, intercept-read, intercept-write, router hook, network block" },
+    { "path": "skills/airlock/ledger.js",                  "purpose": "buffered append-only writer for ledger.jsonl" },
+    { "path": "skills/airlock/operator.js",                "purpose": "/airlock status, promote, demote command handlers" },
+    { "path": "skills/airlock/policy.schema.json",         "purpose": "JSON Schema for policy.yaml" },
+    { "path": "skills/airlock/templates/policy.yaml",      "purpose": "scaffold template emitted on skill install" },
+    { "path": "airlock/<quarantined-skill>/policy.yaml",   "purpose": "per-skill policy manifest" },
+    { "path": "airlock/<quarantined-skill>/ledger.jsonl",  "purpose": "per-skill observation ledger" },
+    { "path": "airlock/<quarantined-skill>/shadow/",       "purpose": "ephemeral redirected writes per run" },
+    { "path": "airlock/promotion-log.md",                  "purpose": "human-readable promotion and demotion record" }
+  ],
+  "schemas": [
+    { "name": "policy.yaml",       "owner_phase": "P1", "format": "json-schema" },
+    { "name": "ledger.jsonl entry","owner_phase": "P3", "format": "json-schema" }
+  ],
+  "implementation_phases": [
+    { "id": "P1", "title": "Policy schema and scaffold",          "outputs": ["policy.schema.json", "templates/policy.yaml"], "depends_on": [],         "validation": "AccentOS git pre-commit hook validates every airlock/<skill>/policy.yaml against policy.schema.json" },
+    { "id": "P2", "title": "AirlockGate preflight",               "outputs": ["gate.js preflight()"],                          "depends_on": ["P1"],     "validation": "session-start integration test loads a fixture skill missing policy and asserts preflight aborts" },
+    { "id": "P3", "title": "Filesystem interception and ledger", "outputs": ["gate.js intercept-read", "gate.js intercept-write", "ledger.js"], "depends_on": ["P2"], "validation": "fixture skill performs read+write; ledger contains expected entries and shadow directory contains redirected writes" },
+    { "id": "P4", "title": "Router and network hooks",            "outputs": ["gate.js router-hook", "gate.js network-block"], "depends_on": ["P3"],     "validation": "fixture skill triggers another skill and attempts an outbound fetch; ledger records propagation chain and network-block violation" },
+    { "id": "P5", "title": "Operator slash commands",             "outputs": ["operator.js"],                                   "depends_on": ["P3"],     "validation": "/airlock promote without --reason flag is rejected; with --reason flag flips status and appends promotion-log.md entry" },
+    { "id": "P6", "title": "Documentation and skill registration","outputs": ["skills/airlock/SKILL.md", "skills/_index.md update"], "depends_on": ["P2","P3","P4","P5"], "validation": "AccentOS skill router can resolve airlock by trigger phrase and slash command in a smoke session" }
+  ],
+  "validation_gates": [
+    { "gate": "policy schema validity",          "applies_to": "every airlock/<skill>/policy.yaml",    "passes_if": "policy passes JSON Schema validation in git pre-commit hook" },
+    { "gate": "ledger append-only invariant",    "applies_to": "ledger.jsonl writer",                   "passes_if": "writer rejects non-append modes and is verified by ledger.test.js" },
+    { "gate": "preflight blocks orphan skills",  "applies_to": "session start with quarantined skill", "passes_if": "skill without policy.yaml fails to load and emits policy-missing error" },
+    { "gate": "promotion requires reason",       "applies_to": "/airlock promote command",              "passes_if": "command rejects without --reason and writes promotion-log.md entry with reason" },
+    { "gate": "AirlockGate version pin",         "applies_to": "AirlockGate hook contract",             "passes_if": "integration test asserts gate.js declared SDK_VERSION matches AccentOS skill SDK version" }
+  ],
+  "operating_rules": [
+    "Every quarantined skill runs through AirlockGate.preflight before any other code executes in the session",
+    "policy.yaml is treated as source of truth; runtime state is reconstructed from policy plus ledger on demand",
+    "ledger writes are buffered in memory and flushed once at run end",
+    "compiled policy is cached in memory at session start",
+    "AccentOS-shipped skills are exempt from quarantine and skip AirlockGate hooks",
+    "Promotion mid-run takes effect on the next run; the current run finishes under quarantined policy"
+  ],
+  "next_phases": [
+    { "trigger": "any quarantined skill needs to run shell commands", "scope": "extend AirlockGate with shell-command interceptor and add policy.yaml.shell_allowlist" },
+    { "trigger": "operator reports policy authoring exceeds five minutes per skill", "scope": "introduce wildcard support and a policy-author wizard" },
+    { "trigger": "any single skill ledger exceeds 1 MB", "scope": "monthly archive rotation with sha-pinned promotion-log.md cross-references" },
+    { "trigger": "first observed ledger rewrite incident", "scope": "ledger sha attestation captured at promotion time" }
+  ]
+}

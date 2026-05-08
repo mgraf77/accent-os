@@ -1,0 +1,28 @@
+{
+  "must_build": [
+    { "item": "policy.yaml schema and example", "phase_ref": "02-systems.state.policy.yaml", "reason": "every quarantined skill needs one before its first run" },
+    { "item": "AirlockGate.preflight session-start hook", "phase_ref": "02-systems.entities.AirlockGate", "reason": "ensures no quarantined skill loads without a policy" },
+    { "item": "AirlockGate.intercept-read and intercept-write", "phase_ref": "02-systems.orchestration", "reason": "core observation surface" },
+    { "item": "AirlockGate router-invocation hook", "phase_ref": "02-systems.orchestration", "reason": "captures cross-skill propagation" },
+    { "item": "Network-call default block", "phase_ref": "02-systems.orchestration", "reason": "outbound HTTP is the highest-risk surface" },
+    { "item": "ledger.jsonl append-only writer", "phase_ref": "02-systems.state.ledger.jsonl", "reason": "evidence base for promotion decisions" },
+    { "item": "/airlock status, /airlock promote, /airlock demote slash commands", "phase_ref": "02-systems.interop_surface", "reason": "operator decision surface" },
+    { "item": "promotion-log.md writer with required reason field", "phase_ref": "02-systems.state.promotion-log.md", "reason": "enforced by Ralph pass 2 governance addition" }
+  ],
+  "defer": [
+    { "item": "Wildcard support in policy.invoke_skills", "until": "operator reports policy authoring overhead exceeds five minutes per skill", "reason": "explicit list is sufficient at current skill count" },
+    { "item": "Outbound shell-command sandboxing", "until": "any quarantined skill needs to run shell commands", "reason": "filesystem and router cover existing skills" },
+    { "item": "Monthly ledger archive rotation", "until": "any single skill ledger exceeds 1 MB", "reason": "premature at current activity levels" },
+    { "item": "Ledger sha attestation in promotion-log.md", "until": "first observed ledger rewrite or rebase incident", "reason": "single-operator workflow makes rebase low risk" }
+  ],
+  "delete": [
+    { "item": "Cryptographic skill-provenance attestation", "reason": "speculation" },
+    { "item": "Multi-tenant quarantine across AccentOS clones", "reason": "scope creep" },
+    { "item": "Background daemon for live observation streaming", "reason": "premature abstraction" }
+  ],
+  "future_hooks": [
+    { "surface": "AirlockGate", "extension_point": "register-interceptor function for new surfaces", "rationale": "outbound-http and shell will be added one surface per release" },
+    { "surface": "policy.yaml", "extension_point": "schema-version field with migration table", "rationale": "lets schema evolve without breaking older quarantined skills" }
+  ],
+  "scope_boundary": "AIRLOCK is shipped when a freshly installed community skill can run, accumulate ledger entries, and be promoted via /airlock promote with no manual code edits to AccentOS itself."
+}

@@ -1,0 +1,4 @@
+# Runtime artifact directories — one subdir per project slug.
+# Examples are checked in explicitly.
+artifacts/*/
+!artifacts/.gitkeep

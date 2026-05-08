@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/03-failures",
+  "title": "Failure & Entropy Analysis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bottlenecks",
+    "ambiguity_risks",
+    "token_explosions",
+    "orchestration_drift",
+    "governance_gaps",
+    "sync_problems",
+    "scalability_cliffs",
+    "maintainability"
+  ],
+  "definitions": {
+    "bottleneck":          { "type": "object", "required": ["where", "why", "mitigation"],     "properties": { "where": {"type":"string"}, "why": {"type":"string"}, "mitigation": {"type":"string"} }, "additionalProperties": false },
+    "ambiguity":           { "type": "object", "required": ["surface", "ambiguity", "fix"],    "properties": { "surface": {"type":"string"}, "ambiguity": {"type":"string"}, "fix": {"type":"string"} }, "additionalProperties": false },
+    "token_explosion":     { "type": "object", "required": ["surface", "trigger", "cap"],      "properties": { "surface": {"type":"string"}, "trigger": {"type":"string"}, "cap": {"type":"string"} }, "additionalProperties": false },
+    "drift":               { "type": "object", "required": ["actor", "drift_mode", "guardrail"], "properties": { "actor": {"type":"string"}, "drift_mode": {"type":"string"}, "guardrail": {"type":"string"} }, "additionalProperties": false },
+    "gap":                 { "type": "object", "required": ["rule", "gap", "owner"],           "properties": { "rule": {"type":"string"}, "gap": {"type":"string"}, "owner": {"type":"string"} }, "additionalProperties": false },
+    "sync":                { "type": "object", "required": ["surface", "race", "resolution"],  "properties": { "surface": {"type":"string"}, "race": {"type":"string"}, "resolution": {"type":"string"} }, "additionalProperties": false },
+    "cliff":               { "type": "object", "required": ["axis", "cliff_at", "next_step"],  "properties": { "axis": {"type":"string"}, "cliff_at": {"type":"string"}, "next_step": {"type":"string"} }, "additionalProperties": false },
+    "maintain":            { "type": "object", "required": ["surface", "decay_mode", "preventer"], "properties": { "surface": {"type":"string"}, "decay_mode": {"type":"string"}, "preventer": {"type":"string"} }, "additionalProperties": false }
+  },
+  "properties": {
+    "bottlenecks":         { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/bottleneck" } },
+    "ambiguity_risks":     { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/ambiguity" } },
+    "token_explosions":    { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/token_explosion" } },
+    "orchestration_drift": { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/drift" } },
+    "governance_gaps":     { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/gap" } },
+    "sync_problems":       { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/sync" } },
+    "scalability_cliffs":  { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/cliff" } },
+    "maintainability":     { "type": "array", "maxItems": 7, "items": { "$ref": "#/definitions/maintain" } }
+  }
+}

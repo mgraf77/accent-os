@@ -1,0 +1,25 @@
+{
+  "pass": 1,
+  "focus": "simplify",
+  "removals": [
+    { "target": "02-systems.entities[shadow-fs as separate entity]",   "reason": "shadow fs is a sub-detail of AirlockGate, not a top-level entity" },
+    { "target": "02-systems.scaling_axes.interception-surfaces.future_limit.shell", "reason": "shell sandboxing is out of MVP scope per non_goals" }
+  ],
+  "merges": [
+    { "targets": ["promotion auto path", "promotion manual path"], "into": "AirlockOperator promotion path with auto-trigger flag", "reason": "single decision surface, two trigger sources" }
+  ],
+  "renames": [
+    { "from": "AirlockGate session-start check", "to": "AirlockGate.preflight",   "reason": "shorter and matches AccentOS preflight naming convention" },
+    { "from": "shadow/<paths>",                  "to": "airlock/<skill>/shadow/", "reason": "scope shadow under skill directory for clarity" }
+  ],
+  "additions": [
+    { "target": "02-systems.governance",  "value": "policy.yaml schema-version field is required",  "reason": "preempts maintainability decay surfaced in 03-failures.maintainability[0]" }
+  ],
+  "determinism_wins": [
+    { "surface": "promotion threshold", "before": "after some clean runs",      "after": "threshold_runs and threshold_clean_streak as explicit ints" },
+    { "surface": "shadow lifecycle",    "before": "ephemeral",                   "after": "per-run, discarded at run end" }
+  ],
+  "open_issues": [
+    "Cross-skill invocation chain depth 8 cap — verify against real router traces before promotion to v1.1"
+  ]
+}

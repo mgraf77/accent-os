@@ -1,0 +1,20 @@
+{
+  "pass": 2,
+  "focus": "de-risk",
+  "removals": [],
+  "merges": [],
+  "renames": [],
+  "additions": [
+    { "target": "02-systems.governance", "value": "AirlockGate must run before any other skill loads in a session", "reason": "neutralizes orchestration_drift[0] interception bypass" },
+    { "target": "02-systems.governance", "value": "/airlock promote requires --reason flag",                         "reason": "neutralizes orchestration_drift[1] promotion without review" },
+    { "target": "06-build-plan.operating_rules", "value": "ledger writes are buffered in memory and flushed once at run end", "reason": "neutralizes bottlenecks[1] ledger append cost" },
+    { "target": "06-build-plan.operating_rules", "value": "compiled policy is cached in memory at session start",      "reason": "neutralizes bottlenecks[0] per-action policy lookup cost" },
+    { "target": "06-build-plan.validation_gates", "value": "integration test pins AirlockGate version against skill SDK version", "reason": "neutralizes maintainability[1] hook contract drift" }
+  ],
+  "determinism_wins": [
+    { "surface": "policy violation handling", "before": "halt the run", "after": "skill returns violation error and run is marked failed in ledger before any side effect" }
+  ],
+  "open_issues": [
+    "Concurrent runs invariant relies on AccentOS single-process — document this dependency explicitly in handoff"
+  ]
+}

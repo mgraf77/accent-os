@@ -1,0 +1,36 @@
+{
+  "true_objective": "Quarantine community-installed AccentOS skills in an observation-only runtime layer until they have demonstrated safe behavior across enough runs to be promoted to trusted status.",
+  "system_category": "infra",
+  "primary_executor": "claude-code",
+  "operational_goals": [
+    "Intercept every file read and write a quarantined skill performs",
+    "Intercept every cross-skill invocation a quarantined skill triggers",
+    "Block external network calls from quarantined skills by default",
+    "Track per-skill run outcomes against a promotion threshold",
+    "Promote a skill to trusted on threshold met or explicit override",
+    "Demote a trusted skill on policy violation or operator command"
+  ],
+  "implied_workflows": [
+    "operator installs skill → AIRLOCK auto-quarantines → observation runs accrue → promotion or rollback",
+    "quarantined skill triggers another skill → AIRLOCK records the propagation chain",
+    "operator inspects quarantine ledger → reviews per-run observations → grants explicit promotion"
+  ],
+  "hidden_assumptions": [
+    "Every skill action that affects AccentOS state passes through a recordable surface",
+    "Filesystem and skill-router are the only observable surfaces in MVP",
+    "Operator trusts AccentOS-shipped skills without quarantine",
+    "Promotion threshold can be expressed as a counted run quota plus a clean-violation flag"
+  ],
+  "constraints": [
+    "Markdown plus JSON plus Node.js standard library only",
+    "Must run on Codespace and on local Claude Code with identical behavior",
+    "No background daemons, no external services, no databases",
+    "Total quarantine overhead per run capped at one extra filesystem read and one extra write"
+  ],
+  "non_goals": [
+    "Network sandboxing of compiled binaries or user-shell commands",
+    "Multi-tenant quarantine across multiple AccentOS clones",
+    "Cryptographic attestation of skill provenance",
+    "Replacement for community-skill-vet pre-install audit"
+  ]
+}

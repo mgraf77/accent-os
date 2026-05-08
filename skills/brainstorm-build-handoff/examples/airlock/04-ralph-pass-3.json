@@ -1,0 +1,15 @@
+{
+  "pass": 3,
+  "focus": "unify",
+  "removals": [],
+  "merges": [],
+  "renames": [
+    { "from": "ObservationLedger.success_count", "to": "ledger.clean_streak", "reason": "field name aligns with policy.threshold_clean_streak" },
+    { "from": "AirlockGate write path",          "to": "AirlockGate.intercept-write", "reason": "consistent dotted naming with AirlockGate.preflight" }
+  ],
+  "additions": [],
+  "determinism_wins": [
+    { "surface": "naming convention", "before": "mixed snake and space-delimited", "after": "EntityName.dotted-action across all governance and orchestration entries" }
+  ],
+  "open_issues": []
+}
