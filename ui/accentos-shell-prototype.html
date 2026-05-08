@@ -190,6 +190,97 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 .ai-status-dot.done{background:var(--status-green)}
 .ai-status-dot.queued{background:var(--status-gray)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Tasks Inbox ── */
+.task-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.task-tab{padding:5px 11px;border-radius:14px;font-size:.75rem;font-weight:500;background:var(--layer-elevated);color:var(--text-secondary);border:1px solid var(--border-subtle);cursor:pointer;transition:all .1s}
+.task-tab:hover{color:var(--text-primary)}
+.task-tab.active{background:var(--gold-500);color:var(--text-inverse);border-color:var(--gold-500)}
+.task-tab .ct{margin-left:6px;font-size:.6875rem;opacity:.85}
+.task-list{display:flex;flex-direction:column;gap:6px}
+.task-item{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:10px 12px;background:var(--layer-surface);border:1px solid var(--border-subtle);border-left-width:3px;border-radius:6px;cursor:pointer;transition:background .1s,border-color .1s}
+.task-item:hover{background:var(--layer-elevated);border-color:var(--border-strong)}
+.task-item.p1{border-left-color:var(--status-red)}
+.task-item.p2{border-left-color:var(--status-amber)}
+.task-item.p3{border-left-color:var(--status-blue)}
+.task-item.p4{border-left-color:var(--gray-500)}
+.task-item.done{opacity:.45}
+.task-item.done .task-title{text-decoration:line-through}
+.task-check{width:16px;height:16px;border:1.5px solid var(--border-strong);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;cursor:pointer}
+.task-check.checked{background:var(--status-green);border-color:var(--status-green);color:#fff}
+.task-body{min-width:0}
+.task-title{font-size:.875rem;color:var(--text-primary);font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-meta{font-size:.6875rem;color:var(--text-muted);margin-top:2px;display:flex;gap:8px;align-items:center}
+.task-source{padding:1px 6px;border-radius:3px;background:var(--layer-elevated);font-size:.625rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary)}
+.task-due{font-size:.6875rem;font-weight:500;white-space:nowrap;text-align:right}
+.task-due.overdue{color:var(--status-red)}
+.task-due.today{color:var(--status-amber)}
+.task-due.soon{color:var(--text-secondary)}
+.task-go{font-size:14px;color:var(--text-muted);transition:color .1s}
+.task-item:hover .task-go{color:var(--gold-400)}
+
+/* ── Keyboard Shortcuts Overlay ── */
+.kb-overlay{display:none;position:fixed;inset:0;background:var(--layer-overlay);backdrop-filter:blur(6px);z-index:850;align-items:center;justify-content:center;padding:24px}
+.kb-overlay.show{display:flex}
+.kb-modal{background:var(--layer-elevated);border:1px solid var(--border-strong);border-radius:12px;max-width:680px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.kb-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-subtle);position:sticky;top:0;background:var(--layer-elevated);z-index:1}
+.kb-hdr h3{margin:0;font-size:1rem;font-weight:600;color:var(--text-primary)}
+.kb-grid{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.kb-section h4{margin:0 0 8px;font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+.kb-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:.8125rem;color:var(--text-body);border-bottom:1px solid var(--border-subtle)}
+.kb-row:last-child{border-bottom:none}
+.kb-row kbd{font-family:var(--font-mono);font-size:.6875rem;background:var(--layer-canvas);border:1px solid var(--border-default);padding:2px 6px;border-radius:4px;color:var(--text-primary);min-width:18px;text-align:center}
+.kb-row .keys{display:flex;gap:4px;align-items:center}
+.kb-row .plus{color:var(--text-muted);font-size:.625rem}
+@media(max-width:640px){.kb-grid{grid-template-columns:1fr;gap:16px}}
+
+/* ── Recent Items Panel ── */
+.recent-panel{display:none;position:fixed;top:80px;left:50%;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));background:var(--layer-elevated);border:1px solid var(--border-strong);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:820;overflow:hidden}
+.recent-panel.show{display:block}
+.recent-hdr{padding:10px 16px;font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border-subtle)}
+.recent-list{max-height:400px;overflow-y:auto}
+.recent-item{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border-subtle)}
+.recent-item:hover,.recent-item.kb-focus{background:var(--layer-surface)}
+.recent-item:last-child{border-bottom:none}
+.recent-icon{font-size:16px;flex-shrink:0}
+.recent-body{flex:1;min-width:0}
+.recent-title{font-size:.875rem;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-sub{font-size:.6875rem;color:var(--text-muted);margin-top:1px}
+.recent-time{font-size:.6875rem;color:var(--text-muted);white-space:nowrap}
+.recent-empty{padding:32px;text-align:center;color:var(--text-muted);font-size:.875rem}
+
+/* ── AI Assist Mode hints ── */
+.ai-hint{display:none;background:linear-gradient(135deg,#1a1f3a,#0f1428);border:1px solid #3b4faf;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:.75rem;color:#a6b4ff;display:none;align-items:flex-start;gap:6px;line-height:1.4}
+.ai-hint::before{content:'✨';flex-shrink:0}
+[data-mode="ai"] .ai-hint{display:flex}
+[data-mode="ai"] .aos-card{border-color:#3b4faf33}
+.mode-banner.ai{background:#0f1428;color:#a6b4ff;border-bottom:1px solid #3b4faf}
+
+/* ── Bottom Sheet (mobile rail override) ── */
+@media(max-width:640px){
+  .aos-rail.open{
+    position:fixed;top:auto;left:0;right:0;bottom:0;
+    width:100%;max-height:80vh;
+    border-radius:14px 14px 0 0;
+    border-left:none;border-top:1px solid var(--border-strong);
+    box-shadow:0 -8px 32px rgba(0,0,0,.6);
+    z-index:600;
+    animation:sheetUp 220ms ease;
+    padding-bottom:calc(var(--bottom-bar-height) + env(safe-area-inset-bottom) + 16px);
+  }
+  .aos-rail.open::before{
+    content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);
+    width:40px;height:4px;border-radius:2px;background:var(--border-strong);
+  }
+  .aos-rail-header{padding-top:18px}
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+}
+
+/* ── FAB pulse to invite click ── */
+.aos-fab{box-shadow:0 4px 16px rgba(212,160,23,.35)}
+
+/* ── Contextual cmd palette section ── */
+.cmd-ctx-banner{padding:8px 16px;background:linear-gradient(90deg,rgba(212,160,23,.12),transparent);border-bottom:1px solid var(--border-subtle);font-size:.6875rem;color:var(--gold-300);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
 </style>
 </head>
 <body>
@@ -226,6 +317,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <option value="focus">Focus</option>
       <option value="urgent">Urgent</option>
       <option value="exec">Exec</option>
+      <option value="ai">AI Assist</option>
       <option value="readonly">Read-Only</option>
     </select>
   </div>
@@ -289,6 +381,10 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
     <span class="aos-sidebar-label">Overview</span>
     <a class="aos-nav-item active" data-module="dashboard">
       <span class="aos-nav-icon">🏠</span><span class="aos-nav-text">Dashboard</span>
+    </a>
+    <a class="aos-nav-item" data-module="tasks" data-roles="owner,manager,sales,designer,warehouse">
+      <span class="aos-nav-icon">✓</span><span class="aos-nav-text">Tasks</span>
+      <span class="nav-badge alert" id="badge-tasks">4</span>
     </a>
   </div>
   <div class="aos-sidebar-divider"></div>
@@ -528,6 +624,30 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
     </div>
   </div>
 
+  <!-- TASKS INBOX -->
+  <div class="proto-mod" id="mod-tasks">
+    <div class="aos-surface-header">
+      <div>
+        <div class="aos-surface-title">Task Inbox</div>
+        <div class="aos-surface-subtitle">Unified work queue across all modules — sorted by priority &amp; due date</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost" onclick="AccentOS.shell.showToast('Filtered to my tasks','info');renderTasks(currentTaskFilter,'me')">My Tasks</button>
+        <button class="btn btn-primary" onclick="AccentOS.shell.showToast('Task created','success')">+ New Task</button>
+      </div>
+    </div>
+    <div style="padding:16px">
+      <div class="task-toolbar" id="taskToolbar">
+        <span class="task-tab active" data-tab="open" onclick="setTaskFilter('open')">Open <span class="ct" id="tk-ct-open">—</span></span>
+        <span class="task-tab" data-tab="overdue" onclick="setTaskFilter('overdue')">Overdue <span class="ct" id="tk-ct-overdue">—</span></span>
+        <span class="task-tab" data-tab="today" onclick="setTaskFilter('today')">Today <span class="ct" id="tk-ct-today">—</span></span>
+        <span class="task-tab" data-tab="week" onclick="setTaskFilter('week')">This Week <span class="ct" id="tk-ct-week">—</span></span>
+        <span class="task-tab" data-tab="done" onclick="setTaskFilter('done')">Done <span class="ct" id="tk-ct-done">—</span></span>
+      </div>
+      <div class="task-list" id="taskList"></div>
+    </div>
+  </div>
+
   <!-- STUB MODULES -->
   <div class="proto-mod" id="mod-jobs"><div class="aos-surface-header"><div class="aos-surface-title">Jobs &amp; Builds</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">🔨</div><div style="margin-top:12px">Job Tracker module — production at js/jobs.js</div></div></div>
   <div class="proto-mod" id="mod-pricing"><div class="aos-surface-header"><div class="aos-surface-title">Pricing Tools</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">💰</div><div style="margin-top:12px">Price Book module — production at js/price_book.js</div></div></div>
@@ -551,7 +671,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 </div><!-- /body -->
 
 <!-- FAB -->
-<button class="aos-fab" title="Quick actions (⌘K)">＋</button>
+<button class="aos-fab" title="Quick actions (⌘K)" onclick="AccentOS.shell.openCommandLauncher()">＋</button>
 
 <!-- BOTTOM BAR (mobile) -->
 <div class="aos-bottom-bar" id="bottomBar">
@@ -569,6 +689,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <span class="search-icon">🔍</span>
       <input class="aos-command-input" placeholder="Search or run a command…" autocomplete="off" spellcheck="false">
     </div>
+    <div class="cmd-ctx-banner" id="cmdCtxBanner" style="display:none"></div>
     <div class="aos-command-results">
       <div class="aos-command-group-label">Quick Actions</div>
       <div class="aos-command-item" onclick="navigate('quotes');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Opening new quote…','info')">
@@ -630,6 +751,58 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
     </div>
     <div class="aos-command-footer">
       <span><kbd>↑↓</kbd> Navigate</span><span><kbd>↵</kbd> Select</span><span><kbd>Esc</kbd> Close</span><span><kbd>⌘K</kbd> Toggle</span>
+    </div>
+  </div>
+</div>
+
+<!-- RECENT ITEMS PANEL (Cmd+P quick switcher) -->
+<div class="recent-panel" id="recentPanel">
+  <div class="recent-hdr">Recent Items · ↑↓ navigate · ↵ jump · Esc close</div>
+  <div class="recent-list" id="recentList"><div class="recent-empty">No recent items yet — open a vendor, quote, or customer to start tracking.</div></div>
+</div>
+
+<!-- KEYBOARD SHORTCUTS OVERLAY (?) -->
+<div class="kb-overlay" id="kbOverlay" onclick="if(event.target.id==='kbOverlay')closeShortcutHelp()">
+  <div class="kb-modal">
+    <div class="kb-hdr">
+      <h3>⌨ Keyboard Shortcuts</h3>
+      <button class="aos-icon-btn" onclick="closeShortcutHelp()">✕</button>
+    </div>
+    <div class="kb-grid">
+      <div class="kb-section">
+        <h4>Global</h4>
+        <div class="kb-row"><span>Command Launcher</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>K</kbd></span></div>
+        <div class="kb-row"><span>Recent Items</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>P</kbd></span></div>
+        <div class="kb-row"><span>This Help</span><span class="keys"><kbd>?</kbd></span></div>
+        <div class="kb-row"><span>Toggle Sidebar</span><span class="keys"><kbd>⌘</kbd><span class="plus">+</span><kbd>B</kbd></span></div>
+        <div class="kb-row"><span>Close Panel / Rail</span><span class="keys"><kbd>Esc</kbd></span></div>
+      </div>
+      <div class="kb-section">
+        <h4>Navigation</h4>
+        <div class="kb-row"><span>Dashboard</span><span class="keys"><kbd>G</kbd><span class="plus">→</span><kbd>D</kbd></span></div>
+        <div class="kb-row"><span>Tasks</span><span class="keys"><kbd>G</kbd><span class="plus">→</span><kbd>T</kbd></span></div>
+        <div class="kb-row"><span>Vendors</span><span class="keys"><kbd>G</kbd><span class="plus">→</span><kbd>V</kbd></span></div>
+        <div class="kb-row"><span>Quotes</span><span class="keys"><kbd>G</kbd><span class="plus">→</span><kbd>Q</kbd></span></div>
+        <div class="kb-row"><span>Customers</span><span class="keys"><kbd>G</kbd><span class="plus">→</span><kbd>C</kbd></span></div>
+        <div class="kb-row"><span>Pipeline</span><span class="keys"><kbd>G</kbd><span class="plus">→</span><kbd>P</kbd></span></div>
+        <div class="kb-row"><span>Inventory</span><span class="keys"><kbd>G</kbd><span class="plus">→</span><kbd>I</kbd></span></div>
+      </div>
+      <div class="kb-section">
+        <h4>System Modes</h4>
+        <div class="kb-row"><span>Normal</span><span class="keys"><kbd>M</kbd><span class="plus">→</span><kbd>N</kbd></span></div>
+        <div class="kb-row"><span>Focus</span><span class="keys"><kbd>M</kbd><span class="plus">→</span><kbd>F</kbd></span></div>
+        <div class="kb-row"><span>Urgent</span><span class="keys"><kbd>M</kbd><span class="plus">→</span><kbd>U</kbd></span></div>
+        <div class="kb-row"><span>Executive</span><span class="keys"><kbd>M</kbd><span class="plus">→</span><kbd>E</kbd></span></div>
+        <div class="kb-row"><span>AI Assist</span><span class="keys"><kbd>M</kbd><span class="plus">→</span><kbd>A</kbd></span></div>
+        <div class="kb-row"><span>Read-Only</span><span class="keys"><kbd>M</kbd><span class="plus">→</span><kbd>R</kbd></span></div>
+      </div>
+      <div class="kb-section">
+        <h4>Tables</h4>
+        <div class="kb-row"><span>Focus Search</span><span class="keys"><kbd>/</kbd></span></div>
+        <div class="kb-row"><span>Open Selected Row</span><span class="keys"><kbd>↵</kbd></span></div>
+        <div class="kb-row"><span>Navigate Rows</span><span class="keys"><kbd>↑</kbd><kbd>↓</kbd></span></div>
+        <div class="kb-row"><span>Mark Done (in Tasks)</span><span class="keys"><kbd>X</kbd></span></div>
+      </div>
     </div>
   </div>
 </div>
@@ -719,6 +892,22 @@ const DATA = {
     {icon:'📦',text:'Inventory alert — WP-2290 below reorder point',time:'5h ago'},
     {icon:'✅',text:'PO #1041 received — 22 items updated',time:'6h ago'},
     {icon:'🤖',text:'AI parse completed — QT-0842 notes processed',time:'7h ago'},
+  ],
+  tasks: [
+    {id:'T01',title:'Follow up: Pacific Design Group quote QT-0838',source:'quotes',priority:1,due:-2,owner:'MW',mod:'quotes',ref:'QT-0838',done:false},
+    {id:'T02',title:'Reorder WP-2290 Wall Pack — 3 units in stock (reorder at 10)',source:'inventory',priority:1,due:0,owner:'MW',mod:'inventory',ref:'WP-2290',done:false},
+    {id:'T03',title:'Co-op deadline: Progress Lighting $4,200 — claim by 5/16',source:'vendors',priority:1,due:8,owner:'MW',mod:'vendors',ref:'V03',done:false},
+    {id:'T04',title:'Score 6 vendors — quarterly review window closes',source:'vendors',priority:2,due:5,owner:'MW',mod:'vendors',ref:null,done:false},
+    {id:'T05',title:'Call Westside Builders — quote stale 12 days',source:'customers',priority:2,due:0,owner:'MW',mod:'customers',ref:'C06',done:false},
+    {id:'T06',title:'Advance Pacific Commercial deal — 12 days in Negotiating',source:'pipeline',priority:2,due:1,owner:'MW',mod:'pipeline',ref:'D04',done:false},
+    {id:'T07',title:'Reorder FX-9901 Outdoor Post — 1 unit in stock',source:'inventory',priority:1,due:-1,owner:'MW',mod:'inventory',ref:'FX-9901',done:false},
+    {id:'T08',title:'Approve spec sheet — Summit Phase 2',source:'jobs',priority:3,due:3,owner:'JL',mod:'jobs',ref:null,done:false},
+    {id:'T09',title:'Send revised quote to Riverside Remodel',source:'quotes',priority:3,due:2,owner:'MW',mod:'quotes',ref:'QT-0841',done:false},
+    {id:'T10',title:'Review Q1 vendor performance report',source:'reports',priority:3,due:7,owner:'MW',mod:'reports',ref:null,done:false},
+    {id:'T11',title:'Update price book — Kichler 6% increase eff 6/1',source:'pricing',priority:4,due:14,owner:'JL',mod:'pricing',ref:null,done:false},
+    {id:'T12',title:'Receive PO #1042 — 5 items expected',source:'pos',priority:3,due:1,owner:'WH',mod:'pos',ref:'1042',done:false},
+    {id:'T13',title:'PO #1041 reconciled — 22 items received',source:'pos',priority:4,due:-3,owner:'WH',mod:'pos',ref:'1041',done:true},
+    {id:'T14',title:'Quote QT-0839 sent — Harbor View Homes',source:'quotes',priority:3,due:-1,owner:'MW',mod:'quotes',ref:'QT-0839',done:true},
   ],
 };
 
@@ -1328,6 +1517,7 @@ const MODE_CFG = {
   focus:    {cls:'focus',   msg:'🎯 Focus Mode — sidebar minimized, distractions reduced'},
   urgent:   {cls:'urgent',  msg:'🚨 Urgent Mode — critical items surfaced, alerts active'},
   exec:     {cls:'exec',    msg:'👁 Executive Overview — summary metrics, read-focused'},
+  ai:       {cls:'ai',      msg:'✨ AI Assist — inline suggestions, auto-summaries, smart prompts'},
   readonly: {cls:'readonly',msg:'🔒 Read-Only Mode — no changes can be made'},
 };
 
@@ -1364,11 +1554,11 @@ function navigate(mod) {
    ROLE APPLICATION
    ═══════════════════════════════════════════ */
 const ROLE_NAV = {
-  owner:    ['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','admin','health'],
-  manager:  ['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','health'],
-  sales:    ['dashboard','quotes','pipeline','customers','jobs','inventory','reports','ai'],
-  designer: ['dashboard','quotes','customers','jobs','inventory','ai'],
-  warehouse:['dashboard','inventory','pos','deliveries'],
+  owner:    ['dashboard','tasks','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','admin','health'],
+  manager:  ['dashboard','tasks','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','health'],
+  sales:    ['dashboard','tasks','quotes','pipeline','customers','jobs','inventory','reports','ai'],
+  designer: ['dashboard','tasks','quotes','customers','jobs','inventory','ai'],
+  warehouse:['dashboard','tasks','inventory','pos','deliveries'],
   viewer:   ['dashboard','inventory'],
   ai_agent: ['dashboard','health','ai'],
 };
@@ -1436,6 +1626,364 @@ if (!window.AccentOS?.shell?.showToast) {
 }
 
 /* ═══════════════════════════════════════════
+   TASKS INBOX
+   ═══════════════════════════════════════════ */
+let currentTaskFilter = 'open';
+const SOURCE_ICONS = {quotes:'📋',inventory:'📦',vendors:'🏭',customers:'👥',pipeline:'💼',jobs:'🔨',pricing:'💰',reports:'📊',pos:'🛒',deliveries:'🚚'};
+
+function dueLabel(d){
+  if (d < 0) return {txt: Math.abs(d)+'d overdue', cls: 'overdue'};
+  if (d === 0) return {txt: 'Today', cls: 'today'};
+  if (d === 1) return {txt: 'Tomorrow', cls: 'today'};
+  if (d <= 7) return {txt: 'in '+d+'d', cls: 'soon'};
+  return {txt: 'in '+d+'d', cls: 'soon'};
+}
+
+function taskFilter(set, key){
+  if (key==='done') return set.filter(t=>t.done);
+  const open = set.filter(t=>!t.done);
+  if (key==='overdue') return open.filter(t=>t.due<0);
+  if (key==='today') return open.filter(t=>t.due===0);
+  if (key==='week') return open.filter(t=>t.due>=0 && t.due<=7);
+  return open;
+}
+
+function renderTasks(filter, scope){
+  filter = filter || currentTaskFilter;
+  const list = document.getElementById('taskList');
+  if (!list) return;
+  let set = DATA.tasks.slice();
+  if (scope === 'me') set = set.filter(t=>t.owner==='MW');
+  // counts
+  ['open','overdue','today','week','done'].forEach(k=>{
+    const el = document.getElementById('tk-ct-'+k);
+    if (el) el.textContent = taskFilter(set,k).length;
+  });
+  const items = taskFilter(set, filter)
+    .sort((a,b)=> (a.priority - b.priority) || (a.due - b.due));
+  if (!items.length) {
+    list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:.875rem">✨ Nothing in this view. Inbox zero.</div>';
+    return;
+  }
+  list.innerHTML = items.map(t=>{
+    const dl = dueLabel(t.due);
+    const icon = SOURCE_ICONS[t.source] || '•';
+    return `<div class="task-item p${t.priority} ${t.done?'done':''}" data-id="${t.id}" onclick="openTaskAction('${t.id}')">
+      <span class="task-check ${t.done?'checked':''}" onclick="event.stopPropagation();toggleTaskDone('${t.id}')">${t.done?'✓':''}</span>
+      <div class="task-body">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">
+          <span class="task-source">${icon} ${t.source}</span>
+          <span>P${t.priority}</span>
+          <span>· ${t.owner}</span>
+          ${t.ref?'<span>· '+t.ref+'</span>':''}
+        </div>
+      </div>
+      <span class="task-due ${dl.cls}">${dl.txt}</span>
+      <span class="task-go">→</span>
+    </div>`;
+  }).join('');
+}
+
+function setTaskFilter(f){
+  currentTaskFilter = f;
+  document.querySelectorAll('#taskToolbar .task-tab').forEach(el=>{
+    el.classList.toggle('active', el.dataset.tab===f);
+  });
+  renderTasks(f);
+}
+
+function toggleTaskDone(id){
+  const t = DATA.tasks.find(x=>x.id===id);
+  if (!t) return;
+  t.done = !t.done;
+  AccentOS.shell.showToast(t.done?'Task completed':'Task reopened', t.done?'success':'info');
+  renderTasks();
+  // update nav badge
+  const open = DATA.tasks.filter(x=>!x.done && (x.due<0||x.due===0)).length;
+  const b = document.getElementById('badge-tasks');
+  if (b) { b.textContent = open; b.style.display = open?'':'none'; }
+}
+
+function openTaskAction(id){
+  const t = DATA.tasks.find(x=>x.id===id);
+  if (!t) return;
+  trackRecent({id:t.id, title:t.title, mod:'tasks', icon:'✓', sub:'Task · '+t.source});
+  if (t.mod && t.mod !== 'tasks') {
+    AccentOS.shell.showToast('Jumping to '+t.source+'…','info');
+    navigate(t.mod);
+  } else {
+    AccentOS.shell.showToast('Task opened','info');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   RECENT ITEMS / QUICK SWITCHER
+   ═══════════════════════════════════════════ */
+const RECENT_MAX = 8;
+let recentItems = [];
+try { recentItems = JSON.parse(localStorage.getItem('aos-recent')||'[]'); } catch(_) {}
+
+function trackRecent(it){
+  if (!it || !it.id) return;
+  recentItems = recentItems.filter(x=>x.id!==it.id);
+  recentItems.unshift({...it, ts: Date.now()});
+  if (recentItems.length > RECENT_MAX) recentItems = recentItems.slice(0, RECENT_MAX);
+  try { localStorage.setItem('aos-recent', JSON.stringify(recentItems)); } catch(_) {}
+}
+
+function relTime(ts){
+  const m = Math.floor((Date.now()-ts)/60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m+'m ago';
+  const h = Math.floor(m/60);
+  if (h < 24) return h+'h ago';
+  return Math.floor(h/24)+'d ago';
+}
+
+function openRecentPanel(){
+  const p = document.getElementById('recentPanel');
+  const list = document.getElementById('recentList');
+  if (!p || !list) return;
+  if (!recentItems.length) {
+    list.innerHTML = '<div class="recent-empty">No recent items yet — open a vendor, quote, or customer to start tracking.</div>';
+  } else {
+    list.innerHTML = recentItems.map((it,i)=>`
+      <div class="recent-item${i===0?' kb-focus':''}" data-recent-idx="${i}" onclick="jumpToRecent(${i})">
+        <span class="recent-icon">${it.icon||'•'}</span>
+        <div class="recent-body">
+          <div class="recent-title">${it.title}</div>
+          <div class="recent-sub">${it.sub||''}</div>
+        </div>
+        <span class="recent-time">${relTime(it.ts)}</span>
+      </div>
+    `).join('');
+  }
+  p.classList.add('show');
+}
+
+function closeRecentPanel(){
+  const p = document.getElementById('recentPanel');
+  if (p) p.classList.remove('show');
+}
+
+function jumpToRecent(idx){
+  const it = recentItems[idx];
+  if (!it) return;
+  closeRecentPanel();
+  if (it.mod) navigate(it.mod);
+  // re-track to bump it to top
+  trackRecent(it);
+  AccentOS.shell.showToast('Jumped to '+(it.title.length>40?it.title.slice(0,40)+'…':it.title),'info');
+}
+
+/* ═══════════════════════════════════════════
+   KEYBOARD SHORTCUT HELP
+   ═══════════════════════════════════════════ */
+function openShortcutHelp(){
+  const o = document.getElementById('kbOverlay');
+  if (o) o.classList.add('show');
+}
+function closeShortcutHelp(){
+  const o = document.getElementById('kbOverlay');
+  if (o) o.classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════
+   CHORDED KEYBOARD SHORTCUTS (G→X, M→X)
+   ═══════════════════════════════════════════ */
+let chord = null;
+let chordTimer = null;
+const CHORD_TIMEOUT = 1200;
+
+const G_MAP = {d:'dashboard',t:'tasks',v:'vendors',q:'quotes',c:'customers',p:'pipeline',i:'inventory',h:'health',j:'jobs'};
+const M_MAP = {n:'normal',f:'focus',u:'urgent',e:'exec',a:'ai',r:'readonly'};
+
+function clearChord(){ chord = null; if (chordTimer) { clearTimeout(chordTimer); chordTimer = null; } }
+
+document.addEventListener('keydown', function(e){
+  // ignore when typing
+  const tag = (e.target.tagName||'').toLowerCase();
+  const typing = tag==='input' || tag==='textarea' || tag==='select' || e.target.isContentEditable;
+
+  // Cmd/Ctrl+P — recent items quick switcher
+  if ((e.metaKey||e.ctrlKey) && (e.key==='p'||e.key==='P')) {
+    e.preventDefault();
+    if (document.getElementById('recentPanel').classList.contains('show')) closeRecentPanel();
+    else openRecentPanel();
+    return;
+  }
+  // Cmd/Ctrl+B — toggle sidebar
+  if ((e.metaKey||e.ctrlKey) && (e.key==='b'||e.key==='B')) {
+    e.preventDefault();
+    AccentOS.shell.toggleSidebar?.();
+    return;
+  }
+  // Esc — close overlays
+  if (e.key === 'Escape') {
+    if (document.getElementById('kbOverlay').classList.contains('show')) { closeShortcutHelp(); return; }
+    if (document.getElementById('recentPanel').classList.contains('show')) { closeRecentPanel(); return; }
+  }
+
+  if (typing) return;
+
+  // ? — shortcut help
+  if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+    e.preventDefault();
+    openShortcutHelp();
+    return;
+  }
+  // / — focus search (open command launcher)
+  if (e.key === '/') {
+    e.preventDefault();
+    AccentOS.shell.openCommandLauncher();
+    return;
+  }
+  // Chord prefix
+  if (!chord && (e.key === 'g' || e.key === 'G')) {
+    chord = 'g'; chordTimer = setTimeout(clearChord, CHORD_TIMEOUT);
+    return;
+  }
+  if (!chord && (e.key === 'm' || e.key === 'M')) {
+    chord = 'm'; chordTimer = setTimeout(clearChord, CHORD_TIMEOUT);
+    return;
+  }
+  // Chord resolution
+  if (chord === 'g') {
+    const target = G_MAP[e.key.toLowerCase()];
+    clearChord();
+    if (target) { e.preventDefault(); navigate(target); AccentOS.shell.showToast('→ '+target,'info'); }
+    return;
+  }
+  if (chord === 'm') {
+    const target = M_MAP[e.key.toLowerCase()];
+    clearChord();
+    if (target) { e.preventDefault(); setMode(target); }
+    return;
+  }
+  // X — toggle done in tasks module
+  if ((e.key==='x'||e.key==='X') && document.getElementById('mod-tasks').classList.contains('active')) {
+    const first = document.querySelector('#taskList .task-item:not(.done)');
+    if (first) {
+      e.preventDefault();
+      toggleTaskDone(first.dataset.id);
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════
+   CONTEXTUAL COMMAND PALETTE
+   ═══════════════════════════════════════════ */
+const CTX_BANNERS = {
+  dashboard: null,
+  tasks:     '✓ TASKS context · X to mark done · ↑↓ to navigate',
+  vendors:   '🏭 VENDORS context · score · log co-op · open vendor',
+  quotes:    '📋 QUOTES context · new quote · log follow-up · send',
+  customers: '👥 CUSTOMERS context · log call · add note · schedule',
+  pipeline:  '💼 PIPELINE context · advance stage · add deal · forecast',
+  inventory: '📦 INVENTORY context · check stock · create PO · adjust',
+  health:    '💚 HEALTH context · service status · migrations',
+};
+
+function updateCmdContext(mod){
+  const b = document.getElementById('cmdCtxBanner');
+  if (!b) return;
+  const txt = CTX_BANNERS[mod];
+  if (txt) { b.textContent = txt; b.style.display = ''; }
+  else { b.style.display = 'none'; }
+}
+
+// hook navigate to update context + track recent
+const _origNavigate = navigate;
+window.navigate = function(mod){
+  _origNavigate(mod);
+  updateCmdContext(mod);
+  if (mod === 'tasks') renderTasks();
+};
+
+/* ═══════════════════════════════════════════
+   AI ASSIST MODE — inject hint chips into dashboard cards
+   ═══════════════════════════════════════════ */
+const AI_HINTS = {
+  vendors:  'Kichler trending +3 — consider expanding co-op program. Savoy at 55/C: review or pause.',
+  quotes:   '3 quotes stale >7d. Drafting follow-up emails would recover ~$15K avg pipeline.',
+  pipeline: 'Pacific Commercial at 81% prob, 12d in stage. Suggest: send signed terms today.',
+  customers:'Westside & Coastal both lapsing. Recommend: outreach this week.',
+  inventory:'WP-2290 + FX-9901 critical. Auto-suggested PO #1043 ready for review.',
+  priorities:'Top 3 actions ranked by $-impact: (1) co-op claim, (2) stale follow-ups, (3) reorders.',
+};
+
+function injectAIHints(){
+  document.querySelectorAll('.aos-card').forEach(card=>{
+    if (card.querySelector('.ai-hint')) return;
+    const title = card.querySelector('.aos-card-title')?.textContent.toLowerCase() || '';
+    let hint = null;
+    for (const k of Object.keys(AI_HINTS)) {
+      if (title.includes(k)) { hint = AI_HINTS[k]; break; }
+    }
+    if (hint) {
+      const div = document.createElement('div');
+      div.className = 'ai-hint';
+      div.innerHTML = `<span>${hint}</span>`;
+      const body = card.querySelector('.aos-card-body') || card;
+      body.appendChild(div);
+    }
+  });
+}
+
+// hook setMode + renderDashboard to refresh AI hints
+const _origSetMode = setMode;
+window.setMode = function(mode){
+  _origSetMode(mode);
+  if (mode === 'ai') injectAIHints();
+};
+const _origRenderDashboard = renderDashboard;
+window.renderDashboard = function(role){
+  _origRenderDashboard(role);
+  if (document.getElementById('aosShell').dataset.mode === 'ai') injectAIHints();
+};
+
+/* ═══════════════════════════════════════════
+   RAIL TRACKING — track opens as recent items
+   ═══════════════════════════════════════════ */
+const _origOpenVendorRail = openVendorRail;
+window.openVendorRail = function(id){
+  _origOpenVendorRail(id);
+  const v = DATA.vendors.find(x=>x.id===id);
+  if (v) trackRecent({id:'V:'+id, title:v.name, mod:'vendors', icon:'🏭', sub:'Vendor · '+v.tier.toUpperCase()+' tier · '+v.score+'/100'});
+};
+const _origOpenQuoteRail = openQuoteRail;
+window.openQuoteRail = function(id){
+  _origOpenQuoteRail(id);
+  const q = DATA.quotes.find(x=>x.id===id);
+  if (q) trackRecent({id:'Q:'+id, title:q.id+' — '+q.customer, mod:'quotes', icon:'📋', sub:'Quote · '+fmt(q.value)+' · '+q.status});
+};
+const _origOpenCustomerRail = openCustomerRail;
+window.openCustomerRail = function(id){
+  _origOpenCustomerRail(id);
+  const c = DATA.customers.find(x=>x.id===id);
+  if (c) trackRecent({id:'C:'+id, title:c.name, mod:'customers', icon:'👥', sub:'Customer · '+c.seg.toUpperCase()+' · LTV '+fmt(c.ltv)});
+};
+const _origOpenInventoryRail = openInventoryRail;
+window.openInventoryRail = function(sku){
+  _origOpenInventoryRail(sku);
+  const i = DATA.inventory.find(x=>x.sku===sku);
+  if (i) trackRecent({id:'I:'+sku, title:i.sku+' — '+i.name, mod:'inventory', icon:'📦', sub:'SKU · qty '+i.qty+' · '+i.vendor});
+};
+const _origOpenDealRail = openDealRail;
+window.openDealRail = function(id){
+  _origOpenDealRail(id);
+  const d = DATA.deals.find(x=>x.id===id);
+  if (d) trackRecent({id:'D:'+id, title:d.name, mod:'pipeline', icon:'💼', sub:'Deal · '+d.stage+' · '+fmt(d.value)+' · '+d.prob+'%'});
+};
+
+/* outside-click for recent panel */
+document.addEventListener('click', function(e){
+  const p = document.getElementById('recentPanel');
+  if (p && p.classList.contains('show') && !p.contains(e.target)) closeRecentPanel();
+});
+
+/* ═══════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════ */
 document.addEventListener('aos:navigate', e => navigate(e.detail.module));
@@ -1445,7 +1993,9 @@ renderQuotes();
 renderCustomers();
 renderInventory();
 renderPipeline();
+renderTasks();
 applyRole('owner');
+updateCmdContext('dashboard');
 
 // Restore saved mode
 try { const m=localStorage.getItem('aos-mode'); if(m&&m!=='normal') setMode(m); } catch(_) {}
