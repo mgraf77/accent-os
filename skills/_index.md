@@ -14,6 +14,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 
 ## Skills
 
+### ddv-evaluator
+- summary: Universal meta-evaluation framework — measures delta, velocity, and acceleration of any AccentOS artifact (skills, prompts, workflows, agent chains, Ralph loops) and produces a strategic recommendation (CONTINUE_OPTIMIZING, PROMOTE_TO_CORE, SIMPLIFY, ROLL_BACK, etc.).
+- triggers: "evaluate this skill", "DDV check", "ddv score", "is this worth optimizing further", "what's the ROI on this", "score this pass", "should we keep iterating", "is this diminishing returns", "should we promote to core", "optimization score for"
+- when_to_use: after any optimization pass (auto-triggers from skill-forge Ralph loop); when deciding whether continued investment in a skill/prompt/workflow is justified; quarterly skill health review
+- when_NOT: routine skill edits or doc fixes; first-time builds where no optimization pass has run yet (no delta to measure)
+- companion: skill-forge (Ralph loop integration), efficiency-monitor (PROMOTE candidate scoring), codex-review (pre/post-review scoring)
+
 ### analysis-snapshot
 - summary: Capture an ad-hoc analysis (vendor query, deal investigation, GMC audit) as a named, re-runnable artifact.
 - triggers: "save this analysis", "snapshot this query", "make this re-runnable"
