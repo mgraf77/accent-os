@@ -1,44 +1,69 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
+**Last updated:** 2026-05-08 — AccentOS UI Foundation session (complete, committing)
 **Resume trigger:** "continue last session"
 
 ---
 
 ## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+Previous session state:
+- Built Quote Generator v2 with AI parse — commit `940e7f8`
+- Worker proxy fix at `2dca2a6` — NOT YET REDEPLOYED (BUG-01)
+- Worker needs `wrangler deploy` from Michael's local terminal to fix Quote AI Parse 400 error
 
-## NEXT STEPS PENDING
+This session:
+- Implemented AccentOS UI System foundation (governed safe mode)
+- Zero edits to index.html, worker/, wrangler.toml, or SQL migrations
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+---
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
+## COMPLETED THIS SESSION
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+All files created, boot smoke at 26/27 (only uncommitted-files check fails, clears after commit):
 
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+### Governance Docs (new)
+- `SYSTEM_STATE.md` — live system snapshot
+- `GOVERNANCE_RISKS.md` — risk register with R-01 through R-06 + gates
+- `STABILIZATION_PROTOCOL.md` — pre/post session checklists, phase gates
+- `MODULE_OWNERSHIP_MAP.md` — module registry, extraction status, dependency map
 
-Pick up from step 1.
+### Boot Smoke (new)
+- `scripts/boot-smoke.sh` — 27-check static smoke test, run before/after sessions
+
+### Design System Docs (new — docs/design/)
+- `ACCENTOS_UI_SYSTEM.md` — identity, shell zones, component vocabulary
+- `ACCENTOS_TOKENS.md` — complete token reference (colors, spacing, typography, z-index)
+- `ACCENTOS_LAYOUT_ARCHITECTURE.md` — 3-column shell, zone specs, breakpoints, card density
+- `ACCENTOS_MOBILE_PWA_RULES.md` — iPhone 13 Pro Max baseline, safe areas, touch targets, manifest
+- `ACCENTOS_ROLE_VISIBILITY_MATRIX.md` — 8 roles × 14 modules, UX visibility (not security)
+
+### UI Foundation Files (new — ui/)
+- `tokens.css` — all CSS custom properties, motion-preference safe
+- `accentos-shell.css` — full shell layout CSS (header, sidebar, ticker, cards, rail, FAB, bottom bar, command launcher)
+- `accentos-shell.js` — shell behavior (cmd launcher, rail, nav, sidebar collapse, keyboard shortcuts)
+- `accentos-shell-prototype.html` — self-contained prototype, zero monolith dependency, role switcher
+
+---
+
+## OPEN ITEMS
+
+### BUG-01 — Worker Proxy Redeploy (BLOCKS ON MICHAEL)
+Quote Generator AI Parse returns 400. Worker fix is in commit `2dca2a6`.
+Michael must run: `wrangler deploy` from local terminal at `C:\Users\Michael\Desktop\accent-os`
+
+### Phase 2 — Shell Integration (future)
+When Michael reviews and approves the design docs + prototype, Phase 2 would progressively wire the new shell into production. Requires:
+1. Michael reviews ui/accentos-shell-prototype.html
+2. Decisions on: layout direction, mobile nav model, right rail vs bottom sheet
+3. Safe progressive wiring into index.html (not a big-bang replacement)
+
+---
+
+## NEXT STEPS
+
+1. **Michael: fix BUG-01** — `wrangler deploy` from local terminal
+2. **Michael: review prototype** — open `ui/accentos-shell-prototype.html` in browser
+3. **Michael: review design docs** — `docs/design/ACCENTOS_ROLE_VISIBILITY_MATRIX.md` especially
+4. **Next Claude session**: pick up BUILD_PLAN_CLAUDE.md next unblocked item

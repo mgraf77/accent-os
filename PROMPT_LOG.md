@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-08 — AccentOS UI System Implementation (Governed Safe Mode)
+**Prompt:** ACCENTOS UI SYSTEM IMPLEMENTATION — GOVERNED SAFE MODE. Implement Claude Design UI direction into AccentOS repo. Create production-ready AccentOS UI foundation: design system docs, shell architecture, PWA/mobile rules, role/module visibility matrix, UI tokens, isolated prototype. Branch: claude/accentos-ui-foundation. Governance constraints: no worker/, no wrangler.toml, no SQL migrations, no monolith edits, no real security enforcement yet.
+**Context:** New session, feature-spec prompt from Michael. No prior work on this branch. Building from clean slate on claude/implement-claude-design-ui-eFn9b.
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"
