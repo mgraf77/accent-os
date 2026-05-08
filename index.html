@@ -701,6 +701,7 @@ async function hydrateFromSupabase(){
     try { await sbLoadPipeline(); } catch(e){ console.warn(e); }
     try { await sbLoadKPIs(); } catch(e){ console.warn(e); }
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
+    try { if(typeof sbLoadGovernance==='function') await sbLoadGovernance(); } catch(e){ console.warn(e); }
     // Run alert generator AFTER all data loaded — heuristics read from every module's state.
     try { if(typeof generateAlertsFromData==='function') await generateAlertsFromData(); } catch(e){ console.warn(e); }
   }
@@ -7013,9 +7014,16 @@ function settings(el){
           <div style="color:var(--text-3);font-size:12.5px;padding:8px 0;">Loading…</div>
         </div>
       </div></div>
+
+      ${isOwner ? `<div class="card"><div class="card-hd"><span class="card-title">⚙️ Autonomous Governance</span></div><div class="card-body">
+        <div id="governance-container"><div style="color:var(--text-3);font-size:12.5px;padding:8px 0;">Loading governance settings…</div></div>
+      </div></div>` : ''}
     </div>
   </div>`;
   renderUsersPanel();
+  if(isOwner && typeof renderGovernance === 'function'){
+    setTimeout(() => renderGovernance($('governance-container')), 0);
+  }
 }
 
 // Renders the user list inside #users-panel. Owner sees full list with role editors;
@@ -7165,5 +7173,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
 <script src="js/internal_meetings.js?v=6.10.74"></script>
+<script src="js/governance.js?v=6.11.0"></script>
 </body>
 </html>

@@ -1,44 +1,35 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-08 — Autonomous Governance Phase 1
+**Resume trigger:** "continue autonomous governance"
 
 ---
 
 ## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
+- Quote Generator v2 worker proxy blocker: code patched (commit 2dca2a6) but not redeployed (Michael runs wrangler)
+- Started Track 6 Phase 4: Autonomous Governance (role-based approval authorities + auto-action workflows)
+- Schema written (M41_autonomous_governance.sql)
+- UI complete: Governance rules editor in Settings (Owner-only)
+- JS module wired: js/governance.js + hydrate + render calls
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+## CURRENT TASK
+Autonomous Governance Phase 1 — SHIPPED (schema + UI framework)
 
 ## NEXT STEPS PENDING
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+**1. Michael runs M41 SQL** to activate approval_authorities + auto_action_rules tables.
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
+**2. Phase 1b: Wire approval checks into Quote save flow**
+   - Before quote.status='approved', check APPROVAL_AUTHORITIES
+   - If quote_total ≤ user's role's threshold → auto-approve
+   - If quote_total > threshold → set status='pending_approval', escalate to Manager
+   - Log auto-decision to auto_action_log with rule_id=null (manual approval, not rule-triggered)
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+**3. Phase 2: Auto-action rule execution engine** (Deal→Job, auto-create PO on reorder threshold, etc.)
+   - Trigger dispatcher in save flows (quote, deal, po, inventory)
+   - Execute enabled rules; log to auto_action_log with rule_id
 
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+**4. Phase 3: Self-service rule builder** (Owner can define new rules via UI, not just edit seeded ones)
 
-Pick up from step 1.
+Unblock on M41. Continue from step 2 when ready.
