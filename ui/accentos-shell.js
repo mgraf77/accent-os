@@ -235,6 +235,154 @@
     init();
   }
 
+  /* ── Mode Switching ─────────────────────────────────── */
+
+  var MODE_LABELS = {
+    normal:   null,
+    focus:    { cls: 'focus',    msg: '🎯 Focus Mode — distractions minimized' },
+    urgent:   { cls: 'urgent',   msg: '🚨 Urgent Operations Mode — critical items surfaced' },
+    exec:     { cls: 'exec',     msg: '👁 Executive Overview — summary metrics only' },
+    readonly: { cls: 'readonly', msg: '🔒 Read-Only Mode — no changes can be made' },
+  };
+
+  function setMode(mode) {
+    var shell = document.getElementById('aosShell') || document.querySelector('.accentos-shell');
+    if (!shell) return;
+    shell.dataset.mode = mode || 'normal';
+
+    var banner = document.getElementById('modeBanner');
+    if (!banner) return;
+    var cfg = MODE_LABELS[mode];
+    if (cfg) {
+      banner.className = 'aos-mode-banner visible ' + cfg.cls;
+      var msgEl = banner.querySelector('.aos-mode-banner-msg');
+      if (msgEl) msgEl.textContent = cfg.msg;
+      banner.style.display = '';
+    } else {
+      banner.className = 'aos-mode-banner';
+      banner.style.display = 'none';
+    }
+
+    try { localStorage.setItem('aos-mode', mode || 'normal'); } catch (_) {}
+
+    var modeSelect = document.getElementById('modeSelect');
+    if (modeSelect) modeSelect.value = mode || 'normal';
+  }
+
+  function restoreMode() {
+    try {
+      var saved = localStorage.getItem('aos-mode');
+      if (saved && saved !== 'normal') setMode(saved);
+    } catch (_) {}
+  }
+
+  /* ── Notification Panel ─────────────────────────────── */
+
+  function openNotifPanel() {
+    var panel = document.getElementById('notifPanel');
+    if (panel) panel.classList.add('open');
+    document.addEventListener('click', notifOutsideClick, true);
+  }
+
+  function closeNotifPanel() {
+    var panel = document.getElementById('notifPanel');
+    if (panel) panel.classList.remove('open');
+    document.removeEventListener('click', notifOutsideClick, true);
+  }
+
+  function notifOutsideClick(e) {
+    var panel = document.getElementById('notifPanel');
+    var btn = document.getElementById('notifBtn');
+    if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+      closeNotifPanel();
+    }
+  }
+
+  /* ── Nav Badge ──────────────────────────────────────── */
+
+  function updateNavBadge(module, count, type) {
+    var item = document.querySelector('.aos-nav-item[data-module="' + module + '"]');
+    if (!item) return;
+    var badge = item.querySelector('.aos-nav-badge');
+    if (count === 0 || count == null) {
+      if (badge) badge.remove();
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'aos-nav-badge';
+      item.appendChild(badge);
+    }
+    badge.textContent = count;
+    badge.className = 'aos-nav-badge' + (type === 'alert' ? ' alert' : type === 'info' ? ' info' : '');
+  }
+
+  /* ── Toast ──────────────────────────────────────────── */
+
+  function showToast(msg, type) {
+    var toast = document.createElement('div');
+    var colors = { success: 'var(--status-green-dim)', warning: 'var(--status-amber-dim)', error: 'var(--status-red-dim)', info: 'var(--status-blue-dim)' };
+    var textColors = { success: 'var(--status-green)', warning: 'var(--status-amber)', error: 'var(--status-red)', info: 'var(--status-blue)' };
+    toast.style.cssText = [
+      'position:fixed',
+      'bottom:calc(env(safe-area-inset-bottom) + 80px)',
+      'left:50%',
+      'transform:translateX(-50%)',
+      'background:' + (colors[type] || colors.info),
+      'color:' + (textColors[type] || textColors.info),
+      'border:1px solid currentColor',
+      'border-radius:8px',
+      'padding:8px 16px',
+      'font-size:0.8125rem',
+      'font-family:var(--font-sans)',
+      'z-index:900',
+      'pointer-events:none',
+      'white-space:nowrap',
+      'max-width:calc(100vw - 32px)',
+      'text-align:center',
+      'box-shadow:0 4px 16px rgba(0,0,0,0.4)',
+    ].join(';');
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(function() {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 300ms';
+      setTimeout(function() { toast.remove(); }, 300);
+    }, 2500);
+  }
+
+  /* ── Notification bell button ───────────────────────── */
+
+  function initNotifBtn() {
+    var btn = document.getElementById('notifBtn');
+    if (btn) btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var panel = document.getElementById('notifPanel');
+      if (panel && panel.classList.contains('open')) closeNotifPanel();
+      else openNotifPanel();
+    });
+  }
+
+  /* ── Mode select ────────────────────────────────────── */
+
+  function initModeSelect() {
+    var sel = document.getElementById('modeSelect');
+    if (sel) sel.addEventListener('change', function() { setMode(sel.value); });
+    var exitBtns = document.querySelectorAll('[data-exit-mode]');
+    exitBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() { setMode('normal'); });
+    });
+  }
+
+  /* Override init to include new inits */
+  var _origInit = init;
+  function init() {
+    _origInit();
+    initNotifBtn();
+    initModeSelect();
+    restoreMode();
+  }
+
   /* ── Public API ─────────────────────────────────────── */
 
   window.AccentOS = window.AccentOS || {};
@@ -245,6 +393,11 @@
     closeRail: closeRail,
     activateNavItem: activateNavItem,
     toggleSidebar: toggleSidebar,
+    setMode: setMode,
+    openNotifPanel: openNotifPanel,
+    closeNotifPanel: closeNotifPanel,
+    updateNavBadge: updateNavBadge,
+    showToast: showToast,
   };
 
 })();

@@ -1,824 +1,1454 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-mode="normal" data-role="owner">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="AccentOS">
-  <meta name="theme-color" content="#0f0f17">
-  <title>AccentOS — Shell Prototype</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AccentOS">
+<meta name="theme-color" content="#0f0f17">
+<title>AccentOS — Command Center</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="accentos-shell.css">
+<style>
+/* ── Proto overrides ── */
+html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
+.accentos-shell{height:100dvh}
 
-  <!--
-    ACCENTOS SHELL PROTOTYPE
-    ========================
-    Status:  PROTOTYPE — isolated, non-production
-    Branch:  claude/implement-claude-design-ui-eFn9b
-    Created: 2026-05-08
+/* ── KPI row ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--space-3);margin-bottom:var(--space-5)}
+.kpi-item{background:var(--layer-surface);border:1px solid var(--border-subtle);border-radius:var(--card-radius);padding:var(--space-3) var(--space-4)}
+.kpi-val{font-size:1.5rem;font-weight:600;color:var(--text-primary);line-height:1.1}
+.kpi-lbl{font-size:.75rem;color:var(--text-secondary);margin-top:3px}
+.kpi-delta{font-size:.6875rem;font-weight:500;margin-top:4px}
+.kpi-delta.up{color:var(--status-green)} .kpi-delta.dn{color:var(--status-red)} .kpi-delta.fl{color:var(--text-muted)}
 
-    This file is a self-contained preview of the AccentOS shell architecture.
-    - Zero dependencies on index.html or any production code
-    - Safe to delete at any time — zero production impact
-    - Demonstrates: header, sidebar, ticker, card grid, right rail, FAB, command launcher, mobile layout
-    - Role-aware sidebar: uses ?role= URL param (owner/manager/sales/designer/builder/warehouse/viewer)
+/* ── Score bar ── */
+.score-bar{display:flex;align-items:center;gap:6px;min-width:100px}
+.score-track{flex:1;height:5px;background:var(--gray-700);border-radius:3px;overflow:hidden}
+.score-fill{height:100%;border-radius:3px;transition:width .2s}
+.score-fill.a{background:var(--status-green)} .score-fill.b{background:var(--status-amber)} .score-fill.c{background:var(--status-red)}
+.score-num{font-size:.75rem;font-weight:500;color:var(--text-primary);min-width:26px;text-align:right}
 
-    To view: open this file directly in a browser (file:// or serve via any static server).
-    To test mobile: use browser DevTools → iPhone 13 Pro Max preset.
-  -->
+/* ── Tier badge ── */
+.tier{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;font-size:.75rem;font-weight:700;flex-shrink:0}
+.tier.a{background:var(--status-green-dim);color:var(--status-green)}
+.tier.b{background:var(--status-amber-dim);color:var(--status-amber)}
+.tier.c{background:var(--status-red-dim);color:var(--status-red)}
 
-  <link rel="stylesheet" href="tokens.css">
-  <link rel="stylesheet" href="accentos-shell.css">
+/* ── Stage pill ── */
+.stage{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:.75rem;font-weight:500;white-space:nowrap}
+.stage.lead{background:var(--status-gray-dim);color:var(--status-gray)}
+.stage.qualified{background:var(--status-blue-dim);color:var(--status-blue)}
+.stage.quoted{background:var(--status-amber-dim);color:var(--status-amber)}
+.stage.negotiating{background:#1a0f38;color:#a78bfa}
+.stage.won{background:var(--status-green-dim);color:var(--status-green)}
+.stage.lost{background:var(--status-red-dim);color:var(--status-red)}
 
-  <style>
-    /* ── Prototype-only overrides ── */
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: var(--layer-canvas);
-      height: 100%;
-    }
+/* ── Data table ── */
+.dtable{width:100%;border-collapse:collapse;font-size:.875rem}
+.dtable th{text-align:left;font-size:.75rem;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 12px;border-bottom:1px solid var(--border-subtle);white-space:nowrap}
+.dtable td{padding:10px 12px;border-bottom:1px solid var(--border-subtle);color:var(--text-body);vertical-align:middle}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tbody tr{cursor:pointer;transition:background .1s}
+.dtable tbody tr:hover{background:var(--layer-elevated)}
+.dtable tbody tr.sel{background:var(--nav-active-bg);border-left:2px solid var(--gold-400)}
 
-    .accentos-shell {
-      height: 100dvh;
-    }
+/* ── Activity feed ── */
+.act-entry{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+.act-entry:last-child{border-bottom:none}
+.act-icon{width:28px;height:28px;border-radius:6px;background:var(--layer-elevated);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.act-text{font-size:.875rem;color:var(--text-body);line-height:1.4}
+.act-time{font-size:.6875rem;color:var(--text-muted);margin-top:2px}
 
-    .proto-banner {
-      background: var(--status-blue-dim);
-      border-bottom: 1px solid var(--status-blue);
-      color: var(--status-blue);
-      text-align: center;
-      font-size: var(--size-label);
-      padding: var(--space-1) var(--space-4);
-      font-weight: var(--weight-medium);
-      flex-shrink: 0;
-      letter-spacing: 0.02em;
-    }
+/* ── Mode banner ── */
+.mode-banner{display:none;align-items:center;justify-content:space-between;padding:6px 16px;font-size:.75rem;font-weight:500;flex-shrink:0;gap:16px}
+.mode-banner.show{display:flex}
+.mode-banner.focus{background:var(--status-blue-dim);color:var(--status-blue);border-bottom:1px solid var(--status-blue)}
+.mode-banner.urgent{background:var(--status-red-dim);color:var(--status-red);border-bottom:1px solid var(--status-red)}
+.mode-banner.exec{background:#1a1500;color:var(--gold-300);border-bottom:1px solid var(--gold-600)}
+.mode-banner.readonly{background:var(--status-gray-dim);color:var(--status-gray);border-bottom:1px solid var(--status-gray)}
+.mode-banner-exit{cursor:pointer;opacity:.7;font-size:.6875rem;text-transform:uppercase;letter-spacing:.05em}
+.mode-banner-exit:hover{opacity:1}
 
-    .proto-role-switcher {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--size-label);
-    }
+/* ── Notif panel ── */
+.notif-panel{display:none;position:fixed;top:calc(56px + env(safe-area-inset-top));right:16px;width:340px;background:var(--layer-elevated);border:1px solid var(--border-strong);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:500;overflow:hidden}
+.notif-panel.open{display:block}
+.notif-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border-subtle);font-size:.875rem;font-weight:600;color:var(--text-primary)}
+.notif-list{max-height:360px;overflow-y:auto}
+.notif-item{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-subtle);cursor:pointer;transition:background .1s}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--layer-surface)}
+.notif-item.unread{border-left:3px solid var(--status-blue)}
+.notif-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.notif-dot.alert{background:var(--status-red)} .notif-dot.warning{background:var(--status-amber)} .notif-dot.info{background:var(--status-blue)}
+.notif-msg{font-size:.8125rem;color:var(--text-body);line-height:1.4;flex:1}
+.notif-ts{font-size:.6875rem;color:var(--text-muted);margin-top:2px}
+.notif-footer{padding:8px 16px;text-align:center;font-size:.75rem;color:var(--gold-400);cursor:pointer;border-top:1px solid var(--border-subtle)}
+.notif-footer:hover{color:var(--gold-300)}
 
-    .proto-role-switcher select {
-      background: var(--layer-surface);
-      border: 1px solid var(--border-default);
-      border-radius: 4px;
-      color: var(--text-primary);
-      font-size: var(--size-label);
-      padding: 2px var(--space-2);
-      cursor: pointer;
-      outline: none;
-    }
+/* ── Nav badge ── */
+.nav-badge{margin-left:auto;border-radius:10px;padding:0 5px;font-size:.6875rem;font-weight:600;min-width:18px;text-align:center;line-height:16px;flex-shrink:0}
+.nav-badge.warn{background:var(--status-amber-dim);color:var(--status-amber)}
+.nav-badge.alert{background:var(--status-red-dim);color:var(--status-red)}
+.nav-badge.info{background:var(--status-blue-dim);color:var(--status-blue)}
 
-    .proto-module-surface {
-      display: none;
-    }
+/* ── Quick grid ── */
+.quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.quick-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;background:var(--layer-elevated);border:1px solid var(--border-subtle);border-radius:var(--card-radius);cursor:pointer;transition:background .1s,border-color .1s;text-align:center;min-height:52px}
+.quick-btn:hover{background:var(--interactive-muted);border-color:var(--border-strong)}
+.quick-btn .qi{font-size:18px} .quick-btn .ql{font-size:.6875rem;color:var(--text-secondary)}
 
-    .proto-module-surface.active {
-      display: block;
-    }
+/* ── Toolbar / buttons ── */
+.mod-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.mod-search{flex:1;min-width:180px;max-width:300px;height:32px;background:var(--layer-surface);border:1px solid var(--border-subtle);border-radius:6px;padding:0 12px;color:var(--text-primary);font-size:.875rem;font-family:var(--font-sans);outline:none}
+.mod-search:focus{border-color:var(--border-brand)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:0 12px;height:32px;border-radius:6px;font-size:.875rem;font-family:var(--font-sans);cursor:pointer;border:1px solid var(--border-default);white-space:nowrap;transition:background .1s}
+.btn-primary{background:var(--interactive-default);color:var(--gray-950);border-color:transparent}
+.btn-primary:hover{background:var(--interactive-hover)}
+.btn-ghost{background:transparent;color:var(--text-secondary)}
+.btn-ghost:hover{background:var(--layer-elevated);color:var(--text-primary)}
 
-    .health-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: var(--space-3);
-      margin-top: var(--space-3);
-    }
+/* ── Priority item ── */
+.pri-list{display:flex;flex-direction:column;gap:6px}
+.pri-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--layer-canvas);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;transition:background .1s;min-height:42px}
+.pri-item:hover{background:var(--layer-elevated)}
+.pri-icon{font-size:15px;flex-shrink:0}
+.pri-text{flex:1;font-size:.875rem;color:var(--text-body)}
 
-    .health-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-3);
-      background: var(--layer-canvas);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      font-size: var(--size-label);
-    }
+/* ── Proto module panel ── */
+.proto-mod{display:none}
+.proto-mod.active{display:block}
 
-    .timeline-item {
-      display: flex;
-      gap: var(--space-3);
-      padding: var(--space-3) 0;
-      border-bottom: 1px solid var(--border-subtle);
-      font-size: var(--size-body);
-    }
+/* ── Notif badge on bell ── */
+.notif-bell-wrap{position:relative}
+.notif-count{position:absolute;top:-4px;right:-4px;background:var(--status-red);color:#fff;border-radius:8px;font-size:.6875rem;font-weight:700;padding:0 4px;min-width:16px;text-align:center;line-height:16px;pointer-events:none}
 
-    .timeline-item:last-child { border-bottom: none; }
+/* ── Mode-specific shell states ── */
+[data-mode="focus"] .aos-sidebar{opacity:.4;pointer-events:none}
+[data-mode="urgent"] .aos-header{border-bottom-color:var(--status-red)}
+[data-mode="urgent"] .aos-ticker{background:var(--status-red-dim);border-bottom-color:var(--status-red)}
+[data-mode="exec"] .aos-header{border-bottom-color:var(--gold-600)}
+[data-mode="readonly"] .btn-primary{opacity:.4;pointer-events:none}
+[data-mode="readonly"] .aos-fab{display:none}
 
-    .timeline-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--status-green);
-      flex-shrink: 0;
-      margin-top: 6px;
-    }
+/* ── Role-specific card visibility ── */
+.card-owner,.card-manager,.card-sales,.card-designer,.card-warehouse,.card-viewer{display:none}
+[data-role="owner"] .card-owner,[data-role="manager"] .card-manager,
+[data-role="sales"] .card-sales,[data-role="designer"] .card-designer,
+[data-role="warehouse"] .card-warehouse,[data-role="viewer"] .card-viewer{display:block}
 
-    .timeline-text { color: var(--text-body); }
-    .timeline-time { color: var(--text-muted); font-size: var(--size-label); margin-top: 2px; }
+/* ── Segment badge ── */
+.seg{display:inline-flex;padding:2px 7px;border-radius:4px;font-size:.75rem;font-weight:500}
+.seg.vip{background:#1a1500;color:var(--gold-300)}
+.seg.active{background:var(--status-green-dim);color:var(--status-green)}
+.seg.lapsed{background:var(--status-amber-dim);color:var(--status-amber)}
+.seg.prospect{background:var(--status-blue-dim);color:var(--status-blue)}
+.seg.lost{background:var(--status-red-dim);color:var(--status-red)}
 
-    .stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-3);
-    }
+/* ── Mobile ── */
+@media(max-width:767px){
+  .kpi-row{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-val{font-size:1.25rem}
+  .notif-panel{left:8px;right:8px;width:auto}
+  .dtable th:nth-child(n+4),.dtable td:nth-child(n+4){display:none}
+  .hide-mobile{display:none}
+  .aos-card-grid{grid-template-columns:1fr}
+}
 
-    .stat-item {
-      background: var(--layer-canvas);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: var(--space-3);
-    }
+/* ── Proto dev banner ── */
+.proto-dev-banner{background:var(--status-blue-dim);border-bottom:1px solid var(--status-blue);color:var(--status-blue);text-align:center;font-size:.6875rem;padding:4px 16px;font-weight:500;flex-shrink:0;letter-spacing:.02em}
 
-    .stat-val {
-      font-size: 1.5rem;
-      font-weight: var(--weight-semibold);
-      color: var(--text-primary);
-    }
+/* ── Role/mode selectors in header ── */
+.hdr-select{background:var(--layer-surface);border:1px solid var(--border-default);border-radius:4px;color:var(--text-primary);font-size:.75rem;padding:3px 6px;cursor:pointer;outline:none;max-width:90px}
 
-    .stat-lbl {
-      font-size: var(--size-label);
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
-  </style>
+/* Pipeline stage columns */
+.pipeline-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.pipeline-col{background:var(--layer-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:12px}
+.pipeline-col-hdr{font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.pipeline-deal{background:var(--layer-canvas);border:1px solid var(--border-subtle);border-radius:6px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .1s}
+.pipeline-deal:hover{border-color:var(--border-brand)}
+.pipeline-deal-name{font-size:.875rem;color:var(--text-primary);font-weight:500}
+.pipeline-deal-val{font-size:.75rem;color:var(--status-green);margin-top:2px}
+.pipeline-deal-meta{font-size:.6875rem;color:var(--text-muted);margin-top:4px}
+
+/* Health status ── */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.health-card{background:var(--layer-surface);border:1px solid var(--border-subtle);border-radius:8px;padding:14px;display:flex;align-items:center;gap:10px}
+.health-card.ok{border-color:var(--status-green)}
+.health-card.warn{border-color:var(--status-amber)}
+.health-card.fail{border-color:var(--status-red)}
+.health-icon{font-size:22px;flex-shrink:0}
+.health-name{font-size:.875rem;font-weight:600;color:var(--text-primary)}
+.health-detail{font-size:.75rem;color:var(--text-secondary);margin-top:2px}
+
+/* ── AI queue ── */
+.ai-queue-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+.ai-queue-item:last-child{border-bottom:none}
+.ai-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ai-status-dot.running{background:var(--status-blue);animation:pulse 1.5s infinite}
+.ai-status-dot.done{background:var(--status-green)}
+.ai-status-dot.queued{background:var(--status-gray)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
 </head>
 <body>
 
 <div class="accentos-shell" id="aosShell">
 
-  <!-- Prototype banner -->
-  <div class="proto-banner">
-    ⚡ PROTOTYPE — AccentOS Shell Preview — Not production. View docs/design/ for full spec.
+<!-- Dev Banner -->
+<div class="proto-dev-banner">⚡ PROTOTYPE v2 — AccentOS Command Center — Isolated · Not Production · docs/design/ for spec</div>
+
+<!-- Mode Banner -->
+<div class="mode-banner" id="modeBanner">
+  <span id="modeBannerMsg"></span>
+  <span class="mode-banner-exit" onclick="setMode('normal')">Exit Mode ✕</span>
+</div>
+
+<!-- Header -->
+<header class="aos-header">
+  <button class="aos-icon-btn" data-toggle-sidebar title="Sidebar">☰</button>
+  <a href="#" class="aos-header-logo">
+    <div class="logo-mark">A</div>
+    <span class="hide-mobile">AccentOS</span>
+  </a>
+  <div class="aos-header-search hide-mobile">
+    <span class="aos-header-search-icon">🔍</span>
+    <input type="text" placeholder="Search vendors, quotes, products… (⌘K)" onfocus="AccentOS.shell.openCommandLauncher();this.blur()">
+  </div>
+  <div class="aos-header-spacer"></div>
+
+  <!-- Mode selector -->
+  <div style="display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--text-muted)" class="hide-mobile">
+    Mode:
+    <select class="hdr-select" id="modeSelect" onchange="setMode(this.value)">
+      <option value="normal">Normal</option>
+      <option value="focus">Focus</option>
+      <option value="urgent">Urgent</option>
+      <option value="exec">Exec</option>
+      <option value="readonly">Read-Only</option>
+    </select>
   </div>
 
-  <!-- Global Header -->
-  <header class="aos-header">
-    <button class="aos-icon-btn" data-toggle-sidebar title="Toggle sidebar">☰</button>
+  <!-- System status -->
+  <div style="display:flex;gap:6px;align-items:center" class="hide-mobile">
+    <span class="aos-badge active" style="font-size:.6875rem"><span class="aos-dot active"></span>DB</span>
+    <span class="aos-badge warning" style="font-size:.6875rem"><span class="aos-dot warning"></span>Worker</span>
+  </div>
 
-    <a href="#" class="aos-header-logo">
-      <div class="logo-mark">A</div>
-      AccentOS
+  <!-- Notifications -->
+  <div class="notif-bell-wrap">
+    <button class="aos-icon-btn" id="notifBtn" title="Notifications">🔔</button>
+    <span class="notif-count" id="notifCount">2</span>
+  </div>
+
+  <!-- Role selector + avatar -->
+  <div style="display:flex;align-items:center;gap:6px">
+    <span style="font-size:.75rem;color:var(--text-muted)" class="hide-mobile">Role:</span>
+    <select class="hdr-select" id="roleSelect" onchange="applyRole(this.value)" style="max-width:110px">
+      <option value="owner">Owner</option>
+      <option value="manager">Manager</option>
+      <option value="sales">Salesperson</option>
+      <option value="designer">Designer</option>
+      <option value="warehouse">Warehouse</option>
+      <option value="viewer">Viewer</option>
+      <option value="ai_agent">AI Agent</option>
+    </select>
+    <div class="aos-avatar" id="avatarEl" title="Owner">M</div>
+  </div>
+</header>
+
+<!-- Ticker -->
+<div class="aos-ticker" id="tickerBar">
+  <span class="aos-ticker-label">Pulse</span>
+  <div class="aos-ticker-scroll" id="tickerScroll">
+    <span class="aos-ticker-item clickable">📋 QT-0839 accepted — Harbor View Homes $22,500 · 1h ago</span>
+    <span class="aos-ticker-item clickable">⭐ Kichler score updated 91/100 (+3) · 2h ago</span>
+    <span class="aos-ticker-item clickable">💼 Riverside Full Spec → Quoted · 3h ago</span>
+    <span class="aos-ticker-item clickable">⚠ Co-op deadline 8d — Progress Lighting $4,200 at risk</span>
+    <span class="aos-ticker-item clickable">📦 WP-2290 Wall Pack below reorder — 3 in stock</span>
+    <span class="aos-ticker-item clickable">✅ PO #1041 received — 22 items · 3 vendors updated</span>
+    <span class="aos-ticker-item clickable">🤖 AI parse completed — QT-0842 notes processed</span>
+    <span class="aos-ticker-item clickable">💰 WAC co-op fund $1,800 added · 5h ago</span>
+    <!-- Duplicate for loop -->
+    <span class="aos-ticker-item clickable">📋 QT-0839 accepted — Harbor View Homes $22,500 · 1h ago</span>
+    <span class="aos-ticker-item clickable">⭐ Kichler score updated 91/100 (+3) · 2h ago</span>
+    <span class="aos-ticker-item clickable">💼 Riverside Full Spec → Quoted · 3h ago</span>
+    <span class="aos-ticker-item clickable">⚠ Co-op deadline 8d — Progress Lighting $4,200 at risk</span>
+    <span class="aos-ticker-item clickable">📦 WP-2290 Wall Pack below reorder — 3 in stock</span>
+    <span class="aos-ticker-item clickable">✅ PO #1041 received — 22 items · 3 vendors updated</span>
+  </div>
+</div>
+
+<!-- MAIN BODY -->
+<div class="aos-body">
+
+<!-- SIDEBAR -->
+<nav class="aos-sidebar" id="sidebar">
+  <div class="aos-sidebar-section">
+    <span class="aos-sidebar-label">Overview</span>
+    <a class="aos-nav-item active" data-module="dashboard">
+      <span class="aos-nav-icon">🏠</span><span class="aos-nav-text">Dashboard</span>
     </a>
+  </div>
+  <div class="aos-sidebar-divider"></div>
+  <div class="aos-sidebar-section">
+    <span class="aos-sidebar-label">Business</span>
+    <a class="aos-nav-item" data-module="vendors" data-roles="owner,manager,sales">
+      <span class="aos-nav-icon">🏭</span><span class="aos-nav-text">Vendor Intelligence</span>
+      <span class="nav-badge warn" id="badge-vendors">6</span>
+    </a>
+    <a class="aos-nav-item" data-module="quotes" data-roles="owner,manager,sales,designer">
+      <span class="aos-nav-icon">📋</span><span class="aos-nav-text">Quote Generator</span>
+      <span class="nav-badge alert" id="badge-quotes">3</span>
+    </a>
+    <a class="aos-nav-item" data-module="pipeline" data-roles="owner,manager,sales">
+      <span class="aos-nav-icon">💼</span><span class="aos-nav-text">Sales Pipeline</span>
+    </a>
+    <a class="aos-nav-item" data-module="customers" data-roles="owner,manager,sales,designer">
+      <span class="aos-nav-icon">👥</span><span class="aos-nav-text">Customers</span>
+      <span class="nav-badge alert" id="badge-customers">3</span>
+    </a>
+    <a class="aos-nav-item" data-module="jobs" data-roles="owner,manager,sales,designer,builder,warehouse">
+      <span class="aos-nav-icon">🔨</span><span class="aos-nav-text">Jobs &amp; Builds</span>
+    </a>
+  </div>
+  <div class="aos-sidebar-divider"></div>
+  <div class="aos-sidebar-section">
+    <span class="aos-sidebar-label">Products</span>
+    <a class="aos-nav-item" data-module="inventory" data-roles="owner,manager,sales,designer,builder,warehouse,viewer">
+      <span class="aos-nav-icon">📦</span><span class="aos-nav-text">Product Lookup</span>
+      <span class="nav-badge alert" id="badge-inventory">2</span>
+    </a>
+    <a class="aos-nav-item" data-module="pricing" data-roles="owner,manager,sales">
+      <span class="aos-nav-icon">💰</span><span class="aos-nav-text">Pricing Tools</span>
+    </a>
+    <a class="aos-nav-item" data-module="pos" data-roles="owner,manager,warehouse">
+      <span class="aos-nav-icon">🛒</span><span class="aos-nav-text">Purchase Orders</span>
+    </a>
+    <a class="aos-nav-item" data-module="deliveries" data-roles="owner,manager,warehouse,builder">
+      <span class="aos-nav-icon">🚚</span><span class="aos-nav-text">Deliveries</span>
+    </a>
+  </div>
+  <div class="aos-sidebar-divider"></div>
+  <div class="aos-sidebar-section">
+    <span class="aos-sidebar-label">Intelligence</span>
+    <a class="aos-nav-item" data-module="reports" data-roles="owner,manager,sales">
+      <span class="aos-nav-icon">📊</span><span class="aos-nav-text">Reports</span>
+    </a>
+    <a class="aos-nav-item" data-module="ai" data-roles="owner,manager,sales,designer">
+      <span class="aos-nav-icon">🤖</span><span class="aos-nav-text">AI Tools</span>
+      <span class="nav-badge alert" id="badge-ai">1</span>
+    </a>
+    <a class="aos-nav-item" data-module="decisions" data-roles="owner,manager">
+      <span class="aos-nav-icon">🧠</span><span class="aos-nav-text">Decision Engine</span>
+    </a>
+  </div>
+  <div class="aos-sidebar-divider"></div>
+  <div class="aos-sidebar-section">
+    <span class="aos-sidebar-label">System</span>
+    <a class="aos-nav-item" data-module="admin" data-roles="owner">
+      <span class="aos-nav-icon">⚙️</span><span class="aos-nav-text">Admin</span>
+    </a>
+    <a class="aos-nav-item" data-module="health" data-roles="owner,manager">
+      <span class="aos-nav-icon">💚</span><span class="aos-nav-text">System Health</span>
+      <span class="nav-badge warn" id="badge-health">1</span>
+    </a>
+  </div>
+</nav>
 
-    <div class="aos-header-search">
-      <span class="aos-header-search-icon">🔍</span>
-      <input type="text" placeholder="Search vendors, quotes, products… (Cmd+K)">
-    </div>
+<!-- CENTRAL SURFACE -->
+<main class="aos-surface" id="mainSurface">
 
-    <div class="aos-header-spacer"></div>
+  <!-- DASHBOARD -->
+  <div class="proto-mod active" id="mod-dashboard">
+    <div id="dashContent"><!-- JS-rendered --></div>
+  </div>
 
-    <div class="aos-header-status">
-      <span class="aos-badge active"><span class="aos-dot active"></span> DB</span>
-      <span class="aos-badge active"><span class="aos-dot active"></span> Worker</span>
-    </div>
-
-    <div class="aos-header-actions">
-      <div class="proto-role-switcher">
-        <span style="color:var(--text-muted)">Role:</span>
-        <select id="roleSelect" onchange="applyRole(this.value)">
-          <option value="owner">Owner</option>
-          <option value="manager">Manager</option>
-          <option value="sales">Salesperson</option>
-          <option value="designer">Designer</option>
-          <option value="builder">Builder</option>
-          <option value="warehouse">Warehouse</option>
-          <option value="viewer">Viewer</option>
-        </select>
+  <!-- VENDOR INTELLIGENCE -->
+  <div class="proto-mod" id="mod-vendors">
+    <div class="aos-surface-header">
+      <div><div class="aos-surface-title">Vendor Intelligence</div><div class="aos-surface-subtitle">10 vendors tracked · 3 co-op funds open</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="aos-badge warning">6 scores need review</span>
+        <button class="btn btn-primary" onclick="AccentOS.shell.showToast('Score entry open','info')">+ Score Vendor</button>
       </div>
-      <button class="aos-icon-btn" title="Notifications">🔔</button>
-      <div class="aos-avatar" id="avatarEl">M</div>
     </div>
-  </header>
+    <div class="mod-toolbar">
+      <input class="mod-search" type="text" placeholder="Search vendors…" oninput="filterTable(this,'vtable')">
+      <button class="btn btn-ghost">Filter by Tier ▾</button>
+      <button class="btn btn-ghost">Sort by Score ▾</button>
+    </div>
+    <table class="dtable" id="vtable">
+      <thead><tr><th>Vendor</th><th>Tier</th><th>Score</th><th class="hide-mobile">Rep</th><th class="hide-mobile">Co-op Open</th><th class="hide-mobile">Last Activity</th></tr></thead>
+      <tbody id="vendorRows"></tbody>
+    </table>
+  </div>
 
-  <!-- Ticker / Pulse Strip -->
-  <div class="aos-ticker" id="tickerBar">
-    <span class="aos-ticker-label">Pulse</span>
-    <div class="aos-ticker-scroll" id="tickerScroll">
-      <span class="aos-ticker-item clickable">📋 Quote QT-0842 saved — Builder Supply Co · 2m ago</span>
-      <span class="aos-ticker-item clickable">⭐ Vendor score updated — Kichler Lighting · 5m ago</span>
-      <span class="aos-ticker-item clickable">💼 Deal moved to Quoted — Riverside Remodel · 12m ago</span>
-      <span class="aos-ticker-item clickable">⚠ Co-op deadline in 8 days — $4,200 at risk · Progress Lighting</span>
-      <span class="aos-ticker-item clickable">📦 Inventory alert — SKU WP-2290 low stock</span>
-      <span class="aos-ticker-item clickable">✅ PO #1041 received — 22 items updated</span>
-      <!-- duplicate for seamless loop -->
-      <span class="aos-ticker-item clickable">📋 Quote QT-0842 saved — Builder Supply Co · 2m ago</span>
-      <span class="aos-ticker-item clickable">⭐ Vendor score updated — Kichler Lighting · 5m ago</span>
-      <span class="aos-ticker-item clickable">💼 Deal moved to Quoted — Riverside Remodel · 12m ago</span>
-      <span class="aos-ticker-item clickable">⚠ Co-op deadline in 8 days — $4,200 at risk · Progress Lighting</span>
-      <span class="aos-ticker-item clickable">📦 Inventory alert — SKU WP-2290 low stock</span>
-      <span class="aos-ticker-item clickable">✅ PO #1041 received — 22 items updated</span>
+  <!-- QUOTES -->
+  <div class="proto-mod" id="mod-quotes">
+    <div class="aos-surface-header">
+      <div><div class="aos-surface-title">Quote Generator</div><div class="aos-surface-subtitle">8 open quotes · $104,800 total value</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="aos-badge alert">3 stale &gt;7 days</span>
+        <span class="aos-badge warning">⚠ AI Parse needs worker redeploy</span>
+        <button class="btn btn-primary" onclick="AccentOS.shell.showToast('New quote form open','info')">+ New Quote</button>
+      </div>
+    </div>
+    <div class="mod-toolbar">
+      <input class="mod-search" type="text" placeholder="Search quotes…" oninput="filterTable(this,'qtable')">
+      <button class="btn btn-ghost">Filter by Status ▾</button>
+      <button class="btn btn-ghost">Sort by Value ▾</button>
+    </div>
+    <table class="dtable" id="qtable">
+      <thead><tr><th>Quote ID</th><th>Customer</th><th>Value</th><th>Age</th><th>Status</th><th class="hide-mobile">Assignee</th></tr></thead>
+      <tbody id="quoteRows"></tbody>
+    </table>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div class="proto-mod" id="mod-customers">
+    <div class="aos-surface-header">
+      <div><div class="aos-surface-title">Customers</div><div class="aos-surface-subtitle">8 customers · 3 follow-ups overdue</div></div>
+      <button class="btn btn-primary" onclick="AccentOS.shell.showToast('Add customer form open','info')">+ Add Customer</button>
+    </div>
+    <div class="mod-toolbar">
+      <input class="mod-search" type="text" placeholder="Search customers…" oninput="filterTable(this,'ctable')">
+      <button class="btn btn-ghost">Filter by Segment ▾</button>
+    </div>
+    <table class="dtable" id="ctable">
+      <thead><tr><th>Customer</th><th>Segment</th><th>Last Contact</th><th class="hide-mobile">LTV</th><th>Follow-Up</th></tr></thead>
+      <tbody id="customerRows"></tbody>
+    </table>
+  </div>
+
+  <!-- INVENTORY -->
+  <div class="proto-mod" id="mod-inventory">
+    <div class="aos-surface-header">
+      <div><div class="aos-surface-title">Product Lookup</div><div class="aos-surface-subtitle">488 SKUs tracked · 2 critical alerts</div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost">Import CSV</button>
+        <button class="btn btn-primary" onclick="AccentOS.shell.showToast('Search active','info')">+ Add SKU</button>
+      </div>
+    </div>
+    <div class="mod-toolbar">
+      <input class="mod-search" type="text" placeholder="Search SKU, name, vendor…" oninput="filterTable(this,'itable')">
+      <button class="btn btn-ghost">Show Alerts Only</button>
+    </div>
+    <table class="dtable" id="itable">
+      <thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th class="hide-mobile">Reorder At</th><th class="hide-mobile">Vendor</th><th class="hide-mobile">List Price</th></tr></thead>
+      <tbody id="inventoryRows"></tbody>
+    </table>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="proto-mod" id="mod-pipeline">
+    <div class="aos-surface-header">
+      <div><div class="aos-surface-title">Sales Pipeline</div><div class="aos-surface-subtitle">7 deals · $615K total · $312K weighted forecast</div></div>
+      <button class="btn btn-primary" onclick="AccentOS.shell.showToast('New deal form open','info')">+ New Deal</button>
+    </div>
+    <div class="pipeline-grid" id="pipelineBoard"></div>
+  </div>
+
+  <!-- SYSTEM HEALTH -->
+  <div class="proto-mod" id="mod-health">
+    <div class="aos-surface-header">
+      <div><div class="aos-surface-title">System Health</div><div class="aos-surface-subtitle">3 of 4 services nominal · 1 action required</div></div>
+      <span class="aos-badge warning">1 issue</span>
+    </div>
+    <div class="health-grid">
+      <div class="health-card ok">
+        <span class="health-icon">🗄️</span>
+        <div><div class="health-name">Supabase DB</div><div class="health-detail">Online · Latency 12ms</div></div>
+      </div>
+      <div class="health-card ok">
+        <span class="health-icon">☁️</span>
+        <div><div class="health-name">Cloudflare Pages</div><div class="health-detail">Live · accent-os.pages.dev</div></div>
+      </div>
+      <div class="health-card warn">
+        <span class="health-icon">⚡</span>
+        <div><div class="health-name">Anthropic Worker</div><div class="health-detail">⚠ Commit 2dca2a6 not redeployed · Run wrangler deploy</div></div>
+      </div>
+      <div class="health-card ok">
+        <span class="health-icon">🔐</span>
+        <div><div class="health-name">Auth Service</div><div class="health-detail">Active · 5 sessions today</div></div>
+      </div>
+    </div>
+    <div class="aos-card alert-card" style="max-width:520px">
+      <div class="aos-card-title">BUG-01 — Worker Proxy Needs Redeploy</div>
+      <div class="aos-card-body" style="margin-top:8px">
+        Fix commit <span style="font-family:var(--font-mono);color:var(--gold-400)">2dca2a6</span> is not live. Quote AI Parse returns 400.<br><br>
+        <strong style="color:var(--text-primary)">Fix:</strong> Run <span style="font-family:var(--font-mono);color:var(--gold-400)">wrangler deploy</span> from <span style="font-family:var(--font-mono)">C:\Users\Michael\Desktop\accent-os</span>
+      </div>
+      <div class="aos-card-footer">
+        <span class="aos-badge alert">Blocked on Michael</span>
+        <span style="font-size:.75rem;color:var(--text-muted)">Opened 2026-05-07</span>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <div class="aos-surface-title" style="font-size:1.125rem;margin-bottom:12px">Pending SQL Migrations</div>
+      <table class="dtable">
+        <thead><tr><th>Migration</th><th>Description</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--font-mono)">M01</td><td>RLS tightening — drop anon policies</td><td><span class="aos-badge warning">Pending Michael</span></td></tr>
+          <tr><td style="font-family:var(--font-mono)">M02</td><td>Core schema — 18 tables</td><td><span class="aos-badge warning">Pending Michael</span></td></tr>
+          <tr><td style="font-family:var(--font-mono)">M21–M40</td><td>All module schemas</td><td><span class="aos-badge muted">Pending M02 first</span></td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Main body: sidebar + surface + rail -->
-  <div class="aos-body">
-
-    <!-- Sidebar -->
-    <nav class="aos-sidebar" id="sidebar">
-
-      <div class="aos-sidebar-section">
-        <span class="aos-sidebar-label">Overview</span>
-        <a class="aos-nav-item active" data-module="dashboard">
-          <span class="aos-nav-icon">🏠</span>
-          <span class="aos-nav-text">Dashboard</span>
-        </a>
-      </div>
-
-      <div class="aos-sidebar-divider"></div>
-
-      <div class="aos-sidebar-section">
-        <span class="aos-sidebar-label">Business</span>
-        <a class="aos-nav-item" data-module="vendors" data-roles="owner,manager,sales">
-          <span class="aos-nav-icon">🏭</span>
-          <span class="aos-nav-text">Vendor Intelligence</span>
-        </a>
-        <a class="aos-nav-item" data-module="quotes" data-roles="owner,manager,sales,designer">
-          <span class="aos-nav-icon">📋</span>
-          <span class="aos-nav-text">Quote Generator</span>
-        </a>
-        <a class="aos-nav-item" data-module="pipeline" data-roles="owner,manager,sales">
-          <span class="aos-nav-icon">💼</span>
-          <span class="aos-nav-text">Sales Pipeline</span>
-        </a>
-        <a class="aos-nav-item" data-module="customers" data-roles="owner,manager,sales,designer">
-          <span class="aos-nav-icon">👥</span>
-          <span class="aos-nav-text">Customers</span>
-        </a>
-        <a class="aos-nav-item" data-module="jobs" data-roles="owner,manager,sales,designer,builder,warehouse">
-          <span class="aos-nav-icon">🔨</span>
-          <span class="aos-nav-text">Jobs & Builds</span>
-        </a>
-      </div>
-
-      <div class="aos-sidebar-divider"></div>
-
-      <div class="aos-sidebar-section">
-        <span class="aos-sidebar-label">Products</span>
-        <a class="aos-nav-item" data-module="inventory" data-roles="owner,manager,sales,designer,builder,warehouse,viewer">
-          <span class="aos-nav-icon">📦</span>
-          <span class="aos-nav-text">Product Lookup</span>
-        </a>
-        <a class="aos-nav-item" data-module="pricing" data-roles="owner,manager,sales">
-          <span class="aos-nav-icon">💰</span>
-          <span class="aos-nav-text">Pricing Tools</span>
-        </a>
-        <a class="aos-nav-item" data-module="purchase-orders" data-roles="owner,manager,warehouse">
-          <span class="aos-nav-icon">🛒</span>
-          <span class="aos-nav-text">Purchase Orders</span>
-        </a>
-        <a class="aos-nav-item" data-module="deliveries" data-roles="owner,manager,warehouse,builder">
-          <span class="aos-nav-icon">🚚</span>
-          <span class="aos-nav-text">Deliveries</span>
-        </a>
-      </div>
-
-      <div class="aos-sidebar-divider"></div>
-
-      <div class="aos-sidebar-section">
-        <span class="aos-sidebar-label">Intelligence</span>
-        <a class="aos-nav-item" data-module="reports" data-roles="owner,manager,sales">
-          <span class="aos-nav-icon">📊</span>
-          <span class="aos-nav-text">Reports</span>
-        </a>
-        <a class="aos-nav-item" data-module="ai-tools" data-roles="owner,manager,sales,designer">
-          <span class="aos-nav-icon">🤖</span>
-          <span class="aos-nav-text">AI Tools</span>
-        </a>
-        <a class="aos-nav-item" data-module="decision-engine" data-roles="owner,manager">
-          <span class="aos-nav-icon">🧠</span>
-          <span class="aos-nav-text">Decision Engine</span>
-        </a>
-      </div>
-
-      <div class="aos-sidebar-divider"></div>
-
-      <div class="aos-sidebar-section">
-        <span class="aos-sidebar-label">System</span>
-        <a class="aos-nav-item" data-module="admin" data-roles="owner">
-          <span class="aos-nav-icon">⚙️</span>
-          <span class="aos-nav-text">Admin</span>
-        </a>
-        <a class="aos-nav-item" data-module="health" data-roles="owner,manager">
-          <span class="aos-nav-icon">💚</span>
-          <span class="aos-nav-text">System Health</span>
-        </a>
-      </div>
-
-    </nav>
-
-    <!-- Central Surface -->
-    <main class="aos-surface" id="mainSurface">
-
-      <!-- DASHBOARD MODULE -->
-      <div class="proto-module-surface active" id="mod-dashboard">
-
-        <div class="aos-surface-header">
-          <div>
-            <div class="aos-surface-title">Daily Briefing</div>
-            <div class="aos-surface-subtitle">Friday, May 8 · Good morning, Michael</div>
-          </div>
-          <span class="aos-badge active"><span class="aos-dot active"></span> All Systems Live</span>
-        </div>
-
-        <!-- Next Actions Row -->
-        <div class="aos-next-actions">
-          <span class="aos-next-actions-label">Next Actions:</span>
-          <button class="aos-action-chip warning" onclick="AccentOS.shell.activateNavItem('quotes')">
-            ⚠ Stale Quotes <span class="chip-count">3</span>
-          </button>
-          <button class="aos-action-chip warning" onclick="AccentOS.shell.activateNavItem('pipeline')">
-            📞 Follow-ups due <span class="chip-count">2</span>
-          </button>
-          <button class="aos-action-chip alert">
-            💰 Co-op deadline 8d <span class="chip-count">$4,200</span>
-          </button>
-          <button class="aos-action-chip" onclick="AccentOS.shell.activateNavItem('vendors')">
-            ⭐ Vendor scores needed <span class="chip-count">6</span>
-          </button>
-          <button class="aos-action-chip" onclick="AccentOS.shell.activateNavItem('inventory')">
-            📦 Low stock <span class="chip-count">2 SKUs</span>
-          </button>
-        </div>
-
-        <!-- Card Grid -->
-        <div class="aos-card-grid">
-
-          <!-- Vendor Intelligence -->
-          <div class="aos-card"
-               data-rail-title="Vendor Intelligence"
-               data-rail-content="
-                 <div class='aos-rail-section-label'>Top Vendors</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Kichler</span><span class='aos-rail-row-value aos-text-green'>A · 91/100</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Lutron</span><span class='aos-rail-row-value aos-text-green'>A · 88/100</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Progress Lighting</span><span class='aos-rail-row-value aos-text-amber'>B · 74/100</span></div>
-                 <div class='aos-rail-section-label' style='margin-top:16px'>Stats</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Unverified scores</span><span class='aos-rail-row-value'>6</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Tier C vendors</span><span class='aos-rail-row-value aos-text-amber'>3</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Total tracked</span><span class='aos-rail-row-value'>42</span></div>
-               "
-               data-roles="owner,manager,sales">
-            <div class="aos-card-header">
-              <div>
-                <div class="aos-card-title">Vendor Intelligence</div>
-                <div class="aos-card-meta">42 vendors tracked</div>
-              </div>
-              <span class="aos-card-icon">🏭</span>
-            </div>
-            <div class="aos-card-body">
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-                <span class="aos-badge active">A: 18</span>
-                <span class="aos-badge warning">B: 14</span>
-                <span class="aos-badge alert">C: 3</span>
-                <span class="aos-badge muted">Unscored: 7</span>
-              </div>
-              <div style="font-size:var(--size-label);color:var(--text-secondary)">6 vendors need score review</div>
-            </div>
-            <div class="aos-card-footer">
-              <span>Avg score: 78.4</span>
-              <span class="aos-card-action">Open →</span>
-            </div>
-          </div>
-
-          <!-- Quote Generator -->
-          <div class="aos-card"
-               data-rail-title="Quote Generator"
-               data-rail-content="
-                 <div class='aos-badge warning' style='margin-bottom:12px'><span class='aos-dot warning'></span> AI Parse has a 400 error — worker needs redeploy</div>
-                 <div class='aos-rail-section-label'>Open Quotes</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>QT-0842</span><span class='aos-rail-row-value'>Builder Supply · $12,400</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>QT-0841</span><span class='aos-rail-row-value'>Riverside Remodel · $8,200</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>QT-0838</span><span class='aos-rail-row-value aos-text-amber'>Stale 9d · $3,100</span></div>
-                 <div class='aos-rail-section-label' style='margin-top:16px'>Summary</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Total open value</span><span class='aos-rail-row-value'>$127,400</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Stale (>7d)</span><span class='aos-rail-row-value aos-text-amber'>3</span></div>
-               "
-               data-roles="owner,manager,sales,designer">
-            <div class="aos-card-header">
-              <div>
-                <div class="aos-card-title">Quote Generator</div>
-                <div class="aos-card-meta">12 open quotes</div>
-              </div>
-              <span class="aos-card-icon">📋</span>
-            </div>
-            <div style="display:flex;gap:16px;align-items:flex-end">
-              <div>
-                <div class="aos-card-value">$127K</div>
-                <div class="aos-card-label">Total open value</div>
-              </div>
-              <div>
-                <div class="aos-card-value amber">3</div>
-                <div class="aos-card-label">Stale >7 days</div>
-              </div>
-            </div>
-            <div class="aos-card-footer">
-              <span class="aos-badge warning">⚠ AI Parse 400 — worker needs redeploy</span>
-              <span class="aos-card-action">Open →</span>
-            </div>
-          </div>
-
-          <!-- Product Lookup -->
-          <div class="aos-card"
-               data-rail-title="Product Lookup"
-               data-rail-content="
-                 <div class='aos-rail-section-label'>Recent Searches</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label aos-text-mono'>WP-2290</span><span class='aos-rail-row-value'>Wall Pack — Low stock</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label aos-text-mono'>DL-4480</span><span class='aos-rail-row-value'>Downlight 4\" — 24 in stock</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label aos-text-mono'>TR-7720</span><span class='aos-rail-row-value'>Track Head — 8 in stock</span></div>
-                 <div class='aos-rail-section-label' style='margin-top:16px'>Inventory Alerts</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Low stock items</span><span class='aos-rail-row-value aos-text-amber'>2</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Total SKUs tracked</span><span class='aos-rail-row-value'>488</span></div>
-               ">
-            <div class="aos-card-header">
-              <div>
-                <div class="aos-card-title">Product Lookup</div>
-                <div class="aos-card-meta">488 SKUs · 2 alerts</div>
-              </div>
-              <span class="aos-card-icon">📦</span>
-            </div>
-            <div class="aos-card-value">488</div>
-            <div class="aos-card-label">SKUs in inventory</div>
-            <div class="aos-card-footer">
-              <span class="aos-badge warning">2 low stock</span>
-              <span class="aos-card-action">Open →</span>
-            </div>
-          </div>
-
-          <!-- Sales Pipeline -->
-          <div class="aos-card"
-               data-rail-title="Sales Pipeline"
-               data-rail-content="
-                 <div class='aos-rail-section-label'>Pipeline by Stage</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Lead</span><span class='aos-rail-row-value'>8 · $89K</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Qualified</span><span class='aos-rail-row-value'>5 · $142K</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Quoted</span><span class='aos-rail-row-value'>7 · $198K</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Negotiating</span><span class='aos-rail-row-value'>3 · $88K</span></div>
-                 <div class='aos-rail-section-label' style='margin-top:16px'>Health</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Weighted forecast</span><span class='aos-rail-row-value aos-text-green'>$312K</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Stale deals (14d+)</span><span class='aos-rail-row-value aos-text-amber'>2</span></div>
-               "
-               data-roles="owner,manager,sales">
-            <div class="aos-card-header">
-              <div>
-                <div class="aos-card-title">Sales Pipeline</div>
-                <div class="aos-card-meta">23 active deals</div>
-              </div>
-              <span class="aos-card-icon">💼</span>
-            </div>
-            <div style="display:flex;gap:16px;align-items:flex-end">
-              <div>
-                <div class="aos-card-value green">$312K</div>
-                <div class="aos-card-label">Weighted forecast</div>
-              </div>
-              <div>
-                <div class="aos-card-value amber">2</div>
-                <div class="aos-card-label">Stale deals</div>
-              </div>
-            </div>
-            <div class="aos-card-footer">
-              <span>Close rate: 68%</span>
-              <span class="aos-card-action">Open →</span>
-            </div>
-          </div>
-
-          <!-- System Health -->
-          <div class="aos-card success-card"
-               data-rail-title="System Health"
-               data-rail-content="
-                 <div class='aos-rail-section-label'>Services</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Supabase DB</span><span class='aos-rail-row-value aos-text-green'>✓ Online</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Cloudflare Pages</span><span class='aos-rail-row-value aos-text-green'>✓ Live</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Anthropic Worker</span><span class='aos-rail-row-value aos-text-amber'>⚠ Needs redeploy</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Auth</span><span class='aos-rail-row-value aos-text-green'>✓ Active</span></div>
-                 <div class='aos-rail-section-label' style='margin-top:16px'>Pending</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>SQL migrations</span><span class='aos-rail-row-value aos-text-amber'>M01–M40 pending</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>RLS tightening</span><span class='aos-rail-row-value aos-text-amber'>M01 pending</span></div>
-               "
-               data-roles="owner,manager">
-            <div class="aos-card-header">
-              <div>
-                <div class="aos-card-title">System Health</div>
-                <div class="aos-card-meta">3/4 services nominal</div>
-              </div>
-              <span class="aos-card-icon">💚</span>
-            </div>
-            <div class="health-row">
-              <div class="health-item"><span class="aos-dot active"></span> Supabase DB</div>
-              <div class="health-item"><span class="aos-dot active"></span> CF Pages</div>
-              <div class="health-item"><span class="aos-dot warning"></span> Worker (BUG-01)</div>
-              <div class="health-item"><span class="aos-dot active"></span> Auth</div>
-            </div>
-            <div class="aos-card-footer">
-              <span class="aos-badge warning">1 issue: Worker redeploy needed</span>
-              <span class="aos-card-action">Details →</span>
-            </div>
-          </div>
-
-          <!-- AI Tools -->
-          <div class="aos-card"
-               data-rail-title="AI Tools"
-               data-rail-content="
-                 <div class='aos-rail-section-label'>Status</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Worker</span><span class='aos-rail-row-value aos-text-amber'>Needs redeploy</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Model</span><span class='aos-rail-row-value'>claude-sonnet-4-20250514</span></div>
-                 <div class='aos-rail-section-label' style='margin-top:16px'>Active Features</div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Quote AI Parse</span><span class='aos-rail-row-value aos-text-amber'>⚠ 400 error</span></div>
-                 <div class='aos-rail-row'><span class='aos-rail-row-label'>Track calculator</span><span class='aos-rail-row-value aos-text-green'>✓ Working</span></div>
-               "
-               data-roles="owner,manager,sales,designer">
-            <div class="aos-card-header">
-              <div>
-                <div class="aos-card-title">AI Tools</div>
-                <div class="aos-card-meta">Anthropic worker proxy</div>
-              </div>
-              <span class="aos-card-icon">🤖</span>
-            </div>
-            <div class="aos-card-body">
-              <span class="aos-badge warning">⚠ Worker proxy needs redeploy</span>
-              <div style="margin-top:8px;font-size:var(--size-label);color:var(--text-secondary)">
-                Run <code style="font-family:var(--font-mono);color:var(--gold-400)">wrangler deploy</code> from local terminal to fix BUG-01
-              </div>
-            </div>
-            <div class="aos-card-footer">
-              <span>Last used: Quote AI Parse</span>
-              <span class="aos-card-action">Open →</span>
-            </div>
-          </div>
-
-        </div><!-- /card grid -->
-      </div><!-- /dashboard module -->
-
-      <!-- VENDORS MODULE -->
-      <div class="proto-module-surface" id="mod-vendors">
-        <div class="aos-surface-header">
-          <div>
-            <div class="aos-surface-title">Vendor Intelligence</div>
-            <div class="aos-surface-subtitle">42 vendors · Last updated 5m ago</div>
-          </div>
-          <span class="aos-badge muted">Prototype placeholder</span>
-        </div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)">
-          <div style="font-size:48px;margin-bottom:16px">🏭</div>
-          <div style="font-size:var(--size-heading);color:var(--text-secondary);margin-bottom:8px">Vendor Intelligence Module</div>
-          <div style="font-size:var(--size-body)">In production, this renders the Vendor Scoring, Parent Groups, Co-op Tracker. This prototype slot shows the module is wired to the sidebar nav.</div>
-        </div>
-      </div>
-
-      <!-- QUOTES MODULE -->
-      <div class="proto-module-surface" id="mod-quotes">
-        <div class="aos-surface-header">
-          <div>
-            <div class="aos-surface-title">Quote Generator</div>
-            <div class="aos-surface-subtitle">12 open quotes · $127,400 total value</div>
-          </div>
-          <span class="aos-badge warning">⚠ AI Parse needs worker redeploy</span>
-        </div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)">
-          <div style="font-size:48px;margin-bottom:16px">📋</div>
-          <div style="font-size:var(--size-heading);color:var(--text-secondary);margin-bottom:8px">Quote Generator Module</div>
-          <div style="font-size:var(--size-body)">In production: line-item quotes, AI parse, track calculator, CSV export, saved quotes.</div>
-        </div>
-      </div>
-
-      <!-- Generic placeholder for other modules -->
-      <div class="proto-module-surface" id="mod-pipeline">
-        <div class="aos-surface-header"><div class="aos-surface-title">Sales Pipeline</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">💼</div><div style="margin-top:16px;color:var(--text-secondary)">Sales Pipeline module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-customers">
-        <div class="aos-surface-header"><div class="aos-surface-title">Customers</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">👥</div><div style="margin-top:16px;color:var(--text-secondary)">Customer CRM module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-jobs">
-        <div class="aos-surface-header"><div class="aos-surface-title">Jobs &amp; Builds</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">🔨</div><div style="margin-top:16px;color:var(--text-secondary)">Job Tracker module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-inventory">
-        <div class="aos-surface-header"><div class="aos-surface-title">Product Lookup</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">📦</div><div style="margin-top:16px;color:var(--text-secondary)">Inventory / Product Lookup module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-pricing">
-        <div class="aos-surface-header"><div class="aos-surface-title">Pricing Tools</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">💰</div><div style="margin-top:16px;color:var(--text-secondary)">Price Book / Pricing Tools — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-purchase-orders">
-        <div class="aos-surface-header"><div class="aos-surface-title">Purchase Orders</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">🛒</div><div style="margin-top:16px;color:var(--text-secondary)">Purchase Orders module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-deliveries">
-        <div class="aos-surface-header"><div class="aos-surface-title">Deliveries</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">🚚</div><div style="margin-top:16px;color:var(--text-secondary)">Deliveries module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-reports">
-        <div class="aos-surface-header"><div class="aos-surface-title">Reports</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">📊</div><div style="margin-top:16px;color:var(--text-secondary)">Reports module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-ai-tools">
-        <div class="aos-surface-header"><div class="aos-surface-title">AI Tools</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">🤖</div><div style="margin-top:16px;color:var(--text-secondary)">AI Tools module — prototype slot</div></div>
-      </div>
-      <div class="proto-module-surface" id="mod-decision-engine">
-        <div class="aos-surface-header"><div class="aos-surface-title">Decision Engine</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">🧠</div><div style="margin-top:16px;color:var(--text-secondary)">Decision Engine module — prototype slot</div></div>
-      </div>
-
-      <!-- HEALTH MODULE -->
-      <div class="proto-module-surface" id="mod-health">
-        <div class="aos-surface-header">
-          <div>
-            <div class="aos-surface-title">System Health</div>
-            <div class="aos-surface-subtitle">3/4 services nominal · 1 issue</div>
-          </div>
-          <span class="aos-badge warning">1 issue</span>
-        </div>
-        <div class="health-row" style="margin-bottom:24px">
-          <div class="health-item"><span class="aos-dot active"></span>&nbsp; Supabase DB — Online</div>
-          <div class="health-item"><span class="aos-dot active"></span>&nbsp; Cloudflare Pages — Live</div>
-          <div class="health-item" style="border:1px solid var(--status-amber)"><span class="aos-dot warning"></span>&nbsp; Worker — Needs redeploy</div>
-          <div class="health-item"><span class="aos-dot active"></span>&nbsp; Auth — Active</div>
-        </div>
-        <div class="aos-card alert-card" style="max-width:480px">
-          <div class="aos-card-title">BUG-01: Worker Proxy Needs Redeploy</div>
-          <div class="aos-card-body" style="margin-top:8px">
-            Commit <span class="aos-text-mono">2dca2a6</span> is not yet deployed. Quote AI Parse returns 400.
-            Fix: run <span class="aos-text-mono" style="color:var(--gold-400)">wrangler deploy</span> from Michael's local terminal.
-          </div>
-          <div class="aos-card-footer">
-            <span class="aos-badge alert">Blocked on Michael</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="proto-module-surface" id="mod-admin">
-        <div class="aos-surface-header"><div class="aos-surface-title">Admin</div></div>
-        <div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:48px">⚙️</div><div style="margin-top:16px;color:var(--text-secondary)">Admin / Governance — Owner only — prototype slot</div></div>
-      </div>
-
-    </main><!-- /surface -->
-
-    <!-- Right Rail Inspector -->
-    <aside class="aos-rail" id="rightRail">
-      <div class="aos-rail-header">
-        <span class="aos-rail-title" id="railTitle">Inspector</span>
-        <button class="aos-icon-btn" data-close-rail title="Close">✕</button>
-      </div>
-      <div class="aos-rail-body" id="railBody">
-        <div style="color:var(--text-muted);font-size:var(--size-body)">Click a card to inspect details.</div>
-      </div>
-    </aside>
-
-  </div><!-- /body -->
-
-  <!-- FAB -->
-  <button class="aos-fab" title="Quick actions (Cmd+K)">＋</button>
-
-  <!-- Bottom Command Bar (mobile) -->
-  <div class="aos-bottom-bar" id="bottomBar">
-    <div class="aos-bottom-nav-item active" data-module="dashboard">
-      <span class="icon">🏠</span>
-      <span class="label">Home</span>
+  <!-- AI TOOLS -->
+  <div class="proto-mod" id="mod-ai">
+    <div class="aos-surface-header">
+      <div><div class="aos-surface-title">AI Tools</div><div class="aos-surface-subtitle">Anthropic Worker · claude-sonnet-4-20250514</div></div>
+      <span class="aos-badge warning">Worker needs redeploy</span>
     </div>
-    <div class="aos-bottom-nav-item" data-module="quotes">
-      <span class="icon">📋</span>
-      <span class="label">Quotes</span>
+    <div class="aos-card" style="max-width:480px;margin-bottom:16px">
+      <div class="aos-card-title">Service Status</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        <div class="ai-queue-item">
+          <span class="ai-status-dot fail" style="background:var(--status-red)"></span>
+          <div><div style="font-size:.875rem;color:var(--text-primary)">Quote AI Parse</div><div style="font-size:.75rem;color:var(--text-muted)">Returns 400 — worker not redeployed</div></div>
+        </div>
+        <div class="ai-queue-item">
+          <span class="ai-status-dot done"></span>
+          <div><div style="font-size:.875rem;color:var(--text-primary)">Track Calculator</div><div style="font-size:.75rem;color:var(--text-muted)">Working — pure-compute, no worker needed</div></div>
+        </div>
+        <div class="ai-queue-item">
+          <span class="ai-status-dot queued"></span>
+          <div><div style="font-size:.875rem;color:var(--text-primary)">AI Assist (future)</div><div style="font-size:.75rem;color:var(--text-muted)">Planned — Phase 2</div></div>
+        </div>
+      </div>
     </div>
-    <button class="aos-bottom-bar-fab">＋</button>
-    <div class="aos-bottom-nav-item" data-module="inventory">
-      <span class="icon">📦</span>
-      <span class="label">Products</span>
-    </div>
-    <div class="aos-bottom-nav-item" data-module="pipeline">
-      <span class="icon">💼</span>
-      <span class="label">Pipeline</span>
+    <div style="margin-top:20px;font-size:.875rem;color:var(--text-secondary)">
+      <strong style="color:var(--text-primary)">Model:</strong> claude-sonnet-4-20250514<br>
+      <strong style="color:var(--text-primary)">Proxy:</strong> https://accentos-anthropic-proxy.mgraf77.workers.dev<br>
+      <strong style="color:var(--text-primary)">Usage today:</strong> 3 requests · 2 failed (400)
     </div>
   </div>
 
-  <!-- Command Launcher -->
-  <div class="aos-command-backdrop" id="commandLauncher">
-    <div class="aos-command-modal">
-      <div class="aos-command-input-row">
-        <span class="search-icon">🔍</span>
-        <input class="aos-command-input" placeholder="Search or run a command…" autocomplete="off" spellcheck="false">
+  <!-- STUB MODULES -->
+  <div class="proto-mod" id="mod-jobs"><div class="aos-surface-header"><div class="aos-surface-title">Jobs &amp; Builds</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">🔨</div><div style="margin-top:12px">Job Tracker module — production at js/jobs.js</div></div></div>
+  <div class="proto-mod" id="mod-pricing"><div class="aos-surface-header"><div class="aos-surface-title">Pricing Tools</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">💰</div><div style="margin-top:12px">Price Book module — production at js/price_book.js</div></div></div>
+  <div class="proto-mod" id="mod-pos"><div class="aos-surface-header"><div class="aos-surface-title">Purchase Orders</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">🛒</div><div style="margin-top:12px">PO module — production at js/purchase_orders.js</div></div></div>
+  <div class="proto-mod" id="mod-deliveries"><div class="aos-surface-header"><div class="aos-surface-title">Deliveries</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">🚚</div><div style="margin-top:12px">Deliveries module — production at js/deliveries.js</div></div></div>
+  <div class="proto-mod" id="mod-reports"><div class="aos-surface-header"><div class="aos-surface-title">Reports</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">📊</div><div style="margin-top:12px">Reports module — production at js/reports.js</div></div></div>
+  <div class="proto-mod" id="mod-decisions"><div class="aos-surface-header"><div class="aos-surface-title">Decision Engine</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">🧠</div><div style="margin-top:12px">Decision Engine — production at js/decision_engine.js</div></div></div>
+  <div class="proto-mod" id="mod-admin"><div class="aos-surface-header"><div class="aos-surface-title">Admin</div></div><div style="padding:40px;text-align:center;color:var(--text-muted)"><div style="font-size:40px">⚙️</div><div style="margin-top:12px">Owner-only Admin — production in index.html</div></div></div>
+
+</main><!-- /surface -->
+
+<!-- RIGHT RAIL -->
+<aside class="aos-rail" id="rightRail">
+  <div class="aos-rail-header">
+    <span class="aos-rail-title" id="railTitle">Inspector</span>
+    <button class="aos-icon-btn" data-close-rail>✕</button>
+  </div>
+  <div class="aos-rail-body" id="railBody"><div style="color:var(--text-muted);font-size:.875rem">Click any row or card to inspect.</div></div>
+</aside>
+
+</div><!-- /body -->
+
+<!-- FAB -->
+<button class="aos-fab" title="Quick actions (⌘K)">＋</button>
+
+<!-- BOTTOM BAR (mobile) -->
+<div class="aos-bottom-bar" id="bottomBar">
+  <div class="aos-bottom-nav-item active" data-module="dashboard"><span class="icon">🏠</span><span class="label">Home</span></div>
+  <div class="aos-bottom-nav-item" data-module="quotes"><span class="icon">📋</span><span class="label">Quotes</span></div>
+  <button class="aos-bottom-bar-fab">＋</button>
+  <div class="aos-bottom-nav-item" data-module="inventory"><span class="icon">📦</span><span class="label">Products</span></div>
+  <div class="aos-bottom-nav-item" data-module="pipeline"><span class="icon">💼</span><span class="label">Pipeline</span></div>
+</div>
+
+<!-- COMMAND LAUNCHER -->
+<div class="aos-command-backdrop" id="commandLauncher">
+  <div class="aos-command-modal">
+    <div class="aos-command-input-row">
+      <span class="search-icon">🔍</span>
+      <input class="aos-command-input" placeholder="Search or run a command…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="aos-command-results">
+      <div class="aos-command-group-label">Quick Actions</div>
+      <div class="aos-command-item" onclick="navigate('quotes');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Opening new quote…','info')">
+        <div class="cmd-icon">📋</div><div><div>New Quote</div><div style="font-size:.75rem;color:var(--text-muted)">Open Quote Generator · ⌘N</div></div>
       </div>
-      <div class="aos-command-results">
-        <div class="aos-command-group-label">Quick Actions</div>
-        <div class="aos-command-item" onclick="navigate('quotes');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">📋</div>
-          <div>
-            <div>New Quote</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">Open Quote Generator</div>
-          </div>
-        </div>
-        <div class="aos-command-item" onclick="navigate('vendors');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">🏭</div>
-          <div>
-            <div>Vendor Intelligence</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">View vendor scores &amp; co-op</div>
-          </div>
-        </div>
-        <div class="aos-command-item" onclick="navigate('inventory');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">📦</div>
-          <div>
-            <div>Search Products</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">Find SKUs, check inventory</div>
-          </div>
-        </div>
-        <div class="aos-command-item" onclick="navigate('customers');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">👥</div>
-          <div>
-            <div>Customers</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">CRM &amp; customer history</div>
-          </div>
-        </div>
-        <div class="aos-command-group-label">Navigation</div>
-        <div class="aos-command-item" onclick="navigate('pipeline');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">💼</div>
-          <div>
-            <div>Sales Pipeline</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">View deals &amp; forecast</div>
-          </div>
-        </div>
-        <div class="aos-command-item" onclick="navigate('health');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">💚</div>
-          <div>
-            <div>System Health</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">Service status &amp; issues</div>
-          </div>
-        </div>
-        <div class="aos-command-item" onclick="navigate('reports');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">📊</div>
-          <div>
-            <div>Reports</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">Analytics &amp; exports</div>
-          </div>
-        </div>
-        <div class="aos-command-item" onclick="navigate('decision-engine');AccentOS.shell.closeCommandLauncher()">
-          <div class="cmd-icon">🧠</div>
-          <div>
-            <div>Decision Engine</div>
-            <div style="font-size:var(--size-label);color:var(--text-muted)">AI-driven recommendations</div>
-          </div>
-        </div>
+      <div class="aos-command-item" onclick="navigate('customers');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Customer log open','info')">
+        <div class="cmd-icon">👥</div><div><div>Log Customer Interaction</div><div style="font-size:.75rem;color:var(--text-muted)">Add a call, note, or visit</div></div>
       </div>
-      <div class="aos-command-footer">
-        <span><kbd>↑↓</kbd> Navigate</span>
-        <span><kbd>↵</kbd> Select</span>
-        <span><kbd>Esc</kbd> Close</span>
-        <span><kbd>⌘K</kbd> Toggle</span>
+      <div class="aos-command-item" onclick="navigate('inventory');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">📦</div><div><div>Search Products / SKUs</div><div style="font-size:.75rem;color:var(--text-muted)">Find inventory, check stock</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('vendors');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">🏭</div><div><div>Score a Vendor</div><div style="font-size:.75rem;color:var(--text-muted)">Update vendor performance rating</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('pipeline');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('New deal form open','info')">
+        <div class="cmd-icon">💼</div><div><div>Add Pipeline Deal</div><div style="font-size:.75rem;color:var(--text-muted)">Create a new deal in pipeline</div></div>
+      </div>
+      <div class="aos-command-group-label">Navigate</div>
+      <div class="aos-command-item" onclick="navigate('dashboard');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">🏠</div><div><div>Dashboard</div><div style="font-size:.75rem;color:var(--text-muted)">Daily briefing &amp; operations</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('vendors');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">🏭</div><div><div>Vendor Intelligence</div><div style="font-size:.75rem;color:var(--text-muted)">Scores, co-op, changelog</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('quotes');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">📋</div><div><div>Quotes</div><div style="font-size:.75rem;color:var(--text-muted)">Open, stale, saved quotes</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('pipeline');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">💼</div><div><div>Sales Pipeline</div><div style="font-size:.75rem;color:var(--text-muted)">Deals, forecast, probability</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('customers');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">👥</div><div><div>Customers</div><div style="font-size:.75rem;color:var(--text-muted)">CRM, RFM, follow-ups</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('inventory');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">📦</div><div><div>Product Lookup</div><div style="font-size:.75rem;color:var(--text-muted)">Inventory, SKUs, stock levels</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('health');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">💚</div><div><div>System Health</div><div style="font-size:.75rem;color:var(--text-muted)">Service status, issues</div></div>
+      </div>
+      <div class="aos-command-item" onclick="navigate('ai');AccentOS.shell.closeCommandLauncher()">
+        <div class="cmd-icon">🤖</div><div><div>AI Tools</div><div style="font-size:.75rem;color:var(--text-muted)">Worker status, AI features</div></div>
+      </div>
+      <div class="aos-command-group-label">System Modes</div>
+      <div class="aos-command-item" onclick="setMode('normal');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Normal mode','info')">
+        <div class="cmd-icon">✅</div><div><div>Normal Mode</div><div style="font-size:.75rem;color:var(--text-muted)">Full access, standard view</div></div>
+      </div>
+      <div class="aos-command-item" onclick="setMode('focus');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Focus mode active','info')">
+        <div class="cmd-icon">🎯</div><div><div>Focus Mode</div><div style="font-size:.75rem;color:var(--text-muted)">Minimize distractions</div></div>
+      </div>
+      <div class="aos-command-item" onclick="setMode('urgent');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Urgent mode active','warning')">
+        <div class="cmd-icon">🚨</div><div><div>Urgent Mode</div><div style="font-size:.75rem;color:var(--text-muted)">Surface critical items</div></div>
+      </div>
+      <div class="aos-command-item" onclick="setMode('exec');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Exec overview active','info')">
+        <div class="cmd-icon">👁</div><div><div>Executive Overview</div><div style="font-size:.75rem;color:var(--text-muted)">Summary metrics only</div></div>
+      </div>
+      <div class="aos-command-item" onclick="setMode('readonly');AccentOS.shell.closeCommandLauncher();AccentOS.shell.showToast('Read-only mode','warning')">
+        <div class="cmd-icon">🔒</div><div><div>Read-Only Mode</div><div style="font-size:.75rem;color:var(--text-muted)">No changes can be made</div></div>
       </div>
     </div>
+    <div class="aos-command-footer">
+      <span><kbd>↑↓</kbd> Navigate</span><span><kbd>↵</kbd> Select</span><span><kbd>Esc</kbd> Close</span><span><kbd>⌘K</kbd> Toggle</span>
+    </div>
   </div>
+</div>
+
+<!-- NOTIFICATION PANEL -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-hdr">
+    <span>Notifications</span>
+    <span class="aos-badge alert" style="font-size:.6875rem">2 new</span>
+  </div>
+  <div class="notif-list" id="notifList"><!-- JS-rendered --></div>
+  <div class="notif-footer" onclick="AccentOS.shell.showToast('Viewing all notifications','info')">View all notifications →</div>
+</div>
 
 </div><!-- /accentos-shell -->
 
 <script src="accentos-shell.js"></script>
 <script>
-  /* ── Prototype navigation logic ───────────────────── */
+/* ═══════════════════════════════════════════
+   PROTO DATA
+   ═══════════════════════════════════════════ */
+const DATA = {
+  vendors: [
+    {id:'V01',name:'Kichler Lighting',score:91,tier:'a',rep:'Tom Sullivan',lastAct:'2h ago',coop:8500,change:3},
+    {id:'V02',name:'Lutron Electronics',score:88,tier:'a',rep:'Sarah Chen',lastAct:'1d ago',coop:0,change:1},
+    {id:'V03',name:'Progress Lighting',score:74,tier:'b',rep:'Mike Davis',lastAct:'3d ago',coop:4200,change:-2},
+    {id:'V04',name:'Hinkley Lighting',score:82,tier:'a',rep:null,lastAct:'5d ago',coop:0,change:0},
+    {id:'V05',name:'WAC Lighting',score:68,tier:'b',rep:'Tom Sullivan',lastAct:'1d ago',coop:1800,change:2},
+    {id:'V06',name:'Sea Gull Lighting',score:71,tier:'b',rep:'Sarah Chen',lastAct:'2d ago',coop:0,change:-1},
+    {id:'V07',name:'Juno Lighting',score:65,tier:'c',rep:null,lastAct:'8d ago',coop:0,change:-4},
+    {id:'V08',name:'Elk Home',score:79,tier:'b',rep:'Mike Davis',lastAct:'4d ago',coop:0,change:1},
+    {id:'V09',name:'Savoy House',score:55,tier:'c',rep:null,lastAct:'12d ago',coop:0,change:-6},
+    {id:'V10',name:'Quoizel',score:73,tier:'b',rep:'Tom Sullivan',lastAct:'3d ago',coop:0,change:0},
+  ],
+  quotes: [
+    {id:'QT-0842',customer:'Builder Supply Co',value:12400,age:2,status:'active',assignee:'MW'},
+    {id:'QT-0841',customer:'Riverside Remodel',value:8200,age:5,status:'active',assignee:'MW'},
+    {id:'QT-0840',customer:'Summit Developers',value:31000,age:3,status:'active',assignee:'JL'},
+    {id:'QT-0839',customer:'Harbor View Homes',value:22500,age:1,status:'accepted',assignee:'MW'},
+    {id:'QT-0838',customer:'Pacific Design Group',value:3100,age:9,status:'stale',assignee:'MW'},
+    {id:'QT-0836',customer:'Westside Builders',value:7800,age:12,status:'stale',assignee:'JL'},
+    {id:'QT-0835',customer:'Alpine Estates',value:15600,age:2,status:'active',assignee:'MW'},
+    {id:'QT-0834',customer:'Coastal Lighting Studio',value:4200,age:14,status:'stale',assignee:'JL'},
+  ],
+  customers: [
+    {id:'C01',name:'Builder Supply Co',seg:'vip',lastContact:2,ltv:142000,followUp:null},
+    {id:'C02',name:'Summit Developers',seg:'vip',lastContact:1,ltv:98000,followUp:null},
+    {id:'C03',name:'Riverside Remodel',seg:'active',lastContact:5,ltv:34000,followUp:'today'},
+    {id:'C04',name:'Pacific Design Group',seg:'lapsed',lastContact:9,ltv:12000,followUp:'overdue'},
+    {id:'C05',name:'Harbor View Homes',seg:'prospect',lastContact:1,ltv:0,followUp:null},
+    {id:'C06',name:'Westside Builders',seg:'active',lastContact:12,ltv:28000,followUp:'overdue'},
+    {id:'C07',name:'Alpine Estates',seg:'active',lastContact:2,ltv:65000,followUp:null},
+    {id:'C08',name:'Coastal Lighting Studio',seg:'lapsed',lastContact:14,ltv:8000,followUp:'overdue'},
+  ],
+  deals: [
+    {id:'D01',stage:'lead',name:'Harbor View Custom',value:89000,prob:32,age:5,rep:'MW'},
+    {id:'D02',stage:'qualified',name:'Summit Phase 2',value:142000,prob:58,age:8,rep:'JL'},
+    {id:'D03',stage:'quoted',name:'Riverside Full Spec',value:31000,prob:72,age:3,rep:'MW'},
+    {id:'D04',stage:'negotiating',name:'Pacific Commercial',value:88000,prob:81,age:12,rep:'MW'},
+    {id:'D05',stage:'quoted',name:'Alpine Phase 3',value:45000,prob:65,age:6,rep:'JL'},
+    {id:'D06',stage:'lead',name:'Northside Condos',value:220000,prob:18,age:2,rep:'MW'},
+    {id:'D07',stage:'won',name:'Alpine Estates Ph2',value:45000,prob:100,age:14,rep:'JL'},
+  ],
+  inventory: [
+    {sku:'WP-2290',name:'12W Wall Pack',qty:3,reorder:10,vendor:'Progress Lighting',list:89.00,alert:'critical'},
+    {sku:'DL-4480',name:'4" LED Downlight',qty:24,reorder:15,vendor:'Kichler Lighting',list:42.00,alert:null},
+    {sku:'TR-7720',name:'Track Head Adj',qty:8,reorder:8,vendor:'WAC Lighting',list:68.00,alert:null},
+    {sku:'FX-9901',name:'42" Outdoor Post',qty:1,reorder:5,vendor:'Hinkley Lighting',list:289.00,alert:'critical'},
+    {sku:'SF-3310',name:'Surface Mount 8"',qty:12,reorder:8,vendor:'Sea Gull Lighting',list:64.00,alert:null},
+    {sku:'CH-2201',name:'5-Light Chandelier',qty:3,reorder:3,vendor:'Elk Home',list:445.00,alert:null},
+    {sku:'PT-4450',name:'LED Path Light',qty:18,reorder:10,vendor:'Kichler Lighting',list:49.00,alert:null},
+    {sku:'FL-8812',name:'Flush Mount 14"',qty:6,reorder:5,vendor:'Progress Lighting',list:119.00,alert:null},
+  ],
+  notifications: [
+    {type:'alert',msg:'Co-op deadline in 8 days — Progress Lighting $4,200 at risk',time:'2m ago',read:false},
+    {type:'warning',msg:'3 quotes stale >7 days — follow up required',time:'15m ago',read:false},
+    {type:'info',msg:'Quote QT-0839 accepted — Harbor View Homes $22,500',time:'1h ago',read:true},
+    {type:'warning',msg:'Inventory: WP-2290 below reorder point (3 in stock)',time:'2h ago',read:true},
+    {type:'info',msg:'Vendor score updated: Kichler 91/100 (+3)',time:'3h ago',read:true},
+    {type:'alert',msg:'Deal stale 12 days — Pacific Commercial $88K',time:'4h ago',read:true},
+  ],
+  activities: [
+    {icon:'📋',text:'Quote QT-0839 accepted — Harbor View Homes $22,500',time:'1h ago'},
+    {icon:'⭐',text:'Vendor score updated — Kichler Lighting 91/100 (+3)',time:'2h ago'},
+    {icon:'💼',text:'Deal stage → Quoted — Riverside Full Spec',time:'3h ago'},
+    {icon:'👥',text:'Customer note added — Summit Developers',time:'4h ago'},
+    {icon:'📦',text:'Inventory alert — WP-2290 below reorder point',time:'5h ago'},
+    {icon:'✅',text:'PO #1041 received — 22 items updated',time:'6h ago'},
+    {icon:'🤖',text:'AI parse completed — QT-0842 notes processed',time:'7h ago'},
+  ],
+};
 
-  const ROLES = {
-    owner:     ['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','purchase-orders','deliveries','reports','ai-tools','decision-engine','admin','health'],
-    manager:   ['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','purchase-orders','deliveries','reports','ai-tools','decision-engine','health'],
-    sales:     ['dashboard','quotes','pipeline','customers','jobs','inventory','pricing','reports','ai-tools'],
-    designer:  ['dashboard','quotes','customers','jobs','inventory','ai-tools'],
-    builder:   ['dashboard','jobs','inventory','deliveries'],
-    warehouse: ['dashboard','inventory','purchase-orders','deliveries'],
-    viewer:    ['dashboard','inventory'],
-  };
+/* ═══════════════════════════════════════════
+   ROLE CONFIGS
+   ═══════════════════════════════════════════ */
+const ROLE_CFG = {
+  owner: {
+    label:'Owner',avatar:'M',
+    kpis:[
+      {val:'$1.24M',lbl:'Revenue YTD',delta:'+8% vs last yr',cls:'up'},
+      {val:'$517K',lbl:'Pipeline Value',delta:'+12% vs last mo',cls:'up'},
+      {val:'12',lbl:'Open Quotes',delta:'3 stale',cls:'dn'},
+      {val:'78.4',lbl:'Avg Vendor Score',delta:'↑ from 75.1',cls:'up'},
+    ],
+    actions:[
+      {icon:'⚠',label:'3 stale quotes',cls:'warning',mod:'quotes'},
+      {icon:'💰',label:'Co-op deadline 8d',cls:'alert',mod:'vendors'},
+      {icon:'📞',label:'2 follow-ups due',cls:'warning',mod:'customers'},
+      {icon:'⭐',label:'6 vendor scores needed',cls:'',mod:'vendors'},
+      {icon:'📦',label:'2 SKUs low stock',cls:'',mod:'inventory'},
+    ],
+    cards:['priorities','vendors','quotes','pipeline','customers','inventory','activity','health'],
+    nav:['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','admin','health'],
+  },
+  manager: {
+    label:'Manager',avatar:'J',
+    kpis:[
+      {val:'$517K',lbl:'Pipeline Value',delta:'+12% this mo',cls:'up'},
+      {val:'12',lbl:'Open Quotes',delta:'3 stale',cls:'dn'},
+      {val:'23',lbl:'Active Deals',delta:'2 stale',cls:'dn'},
+      {val:'78.4',lbl:'Avg Vendor Score',delta:'↑ 3.3 pts',cls:'up'},
+    ],
+    actions:[
+      {icon:'⚠',label:'3 stale quotes',cls:'warning',mod:'quotes'},
+      {icon:'📞',label:'2 follow-ups due',cls:'warning',mod:'customers'},
+      {icon:'💰',label:'Co-op deadline 8d',cls:'alert',mod:'vendors'},
+      {icon:'⭐',label:'6 vendor scores needed',cls:'',mod:'vendors'},
+    ],
+    cards:['priorities','vendors','quotes','pipeline','customers','activity'],
+    nav:['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','health'],
+  },
+  sales: {
+    label:'Salesperson',avatar:'S',
+    kpis:[
+      {val:'8',lbl:'My Open Quotes',delta:'$94K total',cls:'fl'},
+      {val:'6',lbl:'My Deals',delta:'$218K pipeline',cls:'fl'},
+      {val:'$45K',lbl:'Won This Month',delta:'+18% vs target',cls:'up'},
+      {val:'68%',lbl:'Close Rate',delta:'↑ from 61%',cls:'up'},
+    ],
+    actions:[
+      {icon:'📞',label:'2 follow-ups today',cls:'warning',mod:'customers'},
+      {icon:'⚠',label:'1 stale quote',cls:'alert',mod:'quotes'},
+      {icon:'💼',label:'1 proposal due today',cls:'alert',mod:'pipeline'},
+    ],
+    cards:['my-quotes','my-pipeline','followups','product-search'],
+    nav:['dashboard','quotes','pipeline','customers','jobs','inventory','reports','ai'],
+  },
+  designer: {
+    label:'Designer',avatar:'D',
+    kpis:[
+      {val:'4',lbl:'Active Projects',delta:'2 specs pending',cls:'fl'},
+      {val:'12',lbl:'Specs This Month',delta:'↑ from 8',cls:'up'},
+      {val:'3',lbl:'Open Quotes',delta:'$36K total',cls:'fl'},
+      {val:'28',lbl:'Saved Fixtures',delta:'3 added today',cls:'fl'},
+    ],
+    actions:[
+      {icon:'📐',label:'2 specs need approval',cls:'warning',mod:'jobs'},
+      {icon:'📋',label:'1 quote needs update',cls:'warning',mod:'quotes'},
+    ],
+    cards:['product-lookup','projects','open-quotes'],
+    nav:['dashboard','quotes','customers','jobs','inventory','ai'],
+  },
+  warehouse: {
+    label:'Warehouse',avatar:'W',
+    kpis:[
+      {val:'2',lbl:'Deliveries Today',delta:'Next: 2pm',cls:'fl'},
+      {val:'5',lbl:'PO Items Arriving',delta:'PO #1042',cls:'fl'},
+      {val:'3',lbl:'Low Stock SKUs',delta:'2 critical',cls:'dn'},
+      {val:'1',lbl:'Pending Receives',delta:'PO #1041',cls:'fl'},
+    ],
+    actions:[
+      {icon:'📦',label:'WP-2290 critical stock',cls:'alert',mod:'inventory'},
+      {icon:'📦',label:'FX-9901 critical stock',cls:'alert',mod:'inventory'},
+      {icon:'🚚',label:'2 deliveries today',cls:'',mod:'deliveries'},
+    ],
+    cards:['inv-alerts','pos','deliveries-today'],
+    nav:['dashboard','inventory','pos','deliveries'],
+  },
+  viewer: {
+    label:'Viewer',avatar:'V',
+    kpis:[
+      {val:'$1.24M',lbl:'Revenue YTD',delta:'',cls:'fl'},
+      {val:'$517K',lbl:'Pipeline',delta:'',cls:'fl'},
+      {val:'78.4',lbl:'Avg Vendor Score',delta:'',cls:'fl'},
+    ],
+    actions:[],
+    cards:['summary'],
+    nav:['dashboard','inventory'],
+  },
+  ai_agent: {
+    label:'AI Agent',avatar:'🤖',
+    kpis:[
+      {val:'3/4',lbl:'Services Online',delta:'1 degraded',cls:'dn'},
+      {val:'2',lbl:'Pending Requests',delta:'Both failed',cls:'dn'},
+      {val:'99.1%',lbl:'DB Uptime',delta:'',cls:'fl'},
+    ],
+    actions:[],
+    cards:['system-status'],
+    nav:['dashboard','health','ai'],
+  },
+};
 
-  function navigate(module) {
-    document.querySelectorAll('.proto-module-surface').forEach(function(el) {
-      el.classList.remove('active');
-    });
-    const target = document.getElementById('mod-' + module);
-    if (target) target.classList.add('active');
-    AccentOS.shell.activateNavItem(module);
-    AccentOS.shell.closeRail();
-  }
+/* ═══════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════ */
+function fmt(n){return n>=1000000?'$'+(n/1000000).toFixed(1)+'M':n>=1000?'$'+(n/1000).toFixed(0)+'K':'$'+n}
+function fmtAge(d){return d===1?'1 day':d+' days'}
 
-  function applyRole(role) {
-    const allowed = ROLES[role] || ROLES.viewer;
-    document.querySelectorAll('.aos-nav-item[data-roles]').forEach(function(el) {
-      const roles = el.dataset.roles.split(',');
-      const visible = roles.some(function(r) { return allowed.includes(r) || r === role; });
-      el.style.display = visible ? '' : 'none';
-    });
-    document.getElementById('avatarEl').textContent = role.charAt(0).toUpperCase();
-    document.getElementById('avatarEl').title = 'Role: ' + role;
-    /* Switch to dashboard on role change */
-    navigate('dashboard');
-  }
+/* ═══════════════════════════════════════════
+   DASHBOARD RENDERER
+   ═══════════════════════════════════════════ */
+function renderDashboard(role) {
+  const cfg = ROLE_CFG[role] || ROLE_CFG.owner;
+  const el = document.getElementById('dashContent');
+  if (!el) return;
 
-  /* Wire nav items to navigate() */
-  document.addEventListener('aos:navigate', function(e) {
-    navigate(e.detail.module);
+  let html = '';
+
+  // Surface header
+  const greet = ['Good morning','Good afternoon','Good evening'][Math.floor(new Date().getHours()/8)];
+  html += `<div class="aos-surface-header">
+    <div><div class="aos-surface-title">Daily Briefing</div>
+    <div class="aos-surface-subtitle">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})} · ${greet}, ${cfg.label}</div></div>
+    <span class="aos-badge ${role==='owner'||role==='manager'?'active':'muted'}">${role==='ai_agent'?'⚙️ System View':cfg.label+' View'}</span>
+  </div>`;
+
+  // KPI row
+  html += '<div class="kpi-row">';
+  cfg.kpis.forEach(k => {
+    html += `<div class="kpi-item">
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+      ${k.delta?`<div class="kpi-delta ${k.cls}">${k.delta}</div>`:''}
+    </div>`;
   });
+  html += '</div>';
 
-  /* Init role from select */
-  applyRole('owner');
+  // Next actions
+  if (cfg.actions.length > 0) {
+    html += '<div class="aos-next-actions"><span class="aos-next-actions-label">Next Actions:</span>';
+    cfg.actions.forEach(a => {
+      html += `<button class="aos-action-chip ${a.cls}" onclick="navigate('${a.mod}')">${a.icon} ${a.label}</button>`;
+    });
+    html += '</div>';
+  }
+
+  // Card grid
+  html += '<div class="aos-card-grid">';
+  cfg.cards.forEach(card => { html += buildCard(card, role); });
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+function buildCard(type, role) {
+  const staleQuotes = DATA.quotes.filter(q=>q.status==='stale');
+  const openQuotes = DATA.quotes.filter(q=>q.status==='active');
+  const totalQuoteVal = DATA.quotes.filter(q=>q.status==='active').reduce((s,q)=>s+q.value,0);
+  const overdueCustomers = DATA.customers.filter(c=>c.followUp==='overdue'||c.followUp==='today');
+  const criticalInv = DATA.inventory.filter(i=>i.alert==='critical');
+
+  switch(type) {
+    case 'priorities':
+      return `<div class="aos-card wide" onclick="" style="cursor:default">
+        <div class="aos-card-header"><div class="aos-card-title">Today's Priorities</div><span class="aos-card-icon">📌</span></div>
+        <div class="pri-list">
+          <div class="pri-item" onclick="navigate('quotes')"><span class="pri-icon">⚠️</span><span class="pri-text">Follow up on ${staleQuotes.length} stale quotes (${staleQuotes.map(q=>q.id).join(', ')})</span><span class="aos-badge alert">${staleQuotes.length}</span></div>
+          <div class="pri-item" onclick="navigate('vendors')"><span class="pri-icon">💰</span><span class="pri-text">Co-op deadline in 8 days — Progress Lighting $4,200 at risk</span><span class="aos-badge alert">8d</span></div>
+          <div class="pri-item" onclick="navigate('customers')"><span class="pri-icon">📞</span><span class="pri-text">Follow up: Riverside Remodel, Pacific Design, Westside Builders</span><span class="aos-badge warning">3</span></div>
+          <div class="pri-item" onclick="navigate('vendors')"><span class="pri-icon">⭐</span><span class="pri-text">6 vendors awaiting score review (Hinkley, Juno, Savoy…)</span><span class="aos-badge muted">6</span></div>
+          <div class="pri-item" onclick="navigate('inventory')"><span class="pri-icon">📦</span><span class="pri-text">Reorder WP-2290 (3 in stock) and FX-9901 (1 in stock)</span><span class="aos-badge alert">2</span></div>
+        </div>
+      </div>`;
+
+    case 'vendors':
+      const tierA = DATA.vendors.filter(v=>v.tier==='a').length;
+      const tierB = DATA.vendors.filter(v=>v.tier==='b').length;
+      const tierC = DATA.vendors.filter(v=>v.tier==='c').length;
+      const topV = DATA.vendors.slice().sort((a,b)=>b.score-a.score)[0];
+      return `<div class="aos-card" data-rail-title="Vendor Intelligence" data-rail-content="${escRailVendors()}" onclick="openCardRail(this)">
+        <div class="aos-card-header"><div><div class="aos-card-title">Vendor Intelligence</div><div class="aos-card-meta">${DATA.vendors.length} vendors · 3 co-op funds open</div></div><span class="aos-card-icon">🏭</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="aos-badge active">A: ${tierA}</span>
+          <span class="aos-badge warning">B: ${tierB}</span>
+          <span class="aos-badge alert">C: ${tierC}</span>
+          <span class="aos-badge muted">Unscored: 2</span>
+        </div>
+        <div class="score-bar" style="margin-bottom:6px">
+          <span style="font-size:.75rem;color:var(--text-muted);min-width:80px">Top: ${topV.name.split(' ')[0]}</span>
+          <div class="score-track"><div class="score-fill a" style="width:${topV.score}%"></div></div>
+          <span class="score-num">${topV.score}</span>
+        </div>
+        <div class="aos-card-footer"><span>Avg: 74.1 · Co-op: $14,500 open</span><span class="aos-card-action" onclick="navigate('vendors');event.stopPropagation()">Open →</span></div>
+      </div>`;
+
+    case 'quotes':
+      return `<div class="aos-card" data-rail-title="Quote Activity" data-rail-content="${escRailQuotes()}" onclick="openCardRail(this)">
+        <div class="aos-card-header"><div><div class="aos-card-title">Quote Generator</div><div class="aos-card-meta">${openQuotes.length} open · ${fmt(totalQuoteVal)}</div></div><span class="aos-card-icon">📋</span></div>
+        <div style="display:flex;gap:16px;margin-bottom:8px">
+          <div><div class="kpi-val" style="font-size:1.25rem">${fmt(totalQuoteVal)}</div><div class="kpi-lbl">Open value</div></div>
+          <div><div class="kpi-val" style="font-size:1.25rem;color:var(--status-amber)">${staleQuotes.length}</div><div class="kpi-lbl">Stale &gt;7d</div></div>
+        </div>
+        <div class="aos-card-footer">
+          <span class="aos-badge warning">⚠ AI Parse needs worker redeploy</span>
+          <span class="aos-card-action" onclick="navigate('quotes');event.stopPropagation()">Open →</span>
+        </div>
+      </div>`;
+
+    case 'pipeline':
+      const forecast = DATA.deals.reduce((s,d)=>s+d.value*d.prob/100,0);
+      return `<div class="aos-card" onclick="navigate('pipeline')">
+        <div class="aos-card-header"><div><div class="aos-card-title">Sales Pipeline</div><div class="aos-card-meta">${DATA.deals.filter(d=>d.stage!=='won'&&d.stage!=='lost').length} active deals</div></div><span class="aos-card-icon">💼</span></div>
+        <div style="display:flex;gap:16px;margin-bottom:8px">
+          <div><div class="kpi-val" style="font-size:1.25rem;color:var(--status-green)">${fmt(forecast)}</div><div class="kpi-lbl">Weighted forecast</div></div>
+          <div><div class="kpi-val" style="font-size:1.25rem;color:var(--status-amber)">2</div><div class="kpi-lbl">Stale 14d+</div></div>
+        </div>
+        <div class="aos-card-footer"><span>Close rate: 68% · Won this mo: $45K</span><span class="aos-card-action">Open →</span></div>
+      </div>`;
+
+    case 'customers':
+      return `<div class="aos-card" onclick="navigate('customers')">
+        <div class="aos-card-header"><div><div class="aos-card-title">Customer Follow-Ups</div><div class="aos-card-meta">${overdueCustomers.length} need attention</div></div><span class="aos-card-icon">👥</span></div>
+        <div class="pri-list">
+          ${overdueCustomers.slice(0,3).map(c=>`<div class="pri-item"><span class="pri-icon">${c.followUp==='overdue'?'🔴':'🟡'}</span><span class="pri-text">${c.name} · last contact ${c.lastContact}d ago</span><span class="aos-badge ${c.followUp==='overdue'?'alert':'warning'}">${c.followUp}</span></div>`).join('')}
+        </div>
+        <div class="aos-card-footer"><span>2 VIP · 3 Active · 2 Lapsed</span><span class="aos-card-action">Open →</span></div>
+      </div>`;
+
+    case 'inventory':
+      return `<div class="aos-card" onclick="navigate('inventory')">
+        <div class="aos-card-header"><div><div class="aos-card-title">Inventory Alerts</div><div class="aos-card-meta">488 SKUs · ${criticalInv.length} critical</div></div><span class="aos-card-icon">📦</span></div>
+        <div class="pri-list">
+          ${criticalInv.map(i=>`<div class="pri-item"><span class="pri-icon">🔴</span><span class="pri-text">${i.sku} — ${i.name} · ${i.qty} in stock</span><span class="aos-badge alert">Reorder</span></div>`).join('')}
+        </div>
+        <div class="aos-card-footer"><span>488 SKUs · Avg fill rate 94%</span><span class="aos-card-action">Open →</span></div>
+      </div>`;
+
+    case 'activity':
+      return `<div class="aos-card" style="cursor:default">
+        <div class="aos-card-header"><div class="aos-card-title">Recent Activity</div><span class="aos-card-icon">⚡</span></div>
+        <div>
+          ${DATA.activities.slice(0,5).map(a=>`<div class="act-entry"><div class="act-icon">${a.icon}</div><div><div class="act-text">${a.text}</div><div class="act-time">${a.time}</div></div></div>`).join('')}
+        </div>
+      </div>`;
+
+    case 'health':
+      return `<div class="aos-card" onclick="navigate('health')">
+        <div class="aos-card-header"><div><div class="aos-card-title">System Health</div><div class="aos-card-meta">3/4 nominal · 1 issue</div></div><span class="aos-card-icon">💚</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:.75rem"><span class="aos-dot active"></span>Supabase DB</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.75rem"><span class="aos-dot active"></span>CF Pages</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.75rem"><span class="aos-dot warning"></span>Worker (BUG-01)</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.75rem"><span class="aos-dot active"></span>Auth</div>
+        </div>
+        <div class="aos-card-footer"><span class="aos-badge warning">1 issue: Worker needs redeploy</span><span class="aos-card-action">Details →</span></div>
+      </div>`;
+
+    case 'my-quotes':
+      const myQ = DATA.quotes.filter(q=>q.assignee==='MW');
+      return `<div class="aos-card" onclick="navigate('quotes')">
+        <div class="aos-card-header"><div class="aos-card-title">My Quotes</div><span class="aos-card-icon">📋</span></div>
+        <div class="kpi-val" style="font-size:1.25rem">${fmt(myQ.reduce((s,q)=>s+q.value,0))}</div>
+        <div class="kpi-lbl" style="margin-bottom:8px">${myQ.length} open quotes</div>
+        <div class="aos-card-footer"><span class="aos-badge ${myQ.filter(q=>q.status==='stale').length?'alert':'muted'}">${myQ.filter(q=>q.status==='stale').length} stale</span><span class="aos-card-action">View →</span></div>
+      </div>`;
+
+    case 'my-pipeline':
+      const myD = DATA.deals.filter(d=>d.rep==='MW'&&d.stage!=='won');
+      const myFc = myD.reduce((s,d)=>s+d.value*d.prob/100,0);
+      return `<div class="aos-card" onclick="navigate('pipeline')">
+        <div class="aos-card-header"><div class="aos-card-title">My Pipeline</div><span class="aos-card-icon">💼</span></div>
+        <div class="kpi-val" style="font-size:1.25rem;color:var(--status-green)">${fmt(myFc)}</div>
+        <div class="kpi-lbl" style="margin-bottom:8px">Weighted forecast · ${myD.length} deals</div>
+        <div class="aos-card-footer"><span>Stale: ${myD.filter(d=>d.age>14).length}</span><span class="aos-card-action">View →</span></div>
+      </div>`;
+
+    case 'followups':
+      return `<div class="aos-card" onclick="navigate('customers')">
+        <div class="aos-card-header"><div class="aos-card-title">Follow-Ups Due</div><span class="aos-card-icon">📞</span></div>
+        <div class="pri-list">
+          <div class="pri-item"><span class="pri-icon">🔴</span><span class="pri-text">Pacific Design Group — 9d no contact</span><span class="aos-badge alert">overdue</span></div>
+          <div class="pri-item"><span class="pri-icon">🟡</span><span class="pri-text">Riverside Remodel — follow-up today</span><span class="aos-badge warning">today</span></div>
+        </div>
+      </div>`;
+
+    case 'product-search':
+      return `<div class="aos-card" onclick="navigate('inventory')">
+        <div class="aos-card-header"><div class="aos-card-title">Product Lookup</div><span class="aos-card-icon">📦</span></div>
+        <div class="kpi-val">488</div><div class="kpi-lbl" style="margin-bottom:8px">SKUs in inventory</div>
+        <div class="quick-grid">
+          <div class="quick-btn" onclick="navigate('inventory');event.stopPropagation()"><span class="qi">🔍</span><span class="ql">Search SKU</span></div>
+          <div class="quick-btn" onclick="AccentOS.shell.showToast('Fixture finder open','info');event.stopPropagation()"><span class="qi">💡</span><span class="ql">Fixtures</span></div>
+        </div>
+      </div>`;
+
+    case 'product-lookup':
+      return buildCard('product-search', role);
+
+    case 'projects':
+      return `<div class="aos-card" onclick="navigate('jobs')">
+        <div class="aos-card-header"><div class="aos-card-title">Active Projects</div><span class="aos-card-icon">🔨</span></div>
+        <div class="kpi-val">4</div><div class="kpi-lbl" style="margin-bottom:8px">Active specs in progress</div>
+        <div class="pri-list">
+          <div class="pri-item"><span class="pri-icon">🟡</span><span class="pri-text">Harbor View — spec approval pending</span></div>
+          <div class="pri-item"><span class="pri-icon">🟢</span><span class="pri-text">Summit Phase 2 — fixtures selected</span></div>
+        </div>
+      </div>`;
+
+    case 'open-quotes':
+      return buildCard('my-quotes', role);
+
+    case 'inv-alerts':
+      return buildCard('inventory', role);
+
+    case 'pos':
+      return `<div class="aos-card" onclick="navigate('pos')">
+        <div class="aos-card-header"><div class="aos-card-title">Purchase Orders</div><span class="aos-card-icon">🛒</span></div>
+        <div class="kpi-val">3</div><div class="kpi-lbl" style="margin-bottom:8px">Active POs · 18 line items</div>
+        <div class="pri-list">
+          <div class="pri-item"><span class="pri-icon">🚚</span><span class="pri-text">PO #1042 arriving today — 5 items</span><span class="aos-badge info">today</span></div>
+        </div>
+      </div>`;
+
+    case 'deliveries-today':
+      return `<div class="aos-card" onclick="navigate('deliveries')">
+        <div class="aos-card-header"><div class="aos-card-title">Deliveries Today</div><span class="aos-card-icon">🚚</span></div>
+        <div class="kpi-val">2</div><div class="kpi-lbl" style="margin-bottom:8px">Scheduled today</div>
+        <div class="pri-list">
+          <div class="pri-item"><span class="pri-icon">🕑</span><span class="pri-text">Builder Supply Co — 2:00 PM · 12 fixtures</span></div>
+          <div class="pri-item"><span class="pri-icon">🕔</span><span class="pri-text">Summit Developers — 4:30 PM · 8 items</span></div>
+        </div>
+      </div>`;
+
+    case 'summary':
+      return `<div class="aos-card" style="cursor:default">
+        <div class="aos-card-title">Business Overview</div>
+        <div class="kpi-row" style="margin-top:12px">
+          <div class="kpi-item"><div class="kpi-val">$1.24M</div><div class="kpi-lbl">Revenue YTD</div></div>
+          <div class="kpi-item"><div class="kpi-val">$517K</div><div class="kpi-lbl">Pipeline</div></div>
+        </div>
+        <div style="font-size:.875rem;color:var(--text-muted);margin-top:8px">Read-only view · Contact owner for details</div>
+      </div>`;
+
+    case 'system-status':
+      return `<div class="aos-card" onclick="navigate('health')" style="grid-column:span 2">
+        <div class="aos-card-title">System Status — AI Agent View</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+          <div style="font-size:.875rem"><strong style="color:var(--text-primary)">DB:</strong> <span style="color:var(--status-green)">Online</span></div>
+          <div style="font-size:.875rem"><strong style="color:var(--text-primary)">Worker:</strong> <span style="color:var(--status-amber)">Degraded</span></div>
+          <div style="font-size:.875rem"><strong style="color:var(--text-primary)">Auth:</strong> <span style="color:var(--status-green)">Active</span></div>
+          <div style="font-size:.875rem"><strong style="color:var(--text-primary)">Pages:</strong> <span style="color:var(--status-green)">Live</span></div>
+        </div>
+      </div>`;
+
+    default:
+      return `<div class="aos-card"><div class="aos-card-title">${type}</div><div class="aos-card-body aos-text-muted">Module card placeholder</div></div>`;
+  }
+}
+
+function escRailVendors() {
+  const top3 = DATA.vendors.slice().sort((a,b)=>b.score-a.score).slice(0,3);
+  return top3.map(v=>`<div class='aos-rail-row'><span class='aos-rail-row-label'>${v.name}</span><span class='aos-rail-row-value' style='color:var(--status-green)'>${v.score}/100</span></div>`).join('').replace(/'/g,"&#39;");
+}
+function escRailQuotes() {
+  return DATA.quotes.slice(0,4).map(q=>`<div class='aos-rail-row'><span class='aos-rail-row-label'>${q.id}</span><span class='aos-rail-row-value'>${fmt(q.value)} · ${q.age}d</span></div>`).join('').replace(/'/g,"&#39;");
+}
+
+/* ═══════════════════════════════════════════
+   MODULE RENDERERS
+   ═══════════════════════════════════════════ */
+function renderVendors() {
+  const tbody = document.getElementById('vendorRows');
+  if (!tbody) return;
+  tbody.innerHTML = DATA.vendors.map(v => `
+    <tr onclick="openVendorRail('${v.id}')">
+      <td><strong style="color:var(--text-primary)">${v.name}</strong></td>
+      <td><span class="tier ${v.tier}">${v.tier.toUpperCase()}</span></td>
+      <td>
+        <div class="score-bar">
+          <div class="score-track"><div class="score-fill ${v.tier}" style="width:${v.score}%"></div></div>
+          <span class="score-num">${v.score}</span>
+          ${v.change!==0?`<span style="font-size:.6875rem;color:${v.change>0?'var(--status-green)':'var(--status-red)'}">
+            ${v.change>0?'▲':'▼'}${Math.abs(v.change)}</span>`:''}
+        </div>
+      </td>
+      <td class="hide-mobile">${v.rep||'<span class="aos-badge alert">Unassigned</span>'}</td>
+      <td class="hide-mobile">${v.coop>0?`<span style="color:var(--status-amber)">$${(v.coop/1000).toFixed(1)}K open</span>`:'—'}</td>
+      <td class="hide-mobile" style="color:var(--text-muted)">${v.lastAct}</td>
+    </tr>`).join('');
+}
+
+function renderQuotes() {
+  const tbody = document.getElementById('quoteRows');
+  if (!tbody) return;
+  tbody.innerHTML = DATA.quotes.map(q => {
+    const sColor = q.status==='stale'?'alert':q.status==='accepted'?'active':'muted';
+    return `<tr onclick="openQuoteRail('${q.id}')">
+      <td><span style="font-family:var(--font-mono);color:var(--gold-400)">${q.id}</span></td>
+      <td style="color:var(--text-primary)">${q.customer}</td>
+      <td style="color:var(--status-green);font-weight:500">${fmt(q.value)}</td>
+      <td><span style="color:${q.age>7?'var(--status-amber)':'var(--text-body)'}">${fmtAge(q.age)}</span></td>
+      <td><span class="aos-badge ${sColor}">${q.status}</span></td>
+      <td class="hide-mobile" style="color:var(--text-muted)">${q.assignee}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCustomers() {
+  const tbody = document.getElementById('customerRows');
+  if (!tbody) return;
+  tbody.innerHTML = DATA.customers.map(c => {
+    const fuColor = c.followUp==='overdue'?'alert':c.followUp==='today'?'warning':'muted';
+    return `<tr onclick="openCustomerRail('${c.id}')">
+      <td style="color:var(--text-primary);font-weight:500">${c.name}</td>
+      <td><span class="seg ${c.seg}">${c.seg.toUpperCase()}</span></td>
+      <td style="color:${c.lastContact>7?'var(--status-amber)':'var(--text-body)'}">${c.lastContact}d ago</td>
+      <td class="hide-mobile" style="color:var(--status-green)">${c.ltv>0?fmt(c.ltv):'—'}</td>
+      <td>${c.followUp?`<span class="aos-badge ${fuColor}">${c.followUp}</span>`:'<span style="color:var(--text-muted)">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderInventory() {
+  const tbody = document.getElementById('inventoryRows');
+  if (!tbody) return;
+  tbody.innerHTML = DATA.inventory.map(i => {
+    const lowStock = i.qty <= i.reorder;
+    return `<tr onclick="openInventoryRail('${i.sku}')">
+      <td style="font-family:var(--font-mono);color:var(--gold-400)">${i.sku}</td>
+      <td style="color:var(--text-primary)">${i.name}</td>
+      <td>
+        <span style="color:${i.alert==='critical'?'var(--status-red)':lowStock?'var(--status-amber)':'var(--status-green)'};font-weight:500">${i.qty}</span>
+        ${i.alert==='critical'?` <span class="aos-badge alert">Critical</span>`:''}
+      </td>
+      <td class="hide-mobile" style="color:var(--text-muted)">${i.reorder}</td>
+      <td class="hide-mobile">${i.vendor}</td>
+      <td class="hide-mobile" style="color:var(--text-body)">$${i.list.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPipeline() {
+  const board = document.getElementById('pipelineBoard');
+  if (!board) return;
+  const stages = ['lead','qualified','quoted','negotiating','won'];
+  const labels = {lead:'Lead',qualified:'Qualified',quoted:'Quoted',negotiating:'Negotiating',won:'Won'};
+  board.innerHTML = stages.map(stage => {
+    const deals = DATA.deals.filter(d=>d.stage===stage);
+    const total = deals.reduce((s,d)=>s+d.value,0);
+    return `<div class="pipeline-col">
+      <div class="pipeline-col-hdr">
+        <span>${labels[stage]}</span>
+        <span style="color:var(--text-muted)">${deals.length} · ${fmt(total)}</span>
+      </div>
+      ${deals.map(d=>`<div class="pipeline-deal" onclick="openDealRail('${d.id}')">
+        <div class="pipeline-deal-name">${d.name}</div>
+        <div class="pipeline-deal-val">${fmt(d.value)}</div>
+        <div class="pipeline-deal-meta">${d.prob}% · ${d.age}d · ${d.rep}</div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   RAIL DETAIL OPENERS
+   ═══════════════════════════════════════════ */
+function openCardRail(el) {
+  const title = el.dataset.railTitle || 'Details';
+  const content = el.dataset.railContent || '';
+  AccentOS.shell.openRail(title, content);
+  document.querySelectorAll('.aos-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openVendorRail(id) {
+  const v = DATA.vendors.find(x=>x.id===id);
+  if (!v) return;
+  document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  AccentOS.shell.openRail(v.name, `
+    <div class="aos-rail-section-label">Performance</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Score</span><span class="aos-rail-row-value" style="color:var(--status-green)">${v.score}/100</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Tier</span><span class="aos-rail-row-value"><span class="tier ${v.tier}">${v.tier.toUpperCase()}</span></span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Change</span><span class="aos-rail-row-value" style="color:${v.change>=0?'var(--status-green)':'var(--status-red)'}">${v.change>=0?'+':''}${v.change} pts</span></div>
+    <div class="aos-rail-section-label" style="margin-top:12px">Assignment</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Rep</span><span class="aos-rail-row-value">${v.rep||'Unassigned'}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Last Activity</span><span class="aos-rail-row-value">${v.lastAct}</span></div>
+    <div class="aos-rail-section-label" style="margin-top:12px">Co-op</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Open Funds</span><span class="aos-rail-row-value">${v.coop>0?'$'+v.coop.toLocaleString():'None'}</span></div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-primary" style="width:100%" onclick="AccentOS.shell.showToast('Score form open','info')">📝 Update Score</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="AccentOS.shell.showToast('Viewing full history','info')">📋 View Full History</button>
+    </div>
+  `);
+}
+
+function openQuoteRail(id) {
+  const q = DATA.quotes.find(x=>x.id===id);
+  if (!q) return;
+  document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  AccentOS.shell.openRail(q.id, `
+    <div class="aos-rail-section-label">Quote Details</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Customer</span><span class="aos-rail-row-value">${q.customer}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Value</span><span class="aos-rail-row-value" style="color:var(--status-green)">${fmt(q.value)}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Age</span><span class="aos-rail-row-value" style="color:${q.age>7?'var(--status-amber)':'var(--text-body)'}">${fmtAge(q.age)}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Status</span><span class="aos-rail-row-value"><span class="aos-badge ${q.status==='stale'?'alert':q.status==='accepted'?'active':'muted'}">${q.status}</span></span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Assignee</span><span class="aos-rail-row-value">${q.assignee}</span></div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-primary" style="width:100%" onclick="AccentOS.shell.showToast('Quote editor open','info')">✏️ Edit Quote</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="AccentOS.shell.showToast('Follow-up logged','success')">📞 Log Follow-Up</button>
+      ${q.status==='stale'?`<button class="btn btn-ghost" style="width:100%;color:var(--status-red)" onclick="AccentOS.shell.showToast('Quote marked closed','warning')">Archive Quote</button>`:''}
+    </div>
+  `);
+}
+
+function openCustomerRail(id) {
+  const c = DATA.customers.find(x=>x.id===id);
+  if (!c) return;
+  document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  AccentOS.shell.openRail(c.name, `
+    <div class="aos-rail-section-label">Profile</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Segment</span><span class="aos-rail-row-value"><span class="seg ${c.seg}">${c.seg.toUpperCase()}</span></span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">LTV</span><span class="aos-rail-row-value" style="color:var(--status-green)">${c.ltv>0?fmt(c.ltv):'New'}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Last Contact</span><span class="aos-rail-row-value" style="color:${c.lastContact>7?'var(--status-amber)':'var(--text-body)'}">${c.lastContact}d ago</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Follow-Up</span><span class="aos-rail-row-value">${c.followUp?`<span class="aos-badge ${c.followUp==='overdue'?'alert':'warning'}">${c.followUp}</span>`:'—'}</span></div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-primary" style="width:100%" onclick="AccentOS.shell.showToast('Interaction logged','success')">📞 Log Interaction</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="AccentOS.shell.showToast('Quote builder open','info')">📋 Create Quote</button>
+    </div>
+  `);
+}
+
+function openInventoryRail(sku) {
+  const i = DATA.inventory.find(x=>x.sku===sku);
+  if (!i) return;
+  document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  const stockColor = i.alert==='critical'?'var(--status-red)':i.qty<=i.reorder?'var(--status-amber)':'var(--status-green)';
+  AccentOS.shell.openRail(i.sku, `
+    <div class="aos-rail-section-label">Product</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Name</span><span class="aos-rail-row-value">${i.name}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Vendor</span><span class="aos-rail-row-value">${i.vendor}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">List Price</span><span class="aos-rail-row-value">$${i.list.toFixed(2)}</span></div>
+    <div class="aos-rail-section-label" style="margin-top:12px">Stock</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">In Stock</span><span class="aos-rail-row-value" style="color:${stockColor};font-weight:600">${i.qty}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Reorder At</span><span class="aos-rail-row-value">${i.reorder}</span></div>
+    ${i.alert?`<div style="margin-top:8px"><span class="aos-badge alert">⚠ ${i.alert==='critical'?'Critical — reorder immediately':'Below reorder point'}</span></div>`:''}
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-primary" style="width:100%" onclick="AccentOS.shell.showToast('PO draft created','success')">🛒 Create PO</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="AccentOS.shell.showToast('Price book open','info')">💰 View Pricing</button>
+    </div>
+  `);
+}
+
+function openDealRail(id) {
+  const d = DATA.deals.find(x=>x.id===id);
+  if (!d) return;
+  AccentOS.shell.openRail(d.name, `
+    <div class="aos-rail-section-label">Deal</div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Value</span><span class="aos-rail-row-value" style="color:var(--status-green)">${fmt(d.value)}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Stage</span><span class="aos-rail-row-value"><span class="stage ${d.stage}">${d.stage}</span></span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Win Prob</span><span class="aos-rail-row-value">${d.prob}%</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Age</span><span class="aos-rail-row-value" style="color:${d.age>14?'var(--status-amber)':'var(--text-body)'}">${fmtAge(d.age)}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Rep</span><span class="aos-rail-row-value">${d.rep}</span></div>
+    <div class="aos-rail-row"><span class="aos-rail-row-label">Wtd Value</span><span class="aos-rail-row-value">${fmt(Math.round(d.value*d.prob/100))}</span></div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-primary" style="width:100%" onclick="AccentOS.shell.showToast('Stage updated','success')">→ Advance Stage</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="AccentOS.shell.showToast('Note added','success')">📝 Add Note</button>
+    </div>
+  `);
+}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATIONS RENDERER
+   ═══════════════════════════════════════════ */
+function renderNotifs() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  list.innerHTML = DATA.notifications.map(n => `
+    <div class="notif-item ${n.read?'':'unread'}" onclick="AccentOS.shell.closeNotifPanel();AccentOS.shell.showToast('Notification opened','info')">
+      <span class="notif-dot ${n.type}"></span>
+      <div><div class="notif-msg">${n.msg}</div><div class="notif-ts">${n.time}</div></div>
+    </div>`).join('');
+  const unread = DATA.notifications.filter(n=>!n.read).length;
+  const badge = document.getElementById('notifCount');
+  if (badge) { badge.textContent = unread; badge.style.display = unread ? '' : 'none'; }
+}
+
+/* ═══════════════════════════════════════════
+   MODE SWITCHING
+   ═══════════════════════════════════════════ */
+const MODE_CFG = {
+  normal:   null,
+  focus:    {cls:'focus',   msg:'🎯 Focus Mode — sidebar minimized, distractions reduced'},
+  urgent:   {cls:'urgent',  msg:'🚨 Urgent Mode — critical items surfaced, alerts active'},
+  exec:     {cls:'exec',    msg:'👁 Executive Overview — summary metrics, read-focused'},
+  readonly: {cls:'readonly',msg:'🔒 Read-Only Mode — no changes can be made'},
+};
+
+function setMode(mode) {
+  const shell = document.getElementById('aosShell');
+  const banner = document.getElementById('modeBanner');
+  const msg = document.getElementById('modeBannerMsg');
+  if (!shell || !banner) return;
+  shell.dataset.mode = mode || 'normal';
+  const cfg = MODE_CFG[mode];
+  if (cfg) {
+    banner.className = 'mode-banner show ' + cfg.cls;
+    if (msg) msg.textContent = cfg.msg;
+  } else {
+    banner.className = 'mode-banner';
+  }
+  const sel = document.getElementById('modeSelect');
+  if (sel) sel.value = mode || 'normal';
+  try { localStorage.setItem('aos-mode', mode || 'normal'); } catch(_) {}
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════ */
+function navigate(mod) {
+  document.querySelectorAll('.proto-mod').forEach(el=>el.classList.remove('active'));
+  const target = document.getElementById('mod-'+mod);
+  if (target) target.classList.add('active');
+  AccentOS.shell.activateNavItem(mod);
+  AccentOS.shell.closeRail();
+}
+
+/* ═══════════════════════════════════════════
+   ROLE APPLICATION
+   ═══════════════════════════════════════════ */
+const ROLE_NAV = {
+  owner:    ['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','admin','health'],
+  manager:  ['dashboard','vendors','quotes','pipeline','customers','jobs','inventory','pricing','pos','deliveries','reports','ai','decisions','health'],
+  sales:    ['dashboard','quotes','pipeline','customers','jobs','inventory','reports','ai'],
+  designer: ['dashboard','quotes','customers','jobs','inventory','ai'],
+  warehouse:['dashboard','inventory','pos','deliveries'],
+  viewer:   ['dashboard','inventory'],
+  ai_agent: ['dashboard','health','ai'],
+};
+
+function applyRole(role) {
+  const cfg = ROLE_CFG[role] || ROLE_CFG.owner;
+  const shell = document.getElementById('aosShell');
+  if (shell) shell.dataset.role = role;
+  const allowed = ROLE_NAV[role] || ROLE_NAV.owner;
+  document.querySelectorAll('.aos-nav-item[data-roles]').forEach(el => {
+    const roles = el.dataset.roles.split(',');
+    el.style.display = roles.some(r=>allowed.includes(r)||r===role) ? '' : 'none';
+  });
+  const av = document.getElementById('avatarEl');
+  if (av) { av.textContent = typeof cfg.avatar==='string'&&cfg.avatar.length===1?cfg.avatar:cfg.avatar[0]||'?'; av.title = cfg.label; }
+  navigate('dashboard');
+  renderDashboard(role);
+}
+
+/* ═══════════════════════════════════════════
+   TABLE FILTER
+   ═══════════════════════════════════════════ */
+function filterTable(input, tableId) {
+  const q = input.value.toLowerCase();
+  const rows = document.querySelectorAll('#'+tableId+' tbody tr');
+  rows.forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATION PANEL
+   ═══════════════════════════════════════════ */
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('notifBtn');
+  if (!panel || !btn) return;
+  if (!panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+document.getElementById('notifBtn')?.addEventListener('click', function(e) {
+  e.stopPropagation();
+  const panel = document.getElementById('notifPanel');
+  if (panel) panel.classList.toggle('open');
+});
+
+/* ═══════════════════════════════════════════
+   TOAST (standalone — fallback if JS not loaded)
+   ═══════════════════════════════════════════ */
+if (!window.AccentOS?.shell?.showToast) {
+  window.AccentOS = window.AccentOS || {};
+  window.AccentOS.shell = window.AccentOS.shell || {};
+  if (!window.AccentOS.shell.showToast) {
+    window.AccentOS.shell.showToast = function(msg, type) {
+      const colors = {success:'var(--status-green-dim)',warning:'var(--status-amber-dim)',error:'var(--status-red-dim)',info:'var(--status-blue-dim)'};
+      const tc = {success:'var(--status-green)',warning:'var(--status-amber)',error:'var(--status-red)',info:'var(--status-blue)'};
+      const t = document.createElement('div');
+      t.style.cssText = `position:fixed;bottom:calc(env(safe-area-inset-bottom)+80px);left:50%;transform:translateX(-50%);background:${colors[type]||colors.info};color:${tc[type]||tc.info};border:1px solid currentColor;border-radius:8px;padding:8px 16px;font-size:.8125rem;font-family:var(--font-sans);z-index:900;pointer-events:none;white-space:nowrap;max-width:calc(100vw - 32px);text-align:center`;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.style.opacity='0';t.style.transition='opacity 300ms';setTimeout(()=>t.remove(),300); },2500);
+    };
+  }
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+document.addEventListener('aos:navigate', e => navigate(e.detail.module));
+renderNotifs();
+renderVendors();
+renderQuotes();
+renderCustomers();
+renderInventory();
+renderPipeline();
+applyRole('owner');
+
+// Restore saved mode
+try { const m=localStorage.getItem('aos-mode'); if(m&&m!=='normal') setMode(m); } catch(_) {}
 </script>
-
 </body>
 </html>
