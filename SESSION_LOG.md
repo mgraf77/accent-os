@@ -13,6 +13,24 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-08 — Retroactive close-out for D0X6A internal-meetings + KPI-SQL + mobile/FAB work
+**Branch:** `claude/accentos-continuation-D0X6A` (HEAD `51de122`)
+**Scope:** Docs catch-up only — no code changes. Bringing project docs (WIP / SESSION_LOG / PROMPT_LOG) current after ~14 commits landed on this branch without contemporaneous doc updates between the 2026-05-06 efficiency-monitor session-end and now.
+**What landed since efficiency-monitor (commit-message summary):**
+- **Internal Meetings module v1.0** — Track 5.17 candidate; sql/M30_internal_meetings.sql + M30b/M30c realtime extensions; js/internal_meetings.js with hierarchical agenda prep (groups → subgroups → sections); live cross-device sync via Supabase Realtime; transcript hydration; status badge + collaborative prep + live meeting list; auto-promote Paul + Patrick seed; 3 ralph iterations stabilizing realtime gaps + page-mount safety + channel re-mount
+- **kpi-data-audit driven SQL migrations** — sql/M30_customers_segment.sql + M31 through M40 (11 files total); each scoped to unblock a specific count of KPI-catalog dashboards. M30 customers.segment alone unblocks 22 KPIs. New "KPI DASHBOARDS" section appended to BUILD_PLAN_MICHAEL.md with copy-paste Supabase Editor steps for each.
+- **Mobile responsiveness** — sidebar collapse on small viewports + Quick Actions FAB
+- **FAB "Open Codespace" shortcut** under My Account section
+- **Activity-feed bugfix** — resolve "activity" identifier collision (one of the items the efficiency-monitor flagged earlier as a recurring sequence)
+**Decisions (inferred from commits, not directly logged):** Internal Meetings shipped as a self-contained module rather than bolting onto Calendar; Realtime chosen over polling (low message volume, low write-rate fit); ralph-loop methodology used to harden cross-device sync (3 iters); KPI-driven SQL migrations were drafted by kpi-data-audit skill and queued for Michael (none have been run yet).
+**Verified (this close-out):** Tree clean. Local + `origin/claude/accentos-continuation-D0X6A` both at `51de122`. Diverged from main: 70 ahead / 50 behind. Branch pushed and synced.
+**Gaps surfaced by this close-out:** efficiency-monitor's own session-end-summary.md / efficiency-log.md / _session-scratch.md all empty across ~14 commits — Stop-hook capture appears to have not fired or produced no signal during internal-meetings sessions. Worth investigating before relying on the always-on observer.
+**Open loops:**
+- M30-M40 SQL migrations queued for Michael to run in Supabase (see BUILD_PLAN_MICHAEL.md "KPI DASHBOARDS" section)
+- Branch not merged + no PR opened — needs explicit user direction on shipping path
+- Sister branch `claude/custom-rag-system-rIT34-KoMaP` (HEAD `deb8561`) has 35-page wiki enrichment work that is independent of this branch; cross-pollination not yet decided
+**Next prompt:** see WORK_IN_PROGRESS.md "Next step if interrupted".
+
 ### 2026-05-06 — efficiency-monitor v1 (always-on session observer) — SHIPPED
 **Skill:** `skills/efficiency-monitor/` — silent during work, surfaces only at session boundaries.
 **Built/Changed:**
