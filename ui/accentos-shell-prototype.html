@@ -281,6 +281,68 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 
 /* ── Contextual cmd palette section ── */
 .cmd-ctx-banner{padding:8px 16px;background:linear-gradient(90deg,rgba(212,160,23,.12),transparent);border-bottom:1px solid var(--border-subtle);font-size:.6875rem;color:var(--gold-300);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+
+/* ── Bulk select system ── */
+.dtable th.cb-col,.dtable td.cb-col{width:32px;padding:8px 4px 8px 12px;text-align:center}
+.row-cb{width:14px;height:14px;border:1.5px solid var(--border-strong);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:var(--layer-canvas);transition:background .1s}
+.row-cb.checked{background:var(--gold-500);border-color:var(--gold-500);color:var(--text-inverse);font-size:11px;font-weight:700}
+.row-cb.checked::before{content:'✓'}
+.row-cb:hover{border-color:var(--gold-400)}
+.dtable tbody tr.bulk-sel{background:rgba(212,160,23,.10)!important;border-left:3px solid var(--gold-400)}
+.dtable tbody tr.kb-focus{outline:2px solid var(--gold-400);outline-offset:-2px}
+
+.bulk-bar{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 24px);left:50%;transform:translateX(-50%) translateY(120%);background:var(--layer-elevated);border:1px solid var(--border-strong);border-radius:24px;padding:8px 8px 8px 16px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:flex;align-items:center;gap:12px;z-index:550;transition:transform 220ms ease;font-size:.8125rem;color:var(--text-primary);max-width:calc(100vw - 32px)}
+.bulk-bar.show{transform:translateX(-50%) translateY(0)}
+.bulk-count{font-weight:600;color:var(--gold-300);white-space:nowrap}
+.bulk-count .num{font-size:1rem;color:var(--gold-300)}
+.bulk-divider{width:1px;height:20px;background:var(--border-default)}
+.bulk-btn{padding:6px 12px;border-radius:16px;background:var(--layer-surface);color:var(--text-body);border:1px solid var(--border-subtle);cursor:pointer;font-size:.75rem;font-weight:500;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .1s}
+.bulk-btn:hover{background:var(--interactive-muted);color:var(--text-primary);border-color:var(--border-strong)}
+.bulk-btn.danger{color:var(--status-red)}
+.bulk-btn.danger:hover{background:var(--status-red-dim);border-color:var(--status-red)}
+.bulk-clear{padding:6px 10px;color:var(--text-muted);background:transparent;border:none;cursor:pointer;font-size:.75rem}
+.bulk-clear:hover{color:var(--text-primary)}
+@media(max-width:640px){.bulk-bar{flex-wrap:wrap;justify-content:center;border-radius:12px;left:8px;right:8px;transform:translateY(120%);max-width:none;width:auto}.bulk-bar.show{transform:translateY(0)}}
+
+/* ── Saved view chips ── */
+.view-chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:0 0 12px;border-bottom:1px solid var(--border-subtle);margin-bottom:12px}
+.view-chips-label{font-size:.6875rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
+.view-chip{padding:4px 10px;border-radius:14px;background:var(--layer-elevated);color:var(--text-body);border:1px solid var(--border-subtle);font-size:.75rem;cursor:pointer;transition:all .1s;display:inline-flex;align-items:center;gap:5px;font-weight:500}
+.view-chip:hover{background:var(--interactive-muted);border-color:var(--border-strong)}
+.view-chip.active{background:var(--gold-500);color:var(--text-inverse);border-color:var(--gold-500);font-weight:600}
+.view-chip .ct{font-size:.625rem;opacity:.85;background:rgba(0,0,0,.2);padding:0 5px;border-radius:8px;margin-left:2px}
+.view-chip.active .ct{background:rgba(0,0,0,.25)}
+.view-chip-clear{padding:4px 10px;color:var(--text-muted);background:transparent;border:none;cursor:pointer;font-size:.75rem}
+.view-chip-clear:hover{color:var(--gold-300)}
+
+/* ── Daily Briefing card ── */
+.briefing-card{background:linear-gradient(135deg,var(--layer-elevated),var(--layer-surface));border:1px solid var(--gold-600);border-radius:var(--card-radius);padding:16px 20px;margin-bottom:var(--space-5);box-shadow:0 0 24px rgba(212,160,23,.08)}
+.briefing-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.briefing-title{font-size:1rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:8px}
+.briefing-title-icon{font-size:18px}
+.briefing-meta{font-size:.6875rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
+.briefing-summary{font-size:.875rem;color:var(--text-body);line-height:1.55;margin-bottom:12px}
+.briefing-summary strong{color:var(--text-primary)}
+.briefing-actions{display:flex;flex-wrap:wrap;gap:8px}
+.briefing-action{padding:6px 11px;border-radius:6px;background:var(--layer-canvas);border:1px solid var(--border-subtle);font-size:.75rem;color:var(--text-body);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .1s}
+.briefing-action:hover{background:var(--interactive-muted);border-color:var(--gold-500);color:var(--gold-300)}
+.briefing-action .b-impact{font-size:.6875rem;color:var(--text-muted);margin-left:4px}
+.briefing-action.alert{border-color:var(--status-red);color:var(--status-red)}
+.briefing-action.warn{border-color:var(--status-amber);color:var(--status-amber)}
+
+/* ── Pipeline drag-drop ── */
+.pipeline-deal{cursor:grab;user-select:none}
+.pipeline-deal:active,.pipeline-deal.dragging{cursor:grabbing;opacity:.5}
+.pipeline-col{transition:background .15s,border-color .15s}
+.pipeline-col.drop-target{background:rgba(212,160,23,.06);border-color:var(--gold-500)}
+.pipeline-col-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pipeline-col-meta{font-size:.6875rem;color:var(--text-muted)}
+
+/* ── Notification clickable target ── */
+.notif-item.has-target{cursor:pointer}
+.notif-item.has-target:hover{background:var(--layer-canvas)}
+.notif-target-hint{font-size:.625rem;color:var(--gold-400);margin-top:2px;opacity:0;transition:opacity .15s}
+.notif-item:hover .notif-target-hint{opacity:1}
 </style>
 </head>
 <body>
@@ -475,8 +537,9 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <button class="btn btn-ghost">Filter by Tier ▾</button>
       <button class="btn btn-ghost">Sort by Score ▾</button>
     </div>
-    <table class="dtable" id="vtable">
-      <thead><tr><th>Vendor</th><th>Tier</th><th>Score</th><th class="hide-mobile">Rep</th><th class="hide-mobile">Co-op Open</th><th class="hide-mobile">Last Activity</th></tr></thead>
+    <div class="view-chips" id="vchips" data-table="vendors"></div>
+    <table class="dtable" id="vtable" data-bulk="vendors">
+      <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>Vendor</th><th>Tier</th><th>Score</th><th class="hide-mobile">Rep</th><th class="hide-mobile">Co-op Open</th><th class="hide-mobile">Last Activity</th></tr></thead>
       <tbody id="vendorRows"></tbody>
     </table>
   </div>
@@ -496,8 +559,9 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <button class="btn btn-ghost">Filter by Status ▾</button>
       <button class="btn btn-ghost">Sort by Value ▾</button>
     </div>
-    <table class="dtable" id="qtable">
-      <thead><tr><th>Quote ID</th><th>Customer</th><th>Value</th><th>Age</th><th>Status</th><th class="hide-mobile">Assignee</th></tr></thead>
+    <div class="view-chips" id="qchips" data-table="quotes"></div>
+    <table class="dtable" id="qtable" data-bulk="quotes">
+      <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>Quote ID</th><th>Customer</th><th>Value</th><th>Age</th><th>Status</th><th class="hide-mobile">Assignee</th></tr></thead>
       <tbody id="quoteRows"></tbody>
     </table>
   </div>
@@ -512,8 +576,9 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <input class="mod-search" type="text" placeholder="Search customers…" oninput="filterTable(this,'ctable')">
       <button class="btn btn-ghost">Filter by Segment ▾</button>
     </div>
-    <table class="dtable" id="ctable">
-      <thead><tr><th>Customer</th><th>Segment</th><th>Last Contact</th><th class="hide-mobile">LTV</th><th>Follow-Up</th></tr></thead>
+    <div class="view-chips" id="cchips" data-table="customers"></div>
+    <table class="dtable" id="ctable" data-bulk="customers">
+      <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>Customer</th><th>Segment</th><th>Last Contact</th><th class="hide-mobile">LTV</th><th>Follow-Up</th></tr></thead>
       <tbody id="customerRows"></tbody>
     </table>
   </div>
@@ -531,8 +596,9 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <input class="mod-search" type="text" placeholder="Search SKU, name, vendor…" oninput="filterTable(this,'itable')">
       <button class="btn btn-ghost">Show Alerts Only</button>
     </div>
-    <table class="dtable" id="itable">
-      <thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th class="hide-mobile">Reorder At</th><th class="hide-mobile">Vendor</th><th class="hide-mobile">List Price</th></tr></thead>
+    <div class="view-chips" id="ichips" data-table="inventory"></div>
+    <table class="dtable" id="itable" data-bulk="inventory">
+      <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>SKU</th><th>Product</th><th>Stock</th><th class="hide-mobile">Reorder At</th><th class="hide-mobile">Vendor</th><th class="hide-mobile">List Price</th></tr></thead>
       <tbody id="inventoryRows"></tbody>
     </table>
   </div>
@@ -637,6 +703,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       </div>
     </div>
     <div style="padding:16px">
+      <div class="view-chips" id="tchips" data-table="tasks"></div>
       <div class="task-toolbar" id="taskToolbar">
         <span class="task-tab active" data-tab="open" onclick="setTaskFilter('open')">Open <span class="ct" id="tk-ct-open">—</span></span>
         <span class="task-tab" data-tab="overdue" onclick="setTaskFilter('overdue')">Overdue <span class="ct" id="tk-ct-overdue">—</span></span>
@@ -753,6 +820,15 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <span><kbd>↑↓</kbd> Navigate</span><span><kbd>↵</kbd> Select</span><span><kbd>Esc</kbd> Close</span><span><kbd>⌘K</kbd> Toggle</span>
     </div>
   </div>
+</div>
+
+<!-- BULK ACTION BAR -->
+<div class="bulk-bar" id="bulkBar">
+  <span class="bulk-count"><span class="num" id="bulkCount">0</span> selected</span>
+  <span class="bulk-divider"></span>
+  <span id="bulkBtns" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+  <span class="bulk-divider"></span>
+  <button class="bulk-clear" onclick="clearBulkSelection()">Clear · Esc</button>
 </div>
 
 <!-- RECENT ITEMS PANEL (Cmd+P quick switcher) -->
@@ -877,12 +953,12 @@ const DATA = {
     {sku:'FL-8812',name:'Flush Mount 14"',qty:6,reorder:5,vendor:'Progress Lighting',list:119.00,alert:null},
   ],
   notifications: [
-    {type:'alert',msg:'Co-op deadline in 8 days — Progress Lighting $4,200 at risk',time:'2m ago',read:false},
-    {type:'warning',msg:'3 quotes stale >7 days — follow up required',time:'15m ago',read:false},
-    {type:'info',msg:'Quote QT-0839 accepted — Harbor View Homes $22,500',time:'1h ago',read:true},
-    {type:'warning',msg:'Inventory: WP-2290 below reorder point (3 in stock)',time:'2h ago',read:true},
-    {type:'info',msg:'Vendor score updated: Kichler 91/100 (+3)',time:'3h ago',read:true},
-    {type:'alert',msg:'Deal stale 12 days — Pacific Commercial $88K',time:'4h ago',read:true},
+    {type:'alert',msg:'Co-op deadline in 8 days — Progress Lighting $4,200 at risk',time:'2m ago',read:false,target:{mod:'vendors',rail:{kind:'vendor',id:'V03'}}},
+    {type:'warning',msg:'3 quotes stale >7 days — follow up required',time:'15m ago',read:false,target:{mod:'quotes',view:'stale'}},
+    {type:'info',msg:'Quote QT-0839 accepted — Harbor View Homes $22,500',time:'1h ago',read:true,target:{mod:'quotes',rail:{kind:'quote',id:'QT-0839'}}},
+    {type:'warning',msg:'Inventory: WP-2290 below reorder point (3 in stock)',time:'2h ago',read:true,target:{mod:'inventory',rail:{kind:'inventory',id:'WP-2290'}}},
+    {type:'info',msg:'Vendor score updated: Kichler 91/100 (+3)',time:'3h ago',read:true,target:{mod:'vendors',rail:{kind:'vendor',id:'V01'}}},
+    {type:'alert',msg:'Deal stale 12 days — Pacific Commercial $88K',time:'4h ago',read:true,target:{mod:'pipeline',rail:{kind:'deal',id:'D04'}}},
   ],
   activities: [
     {icon:'📋',text:'Quote QT-0839 accepted — Harbor View Homes $22,500',time:'1h ago'},
@@ -1293,7 +1369,8 @@ function renderVendors() {
   const tbody = document.getElementById('vendorRows');
   if (!tbody) return;
   tbody.innerHTML = DATA.vendors.map(v => `
-    <tr onclick="openVendorRail('${v.id}')">
+    <tr data-row-id="${v.id}" data-row-table="vendors" onclick="openVendorRail('${v.id}')">
+      <td class="cb-col" onclick="event.stopPropagation();toggleBulk('vendors','${v.id}',event)"><span class="row-cb" data-bulk-id="${v.id}"></span></td>
       <td><strong style="color:var(--text-primary)">${v.name}</strong></td>
       <td><span class="tier ${v.tier}">${v.tier.toUpperCase()}</span></td>
       <td>
@@ -1315,7 +1392,8 @@ function renderQuotes() {
   if (!tbody) return;
   tbody.innerHTML = DATA.quotes.map(q => {
     const sColor = q.status==='stale'?'alert':q.status==='accepted'?'active':'muted';
-    return `<tr onclick="openQuoteRail('${q.id}')">
+    return `<tr data-row-id="${q.id}" data-row-table="quotes" onclick="openQuoteRail('${q.id}')">
+      <td class="cb-col" onclick="event.stopPropagation();toggleBulk('quotes','${q.id}',event)"><span class="row-cb" data-bulk-id="${q.id}"></span></td>
       <td><span style="font-family:var(--font-mono);color:var(--gold-400)">${q.id}</span></td>
       <td style="color:var(--text-primary)">${q.customer}</td>
       <td style="color:var(--status-green);font-weight:500">${fmt(q.value)}</td>
@@ -1331,7 +1409,8 @@ function renderCustomers() {
   if (!tbody) return;
   tbody.innerHTML = DATA.customers.map(c => {
     const fuColor = c.followUp==='overdue'?'alert':c.followUp==='today'?'warning':'muted';
-    return `<tr onclick="openCustomerRail('${c.id}')">
+    return `<tr data-row-id="${c.id}" data-row-table="customers" onclick="openCustomerRail('${c.id}')">
+      <td class="cb-col" onclick="event.stopPropagation();toggleBulk('customers','${c.id}',event)"><span class="row-cb" data-bulk-id="${c.id}"></span></td>
       <td style="color:var(--text-primary);font-weight:500">${c.name}</td>
       <td><span class="seg ${c.seg}">${c.seg.toUpperCase()}</span></td>
       <td style="color:${c.lastContact>7?'var(--status-amber)':'var(--text-body)'}">${c.lastContact}d ago</td>
@@ -1346,7 +1425,8 @@ function renderInventory() {
   if (!tbody) return;
   tbody.innerHTML = DATA.inventory.map(i => {
     const lowStock = i.qty <= i.reorder;
-    return `<tr onclick="openInventoryRail('${i.sku}')">
+    return `<tr data-row-id="${i.sku}" data-row-table="inventory" onclick="openInventoryRail('${i.sku}')">
+      <td class="cb-col" onclick="event.stopPropagation();toggleBulk('inventory','${i.sku}',event)"><span class="row-cb" data-bulk-id="${i.sku}"></span></td>
       <td style="font-family:var(--font-mono);color:var(--gold-400)">${i.sku}</td>
       <td style="color:var(--text-primary)">${i.name}</td>
       <td>
@@ -1368,12 +1448,12 @@ function renderPipeline() {
   board.innerHTML = stages.map(stage => {
     const deals = DATA.deals.filter(d=>d.stage===stage);
     const total = deals.reduce((s,d)=>s+d.value,0);
-    return `<div class="pipeline-col">
+    return `<div class="pipeline-col" data-stage="${stage}" ondragover="pipelineDragOver(event)" ondragleave="pipelineDragLeave(event)" ondrop="pipelineDrop(event,'${stage}')">
       <div class="pipeline-col-hdr">
         <span>${labels[stage]}</span>
-        <span style="color:var(--text-muted)">${deals.length} · ${fmt(total)}</span>
+        <span class="pipeline-col-meta">${deals.length} · ${fmt(total)}</span>
       </div>
-      ${deals.map(d=>`<div class="pipeline-deal" onclick="openDealRail('${d.id}')">
+      ${deals.map(d=>`<div class="pipeline-deal" draggable="true" data-deal-id="${d.id}" ondragstart="pipelineDragStart(event,'${d.id}')" ondragend="pipelineDragEnd(event)" onclick="openDealRail('${d.id}')">
         <div class="pipeline-deal-name">${d.name}</div>
         <div class="pipeline-deal-val">${fmt(d.value)}</div>
         <div class="pipeline-deal-meta">${d.prob}% · ${d.age}d · ${d.rep}</div>
@@ -1397,7 +1477,7 @@ function openVendorRail(id) {
   const v = DATA.vendors.find(x=>x.id===id);
   if (!v) return;
   document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
-  event.currentTarget.classList.add('sel');
+  try{ if(typeof event!=='undefined' && event && event.currentTarget) event.currentTarget.classList.add('sel'); }catch(_){}
   AccentOS.shell.openRail(v.name, `
     <div class="aos-rail-section-label">Performance</div>
     <div class="aos-rail-row"><span class="aos-rail-row-label">Score</span><span class="aos-rail-row-value" style="color:var(--status-green)">${v.score}/100</span></div>
@@ -1419,7 +1499,7 @@ function openQuoteRail(id) {
   const q = DATA.quotes.find(x=>x.id===id);
   if (!q) return;
   document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
-  event.currentTarget.classList.add('sel');
+  try{ if(typeof event!=='undefined' && event && event.currentTarget) event.currentTarget.classList.add('sel'); }catch(_){}
   AccentOS.shell.openRail(q.id, `
     <div class="aos-rail-section-label">Quote Details</div>
     <div class="aos-rail-row"><span class="aos-rail-row-label">Customer</span><span class="aos-rail-row-value">${q.customer}</span></div>
@@ -1439,7 +1519,7 @@ function openCustomerRail(id) {
   const c = DATA.customers.find(x=>x.id===id);
   if (!c) return;
   document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
-  event.currentTarget.classList.add('sel');
+  try{ if(typeof event!=='undefined' && event && event.currentTarget) event.currentTarget.classList.add('sel'); }catch(_){}
   AccentOS.shell.openRail(c.name, `
     <div class="aos-rail-section-label">Profile</div>
     <div class="aos-rail-row"><span class="aos-rail-row-label">Segment</span><span class="aos-rail-row-value"><span class="seg ${c.seg}">${c.seg.toUpperCase()}</span></span></div>
@@ -1457,7 +1537,7 @@ function openInventoryRail(sku) {
   const i = DATA.inventory.find(x=>x.sku===sku);
   if (!i) return;
   document.querySelectorAll('.dtable tbody tr').forEach(r=>r.classList.remove('sel'));
-  event.currentTarget.classList.add('sel');
+  try{ if(typeof event!=='undefined' && event && event.currentTarget) event.currentTarget.classList.add('sel'); }catch(_){}
   const stockColor = i.alert==='critical'?'var(--status-red)':i.qty<=i.reorder?'var(--status-amber)':'var(--status-green)';
   AccentOS.shell.openRail(i.sku, `
     <div class="aos-rail-section-label">Product</div>
@@ -1499,14 +1579,47 @@ function openDealRail(id) {
 function renderNotifs() {
   const list = document.getElementById('notifList');
   if (!list) return;
-  list.innerHTML = DATA.notifications.map(n => `
-    <div class="notif-item ${n.read?'':'unread'}" onclick="AccentOS.shell.closeNotifPanel();AccentOS.shell.showToast('Notification opened','info')">
+  list.innerHTML = DATA.notifications.map((n,idx) => {
+    const tgt = n.target;
+    const hint = tgt ? (tgt.rail ? `→ open ${tgt.rail.id}` : `→ ${tgt.view||tgt.mod}`) : '';
+    return `<div class="notif-item ${n.read?'':'unread'} ${tgt?'has-target':''}" onclick="handleNotifClick(${idx})">
       <span class="notif-dot ${n.type}"></span>
-      <div><div class="notif-msg">${n.msg}</div><div class="notif-ts">${n.time}</div></div>
-    </div>`).join('');
+      <div style="flex:1">
+        <div class="notif-msg">${n.msg}</div>
+        <div class="notif-ts">${n.time}</div>
+        ${hint?`<div class="notif-target-hint">${hint}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
   const unread = DATA.notifications.filter(n=>!n.read).length;
   const badge = document.getElementById('notifCount');
   if (badge) { badge.textContent = unread; badge.style.display = unread ? '' : 'none'; }
+}
+
+function handleNotifClick(idx) {
+  const n = DATA.notifications[idx];
+  if (!n) return;
+  n.read = true;
+  AccentOS.shell.closeNotifPanel();
+  if (!n.target) { AccentOS.shell.showToast('Notification opened','info'); renderNotifs(); return; }
+  const t = n.target;
+  if (t.mod) navigate(t.mod);
+  if (t.view) {
+    setTimeout(()=>applyView(t.mod, t.view), 50);
+  }
+  if (t.rail) {
+    setTimeout(()=>{
+      try {
+        if (t.rail.kind==='vendor')   openVendorRail(t.rail.id);
+        if (t.rail.kind==='quote')    openQuoteRail(t.rail.id);
+        if (t.rail.kind==='customer') openCustomerRail(t.rail.id);
+        if (t.rail.kind==='inventory')openInventoryRail(t.rail.id);
+        if (t.rail.kind==='deal')     openDealRail(t.rail.id);
+      } catch(e){ /* fake event.currentTarget — fall back to no rail */ }
+    }, 80);
+  }
+  AccentOS.shell.showToast('Jumping to '+(t.rail?.id||t.view||t.mod),'info');
+  renderNotifs();
 }
 
 /* ═══════════════════════════════════════════
@@ -1982,6 +2095,438 @@ document.addEventListener('click', function(e){
   const p = document.getElementById('recentPanel');
   if (p && p.classList.contains('show') && !p.contains(e.target)) closeRecentPanel();
 });
+
+/* ═══════════════════════════════════════════
+   BULK SELECTION SYSTEM
+   ═══════════════════════════════════════════ */
+const bulkState = { table: null, ids: new Set(), lastClicked: null };
+
+const BULK_TABLE_BTNS = {
+  vendors:   [{l:'⭐ Score Selected',a:'score',type:'success'},{l:'📧 Email Reps',a:'email'},{l:'📋 Export',a:'export'}],
+  quotes:    [{l:'📞 Log Follow-Up',a:'followup',type:'success'},{l:'📧 Send to Customer',a:'send'},{l:'🗄 Archive',a:'archive',cls:'danger'}],
+  customers: [{l:'📞 Schedule Follow-Up',a:'followup',type:'success'},{l:'📧 Email Group',a:'email'},{l:'🏷 Re-segment',a:'segment'}],
+  inventory: [{l:'🛒 Create PO',a:'po',type:'success'},{l:'📋 Export',a:'export'},{l:'⚠ Mark Critical',a:'critical'}],
+  tasks:     [{l:'✓ Mark Done',a:'done',type:'success'},{l:'👤 Assign…',a:'assign'},{l:'⏰ Snooze 1d',a:'snooze'},{l:'🗑 Delete',a:'delete',cls:'danger'}],
+};
+
+function clearBulkSelection() {
+  bulkState.ids.clear();
+  bulkState.lastClicked = null;
+  document.querySelectorAll('.row-cb.checked').forEach(el=>el.classList.remove('checked'));
+  document.querySelectorAll('.dtable tbody tr.bulk-sel,.task-item.bulk-sel').forEach(el=>el.classList.remove('bulk-sel'));
+  refreshBulkBar();
+}
+
+function toggleBulk(table, id, ev) {
+  // switch table — clear if different
+  if (bulkState.table && bulkState.table !== table) clearBulkSelection();
+  bulkState.table = table;
+  // shift-click range
+  if (ev && ev.shiftKey && bulkState.lastClicked) {
+    const rows = Array.from(document.querySelectorAll(`[data-row-table="${table}"]`)).map(r=>r.dataset.rowId);
+    const a = rows.indexOf(bulkState.lastClicked), b = rows.indexOf(id);
+    if (a >= 0 && b >= 0) {
+      const [lo,hi] = a<b ? [a,b] : [b,a];
+      for (let i=lo;i<=hi;i++) bulkState.ids.add(rows[i]);
+      bulkState.lastClicked = id;
+      paintBulk();
+      refreshBulkBar();
+      return;
+    }
+  }
+  if (bulkState.ids.has(id)) bulkState.ids.delete(id);
+  else bulkState.ids.add(id);
+  bulkState.lastClicked = id;
+  paintBulk();
+  refreshBulkBar();
+}
+
+function toggleBulkAll(table) {
+  if (bulkState.table && bulkState.table !== table) clearBulkSelection();
+  bulkState.table = table;
+  const rows = Array.from(document.querySelectorAll(`[data-row-table="${table}"]`));
+  const allSelected = rows.length>0 && rows.every(r=>bulkState.ids.has(r.dataset.rowId));
+  if (allSelected) bulkState.ids.clear();
+  else rows.forEach(r=>bulkState.ids.add(r.dataset.rowId));
+  paintBulk();
+  refreshBulkBar();
+}
+
+function paintBulk() {
+  document.querySelectorAll('.row-cb').forEach(cb=>{
+    const id = cb.dataset.bulkId;
+    if (id == null) return;
+    cb.classList.toggle('checked', bulkState.ids.has(id));
+  });
+  document.querySelectorAll('.dtable tbody tr').forEach(r=>{
+    if (r.dataset.rowTable === bulkState.table) {
+      r.classList.toggle('bulk-sel', bulkState.ids.has(r.dataset.rowId));
+    }
+  });
+}
+
+function refreshBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const ct = document.getElementById('bulkCount');
+  const btns = document.getElementById('bulkBtns');
+  if (!bar) return;
+  const n = bulkState.ids.size;
+  ct.textContent = n;
+  if (n === 0) {
+    bar.classList.remove('show');
+    return;
+  }
+  const tableBtns = BULK_TABLE_BTNS[bulkState.table] || [];
+  btns.innerHTML = tableBtns.map(b=>`<button class="bulk-btn ${b.cls||''}" onclick="runBulkAction('${b.a}')">${b.l}</button>`).join('');
+  bar.classList.add('show');
+}
+
+function runBulkAction(action) {
+  const n = bulkState.ids.size;
+  const t = bulkState.table;
+  const ids = Array.from(bulkState.ids);
+  if (action === 'done' && t === 'tasks') {
+    ids.forEach(id=>{ const x=DATA.tasks.find(y=>y.id===id); if(x)x.done=true; });
+    AccentOS.shell.showToast(`${n} task${n>1?'s':''} completed`,'success');
+    clearBulkSelection();
+    renderTasks();
+    return;
+  }
+  if (action === 'archive' && t === 'quotes') {
+    ids.forEach(id=>{ const x=DATA.quotes.find(y=>y.id===id); if(x)x.status='archived'; });
+    AccentOS.shell.showToast(`${n} quote${n>1?'s':''} archived`,'warning');
+    clearBulkSelection();
+    renderQuotes();
+    return;
+  }
+  if (action === 'po' && t === 'inventory') {
+    AccentOS.shell.showToast(`PO drafted with ${n} SKU${n>1?'s':''}`,'success');
+    clearBulkSelection();
+    return;
+  }
+  AccentOS.shell.showToast(`${n} ${t} → ${action}`,'info');
+  clearBulkSelection();
+}
+
+// header "select all" checkbox
+document.addEventListener('click', function(e){
+  const allCb = e.target.closest('[data-bulk-all]');
+  if (allCb) {
+    const tbl = allCb.closest('.dtable')?.dataset.bulk;
+    if (tbl) { e.stopPropagation(); toggleBulkAll(tbl); }
+  }
+});
+
+/* ═══════════════════════════════════════════
+   SAVED VIEWS — per-table filter chip presets
+   ═══════════════════════════════════════════ */
+const VIEW_DEFS = {
+  vendors: [
+    {id:'tier-a',  label:'Tier A',     pred: v=>v.tier==='a'},
+    {id:'unassigned', label:'Unassigned', pred: v=>!v.rep},
+    {id:'coop-open', label:'Co-op Open', pred: v=>v.coop>0},
+    {id:'declining', label:'Declining', pred: v=>v.change<0},
+    {id:'stale', label:'Stale (>5d)', pred: v=>parseInt(v.lastAct)>5},
+  ],
+  quotes: [
+    {id:'stale',    label:'Stale >7d',     pred: q=>q.age>7},
+    {id:'mine',     label:'Mine (MW)',     pred: q=>q.assignee==='MW'},
+    {id:'high-val', label:'High Value',    pred: q=>q.value>=15000},
+    {id:'active',   label:'Active',        pred: q=>q.status==='active'},
+    {id:'accepted', label:'Accepted',      pred: q=>q.status==='accepted'},
+  ],
+  customers: [
+    {id:'vip',      label:'VIP',           pred: c=>c.seg==='vip'},
+    {id:'overdue',  label:'Overdue Follow-Up', pred: c=>c.followUp==='overdue'},
+    {id:'lapsed',   label:'Lapsed',        pred: c=>c.seg==='lapsed'},
+    {id:'prospect', label:'Prospects',     pred: c=>c.seg==='prospect'},
+    {id:'high-ltv', label:'High LTV',      pred: c=>c.ltv>=50000},
+  ],
+  inventory: [
+    {id:'critical', label:'Critical',      pred: i=>i.alert==='critical'},
+    {id:'low',      label:'Below Reorder', pred: i=>i.qty<=i.reorder},
+    {id:'in-stock', label:'In Stock',      pred: i=>i.qty>i.reorder},
+  ],
+  tasks: [
+    {id:'p1',       label:'P1 only',       pred: t=>t.priority===1 && !t.done},
+    {id:'mine',     label:'Mine (MW)',     pred: t=>t.owner==='MW' && !t.done},
+    {id:'overdue',  label:'Overdue',       pred: t=>t.due<0 && !t.done},
+  ],
+};
+
+const activeViews = {}; // {vendors:'tier-a', ...}
+try { Object.assign(activeViews, JSON.parse(localStorage.getItem('aos-views')||'{}')); } catch(_) {}
+
+function renderViewChips(table) {
+  const el = document.getElementById({vendors:'vchips',quotes:'qchips',customers:'cchips',inventory:'ichips',tasks:'tchips'}[table]);
+  if (!el) return;
+  const defs = VIEW_DEFS[table] || [];
+  const sourceSet = DATA[table] || [];
+  const active = activeViews[table];
+  el.innerHTML = '<span class="view-chips-label">Saved Views</span>' +
+    defs.map(v=>{
+      const ct = sourceSet.filter(v.pred).length;
+      const isActive = active === v.id;
+      return `<span class="view-chip ${isActive?'active':''}" onclick="applyView('${table}','${v.id}')">${v.label}<span class="ct">${ct}</span></span>`;
+    }).join('') +
+    (active ? `<button class="view-chip-clear" onclick="applyView('${table}',null)">Clear ✕</button>` : '');
+}
+
+function applyView(table, viewId) {
+  if (viewId == null || activeViews[table] === viewId) {
+    delete activeViews[table];
+  } else {
+    activeViews[table] = viewId;
+  }
+  try { localStorage.setItem('aos-views', JSON.stringify(activeViews)); } catch(_) {}
+  if (table === 'tasks') {
+    renderTasks();
+    renderViewChips(table);
+    return;
+  }
+  // Apply visibility on table rows
+  const def = (VIEW_DEFS[table]||[]).find(v=>v.id===activeViews[table]);
+  const rows = document.querySelectorAll(`[data-row-table="${table}"]`);
+  rows.forEach(r=>{
+    if (!def) { r.style.display = ''; return; }
+    const item = (DATA[table]||[]).find(x=>(x.id||x.sku)===r.dataset.rowId);
+    r.style.display = (item && def.pred(item)) ? '' : 'none';
+  });
+  renderViewChips(table);
+  if (def) AccentOS.shell.showToast(`View · ${def.label}`,'info');
+}
+
+// patch renderTasks to apply task view filter
+const _origRenderTasks = renderTasks;
+window.renderTasks = function(filter, scope) {
+  _origRenderTasks(filter, scope);
+  const v = activeViews.tasks;
+  if (!v) return;
+  const def = (VIEW_DEFS.tasks||[]).find(x=>x.id===v);
+  if (!def) return;
+  document.querySelectorAll('#taskList .task-item').forEach(item=>{
+    const t = DATA.tasks.find(x=>x.id===item.dataset.id);
+    if (!t || !def.pred(t)) item.style.display = 'none';
+  });
+};
+
+/* ═══════════════════════════════════════════
+   DAILY BRIEFING CARD
+   ═══════════════════════════════════════════ */
+const BRIEFING = {
+  owner: {
+    icon:'☀️', title:'Daily Briefing',
+    summary:`Good morning. <strong>$12,400</strong> at risk across 3 stale quotes — recovery window 48h. Co-op deadline (<strong>Progress Lighting $4,200</strong>) hits in 8 days. <strong>2 SKUs critical</strong>; auto-PO drafted. Pipeline weighted forecast steady at <strong>$312K</strong>.`,
+    actions:[
+      {label:'Stale quotes', impact:'$12.4K', cls:'alert', go:()=>{navigate('quotes');setTimeout(()=>applyView('quotes','stale'),50);}},
+      {label:'Claim co-op fund', impact:'$4.2K', cls:'warn', go:()=>{navigate('vendors');setTimeout(()=>applyView('vendors','coop-open'),50);}},
+      {label:'Critical stock', impact:'2 SKUs', cls:'alert', go:()=>{navigate('inventory');setTimeout(()=>applyView('inventory','critical'),50);}},
+      {label:'Tasks inbox', impact:'4 P1', go:()=>navigate('tasks')},
+    ],
+  },
+  manager: {
+    icon:'☀️', title:'Manager Briefing',
+    summary:`Pipeline weighted forecast <strong>$312K</strong> · <strong>2 deals stale</strong> in Negotiating. Quote close rate trending up (<strong>68%</strong> → +7pts). 6 vendor scores due this quarter.`,
+    actions:[
+      {label:'Stale deals', impact:'2 deals', cls:'warn', go:()=>navigate('pipeline')},
+      {label:'Score vendors', impact:'6 due', go:()=>navigate('vendors')},
+      {label:'Tasks inbox', impact:'4 P1', go:()=>navigate('tasks')},
+    ],
+  },
+  sales: {
+    icon:'🎯', title:"Today's Plan",
+    summary:`<strong>2 follow-ups due today</strong>. <strong>1 stale quote</strong> ($3.1K — Pacific Design). <strong>1 proposal</strong> due to send (Riverside). Close rate up to <strong>68%</strong> — keep going.`,
+    actions:[
+      {label:'My follow-ups', impact:'2 today', cls:'warn', go:()=>{navigate('customers');setTimeout(()=>applyView('customers','overdue'),50);}},
+      {label:'My quotes', impact:'8 open', go:()=>{navigate('quotes');setTimeout(()=>applyView('quotes','mine'),50);}},
+      {label:'My tasks', impact:'P1', cls:'alert', go:()=>navigate('tasks')},
+    ],
+  },
+  designer: {
+    icon:'📐', title:'Design Queue',
+    summary:`<strong>2 specs need approval</strong>. <strong>1 quote update</strong> requested (Riverside Remodel). 3 saved fixtures added this morning.`,
+    actions:[
+      {label:'Pending specs', impact:'2', cls:'warn', go:()=>navigate('jobs')},
+      {label:'Open quotes', impact:'3', go:()=>navigate('quotes')},
+    ],
+  },
+  warehouse: {
+    icon:'📦', title:'Warehouse Plan',
+    summary:`<strong>2 deliveries today</strong> (next 2pm). <strong>PO #1042</strong> arriving — 5 items expected. <strong>2 SKUs critical</strong> stock — review reorder list.`,
+    actions:[
+      {label:'Deliveries today', impact:'2', go:()=>navigate('deliveries')},
+      {label:'Critical stock', impact:'2', cls:'alert', go:()=>{navigate('inventory');setTimeout(()=>applyView('inventory','critical'),50);}},
+      {label:'PO arrivals', impact:'PO 1042', go:()=>navigate('pos')},
+    ],
+  },
+  viewer: null,
+  ai_agent: null,
+};
+
+function buildBriefing(role) {
+  const b = BRIEFING[role];
+  if (!b) return '';
+  const acts = b.actions.map((a,i)=>`<button class="briefing-action ${a.cls||''}" data-briefing-act="${i}">${a.label}<span class="b-impact">· ${a.impact}</span></button>`).join('');
+  const now = new Date();
+  const t = now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  return `<div class="briefing-card" id="briefingCard" data-role="${role}">
+    <div class="briefing-hdr">
+      <div class="briefing-title"><span class="briefing-title-icon">${b.icon}</span>${b.title}</div>
+      <div class="briefing-meta">${t} · auto-generated</div>
+    </div>
+    <div class="briefing-summary">${b.summary}</div>
+    <div class="briefing-actions">${acts}</div>
+  </div>`;
+}
+
+// hook briefing action clicks
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('[data-briefing-act]');
+  if (!btn) return;
+  const card = btn.closest('.briefing-card');
+  if (!card) return;
+  const role = card.dataset.role;
+  const idx = parseInt(btn.dataset.briefingAct, 10);
+  const act = BRIEFING[role]?.actions?.[idx];
+  if (act && act.go) act.go();
+});
+
+// inject briefing into renderDashboard output (after existing wrapper)
+const _origRenderDashboard2 = window.renderDashboard;
+window.renderDashboard = function(role) {
+  _origRenderDashboard2(role);
+  const dash = document.getElementById('dashContent');
+  if (!dash || dash.querySelector('#briefingCard')) return;
+  const html = buildBriefing(role);
+  if (!html) return;
+  // insert briefing right after the surface header
+  const header = dash.querySelector('.aos-surface-header');
+  if (header && header.nextSibling) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    header.parentNode.insertBefore(tmp.firstElementChild, header.nextSibling);
+  } else {
+    dash.insertAdjacentHTML('afterbegin', html);
+  }
+  // re-inject ai hints if mode is ai
+  if (document.getElementById('aosShell').dataset.mode === 'ai') {
+    setTimeout(injectAIHints, 10);
+  }
+};
+
+/* ═══════════════════════════════════════════
+   PIPELINE DRAG-AND-DROP
+   ═══════════════════════════════════════════ */
+const STAGE_PROBABILITY = {lead:25,qualified:50,quoted:70,negotiating:85,won:100,lost:0};
+let dragDealId = null;
+
+function pipelineDragStart(e, id) {
+  dragDealId = id;
+  e.target.classList.add('dragging');
+  try { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } catch(_) {}
+}
+function pipelineDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.pipeline-col.drop-target').forEach(c=>c.classList.remove('drop-target'));
+  dragDealId = null;
+}
+function pipelineDragOver(e) {
+  e.preventDefault();
+  try { e.dataTransfer.dropEffect = 'move'; } catch(_) {}
+  e.currentTarget.classList.add('drop-target');
+}
+function pipelineDragLeave(e) {
+  if (e.currentTarget.contains(e.relatedTarget)) return;
+  e.currentTarget.classList.remove('drop-target');
+}
+function pipelineDrop(e, targetStage) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drop-target');
+  const id = dragDealId || e.dataTransfer?.getData('text/plain');
+  if (!id) return;
+  const d = DATA.deals.find(x=>x.id===id);
+  if (!d) return;
+  if (d.stage === targetStage) return;
+  const fromStage = d.stage;
+  d.stage = targetStage;
+  d.prob = STAGE_PROBABILITY[targetStage] ?? d.prob;
+  renderPipeline();
+  AccentOS.shell.showToast(`${d.name} · ${fromStage} → ${targetStage}`, targetStage==='won'?'success':targetStage==='lost'?'warning':'info');
+}
+
+/* ═══════════════════════════════════════════
+   TABLE KEYBOARD NAVIGATION
+   ═══════════════════════════════════════════ */
+let kbFocusRow = null;
+
+function visibleRows(table) {
+  return Array.from(document.querySelectorAll(`[data-row-table="${table}"]`)).filter(r=>r.style.display!=='none');
+}
+
+function activeTableId() {
+  const active = document.querySelector('.proto-mod.active');
+  if (!active) return null;
+  const t = active.querySelector('.dtable[data-bulk]');
+  return t ? t.dataset.bulk : null;
+}
+
+function paintKbFocus(row) {
+  document.querySelectorAll('.dtable tbody tr.kb-focus').forEach(r=>r.classList.remove('kb-focus'));
+  if (row) {
+    row.classList.add('kb-focus');
+    row.scrollIntoView({block:'nearest'});
+  }
+  kbFocusRow = row;
+}
+
+document.addEventListener('keydown', function(e){
+  const tag = (e.target.tagName||'').toLowerCase();
+  const typing = tag==='input' || tag==='textarea' || tag==='select' || e.target.isContentEditable;
+  if (typing) return;
+  // bulk Esc clears
+  if (e.key === 'Escape' && bulkState.ids.size > 0) {
+    e.preventDefault();
+    clearBulkSelection();
+    return;
+  }
+  const tbl = activeTableId();
+  if (!tbl) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    const rows = visibleRows(tbl);
+    if (!rows.length) return;
+    let idx = rows.indexOf(kbFocusRow);
+    idx = e.key === 'ArrowDown' ? Math.min(rows.length-1, idx+1) : Math.max(0, idx<0?0:idx-1);
+    if (idx < 0) idx = 0;
+    e.preventDefault();
+    paintKbFocus(rows[idx]);
+    if (e.shiftKey) {
+      bulkState.table = tbl;
+      bulkState.ids.add(rows[idx].dataset.rowId);
+      paintBulk();
+      refreshBulkBar();
+    }
+  } else if (e.key === 'Enter' && kbFocusRow && kbFocusRow.dataset.rowTable === tbl) {
+    e.preventDefault();
+    kbFocusRow.click();
+  } else if (e.key === ' ' && kbFocusRow && kbFocusRow.dataset.rowTable === tbl) {
+    e.preventDefault();
+    toggleBulk(tbl, kbFocusRow.dataset.rowId, e);
+  }
+});
+
+/* ═══════════════════════════════════════════
+   APPLYROLE PATCH — render view chips on init
+   ═══════════════════════════════════════════ */
+const _origApplyRole = applyRole;
+window.applyRole = function(role) {
+  _origApplyRole(role);
+  ['vendors','quotes','customers','inventory','tasks'].forEach(t=>renderViewChips(t));
+  // re-apply persisted views
+  Object.entries(activeViews).forEach(([table,viewId])=>{
+    if (table !== 'tasks') applyView(table, viewId);
+  });
+  if (activeViews.tasks) renderTasks();
+};
 
 /* ═══════════════════════════════════════════
    INIT
