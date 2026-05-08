@@ -1504,13 +1504,32 @@ async function sbSaveQuote(q){
   if(!sbConfigured()) return false;
   try{
     const subtotal = (q.lineItems||[]).reduce((s,l)=>s + (l.qty*l.price), 0);
+    const total = q.total || subtotal;
     const extra = {contact: q.contact||'', type: q.type||'', sqft: q.sqft||'', budget: q.budget||'', note: q.notes||''};
+
+    // Autonomous Governance: determine status based on approval authorities
+    let status = 'draft';
+    if(APPROVAL_AUTHORITIES && APPROVAL_AUTHORITIES.length > 0 && CU){
+      const userAuth = APPROVAL_AUTHORITIES.find(a => a.role === CU.role && a.action_type === 'quote_approve' && a.enabled);
+      if(userAuth){
+        if(userAuth.threshold_usd === null){
+          // No limit for this role
+          status = 'approved';
+        } else if(total <= userAuth.threshold_usd){
+          status = 'approved';
+        } else {
+          // Over limit, escalate to pending approval
+          status = 'pending_approval';
+        }
+      }
+    }
+
     const headerBody = {
       number: q.id,
       customer_name: q.customer || null,
       project_name: q.project || null,
-      status: 'draft',
-      subtotal, tax: 0, total: q.total || subtotal,
+      status,
+      subtotal, tax: 0, total,
       notes: JSON.stringify(extra)
     };
     // Upsert header by number; need the UUID back to write lines.
@@ -1545,6 +1564,34 @@ async function sbSaveQuote(q){
         body: JSON.stringify(lineRows)
       });
     }
+
+    // Log autonomous approval decision if quote was auto-approved
+    if((status === 'approved' || status === 'pending_approval') && APPROVAL_AUTHORITIES && APPROVAL_AUTHORITIES.length > 0){
+      const userAuth = APPROVAL_AUTHORITIES.find(a => a.role === CU.role && a.action_type === 'quote_approve' && a.enabled);
+      if(userAuth){
+        try{
+          await sbFetch('/auto_action_log', {
+            method: 'POST',
+            headers: {'Prefer':'return=minimal'},
+            body: JSON.stringify({
+              rule_id: null,
+              trigger_entity: 'quote',
+              trigger_id: uuid,
+              action_type: 'approval_check',
+              action_status: status === 'approved' ? 'executed' : 'escalated',
+              action_result: {
+                decision: status,
+                user_role: CU.role,
+                threshold: userAuth.threshold_usd,
+                quote_total: total,
+                reason: status === 'approved' ? 'within_authority' : 'above_threshold'
+              }
+            })
+          });
+        } catch(e){ console.log('[governance] Log approval:', e.message); }
+      }
+    }
+
     return true;
   }catch(e){ console.warn('[sb] Save quote failed:', e.message); return false; }
 }
