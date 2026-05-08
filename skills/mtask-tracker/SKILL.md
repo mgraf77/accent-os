@@ -38,7 +38,7 @@ Run this skill when Michael says anything like:
 - "/mtask" (slash invocation)
 - "if I do M04 what unblocks" / "if I knock out M[NN] what activates"
 - "unblock priority" / "what to unblock next"
-- "todo list that's blocking you" / "what's on my unblock list"
+- "todo list that were blocking you" / "what's on my unblock list"
 
 Mine is calibrated for Michael's voice (lowercase, "knock out" hard-keep verb, "blocked by me" recurring phrase). Other invocations that should trigger: any sentence pairing an M-task ID (M03–M45) with verbs `unblock` / `block` / `gate` / `knock out` / `close`, OR any question of the shape "what X should I do" where X is `M-task`.
 
@@ -156,7 +156,7 @@ avg_skill_score      = mean(gap_optimizer composite score of unblocked skills)
 leverage             = (direct_unblock_count × avg_skill_score) + (soft_assist_count × 0.25 × avg_skill_score)
 ```
 
-**Schema-task leverage:** schema M-tasks (e.g. `SCHEMA:action_queue`) score on the same formula. The `action_queue` schema unblocks not only `action-queue` itself but every executor skill that depends on action-queue routing — multi-hop unblock counted.
+**Schema-task leverage:** schema M-tasks (e.g. `SCHEMA:action_queue`) score on the same formula. The `action_queue` schema unblocks `action-queue` directly and every 1-hop executor skill that routes through it (per `references/leverage-formula.md` cascade rule, capped at 1 hop — see anti-pattern below for why).
 
 **Multi-hop unblock cascade:** If skill A unblocks (M-task done) and skill A is a hard dependency of skill B (e.g. action-queue is upstream of bc-rest-bridge's executor path), then closing the M-task that gates A is credited 0.5× the leverage of skill B as well. Cap at one hop to avoid exponential explosion.
 
@@ -316,3 +316,5 @@ All tables Markdown — paste-ready into SESSION_LOG.md or daily brief.
 - **Never** emit BLOCK 2 without Block 1 — the leverage table is meaningless without the stub inventory it scored against.
 - **Never** include LIVE skills in BLOCK 1. Stub-mode inventory is BLOCKED-only; mixing in active skills inflates the table and dilutes signal.
 - **Never** rerun more than once per session unless the skill ecosystem changed (new SKILL.md committed) or BUILD_PLAN_MICHAEL.md was edited. The output is deterministic for the same input set.
+- **Never** treat a SUSPECT gate (malformed M-task ID like literal `Mxx` or out-of-range `M99`) as LIVE. False-negatives are worse than false-positives — surface as SUSPECT, never silently classify as LIVE.
+- **Never** emit BLOCK 2 leverage rankings without BLOCK 0 warnings when fallbacks fired. A count-only or cascade-zeroed leverage table that looks score-weighted is the worst output mode.
