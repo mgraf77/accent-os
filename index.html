@@ -409,6 +409,10 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('changelog')"><span class="ni-icon">◑</span><span class="ni-label">Change Log</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('calendar')"><span class="ni-icon">▦</span><span class="ni-label">Calendar</span></div>
+      <div class="sb-sect" data-roles="Owner,Admin,Manager">AEOS</div>
+      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('aeoscommand')"><span class="ni-icon">⊹</span><span class="ni-label">Command Center</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('airouter')"><span class="ni-icon">⚡</span><span class="ni-label">AI Router</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('handoffgen')"><span class="ni-icon">↗</span><span class="ni-label">Handoff Generator</span></div>
       <div class="sb-sect" data-roles="Owner,Admin,Manager">ADMIN</div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('activity')"><span class="ni-icon">◷</span><span class="ni-label">Activity Feed</span></div>
@@ -857,8 +861,11 @@ const PAGE_META={
   roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
   mgmt:      {t:'Management Dashboard',s:'Owner View'},
   settings:  {t:'Settings',s:''},
-  modulemodes: {t:'Module Modes',s:'Rollout state · per-user overrides'},
+  modulemodes:      {t:'Module Modes',s:'Rollout state · per-user overrides'},
   internalmeetings: {t:'Internal Meetings',s:'Briefings · Agenda · Platform Review'},
+  aeoscommand: {t:'AEOS Command Center',s:'Operational intelligence · AI orchestration overview'},
+  airouter:    {t:'AI Router',s:'Route tasks to the right AI agent'},
+  handoffgen:  {t:'Handoff Generator',s:'Generate AI-ready build packets'},
 };
 let curPage='';
 function goTo(page){
@@ -871,7 +878,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,internalmeetings};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,internalmeetings,aeoscommand,airouter,handoffgen};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -3761,7 +3768,7 @@ async function openVendorDetail(vendorId) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         messages: [{
           role: 'user',
@@ -3787,7 +3794,7 @@ async function openVendorDetail(vendorId) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -5685,19 +5692,25 @@ OUTPUT FORMAT:
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4000,
         system: systemPrompt,
         messages: [{ role: 'user', content: `Parse this fixture schedule and generate line items:\n\n${notes}` }]
       })
     });
+    if (!r.ok) {
+      const errText = await r.text().catch(() => '');
+      if (statusEl) statusEl.innerHTML = `<div style="color:var(--accent);font-size:13px;">⚠ API error ${r.status} — ${errText.slice(0,200) || 'check your API key in Settings'}</div>`;
+      console.error('[aiParseNotes] API error', r.status, errText.slice(0,300));
+      return;
+    }
     const data = await r.json();
     const raw = data.content?.[0]?.text || '';
     let parsed;
     try {
       parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
     } catch(e) {
-      if (statusEl) statusEl.innerHTML = `<div style="color:var(--red);font-size:13px;">⚠ Parse failed — AI response was not valid JSON. Try again.</div>`;
+      if (statusEl) statusEl.innerHTML = `<div style="color:var(--accent);font-size:13px;">⚠ Parse failed — AI response was not valid JSON. Try again.</div>`;
       console.error('[aiParseNotes] JSON parse error:', raw.slice(0,200));
       return;
     }
@@ -7165,5 +7178,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
 <script src="js/internal_meetings.js?v=6.10.74"></script>
+<script src="js/aeos_command.js?v=6.11.0"></script>
 </body>
 </html>

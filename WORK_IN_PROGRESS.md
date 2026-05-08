@@ -1,44 +1,44 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
+**Last updated:** 2026-05-08 — AEOS Phase 1 shipped, committing
 **Resume trigger:** "continue last session"
 
 ---
 
 ## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
+- Session start: executed AEOS Command Center Master Build
+- Phase 0 audit: complete (read MASTER.md, BUILD_PLAN_CLAUDE.md, BUILD_INTELLIGENCE.md, WORK_IN_PROGRESS.md, BUILD_PLAN_MICHAEL.md)
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+## COMPLETED THIS SESSION
+1. ✅ **WIP Fix** — model ID `claude-sonnet-4-20250514` → `claude-sonnet-4-6` (4 locations in index.html, replace_all). Added `!r.ok` error handling in `aiParseNotes` to surface actual API error text.
+2. ✅ **js/aeos_command.js created** — v6.11.0, 3 pages:
+   - `aeoscommand` — AEOS Command Center (KPI strip, attention/opportunities, quick actions, build status)
+   - `airouter` — AI Router (task form → routing recommendation → generate handoff)
+   - `handoffgen` — Handoff Generator (template picker + form → formatted packet + localStorage history)
+3. ✅ **index.html updated** — PAGE_META (3 entries), AEOS sidebar section, goTo dispatcher, `<script src>` tag
+4. ✅ **Organizational memory system** — `/memory/` created with 8 seed files:
+   - `memory/architecture/ARCHITECTURE.md`
+   - `memory/governance/GOVERNANCE.md`
+   - `memory/governance/DECISIONS_LOG.md`
+   - `memory/ai-workflows/AI_RULES.md`
+   - `memory/vendors/VENDOR_KNOWLEDGE.md`
+   - `memory/operations/OPERATIONS_SOPS.md`
+   - `memory/README.md`
+5. ✅ PROMPT_LOG.md updated
 
-## NEXT STEPS PENDING
+## CURRENT STATUS
+All work complete, ready to commit.
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+## NEXT STEPS
+- Commit + push to claude/accentos-master-handoff-Xd0fY
+- Next BUILD_PLAN item: 6.5 Trade & Designer Portal (external-facing)
+- AEOS Phase 2: Fixture Finder module, Quote Intelligence expansion, Ecommerce Intelligence module
+- AEOS Phase 3: Next.js migration planning (deferred until Phase 1 is fully adopted)
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
-
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
-
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
-
-Pick up from step 1.
+## FILES CHANGED
+- index.html (model IDs × 4, PAGE_META, sidebar, goTo, script tag)
+- js/aeos_command.js (new, 400 LOC)
+- memory/ (new directory + 7 seed files)
+- PROMPT_LOG.md
+- WORK_IN_PROGRESS.md
