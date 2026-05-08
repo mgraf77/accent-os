@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "airlock/ledger-entry",
+  "title": "AIRLOCK Ledger Entry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ts", "skill", "run_id", "action", "target", "allowed"],
+  "properties": {
+    "ts":             { "type": "string",  "description": "ISO-8601 timestamp" },
+    "skill":          { "type": "string",  "description": "quarantined skill name" },
+    "run_id":         { "type": "string",  "description": "UUID or short hash identifying the run" },
+    "action":         { "type": "string",  "enum": ["read", "write", "invoke-skill", "network", "run-end"] },
+    "target":         { "type": "string",  "description": "file path, skill name, or URL depending on action" },
+    "allowed":        { "type": "boolean" },
+    "violation_kind": {
+      "type": ["string", "null"],
+      "enum": ["path-not-allowed", "invoke-not-allowed", "network-blocked", "missing-policy", null]
+    },
+    "run_outcome":    { "type": ["string", "null"], "enum": ["clean", "violated", null], "description": "Set only on run-end entries" },
+    "clean_streak":   { "type": ["integer", "null"], "description": "Running clean-streak count; set only on run-end entries" }
+  }
+}

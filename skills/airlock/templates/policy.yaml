@@ -1,0 +1,21 @@
+schema_version: "1"
+skill: SKILL_NAME_PLACEHOLDER
+status: quarantined
+
+# Paths the skill may read (relative to repo root, simple glob supported: ** and *)
+read_paths:
+  - skills/SKILL_NAME_PLACEHOLDER/**
+
+# Paths the skill may write (outside this list → redirected to airlock/<skill>/shadow/)
+write_paths:
+  - skills/SKILL_NAME_PLACEHOLDER/**
+
+# Other AccentOS skills this skill is allowed to invoke via vibe-speak router
+# Leave empty to forbid all cross-skill invocations
+invoke_skills: []
+
+# Promotion thresholds
+# threshold_runs: total clean runs required before auto-promotion is eligible
+# threshold_clean_streak: consecutive clean runs required within that window
+threshold_runs: 10
+threshold_clean_streak: 5

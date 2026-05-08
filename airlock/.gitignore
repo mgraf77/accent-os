@@ -1,0 +1,5 @@
+# Per-skill shadow directories — ephemeral, per-run, discarded
+*/shadow/
+
+# Test-only skill dirs created by ledger.test.js
+_test-*/

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "airlock/policy",
+  "title": "AIRLOCK Skill Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "skill",
+    "status",
+    "read_paths",
+    "write_paths",
+    "invoke_skills",
+    "threshold_runs",
+    "threshold_clean_streak"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["1"] },
+    "skill":          { "type": "string", "minLength": 1, "description": "kebab-case skill name" },
+    "status":         { "type": "string", "enum": ["quarantined", "trusted"] },
+    "read_paths": {
+      "type": "array",
+      "description": "Glob patterns the skill is allowed to read. Relative to repo root.",
+      "items": { "type": "string" }
+    },
+    "write_paths": {
+      "type": "array",
+      "description": "Glob patterns the skill is allowed to write. Writes to non-listed paths are redirected to shadow/.",
+      "items": { "type": "string" }
+    },
+    "invoke_skills": {
+      "type": "array",
+      "description": "Explicit list of skill names this skill is allowed to invoke. Empty list = no cross-skill calls permitted.",
+      "items": { "type": "string" }
+    },
+    "threshold_runs": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Total clean runs required before auto-promotion is eligible."
+    },
+    "threshold_clean_streak": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Consecutive clean runs required (within threshold_runs window) for auto-promotion."
+    },
+    "promoted_at":    { "type": "string", "description": "ISO-8601 timestamp set on promotion." },
+    "promoted_by":    { "type": "string", "description": "Operator ID set on promotion." }
+  }
+}

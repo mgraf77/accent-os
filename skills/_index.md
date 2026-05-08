@@ -14,6 +14,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 
 ## Skills
 
+### airlock
+- summary: Runtime quarantine layer for community-installed AccentOS skills — intercepts file reads/writes, cross-skill invocations, and outbound HTTP; records to an append-only ledger; manages promotion to trusted via /airlock promote.
+- triggers: "/airlock init", "/airlock status", "/airlock promote", "/airlock demote", "quarantine this skill", "put X in airlock", "how clean is X", "is X promotion-ready", "check-promote"
+- when_to_use: after community-skill-vet clears a skill for install; whenever a community skill has run and you want to check its clean-run count; when promoting or demoting
+- when_NOT: pre-install auditing (use community-skill-vet), code review (use codex-review), AccentOS-shipped skills (exempt)
+- companion: community-skill-vet, codex-review, skill-forge, repo-scout
+
 ### analysis-snapshot
 - summary: Capture an ad-hoc analysis (vendor query, deal investigation, GMC audit) as a named, re-runnable artifact.
 - triggers: "save this analysis", "snapshot this query", "make this re-runnable"
