@@ -1,0 +1,108 @@
+description: "Eval suite for phrase-miner — PROMPT_LOG / SESSION_LOG trigger phrase mining"
+
+prompts:
+  - file:///home/user/accent-os/skills/phrase-miner/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — mine triggers for [skill]"
+    tags: [happy-path]
+    vars:
+      input: "mine triggers for vendor-cascade"
+    assert:
+      - type: contains-any
+        value: ["PHRASE-MINER", "mine mode", "Top candidate trigger phrases", "Canonical form"]
+      - type: contains-any
+        value: ["Verbatim example", "Freq", "Register notes", "Confidence"]
+      - type: contains-any
+        value: ["Suggested trigger block", "Apply via", "skill-forge", "Edit"]
+
+  - description: "Alternate trigger — slash invocation / lazy phrasing"
+    tags: [happy-path]
+    vars:
+      input: "/mine email-drafter"
+    assert:
+      - type: contains-any
+        value: ["mine mode", "Topic:", "email-drafter"]
+      - type: contains-any
+        value: ["Corpus:", "PROMPT", "SESSION", "Window"]
+
+  - description: "Gotcha — self-circularity (phrase-miner mining itself)"
+    tags: [gotcha]
+    vars:
+      input: "mine triggers for phrase-miner"
+    assert:
+      - type: contains-any
+        value: ["self-mining", "recursive", "not yet appear in PROMPT_LOG", "≥3 sessions", "production"]
+      - type: not-contains
+        value: "ERROR"
+
+  - description: "Gotcha — zero-candidate fallback (synthesized confidence label)"
+    tags: [gotcha]
+    vars:
+      input: "phrase mine churn-predictor (corpus has zero phrasings matching keywords for this topic)"
+    assert:
+      - type: contains-any
+        value: ["no corpus signal", "Synthesized candidates", "synthesized", "no corpus evidence"]
+      - type: contains-any
+        value: ["confidence: synthesized", "labeled clearly", "≥3 production"]
+      - type: not-contains
+        value: "strong"
+
+  - description: "Gotcha — corpus-too-small refusal (audit mode under min_corpus_size)"
+    tags: [gotcha]
+    vars:
+      input: "trigger-phrase audit (PROMPT_LOG + SESSION_LOG combined have only 4 entries)"
+    assert:
+      - type: contains-any
+        value: ["audit refused", "corpus too small", "min_corpus_size", "≥10", "mine mode against specific skills"]
+      - type: not-contains
+        value: "STALE"
+
+  - description: "Edge — both PROMPT_LOG and SESSION_LOG missing/empty"
+    tags: [edge-case]
+    vars:
+      input: "mine triggers for action-queue (PROMPT_LOG.md and SESSION_LOG.md are both empty)"
+    assert:
+      - type: contains-any
+        value: ["both empty", "no corpus to mine", "cannot run until at least one log"]
+      - type: not-contains
+        value: "Top candidate"
+
+  - description: "Edge — topic not in registry (skill-forge passes brand-new skill mid-design)"
+    tags: [edge-case]
+    vars:
+      input: "mine triggers for foo-bar-new-skill (not in skills/_index.md yet)"
+    assert:
+      - type: contains-any
+        value: ["not in registry yet", "topic name only", "keyword filter using topic name"]
+      - type: not-contains
+        value: "ERROR"
+
+  - description: "Anti-pattern — request to auto-edit a SKILL.md trigger section"
+    tags: [gotcha]
+    vars:
+      input: "mine triggers for vendor-cascade and apply them to the SKILL.md directly"
+    assert:
+      - type: contains-any
+        value: ["read-only", "paste-ready proposal", "Apply via", "skill-forge", "Edit"]
+      - type: not-contains
+        value: "auto-applied"
+
+  - description: "Output-shape regression — verbatim register preservation (lowercase / typo / fragment)"
+    tags: [happy-path]
+    vars:
+      input: "what does michael actually say for gap analysis"
+    assert:
+      - type: contains-any
+        value: ["Verbatim example", "lowercase", "typo", "imperative", "Register notes"]
+      - type: not-contains
+        value: "Capitalized"

@@ -1,0 +1,104 @@
+description: "Eval suite for mtask-tracker — BLOCKED-skill → M-task leverage rank"
+
+prompts:
+  - file:///home/user/accent-os/skills/mtask-tracker/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — what M-task should I knock out next"
+    tags: [happy-path]
+    vars:
+      input: "what M-task should i knock out next"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 1", "STUB-MODE SKILL INVENTORY", "M-TASK LEVERAGE RANK"]
+      - type: contains-any
+        value: ["BLOCK 2", "Leverage", "Recommendation"]
+      - type: contains-any
+        value: ["DO NEXT", "DO SOON", "HOLD", "DEPENDENT"]
+
+  - description: "Alternate trigger — terse slash invocation"
+    tags: [happy-path]
+    vars:
+      input: "/mtask"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 1", "STUB-MODE", "BLOCKED"]
+      - type: contains-any
+        value: ["ga4-insights", "bc-rest-bridge", "klaviyo-flows", "windward-bridge", "action-queue"]
+      - type: not-contains
+        value: "I would"
+
+  - description: "Gotcha — 1-hop cascade cap (action-queue dominance prevented)"
+    tags: [gotcha]
+    vars:
+      input: "if I close SCHEMA:action_queue, what cascades — show the multi-hop math"
+    assert:
+      - type: contains-any
+        value: ["1 hop", "one hop", "Cap at one hop", "0.5", "cascade"]
+      - type: not-contains
+        value: "exponential"
+      - type: contains-any
+        value: ["leverage_with_cascade", "Cascade", "1-hop"]
+
+  - description: "Gotcha — malformed M-task ID in skill SKILL.md (literal Mxx / out-of-range M99)"
+    tags: [gotcha]
+    vars:
+      input: "/mtask (a skill cites literal Mxx placeholder and another cites M99 which is not in BUILD_PLAN_MICHAEL.md)"
+    assert:
+      - type: contains-any
+        value: ["SUSPECT", "ORPHAN", "malformed", "not in BUILD_PLAN_MICHAEL", "BLOCK 0", "WARNINGS"]
+      - type: not-contains
+        value: "fabricat"
+      - type: contains-any
+        value: ["surface", "verify", "False-negatives"]
+
+  - description: "Gotcha — BUILD_PLAN_MICHAEL.md modified <30s ago (mid-edit detection)"
+    tags: [gotcha]
+    vars:
+      input: "/mtask (BUILD_PLAN_MICHAEL.md mtime is 12 seconds ago — mid-edit)"
+    assert:
+      - type: contains-any
+        value: ["modified <30s ago", "mid-edit", "may be stale", "re-run"]
+      - type: contains-any
+        value: ["BLOCK 0", "WARNINGS", "warning"]
+      - type: not-contains
+        value: "abort"
+
+  - description: "Edge — out-of-scope deflect (build-plan-wide TOC across Tracks)"
+    tags: [edge-case]
+    vars:
+      input: "what's the highest-leverage thing across all Tracks plus M-tasks"
+    assert:
+      - type: contains-any
+        value: ["bottleneck-finder", "Tracks + M-tasks", "skill-ecosystem-only"]
+      - type: not-contains
+        value: "Track 6"
+
+  - description: "Edge — gap-optimizer/candidate-queue.md missing (count-only fallback)"
+    tags: [edge-case]
+    vars:
+      input: "/mtask (candidate-queue.md is missing)"
+    assert:
+      - type: contains-any
+        value: ["count-only", "leverage = unblock count only", "queue absent", "re-run after /gap"]
+      - type: contains-any
+        value: ["BLOCK 0", "WARNINGS", "warning"]
+
+  - description: "Anti-pattern — request to edit BUILD_PLAN_MICHAEL.md (read-only refusal)"
+    tags: [gotcha]
+    vars:
+      input: "mark M04 as done in BUILD_PLAN_MICHAEL.md and re-rank"
+    assert:
+      - type: contains-any
+        value: ["read-only", "Read-only by design", "Michael edits the plan", "never modify"]
+      - type: not-contains
+        value: "marking M04"

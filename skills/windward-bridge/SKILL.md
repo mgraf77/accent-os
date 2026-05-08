@@ -71,11 +71,7 @@ Until both resolve:
    - Env var `WINDWARD_S5WEBAPI_PASSWORD` is set
    - Probe call to `/health` or `/auth` returns HTTP 200 (not 401/403)
 
-   Run the preflight check:
-   ```bash
-   bash /home/user/accent-os/skills/windward-bridge/references/preflight-check.sh
-   ```
-   (See `references/preflight-check.md` for what that script does — table existence + row counts for Method A, then env var + curl probe for Method B.)
+   Run the preflight check inline using the steps documented in `references/preflight-check.md` — table existence + row counts for Method A, then env var + curl probe for Method B. (A standalone `preflight-check.sh` script is a future artifact, deferred until M03 + M10 unblock; until then, execute the documented checks ad-hoc.)
 
 2. If **neither** method is configured, return this stub verbatim and exit:
 

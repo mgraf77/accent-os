@@ -1,0 +1,112 @@
+description: "Eval suite for registry-validator — action-queue executor-registry contract diff"
+
+prompts:
+  - file:///home/user/accent-os/skills/registry-validator/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — validate the registry"
+    tags: [happy-path]
+    vars:
+      input: "validate the registry"
+    assert:
+      - type: contains-any
+        value: ["REGISTRY VALIDATOR", "BLOCK 1", "TRIAGE TABLE", "Bindings parsed"]
+      - type: contains-any
+        value: ["BLOCK 2", "GREEN ROWS", "verified aligned"]
+      - type: contains-any
+        value: ["BLOCKING", "WARN", "INFO", "OK"]
+
+  - description: "Alternate trigger — slash invocation / executor mismatch"
+    tags: [happy-path]
+    vars:
+      input: "/registry-check"
+    assert:
+      - type: contains-any
+        value: ["executor-registry.md", "action_type", "executor_skill"]
+      - type: contains-any
+        value: ["hsyjcrrazrzqngwkqsqa", "action-queue", "executor"]
+
+  - description: "Gotcha — registry-hallucination (klaviyo-flows refuses send_klaviyo_flow)"
+    tags: [gotcha]
+    vars:
+      input: "validate the registry (registry binds send_klaviyo_flow → klaviyo-flows; klaviyo-flows SKILL.md is read+propose only and explicitly refuses send_klaviyo_flow)"
+    assert:
+      - type: contains-any
+        value: ["registry-hallucination", "BLOCKING", "refuses", "read+propose"]
+      - type: contains-any
+        value: ["Edit executor-registry.md", "remove send_klaviyo_flow", "re-bind"]
+      - type: not-contains
+        value: "auto-patch"
+
+  - description: "Gotcha — orphan-executor (skill declares churn_nudge but no registry row binds it)"
+    tags: [gotcha]
+    vars:
+      input: "registry drift (churn-predictor declares it executes churn_nudge but no row in executor-registry.md routes that action_type)"
+    assert:
+      - type: contains-any
+        value: ["orphan-executor", "INFO", "WARN", "Add registry row", "no registry row"]
+      - type: not-contains
+        value: "auto-extend"
+      - type: contains-any
+        value: ["Edit registry", "binding row", "suggested"]
+
+  - description: "Gotcha — payload-shape-drift (bc-rest-bridge fields object vs registry split)"
+    tags: [gotcha]
+    vars:
+      input: "executor mismatch (registry says update_bc_product takes field_name + new_value split; bc-rest-bridge declares fields object)"
+    assert:
+      - type: contains-any
+        value: ["payload-shape-drift", "field_name", "fields", "shape disagree"]
+      - type: contains-any
+        value: ["WARN", "BLOCKING", "Edit"]
+      - type: not-contains
+        value: "auto-fix"
+
+  - description: "Gotcha — return-shape-drift (executor missing status / error.code / retryable)"
+    tags: [gotcha]
+    vars:
+      input: "audit executors (an executor's declared output omits status, error.code, error.message, error.retryable)"
+    assert:
+      - type: contains-any
+        value: ["return-shape-drift", "result contract", "status", "retryable"]
+      - type: contains-any
+        value: ["WARN", "Edit executor SKILL.md"]
+
+  - description: "Gotcha — registry-duplicate (same action_type bound twice)"
+    tags: [gotcha]
+    vars:
+      input: "diff the registry (send_email is bound to email-drafter on row 12 AND to email-drafter-v2 on row 19)"
+    assert:
+      - type: contains-any
+        value: ["registry-duplicate", "BLOCKING", "duplicate row", "two different executors"]
+      - type: contains-any
+        value: ["Edit registry", "remove the duplicate"]
+
+  - description: "Edge — executor-registry.md missing (abort path)"
+    tags: [edge-case]
+    vars:
+      input: "validate registry (skills/action-queue/references/executor-registry.md is missing)"
+    assert:
+      - type: contains-any
+        value: ["executor-registry.md missing", "re-clone action-queue", "abort"]
+      - type: not-contains
+        value: "passes"
+
+  - description: "Output-shape regression — green-row visibility (no silent green)"
+    tags: [happy-path]
+    vars:
+      input: "are the executors aligned (no findings — registry is clean)"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 2", "GREEN ROWS", "verified aligned", "declared_input_match", "declared_output_match"]
+      - type: not-contains
+        value: "no issues found, ok"

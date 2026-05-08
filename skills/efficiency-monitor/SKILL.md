@@ -1,8 +1,8 @@
 ---
 name: efficiency-monitor
 description: >
-  Always-on observer that watches Michael ↔ Claude back-and-forth for
-  inefficiencies (retries, redundant reads, recurring multi-step
+  AccentOS always-on observer that watches Michael ↔ Claude back-and-forth
+  for inefficiencies (retries, redundant reads, recurring multi-step
   patterns, skill bypass, long clarification loops, redone WIP) and
   flags patterns that should be promoted to a real skill. Surfaces
   findings ONLY at session boundaries (start = replay last session's
