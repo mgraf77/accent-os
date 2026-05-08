@@ -196,12 +196,26 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: single-email drafting (use email-drafter)
 - companion: email-drafter, churn-predictor, bc-business-review, action-queue, daily-brief-composer
 
+### mtask-tracker
+- summary: Maps every BLOCKED-stub AccentOS skill to its blocking M-task IDs and computes "skills unblocked per M-task" leverage rank. Read-only over BUILD_PLAN_MICHAEL.md + skills/*/SKILL.md frontmatter; 1-hop cascade leverage capped at 0.5× weight to keep action_queue from dominating. Surfaces which M-task closure unblocks the most downstream skills.
+- triggers: "what M-task should I knock out next", "what's blocked by me", "what's blocking you", "highest leverage M-task", "/mtask", "if I knock out M[NN] what activates"
+- when_to_use: weekly cadence, planning sessions, after a major skill-forge wave (re-rank M-tasks by new downstream impact)
+- when_NOT: build-plan-wide bottleneck analysis (use bottleneck-finder), single-skill structural audit (use skill-health-monitor)
+- companion: gap-optimizer (consumer — uses leverage rank for buildability rescoring), bottleneck-finder, build-plan-status, daily-brief-composer (surfaces top M-task in brief)
+
 ### next-action-recommender
 - summary: Given current AccentOS state (deals, vendors, KPIs, alerts, action-queue depth, BUILD_PLAN_MICHAEL M-tasks), recommends top-3 high-leverage next actions. Leverage formula: (Impact × Time-sensitivity) ÷ (Effort × Blocked-by-penalty). Each recommendation cites a Supabase row or named gap; no generic advice. Self-calibrates against approval pattern.
 - triggers: "what should I do next", "what are my top 3", "three things to act on", "highest-leverage move", "what would move the needle"
 - when_to_use: morning planning, post-meeting recovery, when stuck
 - when_NOT: tactical implementation choices (use bottleneck-finder for build-plan, decision-log for architecture)
 - companion: daily-brief-composer (consumer), priority-articulation (input), bottleneck-finder, action-queue (PROPOSED queue source), supabase-sql-magic
+
+### phrase-miner
+- summary: Reads PROMPT_LOG.md + SESSION_LOG.md, clusters by topic, extracts the actual phrasings Michael uses, outputs paste-ready candidate trigger-phrase lists. Two modes: `mine` (per-skill or per-topic) and `audit` (cross-ecosystem). Read-only — never auto-edits any SKILL.md. Closes per-forge re-discovery cost; reduces vibe-speak Step 23 false-negatives.
+- triggers: "mine triggers for [X]", "trigger-phrase audit", "what does Michael actually say", "/mine [skill]", "look at the prompt log for", "backtest the triggers", "do these triggers match how I talk"
+- when_to_use: skill-forge Step 6 design pass, retroactive audit of existing skill triggers, post-forge Ralph Pass 1
+- when_NOT: writing the SKILL.md itself (use skill-forge)
+- companion: skill-forge (consumer at Step 6), vibe-speak (Step 23 router consumer), efficiency-monitor (composes — explains skill-bypass via missed phrasings)
 
 ### priority-articulation
 - summary: Translate vague Accent Lighting priorities into measurable scoring rules with explicit weights.
@@ -216,6 +230,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_to_use: batch up future asks during current work
 - when_NOT: synchronous urgent requests
 - companion: autonomous-mode, build-plan-status
+
+### registry-validator
+- summary: Diffs `action-queue/references/executor-registry.md` against each executor skill's actual SKILL.md contract (action_type, payload shape, return shape). Five diff classes: registry-hallucination, orphan-executor, payload-shape-drift, return-shape-drift, registry-duplicate. Read-only by hard rule — never auto-patches. Catches drift like the gap-run-002 klaviyo send→propose mismatch before it hits production.
+- triggers: "validate the registry", "registry drift", "/registry-check", "any executors broken", "did the registry drift", "sanity check the registry"
+- when_to_use: after action-queue changes, before deploying executor changes, weekly cadence
+- when_NOT: structural skill audits (use skill-health-monitor), choosing what to build (use gap-optimizer)
+- companion: action-queue (subject of validation), skill-health-monitor (composes — health monitors structural / registry-validator monitors contract), skill-performance-tracker, gap-optimizer
 
 ### rep-group-matchmaker
 - summary: Suggest rep_group_id for unassigned Accent Lighting vendors based on category / region / overlap.

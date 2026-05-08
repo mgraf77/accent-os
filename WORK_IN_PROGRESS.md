@@ -1,44 +1,42 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-08 — session end · gap-run-002 full-queue drain (15 skills forged + Ralph-optimized)
+**Last updated:** 2026-05-08 — session end · gap-run-004 closed (Wave 3 + Wave 4 complete)
 **Current task:** —
-**Step:** Tree clean on `claude/accentos-gap-analysis-Dcvcf` after final commit. Skill ecosystem grew 30 → **45 skills** in this session. The closed-loop discipline (gap-optimizer ranks → skill-forge builds → skill-health-monitor audits → gap-optimizer logs closure) is now demonstrated end-to-end with a full queue drain.
+**Step:** Tree clean on `claude/accentos-gap-analysis-Dcvcf`. Closed-loop has executed FOUR full cycles in 30h. Skill ecosystem **48 skills** (28 → 30 → 45 → 48). Top-tier gap-optimizer queue is empty; 5-item residue all sub-threshold or M-task-blocked.
 
-**Recent shipped (this session):**
-- 15 NEW skills, each with SKILL.md + references/ + 3 Ralph-pass refinement:
-  - **Customer agentic:** email-drafter, coop-claim-drafter, churn-predictor
-  - **Orchestration:** daily-brief-composer, next-action-recommender, alert-router
-  - **Action pipeline:** action-queue, bc-rest-bridge, klaviyo-flows
-  - **Analytics:** ga4-insights, gsc-insights, demand-forecaster-skill
-  - **Blocked / contract:** trade-vendor-portal, windward-bridge
-  - **Meta-infra:** skill-performance-tracker
-- 7/15 ship in BLOCKED stub mode (M-task gated): ga4-insights + gsc-insights (M06), bc-rest-bridge (M04), klaviyo-flows (M09), windward-bridge (M03+M10), action-queue (action_queue schema), trade-vendor-portal (heavy gate)
-- 8/15 immediately invocable: email-drafter, daily-brief-composer, next-action-recommender, alert-router, churn-predictor, coop-claim-drafter, demand-forecaster-skill, skill-performance-tracker
-- `skills/gap-optimizer/references/forge-briefing.md` + `optimizer-briefing.md` — shared briefings used by all 15+5 sub-agents
-- `skills/gap-optimizer/candidate-queue.md` — overwritten with BUILT statuses + 5 next-cycle candidates seeded
-- `skills/gap-optimizer/gap-log.md` — gap-run-002 appended with full closure log
-- `skills/_index.md` — 15 new entries at proper alphabetical positions
-- Doc updates: `PROMPT_LOG.md`, `SESSION_LOG.md`
+**Recent shipped (this session, gap-run-003 + gap-run-004 follow-on):**
+- **3 NEW skills (Wave 4):** `mtask-tracker`, `registry-validator`, `phrase-miner` — all forged + 3-pass Ralph PASS
+- **Wave 3 maintenance:**
+  - skill-health audit: 1 auto-fix on email-drafter, 15 findings surfaced (YELLOW band)
+  - 133 Promptfoo eval cases generated across 15 gap-run-002 skills
+  - 4 new M-tasks: M42 (action_queue), M43 (vendor_overrides co-op fields), M44 (klaviyo cache), M45 (rfm_scores cache)
+  - BUILD_PLAN_CLAUDE Track 7 added (downstream wiring for M42-M45)
+  - MASTER.md Capability Ladder updated: L3 ✅, L4/L5/L6 🟡 Partial; new "Closed-loop skill ecosystem" subsection
+  - gap-run-003 scored 8-row queue (5 seeded + 3 newly surfaced)
+- **Closure logging:** gap-run-004 entry in `skills/gap-optimizer/gap-log.md` records full cumulative state; `candidate-queue.md` overwritten with BUILT statuses + residue queue
 
-**Architecture demonstrated:**
-- **Wave 1**: 15 parallel forge agents, shared briefing (~70% prompt-size cut), 4 auto-WIP commits captured progress mid-flight, all 15 SKILL.md files validated.
-- **Wave 2**: 5 parallel Ralph optimizer agents, each handling 3 skills × 3 passes (45 pass-ops), logical clustering by skill family. All 15 PASS validation. Caught real cross-skill contract drift (action-queue executor-registry ↔ klaviyo-flows + bc-rest-bridge) — fixed in same pass.
-- **Aggregation**: 11 batched Edit ops to insert _index.md entries alphabetically.
-- **Closure logging**: gap-run-002 entry in gap-log.md records 15/15 closed_since_last + new gap candidates.
+**Open loops (carry to next session):**
+1. 3 Wave-4 skills lack eval-cases.yaml — run `skill-eval-suite` for mtask-tracker / registry-validator / phrase-miner
+2. skill-health YELLOWs need Michael's call — efficiency-monitor description rewrite, vibe-speak structural sections, windward-bridge preflight-check.sh path
+3. M42–M45 schema runs pending Michael (these unblock 5+ skills from BLOCKED stub mode)
+4. 5 sub-threshold candidates parked: ralph-loop-runner (22.5), skill-eval-runner (18.0), skill-deprecator (12.0), customer-card-builder (7.5, blocked on M03+M11+enrichment), win-loss-predictor (7.5, gates on data volume)
+5. Open PR `claude/accentos-gap-analysis-Dcvcf` → main when Michael ready to merge
 
-**Lite skill-health check (pre-final-commit):** GREEN
-- Frontmatter: all 15 valid (1271–2023 char descriptions, multi-line >, AccentOS-named)
-- Anti-patterns: all 15 have 8–14 entries (well above 3 minimum)
-- Companion-link refs: no broken refs detected
-- Full /skill-health audit recommended next session
+**Slash protocols active:**
+- `/gap` — gap-optimizer rescan
+- `/skill-health` — ecosystem audit
+- `/mtask` (NEW) — M-task leverage rank
+- `/registry-check` (NEW) — executor-registry drift validator
+- `/mine [skill]` (NEW) — trigger-phrase mining
+- `/mode <key> <state>` — module mode toggle
+- `/override allow|deny|clear <user> <module>` — per-user grant
 
 **Branch status:** `claude/accentos-gap-analysis-Dcvcf` — pushed to origin. NOT merged to main.
 
 **Next steps:**
 1. Verify tree clean: `git status`
-2. Run `/gap` to score the 5 next-cycle candidates (ralph-loop-runner, M-task-tracker, executor-registry-validator, skill-eval-runner, trigger-phrase-miner)
-3. Run `/skill-health` for full ecosystem audit on the 45-skill state
-4. Open PR `claude/accentos-gap-analysis-Dcvcf` → `main` when Michael approves the cycle
+2. Decide: merge cycle to main, OR run skill-eval-suite on Wave-4 skills, OR address health-report YELLOWs, OR rescan with /gap, OR address M-tasks
+3. Closed-loop is operationally proven across 4 full cycles. Maintenance cadence going forward: weekly /gap, biweekly /skill-health, monthly /mtask leverage re-rank.
 
-**No partial work outstanding.** Closed loop demonstrated end-to-end with a full queue drain. Five new gap candidates queued for next cycle.
+**No partial work outstanding.** Closed loop end-to-end demonstrated four times. Drain-rate ≈ proposal-rate. Healthy.
