@@ -1,44 +1,34 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-08 — STABILIZATION + CLEAN PAUSE MODE entered before governance restructure
+**Resume trigger:** "continue cors proxy"
+**Branch:** `claude/debug-cors-proxy-qyOYS` (pushed)
 
 ---
 
+## STATUS
+
+Repo is in a clean resumable state. Working tree clean. HEAD pushed to origin. No uncommitted work.
+
+Workstream paused at: **worker code fixed in repo, deploy pending (operator action)**.
+
 ## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+- Quote Generator v2 was shipped earlier (commit `940e7f8`).
+- CORS to `api.anthropic.com` was blocked → built Cloudflare Worker proxy.
+- Worker code in repo is correct (commits `87f20a2`, `2dca2a6`, `6b23530`).
+- Worker deployment at `accentos-anthropic-proxy.mgraf77.workers.dev` is **stale** — predates the in-repo fixes.
+- This session's commit (`6b23530`) added a `GET /` health endpoint and made `aiParseNotes` surface real Anthropic errors instead of swallowing them.
 
-## NEXT STEPS PENDING
+## ON RESUME, DO THIS
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+See `NEXT_STEPS.md`. First action is `npx wrangler deploy` from Michael's local machine.
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
+## STABILIZATION DOCS WRITTEN THIS PAUSE
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
-
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
-
-Pick up from step 1.
+- `SESSION_SUMMARY.md` — what changed this session
+- `CURRENT_STATE.md` — what is and isn't operational
+- `NEXT_STEPS.md` — exact resume sequence
+- `KNOWN_ISSUES.md` — open issues + risks for restructure
+- `HANDOFF_FOR_GOVERNANCE_RESTRUCTURE.md` — coupling map and likely repo destinations
