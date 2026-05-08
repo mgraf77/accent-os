@@ -29,3 +29,16 @@ Record of all promotion and demotion decisions. Append-only. Never edit existing
 - **Action:** demote
 - **Skill:** _test-1778245202357
 - **Reason:** test demotion
+
+## 2026-05-08T15:14:38.817Z
+- **Action:** promote
+- **Skill:** _test-1778253278355
+- **Reason:** integration test
+- **Clean runs at promotion:** 1 / 10
+- **Clean streak at promotion:** 1
+- **Forced:** yes
+
+## 2026-05-08T15:14:38.895Z
+- **Action:** demote
+- **Skill:** _test-1778253278355
+- **Reason:** test demotion

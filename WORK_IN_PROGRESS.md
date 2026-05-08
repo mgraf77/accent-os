@@ -1,44 +1,56 @@
 ## WORK IN PROGRESS
+
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-08 — clean pause for governance restructuring
+**Resume trigger:** "resume after governance restructure" / read `NEXT_STEPS.md`
 
 ---
 
-## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
+## STATE: clean pause
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+Two skills shipped this session, both committed and pushed on branch
+`claude/brainstorm-build-handoff-skill-TVlUc`:
 
-## NEXT STEPS PENDING
+- `e55ce62` feat(skills): add brainstorm-build-handoff
+- `f7d4423` feat(skills): add AIRLOCK
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+Working tree is clean. All tests pass (46/46 AIRLOCK + 0 errors validator).
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
+For the full picture, read in this order:
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+1. `SESSION_SUMMARY.md` — what shipped this session
+2. `CURRENT_STATE.md` — exact operational state
+3. `KNOWN_ISSUES.md` — risks + tradeoffs
+4. `HANDOFF_FOR_GOVERNANCE_RESTRUCTURE.md` — context for the restructuring
+5. `NEXT_STEPS.md` — what to do after restructuring
 
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+---
 
-Pick up from step 1.
+## PRE-SESSION WIP (untouched, still valid)
+
+The previous WORK_IN_PROGRESS contents (Cloudflare Worker proxy redeploy +
+Quote Generator 400 debug) were **not touched this session**. That work
+remains where it was. Pick it up from commit `969de17` if relevant.
+
+Summary of pre-session WIP for context:
+
+- Cloudflare Worker proxy needs redeploy with code from commit `2dca2a6`.
+- Quote Generator "Parse Notes" returns 400 from the worker — debug pending.
+- Verification command (browser console on accent-os.pages.dev):
+  ```js
+  fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',
+        {method:'POST'}).then(r=>r.text()).then(console.log)
+  ```
+  Old code → Anthropic auth error. New code → `{"error":"Missing x-api-key header"}`.
+
+---
+
+## PAUSE PROTOCOL
+
+When governance restructuring begins:
+
+- Both new skills (`skills/airlock/`, `skills/brainstorm-build-handoff/`) are
+  self-contained and can be moved as directory units.
+- The `airlock/` runtime directory must move with `skills/airlock/`.
+- See `HANDOFF_FOR_GOVERNANCE_RESTRUCTURE.md` for placement recommendations.
