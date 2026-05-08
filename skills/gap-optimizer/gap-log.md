@@ -137,3 +137,39 @@
 - The closed loop has now executed a full cycle four times in 30h. The cadence is sustainable. The drain-rate ≈ proposal-rate signal is healthy.
 
 ---
+
+### gap-run-005 — 2026-05-08 (Wave 5 sub-threshold residue drain + maintenance)
+- branch: claude/accentos-gap-analysis-Dcvcf
+- head: ef5442b
+- gaps_total: 2 (residue after Wave 5 drain — only customer-card-builder + win-loss-predictor remain, both M-task-blocked or data-volume-blocked)
+- gaps_top3: [customer-card-builder (M03+M11+enrichment-blocked, score 7.5), win-loss-predictor (data-volume-gated, score 7.5)]
+- prior_queue_diff:
+    - closed_since_last: [ralph-loop-runner, skill-eval-runner, skill-deprecator] — Wave 5C/D/E forged via parallel agents. All 3 SKILL.md files structurally complete (≥8 anti-patterns, all required sections, ≥250 char descriptions, AccentOS-named). Note: agents hit "extra usage" cap before completing inline Ralph passes; structural validation passed without Ralph refinement. Recommend running ralph-loop-runner ON these 3 skills next session (eat its own dogfood).
+    - new_gaps: 0 — Wave 5 produced no new gap candidates. Residue queue is now bottom-of-barrel (the 2 remaining are M-task-blocked).
+- approval: top-3 sub-threshold (Michael said "do whatever you need to do" → forged the 3 LOW-effort meta-infra completers despite sub-25.0 score)
+- next_action: queue is effectively drained. The 2 remaining items don't ship until M03/M11/data-volume resolve. Cadence shifts from drain-mode to maintenance-mode (weekly /gap rescan against efficiency-monitor PROMOTE feed).
+
+### Wave 5 architecture notes (5 parallel agents — 2 maintenance + 3 forge)
+- 5A — eval-cases.yaml for the 3 Wave-4 skills (mtask-tracker, registry-validator, phrase-miner). 26 test cases total: 8 happy-path / 13 gotcha / 5 edge-case. Top gotcha per skill: mtask-tracker 1-hop cascade cap, registry-validator klaviyo send→propose drift (the canonical gap-run-002 case), phrase-miner self-circularity rule.
+- 5B — skill-health YELLOW resolution. Auto-fixed: efficiency-monitor description (added "AccentOS"), windward-bridge preflight-check.sh (replaced bash invocation with explicit "future artifact, deferred until M03+M10" note pointing to existing .md). Deferred to ignored.md: 3 intentional non-fixes (efficiency-monitor uses Hard rules in lieu of Anti-patterns, no Trigger Recognition because auto-active; vibe-speak intentional 14k-token bloat for boot performance).
+- 5C/D/E — forged ralph-loop-runner / skill-eval-runner / skill-deprecator. All hit usage-cap mid-Ralph. Structural validation: all PASS the basic gates. Inline Ralph deferred — recommend running the now-shipped ralph-loop-runner on them as the canonical self-test.
+
+### Companion-link integrity (Wave 5 verification)
+- ralph-loop-runner → skill-forge / phrase-miner / skill-eval-suite / skill-health-monitor (all exist)
+- skill-eval-runner → skill-eval-suite / skill-performance-tracker / skill-health-monitor / gap-optimizer (all exist)
+- skill-deprecator → skill-performance-tracker / skill-health-monitor / skill-eval-runner / gap-optimizer (all exist; skill-eval-runner is sibling Wave-5 skill — verified)
+- All 12 companion references resolve.
+
+### Cumulative session state after gap-run-005
+- Skill ecosystem: 28 (start) → 30 (gap-run-001) → 45 (gap-run-002) → 48 (gap-run-004) → **51** (gap-run-005). 82% growth across two days.
+- gap-optimizer queue: top-tier empty (≥25.0 candidates fully drained); 2-item residue both blocked.
+- Eval coverage: 159 Promptfoo cases (133 from gap-run-002 + 26 from gap-run-004). Wave-5 skills (ralph-loop-runner, skill-eval-runner, skill-deprecator) lack eval-cases.yaml — deferred (skill-eval-runner can author for itself once shipped).
+- M-tasks added this session: M42, M43, M44, M45 (per gap-run-002 schema harvest).
+- Skill-health: 1 ERROR auto-fixed (efficiency-monitor description), 1 broken-ref auto-fixed (windward-bridge .sh→.md), 3 WARNs deferred to ignored.md as intentional. Re-audit recommended next session — should now be GREEN.
+
+### Loop-closure verification (FIVE cycles complete)
+- Vision → gap-run-001 → gap-run-002 forge wave (15 skills) → gap-run-003 scoring → gap-run-004 forge wave (3 skills) → gap-run-005 forge wave (3 skills) + maintenance.
+- Closed loop has executed a full cycle FIVE times in 30h. Drain-rate has matched proposal-rate at every iteration. Top-tier queue is clean. Maintenance cadence going forward: weekly /gap, biweekly /skill-health, monthly /mtask + /registry-check.
+- Operational pattern proven: reactive forge cycles end when residue is bottom-of-barrel (M-task-blocked or data-volume-gated). System now needs EXTERNAL inputs (M-task closures, data accumulation, emergent demand from efficiency-monitor PROMOTE) to surface the next wave.
+
+---

@@ -231,6 +231,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: synchronous urgent requests
 - companion: autonomous-mode, build-plan-status
 
+### ralph-loop-runner
+- summary: Runs the 3-pass Ralph loop discipline on a target SKILL.md. Pass 1 = trigger-phrase + voice match (mines PROMPT_LOG via phrase-miner); Pass 2 = failure-mode hardening (3 modes + partial-output sub-blocks + anti-pattern adds); Pass 3 = pre-commit validation + ambiguity scrub. Stops when 3 passes done OR 2 consecutive passes find nothing new. Codifies the gap-run-002 Wave-2 discipline as a callable skill so it doesn't live as ad-hoc inline work.
+- triggers: "ralph this skill", "run ralph on [name]", "/ralph [name]", "ralph-loop", "polish [skill]", "stress-test [skill]"
+- when_to_use: post-forge refinement, periodic re-Ralph on stale skills, before merging a skill PR
+- when_NOT: structural ecosystem audits (use skill-health-monitor)
+- companion: skill-forge (post-forge consumer), phrase-miner (Pass 1 input source), skill-eval-suite, skill-health-monitor
+
 ### registry-validator
 - summary: Diffs `action-queue/references/executor-registry.md` against each executor skill's actual SKILL.md contract (action_type, payload shape, return shape). Five diff classes: registry-hallucination, orphan-executor, payload-shape-drift, return-shape-drift, registry-duplicate. Read-only by hard rule — never auto-patches. Catches drift like the gap-run-002 klaviyo send→propose mismatch before it hits production.
 - triggers: "validate the registry", "registry drift", "/registry-check", "any executors broken", "did the registry drift", "sanity check the registry"
@@ -258,6 +265,20 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_to_use: post-migration, periodic data integrity
 - when_NOT: ad-hoc query work
 - companion: supabase-sql-magic, table-eda, kpi-data-audit
+
+### skill-deprecator
+- summary: Closes the meta-loop with skill-performance-tracker + skill-health-monitor. Reads underperformer reports + propose-deprecation findings, consolidates into a single deprecation queue with multi-signal evidence. **Hard rule: ≥2 independent signals required** to deprecate (prevents single-flag false positives); never auto-deprecates. After Michael approves, moves skill to `skills/_deprecated/` and updates registry.
+- triggers: "deprecate skills", "what should we retire", "/deprecate", "skill graveyard", "kill underperformers"
+- when_to_use: monthly cadence, after major skill ecosystem changes
+- when_NOT: skills with strong recent usage, single-signal flags (WATCH, not deprecate)
+- companion: skill-performance-tracker (signal source 1), skill-health-monitor (signal source 2 + executes the move), skill-eval-runner (high-fail-rate as third signal), gap-optimizer
+
+### skill-eval-runner
+- summary: Runs the `eval-cases.yaml` files that skill-eval-suite authors. Three modes: `run-all` (full ecosystem), `run [skill]` (single skill), `regression-only` (skills with FAIL since last run). Aggregates per-skill pass-rate; persists to `references/run-history.csv` (consumed by skill-performance-tracker for `quality_signal`). Uses ONLY skill-eval-suite-authored YAML; never defines its own format.
+- triggers: "run evals", "eval the skills", "/eval", "evaluate the ecosystem", "regression check", "what's broken"
+- when_to_use: post-skill-edit cadence, weekly regression run, post-commit hook
+- when_NOT: authoring new eval cases (use skill-eval-suite)
+- companion: skill-eval-suite (paired author/runner), skill-performance-tracker (consumer of run-history.csv), skill-health-monitor, gap-optimizer (deprecation feed via skill-deprecator)
 
 ### skill-eval-suite
 - summary: Generate Promptfoo-compatible eval YAML for AccentOS skills (5–8 test cases including gotchas).
