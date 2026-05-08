@@ -1,0 +1,114 @@
+description: "Eval suite for windward-bridge — Windward S5 read-only ERP bridge (BLOCKED on M03+M10)"
+
+prompts:
+  - file:///home/user/accent-os/skills/windward-bridge/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "BLOCKED stub — neither Method A nor Method B configured"
+    tags: [blocked-mode]
+    vars:
+      input: "pull from Windward (no env vars, no replicated tables)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED on **M03 + M10**", "BLOCKED on M03 + M10", "Windward read access provisioned"]
+      - type: contains-any
+        value: ["S5WebAPI", "Curtis", "written confirmation"]
+      - type: not-contains
+        value: "WINDWARD QUERY —"
+
+  - description: "BLOCKED stub — only M03 done (M10 still required)"
+    tags: [blocked-mode]
+    vars:
+      input: "Windward customer balance for ABC Designs (M03 [x], M10 [ ])"
+    assert:
+      - type: contains-any
+        value: ["M03 [x]", "M10 [ ]", "both are required", "credentials"]
+      - type: not-contains
+        value: "open_balance"
+
+  - description: "BLOCKED stub — Track 6.11 phrasing"
+    tags: [blocked-mode]
+    vars:
+      input: "Track 6.11"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED", "M03", "M10", "Windward"]
+
+  - description: "Canonical happy path — invoice aging summary (unblocked)"
+    tags: [happy-path]
+    vars:
+      input: "invoice aging (M03+M10 done, Method A active)"
+    assert:
+      - type: contains-any
+        value: ["WINDWARD QUERY — invoice_aging_summary", "WINDWARD QUERY", "As of:"]
+      - type: contains-any
+        value: ["bucket", "current", "1-30", "31-60", "61-90", "90+"]
+      - type: contains
+        value: "read-only"
+
+  - description: "Anti-pattern — write attempt is a P0 bug, refuse"
+    tags: [gotcha]
+    vars:
+      input: "update Windward customer balance for WW-12345 to $0"
+    assert:
+      - type: contains-any
+        value: ["read-only is a HARD POLICY", "P0 bug", "Refuse", "read-only-policy"]
+      - type: not-contains-any
+        value: ["UPDATE windward_customers", "PUT /windward"]
+
+  - description: "Gotcha — never invent a query pattern on the fly"
+    tags: [gotcha]
+    vars:
+      input: "Windward query for top spenders by month"
+    assert:
+      - type: contains-any
+        value: ["six patterns", "windward-queries.md", "supported set", "do not invent"]
+      - type: not-contains
+        value: "ad-hoc SQL"
+
+  - description: "Gotcha — Method A stale ETL (>24h) surfaces warning"
+    tags: [gotcha]
+    vars:
+      input: "Windward customer balance for WW-12345 (last ETL run was 30h ago)"
+    assert:
+      - type: contains-any
+        value: ["stale: ETL", "ETL last ran", "re-trigger the ETL", "Method A ETL stale"]
+
+  - description: "Gotcha — Method B 401/403 means M10 credential rotation"
+    tags: [gotcha]
+    vars:
+      input: "Windward orders this week (Method B credentials return 401)"
+    assert:
+      - type: contains-any
+        value: ["M10-credential-rotation", "back to Curtis", "re-issue", "Do NOT retry"]
+      - type: not-contains-any
+        value: ["silent retry", "auto-retry"]
+
+  - description: "Gotcha — never omit the `As of` timestamp"
+    tags: [gotcha]
+    vars:
+      input: "vendor balance from ERP for vendor 137"
+    assert:
+      - type: contains-any
+        value: ["As of:", "ISO-8601", "source-of-truth", "timestamp"]
+      - type: not-contains
+        value: "no timestamp"
+
+  - description: "Output-shape — header block always present, no silent empty response"
+    tags: [happy-path]
+    vars:
+      input: "whats on hand for SKU XYZ-789 (Windward returns 0 rows)"
+    assert:
+      - type: contains-any
+        value: ["WINDWARD QUERY — inventory_by_sku", "WINDWARD QUERY", "Connection method:", "no rows"]
+      - type: contains
+        value: "verify"

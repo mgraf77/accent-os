@@ -1,0 +1,100 @@
+description: "Eval suite for trade-vendor-portal — Track 6.5/6.6 portal contract (heavily BLOCKED)"
+
+prompts:
+  - file:///home/user/accent-os/skills/trade-vendor-portal/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "BLOCKED stub — M-task stack gate (M03/M04/M11/M24/M40 unresolved)"
+    tags: [blocked-mode]
+    vars:
+      input: "trade portal"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED on the external-portal M-task stack", "M03", "M04", "M11", "M24", "M40"]
+      - type: contains-any
+        value: ["Trade and Vendor portals", "external-facing"]
+      - type: not-contains
+        value: "BLOCK 3: AUTH + RBAC"
+
+  - description: "BLOCKED stub — vendor portal alternate trigger"
+    tags: [blocked-mode]
+    vars:
+      input: "vendor rep portal"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED", "Vendor Portal", "M03", "M10"]
+      - type: contains-any
+        value: ["unblock fastest", "BUILD_PLAN_MICHAEL"]
+
+  - description: "BLOCKED stub — Track 6.5 / 6.6 referenced explicitly"
+    tags: [blocked-mode]
+    vars:
+      input: "Track 6.5"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED", "trade-vendor-portal", "external-portal M-task"]
+
+  - description: "Gotcha — partial M-task unblock still returns BLOCKED stub (downgrade-by-default)"
+    tags: [gotcha]
+    vars:
+      input: "scope the portals (M01 [x] but M03/M04/M11/M24/M40 still [ ])"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED", "good enough to start", "downgrade-by-default", "full blocking set"]
+      - type: not-contains
+        value: "partial portal contract"
+
+  - description: "Gotcha — never simulate a portal login or fabricate UI"
+    tags: [gotcha]
+    vars:
+      input: "show me the trade portal login page mockup"
+    assert:
+      - type: not-contains-any
+        value: ["<form", "<input", "<html", "login page rendered"]
+      - type: contains-any
+        value: ["BLOCKED", "specification", "documentation, not portal interactions"]
+
+  - description: "Gotcha — references/portal-spec.md missing → BLOCKED stub with extra line"
+    tags: [gotcha]
+    vars:
+      input: "portal contract (portal-spec.md is missing)"
+    assert:
+      - type: contains-any
+        value: ["spec file missing", "skill-health-monitor", "restore", "cannot produce contract from memory"]
+
+  - description: "Edge — all M-tasks resolved → emit full contract (when unblocked)"
+    tags: [edge-case]
+    vars:
+      input: "trade portal scoping (all blocking M-tasks flipped to [x])"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 1: PORTAL SURFACE INVENTORY", "BLOCK 3: AUTH + RBAC", "BLOCK 4: HOSTING"]
+      - type: contains-any
+        value: ["RBAC", "Cloudflare Pages", "audience"]
+
+  - description: "Anti-pattern — never mix internal AccentOS auth with portal auth scopes"
+    tags: [gotcha]
+    vars:
+      input: "portal RBAC (using same staff session as portals)"
+    assert:
+      - type: contains-any
+        value: ["separate audiences", "separate auth scopes", "portals never share session"]
+      - type: not-contains-any
+        value: ["share session", "single auth pool"]
+
+  - description: "Output-shape — scope confirmation line always present"
+    tags: [happy-path]
+    vars:
+      input: "trade and designer portal"
+    assert:
+      - type: contains-any
+        value: ["Scope: Trade", "Trade & Designer", "Trade Portal"]
