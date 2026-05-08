@@ -14,22 +14,23 @@
 - JS module wired: js/governance.js + hydrate + render calls
 
 ## CURRENT TASK
-Autonomous Governance Phase 1 — SHIPPED (schema + UI framework)
+Autonomous Governance Phase 1b — COMPLETE (approval checks wired into Quote save flow)
 
 ## NEXT STEPS PENDING
 
-**1. Michael runs M41 SQL** to activate approval_authorities + auto_action_rules tables.
+**1. Michael runs M41 SQL** to activate approval_authorities + auto_action_rules tables in Supabase.
+   - Once M41 is live, sbLoadGovernance() will populate APPROVAL_AUTHORITIES array
+   - sbSaveQuote() will then auto-check authorities and set status accordingly
 
-**2. Phase 1b: Wire approval checks into Quote save flow**
-   - Before quote.status='approved', check APPROVAL_AUTHORITIES
-   - If quote_total ≤ user's role's threshold → auto-approve
-   - If quote_total > threshold → set status='pending_approval', escalate to Manager
-   - Log auto-decision to auto_action_log with rule_id=null (manual approval, not rule-triggered)
-
-**3. Phase 2: Auto-action rule execution engine** (Deal→Job, auto-create PO on reorder threshold, etc.)
-   - Trigger dispatcher in save flows (quote, deal, po, inventory)
+**2. Phase 2: Auto-action rule execution engine** (Deal→Job, auto-create PO on reorder threshold, etc.)
+   - Trigger dispatcher in save flows (quote, deal, po, inventory_item)
    - Execute enabled rules; log to auto_action_log with rule_id
+   - Implement Deal→Job creation on status='won' (seeded example rule)
 
-**4. Phase 3: Self-service rule builder** (Owner can define new rules via UI, not just edit seeded ones)
+**3. Phase 3: Self-service rule builder** (Owner can define new rules via UI, not just edit seeded ones)
 
-Unblock on M41. Continue from step 2 when ready.
+**4. Outstanding blocker: Quote Generator Parse Notes worker**
+   - Worker code patched (commit 2dca2a6) but not redeployed
+   - Michael must run `wrangler deploy` to activate Anthropic API proxy fix
+
+Unblock on M41 SQL activation. Phase 2 can proceed in parallel with worker redeploy.
