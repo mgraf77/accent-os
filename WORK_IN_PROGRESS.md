@@ -1,36 +1,34 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-06 — session end · efficiency-monitor v1 shipped (always-on observer)
-**Current task:** —
-**Step:** Tree clean on `claude/always-on-efficiency-monitor-2LiuS`. New always-on skill `efficiency-monitor` shipped — silent in-session observer, surfaces flags only at session boundaries. Awaiting first real session to populate `efficiency-log.md`.
+**Last updated:** 2026-05-08 — STABILIZATION + CLEAN PAUSE MODE
+**Current task:** PAUSED — awaiting governance restructuring
+**Step:** Clean pause state reached. No code changes this session.
 
-**Recent shipped (this session):**
-- `skills/efficiency-monitor/` — SKILL.md, `_thresholds.md` (tunable), `efficiency-log.md` (append-only ledger), `skill-candidates.md` (auto-rebuilt with semantic-diff suppression), `session-end-summary.md` (next-boot consumer)
-- `scripts/efficiency-aggregate.sh` — Stop-hook aggregator with cross-session counts + promotion ladder + timestamp-only-diff suppression
-- `.claude/settings.json` — Stop hook wired (runs aggregator → `_aggregator.log`, gitignored)
-- `.claude/CLAUDE.md` — boot step 1.j (replay last summary) + wrap-up step 8 (write findings, batched into session-end commit)
-- `skills/_index.md` — efficiency-monitor entry registered (companion: skill-forge, vibe-speak)
-- Reliability hardening: `_session-scratch.md` (gitignored mid-session journal) makes tracking crash-safe
-- Project hygiene: PROMPT_LOG entry, WIP refresh, SESSION_LOG entry
+**This session summary:**
+- Investigated why `accent-os.pages.dev` doesn't show the redesign
+- Root cause: redesign from `claude.ai/design` was never committed to the repo
+- Blocker: `claude.ai/design/p/019df965-e55f-7c47-bb65-c6c605045b47` is auth-gated (403)
+- No code changes made — tree clean
 
-**Files touched:** `skills/efficiency-monitor/*`, `scripts/efficiency-aggregate.sh`, `.claude/{CLAUDE.md, settings.json}`, `.gitignore`, `skills/_index.md`, `PROMPT_LOG.md`, `WORK_IN_PROGRESS.md`, `SESSION_LOG.md`.
+**To resume the redesign deploy:**
+1. User opens the Claude design URL and shares/exports the HTML
+2. Claude writes it as `index.html`, commits to `main`, pushes
+3. Cloudflare Pages auto-deploys
 
-**Commit chain:** 508a27c (build) → db533b2 (gitignore + aggregator output committed) → 74adbb5 (semantic-diff suppression) → final (project hygiene + crash-safe scratch journal).
+**Files created this session:**
+- `SESSION_SUMMARY.md`
+- `CURRENT_STATE.md`
+- `NEXT_STEPS.md`
+- `KNOWN_ISSUES.md`
+- `HANDOFF_FOR_GOVERNANCE_RESTRUCTURE.md`
 
-**Branch status:** `claude/always-on-efficiency-monitor-2LiuS` pushed to origin. NOT merged to main.
+**Branch status:** `claude/deploy-accent-os-redesign-eaJFH` — pushed to origin. Same SHA as `main`.
 
-**Next step if interrupted:**
-1. Verify tree clean: `git status`
-2. Open PR or merge `claude/always-on-efficiency-monitor-2LiuS` → main when Michael approves
-3. First "real" session will exercise: scratch journaling during work → wrap-up read+clear → aggregator on Stop → boot replay next session
+**Next step after governance restructuring:**
+→ See NEXT_STEPS.md and HANDOFF_FOR_GOVERNANCE_RESTRUCTURE.md
 
-**Watchlist (will fill as the skill runs in real sessions):**
-- Does Claude reliably journal to `_session-scratch.md` mid-session? (the Path A reliability question)
-- Do skill-bypass flags actually catch real bypasses, or fire false positives?
-- First PROMOTE-status candidate → handoff to `skill-forge`
-
-**Other backlog (unchanged from prior WIP):**
+**Prior session backlog (unchanged):**
 - AccentOS module: MODULE_REGISTRY refactor, Saved Filter Sets verify, Bulk action bars wiring, Compact-view toggle
 - M30 SQL: `user_module_overrides` table — when Michael wants real cross-device per-user Module Modes gating
 - 6.x integrations: blocked on M03/M04/M05/M06/M09/M10/M18
