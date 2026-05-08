@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://accent-os/schemas/task.schema.json",
+  "title": "AgentOS Task",
+  "description": "Schema for AgentOS task frontmatter",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "status",
+    "priority",
+    "created_at",
+    "assigned_to",
+    "depends_on",
+    "retry_limit",
+    "execution_budget_minutes",
+    "risk_level",
+    "allowed_actions",
+    "blocked_actions",
+    "success_criteria",
+    "abort_if"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^TASK-\\d{6}$",
+      "description": "Unique task identifier in format TASK-XXXXXX"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable task title"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "queued", "running", "blocked", "failed", "complete", "cancelled"],
+      "description": "Current task lifecycle status"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "description": "Task execution priority"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC datetime when task was created"
+    },
+    "trigger_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional ISO 8601 UTC datetime — task will not queue before this time"
+    },
+    "assigned_to": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Agent or user this task is assigned to"
+    },
+    "depends_on": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^TASK-\\d{6}$"
+      },
+      "description": "List of task IDs that must be complete before this task can run"
+    },
+    "retry_limit": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Maximum number of retry attempts on failure"
+    },
+    "execution_budget_minutes": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum minutes allowed for task execution"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "description": "Risk classification governing auto-execution rules"
+    },
+    "allowed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Explicit list of permitted action types for this task"
+    },
+    "blocked_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Explicit list of forbidden action types for this task"
+    },
+    "success_criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Conditions that define successful task completion"
+    },
+    "abort_if": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Conditions that trigger immediate task abort"
+    }
+  },
+  "additionalProperties": true
+}
