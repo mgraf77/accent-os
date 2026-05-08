@@ -1,44 +1,50 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-08 — governance baseline session
+**Session:** governance-snapshot-prep-k3dBs
+**Resume trigger:** "begin Phase 1 hardening" or "continue governance"
 
 ---
 
 ## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+Previous session paused at commit `969de17` (worker proxy 400 debug) on 2026-05-07.
+That task is **deferred to post-restructure** — see ACTIVE_SESSION_REGISTRY.md S-000.
+
+Current session executed **Phase 0 (Governance Baseline)** of STABILIZATION_PROTOCOL.md.
+
+## CURRENT STATE
+
+Phase 0 actions completed:
+- ✅ SYSTEM_STATE.md — repo snapshot at HEAD `969de17`
+- ✅ ACTIVE_SESSION_REGISTRY.md — registered S-000 (paused-clean) and S-001 (this session)
+- ✅ MODULE_OWNERSHIP_MAP.md — every path mapped to STAY / agentos-core / agentos-command-center / agentos-skills / HOLD
+- ✅ EXTRACTION_CANDIDATES.md — per-asset classification + decouple steps + lift order
+- ✅ GOVERNANCE_RISKS.md — 12 risks ranked, 4 require mitigation before restructure
+- ✅ STABILIZATION_PROTOCOL.md — 7-phase sequence with entry/exit criteria + rollback per phase
+
+## REPO RESTRUCTURING SAFE NOW? **NO**
+
+Blockers requiring resolution before Phase 1 → Phase 2 transition:
+1. **R-02** — worker proxy redeploy still pending (Michael action: `wrangler deploy` from local).
+2. **R-09** — no boot smoke test exists; vibe-speak/efficiency-monitor moves are blind without it.
+3. **R-01** — `.claude/CLAUDE.md` AUTO-EXECUTE step 1 not yet bridged for post-move vibe-speak path.
+4. **R-06** — Stop hook absolute path needs parameterization.
+
+See GOVERNANCE_RISKS.md for the full list and mitigation plan.
 
 ## NEXT STEPS PENDING
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+1. Michael reviews the 6 governance artifacts.
+2. If approved, next session begins **Phase 1 — Pre-Restructure Hardening** per STABILIZATION_PROTOCOL.md:
+   - Resolve R-02 (Michael deploys worker)
+   - Resolve R-09 (build boot smoke test)
+   - Resolve R-06 (parameterize Stop hook path)
+   - Confirm scope freeze on `worker/` and `index.html`
+3. **Do NOT begin Phase 2 (Wave 1 extraction) until Phase 1 exit criteria are met.**
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
+## SESSION END
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
-
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
-
-Pick up from step 1.
+Final commit + push pending. Branch: `claude/governance-snapshot-prep-k3dBs`.
+First push uses `git push -u origin claude/governance-snapshot-prep-k3dBs` per project Git Operations rules.
