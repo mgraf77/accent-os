@@ -1,0 +1,23 @@
+name: boot-smoke
+
+# Verifies the .claude/CLAUDE.md AUTO-EXECUTE chain references resolve
+# before any change can land on main. Catches broken vibe-speak path moves,
+# missing skill files, invalid settings.json, and stale absolute paths.
+#
+# Per GOVERNANCE_RISKS.md R-09 (mitigation).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run boot smoke test
+        run: bash scripts/boot-smoke.sh
