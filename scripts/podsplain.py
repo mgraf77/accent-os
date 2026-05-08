@@ -466,8 +466,22 @@ def generate_script(topic: str, scenario: str, length: str, api_key: str) -> str
         },
         timeout=180,
     )
-    resp.raise_for_status()
-    return resp.json()["content"][0]["text"]
+    try:
+        resp.raise_for_status()
+    except requests.HTTPError as e:
+        status = e.response.status_code if e.response is not None else 0
+        if status == 401:
+            print("ERROR: ANTHROPIC_API_KEY is invalid or expired (401)", file=sys.stderr)
+        elif status == 429:
+            print("ERROR: Anthropic rate limit hit generating script — wait a moment and retry (429)", file=sys.stderr)
+        else:
+            print(f"ERROR: Anthropic API returned {status}: {e}", file=sys.stderr)
+        sys.exit(1)
+    data = resp.json()
+    if not data.get("content") or not data["content"][0].get("text"):
+        print("ERROR: Anthropic API returned an empty response — check model availability", file=sys.stderr)
+        sys.exit(1)
+    return data["content"][0]["text"]
 
 
 # ─── Index ────────────────────────────────────────────────────────────────────
@@ -496,6 +510,42 @@ def update_index(podsplains_dir: Path, topic: str, scenario: str, duration_s: fl
     index_path.write_text(existing + row, encoding="utf-8")
 
 
+# ─── Setup check ─────────────────────────────────────────────────────────────
+
+def run_check(openai_key: str, elevenlabs_key: str, anthropic_key: str) -> None:
+    """Validate environment and print a readiness summary."""
+    import importlib.util
+    ok = True
+
+    py_ver = sys.version_info
+    py_ok = py_ver >= (3, 10)
+    print(f"  Python:              {'✓' if py_ok else '✗'} {py_ver.major}.{py_ver.minor}.{py_ver.micro}")
+    ok = ok and py_ok
+
+    req_ok = importlib.util.find_spec("requests") is not None
+    print(f"  requests:            {'✓' if req_ok else '✗ MISSING — pip install requests'}")
+    ok = ok and req_ok
+
+    print(f"  ANTHROPIC_API_KEY:   {'✓ set' if anthropic_key else '– not set  (needed for --topic standalone mode)'}")
+    print(f"  OPENAI_API_KEY:      {'✓ set' if openai_key else '– not set'}")
+    print(f"  ELEVENLABS_API_KEY:  {'✓ set' if elevenlabs_key else '– not set'}")
+
+    if not openai_key and not elevenlabs_key:
+        print("\n  ⚠  No TTS key found — set OPENAI_API_KEY or ELEVENLABS_API_KEY to generate audio.")
+        print("     Script generation (--topic) still works with ANTHROPIC_API_KEY alone.")
+        ok = False
+    else:
+        preferred = "OpenAI (tts-1-hd)" if openai_key else "ElevenLabs"
+        print(f"\n  Ready to generate audio via {preferred}.")
+
+    voices_openai = " | ".join(f"{h}: {v}" for h, v in OPENAI_VOICES.items())
+    voices_el     = " | ".join(f"{h}: {v[:12]}…" for h, v in ELEVENLABS_VOICES.items())
+    print(f"\n  OpenAI voices:       {voices_openai}")
+    print(f"  ElevenLabs voices:   {voices_el}")
+    print(f"\n  Scenarios:           {', '.join(SCENARIO_FRAMES)}")
+    sys.exit(0 if ok else 1)
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -513,15 +563,19 @@ def main():
     p.add_argument("--keep-segments", action="store_true", help="Keep per-segment WAVs after assembly")
     p.add_argument("--no-checkpoint", action="store_true", help="Disable segment caching")
     p.add_argument("--dry-run", action="store_true", help="Parse + summarise only, no TTS")
+    p.add_argument("--check", action="store_true", help="Validate setup (Python, requests, API keys) and exit")
     args = p.parse_args()
 
-    if not args.script_file and not args.topic:
-        p.error("Provide --script-file or --topic")
-
-    # ── Env keys ──
     openai_key     = os.getenv("OPENAI_API_KEY", "")
     elevenlabs_key = os.getenv("ELEVENLABS_API_KEY", "")
     anthropic_key  = os.getenv("ANTHROPIC_API_KEY", "")
+
+    if args.check:
+        print("[podsplain] Setup check")
+        run_check(openai_key, elevenlabs_key, anthropic_key)
+
+    if not args.script_file and not args.topic:
+        p.error("Provide --script-file or --topic")
 
     # ── Output dir ──
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")

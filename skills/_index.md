@@ -204,9 +204,9 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - companion: vendor-cascade, vendor-clarity-test
 
 ### podsplain
-- summary: Generate a downloadable podcast-style WAV audio learning session on any topic, with two AI hosts in natural conversation. Six scenario types: learn, boardroom, ralph-loop, interview, customer-onboarding, debate.
-- triggers: "podsplain [topic]", "make a podcast on [X]", "audio explainer for [X]", "podsplain [topic] as [scenario]", "create a [scenario] episode on [X]", "walk me through [X] like a podcast", "I want to listen to something on [X]"
-- when_to_use: learning a new concept via audio, interview prep, scenario roleplay practice, anything to listen to hands-free
+- summary: Generate a downloadable podcast-style WAV audio learning session on any topic, with two AI hosts in natural conversation. Eight scenarios: learn, boardroom, ralph-loop, interview, customer-onboarding, debate, pitch, postmortem.
+- triggers: "podsplain [topic]", "make a podcast on [X]", "audio explainer for [X]", "podsplain [topic] as [scenario]", "create a [scenario] episode on [X]", "walk me through [X] like a podcast", "I want to listen to something on [X]", "pitch mode on [X]", "postmortem on [X]"
+- when_to_use: learning a new concept via audio, interview prep, exec pitch practice, incident postmortems, scenario roleplay, anything to listen to hands-free
 - when_NOT: quick text answers, live interactive conversation (V1 is WAV-only)
 - companion: vibe-speak, skill-forge
 
