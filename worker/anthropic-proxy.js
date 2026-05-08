@@ -4,10 +4,16 @@ export default {
       return new Response(null, {
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, x-api-key, anthropic-version',
           'Access-Control-Max-Age': '86400',
         },
+      });
+    }
+
+    if (request.method === 'GET') {
+      return new Response(JSON.stringify({ ok: true, service: 'accentos-anthropic-proxy', version: 2, time: new Date().toISOString() }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
 

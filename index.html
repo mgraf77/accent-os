@@ -5691,7 +5691,13 @@ OUTPUT FORMAT:
         messages: [{ role: 'user', content: `Parse this fixture schedule and generate line items:\n\n${notes}` }]
       })
     });
-    const data = await r.json();
+    const data = await r.json().catch(()=>null);
+    if (!r.ok || !data || data.error || data.type === 'error') {
+      const errMsg = data?.error?.message || data?.error?.type || data?.message || `HTTP ${r.status}`;
+      if (statusEl) statusEl.innerHTML = `<div style="color:var(--red);font-size:13px;">⚠ API error (${r.status}): ${esc(String(errMsg))}</div>`;
+      console.error('[aiParseNotes] API error:', r.status, data);
+      return;
+    }
     const raw = data.content?.[0]?.text || '';
     let parsed;
     try {
