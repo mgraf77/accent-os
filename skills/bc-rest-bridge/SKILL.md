@@ -13,12 +13,14 @@ description: >
   caller-supplied idempotency_key (sha256 of product_id + field_name +
   new_value + proposer_skill), throttled to BigCommerce's 50/sec limit
   via 25ms inter-call sleep, and emits a per-write receipt plus batch
-  summary. Use this skill when Michael says: "push that price update",
-  "bulk meta CSV is approved — fire it", "execute the BC writes", "run
-  the bc-rest-bridge", "send the meta updates to BigCommerce", "apply
-  the approved BC edits", "execute action N" (when action_type is
-  update_bc_product), or any phrasing that asks for write-side
-  BigCommerce API execution against approved AccentOS proposals. Do not
+  summary. Use this skill when Michael says: "push that price", "push prices",
+  "fire the BC writes", "fire it" (in BC context), "ship the meta CSV",
+  "push the meta updates to BC", "push meta to BC", "knock out the approved BC edits",
+  "knock out the BC queue", "run the bc-rest-bridge", "execute N" (when action_type
+  is update_bc_product or price_change_push), "BC catalog write", "BC field update",
+  "ship BC", "push BC", "bulk meta is approved fire it", "bulk meta approved push it",
+  or any phrasing that asks for write-side BigCommerce API execution against
+  approved AccentOS proposals. Do not
   use this skill for read-side BC analytics (use bc-business-review),
   for proposing changes (use bulk-meta-description, gmc-feed-audit, or
   whatever upstream skill produced the action), or for direct write
@@ -43,30 +45,32 @@ Read-side counterpart: `bc-business-review` (already shipped) reads BC analytics
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
-- "push that price update" / "fire the BC writes"
-- "execute the BC writes" / "run bc-rest-bridge"
-- "send the meta updates to BigCommerce" / "ship the meta CSV"
-- "apply the approved BC edits" / "execute the queued product updates"
-- "execute action N" (when action_type is `update_bc_product`)
-- "bulk meta CSV is approved — fire it"
-- "BC catalog write" / "BC field update"
+- "push that price" / "push the price update" / "ship the price change" / "push prices"
+- "fire the BC writes" / "fire it" / "fire that" (when prior context names BC or action_type is `update_bc_product`)
+- "run bc-rest-bridge" / "execute the BC writes" / "execute the BC pushes"
+- "ship the meta CSV" / "push the meta updates" / "push meta to BC" / "knock out the meta updates"
+- "apply the approved BC edits" / "execute the queued product updates" / "ship approved BC"
+- "execute N" / "fire N" / "run N" (when action_type is `update_bc_product` or `price_change_push`)
+- "bulk meta is approved fire it" / "bulk CSV approved push it" / "bulk meta approved push it"
+- "BC catalog write" / "BC field update" / "BC write" / "push BC" / "ship BC"
+- "knock out the BC queue" / "blow out the BC writes"
 
 Also trigger when `action-queue` Step 5 routes an APPROVED row whose `action_type = update_bc_product` — that is the canonical invocation path.
 
 ---
 
-## Step 0 — Preflight (BLOCKED gate)
+## Step 0 — Preflight (BLOCKED gate — runs FIRST, before any other work)
 
-This skill is gated on **M04 (BigCommerce API credentials with write scope)** from `BUILD_PLAN_MICHAEL.md`. Until that resolves, the skill ships in stub mode.
+This skill is gated on **M04 (BigCommerce API credentials with write scope)** from `BUILD_PLAN_MICHAEL.md`. Until that resolves, the skill ships in stub mode and returns the unblock instructions verbatim — no plan generation, no diff fetching, no API calls of any kind happen until M04 lands.
 
 1. Check three environment variables in order:
    - `BC_STORE_HASH` — must equal `store-cwqiwcjxes`
    - `BC_API_TOKEN` — non-empty access token (V2/V3)
    - `BC_API_TOKEN_HAS_WRITE_SCOPE` — must be the literal string `true`
 
-2. If any check fails, return this stub and exit:
+2. If any check fails, return this stub verbatim AND a structured error object to action-queue, then exit (no further steps run):
 
-   > skill `bc-rest-bridge` is BLOCKED on M04. To unblock:
+   > skill `bc-rest-bridge` is BLOCKED on **M04 (BigCommerce API credentials with write scope)**. To unblock:
    > 1. Open `https://store-cwqiwcjxes.mybigcommerce.com/manage/settings/auth/api-accounts`
    > 2. Click **Create API account** → name "AccentOS Write" → token type V2/V3 API token
    > 3. Scopes: **modify** on Products, Price Lists, and Custom Fields (read on Categories is sufficient for assignment lookups)
@@ -74,7 +78,17 @@ This skill is gated on **M04 (BigCommerce API credentials with write scope)** fr
    >    `BC_STORE_HASH=store-cwqiwcjxes`, `BC_API_TOKEN=<paste>`, `BC_API_TOKEN_HAS_WRITE_SCOPE=true`
    > 5. Tell Claude: `M04 done — BC write token in. bc-rest-bridge unblocked.`
    >
-   > Until M04 lands, action-queue rows with `action_type = update_bc_product` stay in APPROVED state with `executor_result = {"error": "bc-rest-bridge blocked on M04"}`. They will execute automatically once env vars are set — no re-approval required.
+   > Until M04 lands, action-queue rows with `action_type = update_bc_product` or `price_change_push` stay in APPROVED state with `executor_result = {"status": "error", "error": {"code": "BLOCKED_ON_M04", "message": "bc-rest-bridge blocked on M04 — see unblock steps in skill stub", "retryable": true}}`. They re-execute automatically once env vars are set — no re-approval required, the existing idempotency_key carries.
+
+   Structured return to action-queue Step 5:
+   ```json
+   {
+     "status": "error",
+     "error": { "code": "BLOCKED_ON_M04", "message": "bc-rest-bridge blocked on M04", "retryable": true },
+     "unblock_m_task": "M04",
+     "duration_ms": 0
+   }
+   ```
 
 3. If all three checks pass, proceed to Step 1.
 
@@ -111,7 +125,15 @@ Read the action_queue row's `payload` jsonb. Match its shape to one of the four 
 | **price_list_record** | `price_list_id` + `variant_id` + `price` | `POST /pricelists/{price_list_id}/records` |
 | **category_assignment** | `product_id` + `categories` (array of category_id) | `PUT /catalog/products/{product_id}` (categories array attribute) |
 
-If the payload doesn't match any variant → mark the action_queue row as failed-execution (state stays APPROVED, `executor_result = {"error": "payload shape not recognized — see references/payload-schemas.md"}`) and exit. Never guess at endpoint mapping.
+If the payload doesn't match any variant → mark the action_queue row as failed-execution (state stays APPROVED, `executor_result = {"status": "error", "error": {"code": "PAYLOAD_SHAPE_INVALID", "message": "payload shape not recognized — see references/payload-schemas.md", "retryable": false}}`) and exit. Never guess at endpoint mapping.
+
+Required keys per variant (missing key → same `PAYLOAD_SHAPE_INVALID` error, do not partial-execute):
+- `product_field_edit` → `product_id` (int) AND `fields` (object with ≥1 entry). Single-field shorthand `{ "field": str, "value": any }` is rejected — use the `fields` object form.
+- `custom_field_edit` → `product_id`, `custom_field_id`, `value`.
+- `price_list_record` → `price_list_id`, `variant_id`, `price`.
+- `category_assignment` → `product_id`, `categories[]`.
+
+For `price_change_push` action_type: expand `payload.changes[]` into a `batch` of `price_list_record` (when `price_list_id` present) or `product_field_edit` calls (when not). Treat as a batch from Step 2 onward.
 
 If the payload is a **batch** (top-level key `batch: [array of variants]`) → produce a plan with one endpoint call per element, ordered by element index. Batches are valid; treat each call as a sub-write with its own receipt.
 
@@ -166,10 +188,13 @@ Per call:
 
 3. Handle the response:
    - **2xx** → success. Record the response excerpt and idempotency_key in `executor_result.calls[i]`.
+   - **401 / 403** → token missing scope or expired. Mark `error: "auth failed — re-check M04 token write scope"`, abort the entire batch (every subsequent call would also fail), surface in receipt.
+   - **404** on PUT/POST endpoint → entity vanished between Step 3 GET and Step 5 write. Mark `error: "BC entity gone since diff — re-propose"`, do NOT retry, surface in receipt.
    - **409 Conflict** (If-Match mismatch) → BC reports the row was modified after our diff. Mark `error: "BC row changed since diff — re-propose"`, do NOT retry, surface in receipt.
    - **422 Unprocessable** → field validation failed at BC. Record the BC error message verbatim. Do NOT retry — proposer skill produced an invalid payload.
    - **429 Too Many Requests** → we exceeded rate limit despite the 25ms sleep. Sleep `X-Rate-Limit-Time-Reset-Ms`, then retry **once**. If the retry also returns 429, mark as failed and abort the rest of the batch.
-   - **5xx** → BigCommerce-side error. Mark as failed; do NOT auto-retry (the proposer skill or Michael decides whether to re-queue).
+   - **503 Service Unavailable** → BC is in maintenance / rolling deploy. Mark every remaining call in the batch as `error: "BC 503 maintenance — re-queue once status page is green"`, link `https://status.bigcommerce.com`, abort the batch. Do NOT auto-retry.
+   - **Other 5xx** → BigCommerce-side error. Mark as failed; do NOT auto-retry (the proposer skill or Michael decides whether to re-queue).
 
 4. After the response, **never** auto-retry on any 4xx (except the 429 single-retry above). Surface the failure and let Michael decide.
 
@@ -229,6 +254,22 @@ Aggregate duration: [N]ms   |   BC rate-limit remaining at end: [N]/50
 [Per-write blocks for any non-ok rows follow below.]
 ```
 
+### Partial-success / blocked / aborted-batch receipt
+
+When a batch aborts mid-flow (auth-fail abort, 503 abort, double-429 abort) OR Step 0 returns BLOCKED stub:
+
+```
+═══ BC-REST-BRIDGE — action_queue id [N] — PARTIAL ═══
+
+state:              APPROVED (NOT promoted to EXECUTED)
+status:             blocked-on-M04 | auth-fail | bc-503 | rate-limit-hard-stop | payload-shape-invalid
+calls_completed:    [N of M]
+calls_remaining:    [M-N]
+abort_reason:       [verbatim error message]
+unblock_steps:      [verbatim from stub OR runbook line for the failure mode]
+re_execute_path:    Michael runs `execute [id]` again once unblocked — idempotency_key carries; completed calls become NO_CHANGE on retry.
+```
+
 ### executor_result jsonb (returned to action-queue)
 
 ```json
@@ -280,3 +321,6 @@ Aggregate duration: [N]ms   |   BC rate-limit remaining at end: [N]/50
 - **Never read Supabase directly.** This skill's only inputs are the payload from action-queue Step 5 and the BC GET responses for the diff. Mixing in Supabase reads couples this executor to schema drift it shouldn't care about.
 - **Never silently truncate a batch on first error.** If call N fails, calls N+1..M still run unless the failure was a 429 hard-stop or an auth failure — the receipt's batch summary shows partial-success explicitly so Michael can re-queue only the failed ids.
 - **Never mutate other skills.** If a new BC endpoint is needed (e.g. `/v3/inventory`), add the variant to `references/bc-endpoints.md` and `references/payload-schemas.md`, register the new `action_type` in `action-queue/references/executor-registry.md`, and have Michael re-approve. Do not edit upstream proposer skills from here.
+- **Never bypass Step 0 in stub mode.** If M04 hasn't landed, no plan-building, no GETs, no diffs run. Returning a half-formed plan or fetching current values "just in case" leaks BC API quota and gives a false sense the skill is partially live — it is not.
+- **Never accept a single-field `{field, value}` shorthand.** The registry contract uses `{ "fields": { "<col>": <new_value> } }`. Accepting both shapes silently invites payload drift between proposers and silently divergent diffs.
+- **Never auto-retry on 503.** BC maintenance windows can last hours; a retry storm during a rolling deploy compounds the outage. Abort the batch, surface the status-page link, and let Michael re-queue when the page is green.

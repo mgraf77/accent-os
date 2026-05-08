@@ -9,22 +9,27 @@ description: >
   UI (Track 1.3) renders without further formatting. Roles supported:
   Owner (default), Sales, Marketing, Ops — each gets a different section
   shape per `references/role-templates.md`. Use this skill when Michael
-  says: "morning brief", "what's on my plate", "daily brief for [role]",
-  "what should I do today", "owner brief", "sales brief", "compose the
-  brief", or any phrasing that asks for a one-screen rundown of today's
-  priorities. Do not use this skill to surface a single alert (use
-  alert-router) or to compute KPI integrity (use kpi-data-audit). Always
-  produces a sectioned, ≤1-screen Markdown brief — never returns prose
-  walls or "I would include" placeholders.
+  says: "morning brief", "whats on my plate", "daily brief", "the brief",
+  "owner brief", "sales brief", "give me the brief", "todays rundown",
+  "rundown", "what should i do today", "whats today look like", or any
+  terse phrasing that asks for a one-screen rundown of today's priorities.
+  Do not use this skill to surface a single alert (use alert-router), to
+  rank top-3 actions standalone (use next-action-recommender), or to
+  compute KPI integrity (use kpi-data-audit). Always produces a
+  sectioned, ≤1-screen Markdown brief — never returns prose walls or
+  "I would include" placeholders. Top trigger phrases (matched against
+  this description by the harness): "morning brief", "whats on my plate",
+  "the brief", "todays rundown", "give me the brief", "owner brief",
+  "daily brief".
 ---
 
 # daily-brief-composer
 
 **Purpose:** Every role at Accent Lighting should walk into a brief that already knows what's on their plate. AccentOS shipped the Daily Command Center UI (Track 1.3) — this skill is the composer that fills it.
 
-Companion skills feeding this composer:
-- `next-action-recommender` (top-3 actions when available)
-- `alert-router` (alerts feed)
+Companion skills feeding this composer (orchestration triangle: this skill is the renderer at the apex; both feeders below produce upstream signal):
+- `next-action-recommender` — emits BLOCK 1 (Top-3) consumed by Step 2 of this skill
+- `alert-router` — emits the per-role daily-brief Alerts block consumed by Step 3 of this skill (also feeds `action_queue` PROPOSED depth, which `next-action-recommender` reads — closes the triangle)
 - `kpi-data-audit` (KPI deviation thresholds)
 - `vendor-cascade` (vendor delta source)
 - `supabase-sql-magic` (raw queries when companions aren't yet built)
@@ -33,16 +38,20 @@ Companion skills feeding this composer:
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "morning brief" / "daily brief"
-- "what's on my plate" / "what should I do today"
-- "compose the brief" / "owner brief"
-- "sales brief" / "marketing brief" / "ops brief"
-- "brief for [role]"
-- "today's rundown"
-- "what's the situation"
+Run this skill when Michael says anything like (lowercase, often no apostrophes — match his terse register):
+- "morning brief" / "daily brief" / "the brief" / "brief"
+- "whats on my plate" / "what should i do today" / "whats the situation"
+- "compose brief" / "compose the brief" / "owner brief" / "give me the brief"
+- "sales brief" / "marketing brief" / "ops brief" / "brief for [role]"
+- "todays rundown" / "todays brief" / "whats today look like"
+- "rundown" / "daily rundown" / "morning rundown"
+- "Daily Brief" (capitalized — Track 1.3 module reference per profile vocab)
+- "whats on deck" / "what fired today" (often paired with alert-router context)
+- "give me the bullets" / "bullets for today" (custom `status+` level — Michael profile)
 
-Auto-trigger on AccentOS session-start when Michael's first message is a date or "morning."
+Also: short standalone "brief" inside an active vibe-speak session is a valid trigger when no other skill is mid-run. Auto-trigger on AccentOS session-start when Michael's first message is a date, "morning", or "good morning."
+
+Disambiguation: if Michael says "alert" / "alerts" / "what fired" without "today" → defer to `alert-router`. If he says "what should i do next" / "top 3" / "highest leverage" / "whats next" without a temporal anchor (no "today", no "morning") → defer to `next-action-recommender`. If he says "/gap" → defer to `gap-optimizer`.
 
 ---
 
@@ -54,9 +63,11 @@ Run these in parallel:
 2. **Resolve voice.** Read `/home/user/accent-os/skills/vibe-speak/profiles/_active.md` → resolve the active mode (default `vibe`). Read `/home/user/accent-os/skills/vibe-speak/modes/[mode].md`. Voice rules from that mode apply to every section header narration and every action verb in this brief.
 3. **Resolve last-brief watermark.** Read `/home/user/accent-os/skills/daily-brief-composer/last-brief.md` (created on first run). The `composed_at` timestamp is the cutoff for the "New since last brief" 24h diff in Step 4. If the file does not exist, treat the watermark as `NOW() - INTERVAL '24 hours'`.
 4. **Probe companion availability.** Check whether each of these skills exists at `/home/user/accent-os/skills/[name]/SKILL.md`: `next-action-recommender`, `alert-router`, `kpi-data-audit`, `vendor-cascade`. Each missing companion → fall back to direct Supabase query (Step 2 / Step 3 / Step 4) using the SQL stubs in `references/fallback-queries.md`.
-5. **Resolve KPI deviation thresholds.** Read `/home/user/accent-os/KPI_CATALOG.md`. The default WoW deviation threshold for "deviation worth surfacing" is **|Δ| ≥ 15%** for Group F (financial), **|Δ| ≥ 20%** for Group $ / Group V (vendor) / Group S (sales). Override via `references/kpi-thresholds.md` if Michael has tuned these.
+5. **Resolve KPI deviation thresholds.** Read `/home/user/accent-os/KPI_CATALOG.md`. The default WoW deviation threshold for "deviation worth surfacing" is **|Δ| ≥ 15%** for Group F (financial), **|Δ| ≥ 20%** for Group $ / Group V (vendor) / Group S (sales). Override via `references/kpi-thresholds.md` if Michael has tuned these. **If `KPI_CATALOG.md` is missing**, fall back to the inline defaults above (15% / 20%) and append `kpi-catalog-missing` to the preflight degrade list — do not abort.
+6. **Concurrent-run guard.** Probe `skills/daily-brief-composer/last-brief.md` for a `composed_at` newer than `NOW() - 60s`. If present, another brief just shipped — emit a one-line `_brief composed [N]s ago — re-running anyway_` notice and continue (this is a feature, not a bug — Michael may want a refresh) but do NOT advance the watermark in Step 5 (the prior run already did).
+7. **Voice fallback.** If `vibe-speak/profiles/_active.md` is missing or unreadable, default to `vibe` mode. Do not abort. Append `voice=vibe (default)` to the preflight line.
 
-Output of Step 0: a one-line preflight: `role=[X] voice=[mode] last-brief=[ts] companions=[present/missing list]`.
+Output of Step 0: a one-line preflight: `role=[X] voice=[mode] last-brief=[ts] companions=[present/missing list] degrades=[list|none]`.
 
 ---
 
@@ -79,6 +90,10 @@ Sales / Marketing / Ops swap, drop, or reweight these — see `references/role-t
 ## Step 2 — Pull Top-3 actions
 
 **If `next-action-recommender` is built:** invoke it with `role=[X]`. Take the first 3 returned actions. Each action must include: action verb, named target (deal/vendor/customer), context one-liner, and an estimated minutes-to-complete.
+
+**Failure mode A — recommender returns "no live candidates" stub:** that's a real signal, not an error. Render the Top-3 section as `_AccentOS state is clean — no Top-3 today_` and append a one-line trailer suggesting `/gap` (vision-driven candidates) or `/skill-health` (ecosystem maintenance). Do not fabricate a Top-3 from stale memory and do not omit the section.
+
+**Failure mode B — recommender returns fewer than 3 actions:** render what came back (1 or 2 rows), append a `_<N> of 3 — quiet day_` line, and continue. Do not pad with low-leverage filler.
 
 **Fallback (companion missing):** run the role-specific top-3 query from `references/fallback-queries.md` against Supabase hsyjcrrazrzqngwkqsqa via the Supabase MCP tool. The Owner fallback is roughly:
 
@@ -111,6 +126,10 @@ Issue all of these queries in parallel (or invoke companion skills in parallel).
 For each row, format: **named entity** + **one-line why-it-matters** + **suggested next move** (verb-first, links to the AccentOS module path when relevant — e.g. `Vendor Intel → [vendor]`).
 
 Companion fallbacks live in `references/fallback-queries.md`. If a query returns 0 rows, render the section as a single line: `_nothing flagged_` (italicized). Do not omit the section entirely — Michael needs to see "I checked, there's nothing" vs. "I forgot to check."
+
+**Failure mode C — Supabase MCP unreachable mid-run (after Step 0 succeeded):** if any Step 3 query times out or errors, render that section as `_⚠ section unavailable — Supabase MCP error_` and continue with the remaining sections. Do not abort the entire brief — partial briefs are useful, missing ones are not. The `_Composed_` trailer in Step 4 must list which sections were degraded so Michael knows to re-run.
+
+**Failure mode D — role-template missing for requested role:** if `references/role-templates.md` does not have a shape for the resolved role (e.g. Michael asks for `warehouse brief` and only Owner/Sales/Marketing/Ops are templated), fall back to Owner shape and emit a one-line trailer: `_role '[X]' not templated — used Owner shape; add to role-templates.md to customize._`
 
 ---
 
@@ -177,6 +196,8 @@ Do not auto-snapshot the brief. Daily briefs are ephemeral by design; if Michael
 
 Single Markdown block emitted to chat in the structure shown in Step 4. Ready to paste directly into the Daily Command Center UI tile. No surrounding prose, no "here's your brief:" preamble, no closing summary — the brief is the entire output.
 
+**Partial-output contract:** if any section degraded (Failure modes A–D above, or any of the Step 0 fallbacks: `kpi-catalog-missing`, `voice=vibe (default)`, concurrent-run guard), the brief still emits — the affected section renders with the appropriate `_⚠ ..._` italicized stub, and the `_Composed_` trailer lists the degraded sections (e.g. `degraded: kpi, vendors`). Watermark in Step 5 advances on a normal run so the next brief's "new since" diff stays correct. **Exception:** when the Step 0 concurrent-run guard fired (`composed_at` <60s old), Step 5 skips the watermark write — the prior run already advanced it. A partial brief is a successful run; aborting would lose the watermark and break the diff chain.
+
 ---
 
 ## AccentOS context
@@ -202,3 +223,8 @@ Single Markdown block emitted to chat in the structure shown in Step 4. Ready to
 - **Never** auto-snapshot the brief — daily briefs are ephemeral; persistence is Michael's call via `analysis-snapshot`.
 - **Never** write to any Supabase table other than the local `last-brief.md` watermark file. This skill is read-mostly.
 - **Never** generate the brief without first checking the watermark — losing the "new since last brief" diff is the single biggest value-leak.
+- **Never** abort the entire brief on a single section's data error — degrade that section to `_⚠ section unavailable_` and continue (see Failure mode C). A partial brief is the contract; aborting loses the watermark.
+- **Never** fabricate a Top-3 when `next-action-recommender` returns the "no live candidates" stub — that's a real signal of a clean state, render it as such (Failure mode A).
+- **Never** abort on a missing `KPI_CATALOG.md` — fall back to inline default thresholds (15% / 20%) and flag `kpi-catalog-missing` in the preflight degrade list.
+- **Never** advance the watermark when Step 0's concurrent-run guard fires (`composed_at` <60s old). The prior run already did. Double-advancing breaks the "new since" diff for the next brief.
+- **Never** abort on a missing vibe-speak `_active.md` — default to `vibe` mode and continue. Voice fallback never blocks brief composition.

@@ -8,11 +8,13 @@ description: >
   send-time changes), and surfaces last-N-day engagement plus churn-risk
   segment overlap with churn-predictor output. Talks to Klaviyo via REST
   API v2024-* using the private key from M09. Use this skill when Michael
-  says: "audit klaviyo flows", "which klaviyo flows suck", "klaviyo
-  performance", "propose flow edits for [name]", "email engagement
-  summary", "klaviyo churn overlap", "/klaviyo audit", "/klaviyo propose",
-  or any phrasing that asks for Klaviyo automation-flow intelligence on
-  the Accent Lighting store-cwqiwcjxes ecosystem. Do not use for one-off
+  says: "audit klaviyo", "audit the flows", "scan klaviyo", "which klaviyo flows suck",
+  "underperforming flows", "klaviyo performance", "klaviyo report", "rank the flows",
+  "propose flow edits for [name]", "fix [flow]", "draft new subjects for [flow]",
+  "email engagement", "engagement last 30d", "klaviyo churn overlap", "whos drifting
+  in our flows", "send to klaviyo", "knock out klaviyo", "/klaviyo audit",
+  "/klaviyo propose", or any phrasing that asks for Klaviyo automation-flow
+  intelligence on the Accent Lighting store-cwqiwcjxes ecosystem. Do not use for one-off
   1:1 email drafts (use email-drafter) or for the BigCommerce order
   product feed (use bc-business-review). Always produces a ranked
   Markdown report with paste-ready edit proposals and explicit blocked-
@@ -31,12 +33,14 @@ Closes: BUILD_PLAN Track 6.4 (Klaviyo integration). Capability ladder: L3 (Diagn
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
-- "audit klaviyo flows" / "audit the flows"
-- "which klaviyo flows suck" / "underperforming flows"
-- "klaviyo performance" / "klaviyo report"
-- "propose flow edits for [flow name]"
-- "email engagement summary" / "engagement last 30 days"
-- "klaviyo churn overlap" / "who's drifting in our flows"
+- "audit klaviyo" / "audit the flows" / "audit klaviyo flows" / "scan klaviyo"
+- "which klaviyo flows suck" / "underperforming flows" / "flows that suck" / "which flows are bad"
+- "klaviyo performance" / "klaviyo report" / "rank the flows" / "klaviyo leaderboard"
+- "propose flow edits for [name]" / "fix [flow]" / "draft new subjects for [flow]" / "propose subjects"
+- "email engagement" / "engagement last 30d" / "engagement last 7 days" / "klaviyo last 30"
+- "klaviyo churn overlap" / "whos drifting in our flows" / "churn vs klaviyo"
+- "send to klaviyo" (routes to propose mode for the named flow — never auto-sends)
+- "knock out klaviyo" / "knock out the flow audit"
 - "/klaviyo audit" / "/klaviyo propose [flow]" / "/klaviyo engagement"
 
 Also trigger when:
@@ -51,16 +55,16 @@ If ambiguous between the three modes, default per `references/mode-routing.md`:
 
 ---
 
-## Step 0 — Preflight (BLOCKED gate)
+## Step 0 — Preflight (BLOCKED gate — runs FIRST, before any other work)
 
-This skill is gated on **M09 (Klaviyo API key)**. Until it resolves the skill returns a stub.
+This skill is gated on **M09 (Klaviyo API key)**. Until it resolves the skill returns the stub verbatim and a structured error to any caller (including action-queue Step 5) — no API calls, no report generation, no churn-overlap reads happen until M09 lands.
 
 1. Check whether the dependency exists:
    - Env var `KLAVIYO_API_KEY` is set and non-empty, OR
    - File `/home/user/accent-os/.claude/settings.local.json` has a `klaviyo_api_key` entry (gitignored, perms 600), OR
    - Supabase `hsyjcrrazrzqngwkqsqa` has a populated `klaviyo_flows` cache table with `last_synced_at > now() - interval '24 hours'` (offline/cached path).
 
-2. If none of those pass, return this stub and exit:
+2. If none of those pass, return this stub verbatim AND a structured error to action-queue, then exit (no further steps run):
 
    > skill `klaviyo-flows` is BLOCKED on **M09 (Klaviyo API key)**. To unblock, per BUILD_PLAN_MICHAEL.md M09:
    > 1. Go to `https://www.klaviyo.com/settings/api-keys` → click **Create Private API Key**.
@@ -68,6 +72,16 @@ This skill is gated on **M09 (Klaviyo API key)**. Until it resolves the skill re
    > 3. Save the key. Paste to Claude: `M09 done — Klaviyo private key: <paste>. Wire into AccentOS.`
    > 4. Claude installs the key into env (`KLAVIYO_API_KEY=...`) via `/home/user/accent-os/.claude/settings.local.json` (perms 600, gitignored).
    > Skill activates automatically once `KLAVIYO_API_KEY` is set.
+
+   Structured return to action-queue Step 5 (only relevant for `propose_klaviyo_edit` action_type — this skill never accepts `send_klaviyo_flow`):
+   ```json
+   {
+     "status": "error",
+     "error": { "code": "BLOCKED_ON_M09", "message": "klaviyo-flows blocked on M09", "retryable": true },
+     "unblock_m_task": "M09",
+     "duration_ms": 0
+   }
+   ```
 
 3. If the dependency exists, also read in parallel:
    - `references/klaviyo-reports.md` — pre-defined report shapes (flow performance leaderboard, list growth/churn, abandoned-cart recovery rate, post-purchase LTV impact).
@@ -94,7 +108,13 @@ Output the dispatch line up front: `MODE: [A/B/C] | SCOPE: [all flows | flow_id=
 
 ## Step 2A — Mode A: audit (ranked leaderboard)
 
-Pull all live flows via Klaviyo REST API v2024-* `/api/flows/` (use header `revision: 2024-10-15`). For each flow, fetch metrics from `/api/flow-action-metrics-aggregate-queries/` over the last 30 days:
+Pull all live flows via Klaviyo REST API v2024-* `/api/flows/` (use header `revision: 2024-10-15`). For each flow, fetch metrics from `/api/flow-action-metrics-aggregate-queries/` over the last 30 days.
+
+**API failure handling (applies to every Klaviyo call across Mode A/B/C):**
+- **401 / 403** → `KLAVIYO_API_KEY` revoked or scope-shrunk. Surface "Klaviyo auth failed — re-check M09 key in /home/user/accent-os/.claude/settings.local.json", abort the run, do NOT degrade to cached data silently.
+- **404** on a flow_id lookup → return the candidate list per the rule in Step 2B; never fabricate a result.
+- **429 Too Many Requests** → respect `Retry-After`; sleep then retry once. If second 429, abort the mode and surface "Klaviyo rate-limited — retry in N minutes".
+- **5xx** → abort the mode, surface the Klaviyo-side error verbatim, do NOT auto-retry.
 
 - `opens_unique`, `clicks_unique`, `recipients`, `delivered`
 - `placed_order_value` (revenue), `placed_order` (count)
@@ -163,6 +183,8 @@ Compute:
 
 Then compute **churn overlap**:
 1. Read top-50 churn risks from `skills/churn-predictor` latest snapshot at `skills/analysis-snapshot/runs/churn-predictor-*.md` (most recent file).
+   - **If no churn-predictor snapshot exists** (companion not yet run): skip the overlap section entirely, emit "Churn overlap skipped — run `churn-predictor` first to populate snapshot, then re-run `/klaviyo engagement`" in the report, continue with the engagement summary. Do not fabricate overlap rows.
+   - **If snapshot is older than 7 days**: include the overlap but stamp "stale churn snapshot — re-run churn-predictor for fresh data" in the table caption.
 2. Resolve each churn customer's `email` against Klaviyo profiles via `/api/profiles/?filter=equals(email,"...")` (batched 100 at a time).
 3. For matched profiles, list which flows they're still receiving (via `/api/profile-segments/`).
 
@@ -176,10 +198,11 @@ Every mode emits three artifacts:
 
 1. **In-message Markdown report** — paste-ready, see Output format. Mode-specific shape per `references/klaviyo-reports.md`.
 2. **Snapshot** via `analysis-snapshot` — `klaviyo-flows-{mode}-YYYY-MM-DD.md`. Include the API queries, parameters, and the full output.
-3. **Action queue handoff**:
-   - Mode A: each underperformer → one PROPOSED row "audit flow [name] for revival" with severity by revenue gap.
-   - Mode B: each subject-line / segment / send-time proposal → one PROPOSED row "apply paste-ready edit to [flow] [field]".
-   - Mode C: each churn-overlap row with `Recommended action != no-action` → one PROPOSED row routed to the suggested skill (suppress → klaviyo-flows.propose for exit-flow; urgent-personal → email-drafter).
+3. **Action queue handoff** — every PROPOSED row uses `action_type = propose_klaviyo_edit` per `action-queue/references/executor-registry.md`. This is a paste-ready edit, never an auto-send.
+   - Mode A: each underperformer → one PROPOSED row "audit flow [name] for revival" with severity by revenue gap. `edit_type = "audit_followup"`.
+   - Mode B: each subject-line / segment / send-time proposal → one PROPOSED row "apply paste-ready edit to [flow] [field]" with `edit_type = "subject_line"|"segment"|"send_time"`.
+   - Mode C: each churn-overlap row with `Recommended action != no-action` → one PROPOSED row routed to the suggested skill (suppress → another `propose_klaviyo_edit` for exit-flow; urgent-personal → `email-drafter` via action_type `send_email`).
+   - **If `action_queue` table doesn't exist yet** (action-queue Step 0 BLOCKED on schema): skip the handoff, persist the proposals to `references/proposed-edits-pending.md` (overwrite each run), and surface "action-queue schema missing — proposals saved to references/proposed-edits-pending.md; run action-queue Step 0 to migrate" in the report. Do NOT silently lose proposals.
 
 If `--dry-run` (or "preview only"), skip the action-queue + brief writes — keep only the in-message report.
 
@@ -287,3 +310,6 @@ Companion routing:  [list of skills the proposals route to]
 - **Never** write SQL migrations from this skill. If `klaviyo_flows*` tables don't exist, document in `references/proposed-schema.md` and run in stateless mode — schema lands via a future M-task.
 - **Never** output prose-only commentary ("your Klaviyo flows look fine"). Every run produces the ranked Markdown report + handoffs — that's the contract.
 - **Never** include suppressed / unsubscribed / `do_not_contact`-flagged customers in any churn-overlap "URGENT-PERSONAL" routing. Filter on Klaviyo profile `subscriptions.email.marketing.consent != "SUBSCRIBED"` first.
+- **Never** accept `action_type = send_klaviyo_flow` even if action-queue routes one here. This skill is read+propose only; the only action_type it processes is `propose_klaviyo_edit`. Refuse with `{"status": "error", "error": {"code": "ACTION_TYPE_NOT_SUPPORTED", "message": "klaviyo-flows is read+propose only — send_klaviyo_flow is not implemented", "retryable": false}}` and surface "fix action-queue/references/executor-registry.md binding".
+- **Never** silently drop proposals when action-queue is BLOCKED on schema. Persist to `references/proposed-edits-pending.md` and surface the migration step — losing proposals erases work and breaks the audit trail.
+- **Never** degrade a 401 / 403 to cached data without an explicit warning. Auth failure means the M09 key was revoked, scope-shrunk, or rotated; running on stale cache hides the security issue.

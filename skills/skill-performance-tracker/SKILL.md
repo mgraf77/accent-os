@@ -12,12 +12,19 @@ description: >
   satisfaction), and opportunity (skills with high match-rate but low
   invocation = harness considered but bypassed). Last-30-vs-prior-30 day
   trend arrows on every metric. Use this skill when Michael says: "skill
-  performance", "leaderboard", "which skills are working", "underperforming
-  skills", "skill stats", "skill ROI", "/skill-perf", or any phrasing that
-  asks how the skill ecosystem is performing in usage terms. Distinct from
-  skill-health-monitor (structural audit) and efficiency-monitor (in-session
-  signals) — this is cross-session usage rollup. Always produces three
-  report blocks with sparkline trend arrows — never returns prose-only.
+  performance", "skill perf", "leaderboard", "which skills are working",
+  "dead skills", "underperforming skills", "skill stats", "skill ROI",
+  "skill metrics", "/skill-perf", "/leaderboard", "is [skill] worth keeping",
+  "are these skills paying off", "did [skill] earn its keep", "which skills
+  are dying", "harness considered but bypassed", "high match low invocation",
+  or any phrasing that asks how the AccentOS skill ecosystem is performing
+  in usage terms. Distinct from skill-health-monitor (structural audit) and
+  efficiency-monitor (in-session signals) — this is cross-session usage
+  rollup; skill-health-monitor consumes its underperformer list while
+  efficiency-monitor feeds it raw match/invocation/skill-bypass signals.
+  Always produces three report blocks with trend arrows — never returns
+  prose-only, never auto-deprecates a skill, never overwrites the snapshot
+  CSV (always appends).
 ---
 
 # skill-performance-tracker
@@ -41,19 +48,25 @@ efficiency-monitor (live)  →  skill-performance-tracker (rollup)  →  gap-opt
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
-- "skill performance"
-- "leaderboard" / "skill leaderboard"
-- "which skills are working" / "which skills are dead"
-- "underperforming skills" / "underperformers"
-- "skill stats" / "skill ROI" / "skill metrics"
-- "/skill-perf" / "/skill-performance"
-- "harness considered but bypassed" / "high match low invocation"
-- "skill-perf for [skill name]" — single-skill drill-down
+- "skill performance" / "skill perf" / "perf" / "skills perf"
+- "leaderboard" / "skill leaderboard" / "which skills won this week" / "skills leaderboard"
+- "which skills are working" / "which skills are dead" / "what skills are dying" / "dead skills"
+- "underperforming skills" / "underperformers" / "skills that arent earning their keep"
+- "skill stats" / "skill ROI" / "skill metrics" / "are these skills paying off"
+- "/skill-perf" / "/skill-performance" / "/leaderboard" / "/perf"
+- "harness considered but bypassed" / "high match low invocation" / "skills i keep dodging"
+- "skill-perf for [skill name]" / "perf for [name]" — single-skill drill-down
+- "did vendor-cascade earn its keep" / "is [skill] worth keeping" / "did [skill] earn its keep" — same drill-down
 
 Also run automatically:
 - Weekly via `daily-brief-composer` Friday digest (leaderboard top-3 surfaced in the brief)
 - After every `skill-forge` commit lands (snapshot before/after to credit/debit the new skill)
 - When `gap-optimizer` requests a "deprecation-candidate scan" for queue-aging logic
+
+Do NOT run for:
+- Structural/broken-ref audits → `skill-health-monitor`
+- Live in-session inefficiency tracking → `efficiency-monitor` (auto-runs already)
+- "Which skill should I build next" → `gap-optimizer`
 
 ---
 
@@ -90,7 +103,17 @@ Output of Step 0: one-line preflight: "tracking N skills over last 60 days; M se
 
 If `efficiency-log.md` does not exist or contains zero sessions, return this stub and exit:
 
-> ⚠ skill `skill-performance-tracker` cannot run — no `efficiency-log.md` data to aggregate. Wait for ≥3 sessions of efficiency-monitor activity, then re-run.
+> Warning — skill `skill-performance-tracker` cannot run — no `efficiency-log.md` data to aggregate. Wait for >=3 sessions of efficiency-monitor activity, then re-run.
+
+**Failure-mode handling for Step 0:**
+
+- **`efficiency-log.md` exists but is malformed** (parse error on session blocks): emit "Warning — efficiency-log.md present but unparseable at line N. Aborting; surface to skill-health-monitor for structural fix." Do not partial-parse; bail.
+- **`_index.md` and `skills/` directory disagree** (skill in registry but no dir, or dir but no registry entry): emit a one-line "Warning — registry drift on [name(s)]; routing to skill-health-monitor." Continue with the union set, mark drifted skills with `qual: registry-drift` in the report.
+- **Skill dir name does not match its frontmatter `name:`** (rename without registry sync): treat the directory name as canonical; flag in the report's footer with "rename-detected: [dir] vs [frontmatter]" so skill-health-monitor can reconcile.
+- **`git log` returns no commits in the window** (fresh clone, detached HEAD, or shallow checkout): skip git-derived signals only; still produce the three blocks from PROMPT_LOG + efficiency-log alone. Mark the report header "git-log-unavailable: [reason]".
+- **Concurrent run already in progress** (lock file `skills/skill-performance-tracker/.run.lock` exists and is <5 min old): exit immediately with "Warning — concurrent run detected, skipping. Re-run after current finishes." Stale locks (>5 min) are removed and the run proceeds.
+- **No skill-eval-suite results anywhere** (zero `eval-results.json` files across the registry): not an abort — proceed with `Qual` rendered as `—` (em-dash) for all skills. Footer notes "quality_signal data sparse — consider running skill-eval-suite to populate."
+- **Window cutoff and PROMPT_LOG entry timestamps disagree by >12h** (clock skew, fresh-clone replay): trust the Git author dates from `git log` over PROMPT_LOG headers. Add a footer line "clock-skew detected — using git author dates as canonical."
 
 ---
 
@@ -256,6 +279,14 @@ See Step 5 for the report shape. Files this skill writes:
 - (optional, on `skill-perf save`) `skills/skill-performance-tracker/reports/YYYY-MM-DD.md` — saved report
 - `skills/skill-performance-tracker/last-run.md` — overwrites with the most recent report (consumed by `daily-brief-composer`)
 
+**Partial-output rules (when one or more data sources fail):**
+
+- All three blocks (LEADERBOARD, UNDERPERFORMERS, OPPORTUNITY) are always emitted. Empty blocks render as `(no skills meet criteria — data sources: [list])` rather than being omitted.
+- If `eval-results.json` is missing for a skill, render `Qual` as `—` (em-dash). If present but >30 days old, render as `Qual: <pct> ⚠ stale`.
+- If git log is unavailable, append `(git log unavailable; usage signals from PROMPT_LOG + efficiency-log only)` to the report header.
+- If `_index.md` is unparseable, abort the run before report generation — do not emit a half-built report. Surface the parse error to the user and route to `skill-health-monitor`.
+- The `snapshots.csv` append happens AFTER all three blocks render successfully. A render failure aborts the snapshot append — never write a partial snapshot row.
+
 ---
 
 ## AccentOS context
@@ -284,3 +315,7 @@ See Step 5 for the report shape. Files this skill writes:
 - **Never** flag a "scheduled-cadence" skill (e.g. `vendor-risk-register` quarterly) as stale based on calendar days alone. Honor the same schedule-aware logic `skill-health-monitor` uses — read the skill's frontmatter for cadence hints before flagging.
 - **Never** run silently with no output. Always produce the three blocks + footer, even if all metrics are zero (signals "no data yet, run more sessions").
 - **Never** overwrite `snapshots.csv` — always append. Trend computation requires longitudinal history.
+- **Never** emit a half-built report when a data source fails. If `_index.md` won't parse, abort and route to `skill-health-monitor`; do not silently aggregate from the directory listing alone (the registry IS the canonical name set).
+- **Never** write the snapshot row before all three report blocks render successfully. A render failure mid-run must not leave a partial row in `snapshots.csv` — that would corrupt the trend-arrow computation on the next run.
+- **Never** ignore registry drift (skill in `skills/` but not `_index.md`, or vice versa). Surface it in the footer and let `skill-health-monitor` reconcile — silently picking one over the other hides ecosystem rot.
+- **Never** double-run concurrently. Honor the `.run.lock` file. Concurrent appends to `snapshots.csv` produce duplicate rows that distort trend arrows.

@@ -4,18 +4,22 @@ description: >
   Generate paste-ready outreach, follow-up, co-op-claim, quote-revival, and
   vendor-correspondence emails for AccentOS / Accent Lighting from Supabase
   context (customers, vendors, pipeline_deals, quotes, coop_tracker). Use
-  this skill when Michael says: "draft an email", "draft outreach to",
-  "follow up with", "revive that quote", "claim co-op from", "email vendor
-  about", "write a follow-up", "email scaffold for", or any phrasing that
-  asks for an email Michael can paste into Gmail. Pulls context via
-  supabase-sql-magic against hsyjcrrazrzqngwkqsqa, calibrates voice from
+  this skill when Michael says: "draft an email to [name]", "email
+  [name]", "follow up with [name]", "ping [name]", "wake up that quote",
+  "knock out an email to [name]", "claim co-op from [vendor]" (single
+  named vendor), "reach out to [name]", "draft me something for [name]",
+  or any phrasing that asks for one email Michael can paste into Gmail
+  for a single named entity. Pulls context via supabase-sql-magic against
+  Supabase hsyjcrrazrzqngwkqsqa, calibrates voice from
   vibe-speak/profiles/michael.md, and emits via Anthropic API
   (ANTHROPIC_API_KEY) when the harness invokes it. Do not use this skill
-  for SMS/text drafts, internal Slack messages, or marketing-blast Klaviyo
-  flows. Always produces a paste-ready Markdown block (subject + to + body
-  + send-or-hold recommendation + reasoning) — never sends, never queues
-  to a mail provider, never invents customer/vendor facts not present in
-  Supabase.
+  for SMS/text drafts, internal Slack messages, marketing-blast Klaviyo
+  flows, or for portfolio-wide co-op deadline scans like "draft co-op
+  claims" or "what co-op is about to expire" (those route to
+  coop-claim-drafter). Always produces a paste-ready Markdown block
+  (subject + to + body + send-or-hold recommendation + reasoning) — never
+  sends, never queues to a mail provider, never invents customer/vendor
+  facts not present in Supabase.
 ---
 
 # email-drafter
@@ -28,17 +32,19 @@ Closes: Capability Ladder L4 (Draft actions) · MASTER §14 quote-revival narrat
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "draft an email to [customer/vendor]"
-- "draft outreach to [name]"
-- "follow up with [customer]"
-- "revive that quote" / "wake up quote Q-2026-####"
-- "claim co-op from [vendor]"
-- "email [vendor] about the [issue]"
-- "write a follow-up for [deal]"
-- "email scaffold for [context]"
+Run this skill when Michael says anything like (terse / lowercase / typo variants all count — match his register per `vibe-speak/profiles/michael.md`; he writes "remue building" / "knock out" / lowercase fragments / no apostrophes):
+- "draft an email to [name]" / "email [name]" / "draft email to [name]"
+- "draft outreach to [name]" / "reach out to [name]" / "intro email to [name]"
+- "follow up with [name]" / "follow up on [deal]" / "check in on [name]"
+- "wake up quote Q-####" / "revive that quote" / "ping [name] on that quote" / "that quote went cold"
+- "claim co-op from [vendor]" (single named vendor — if no vendor named or it's a portfolio scan, route to `coop-claim-drafter` instead)
+- "email [vendor] about [issue]" / "ping [vendor] about [issue]" / "ping [name]"
+- "knock out an email to [name]" / "knock out a quick email" / "write a quick email to [name]"
+- "draft me something for [name]" / "email scaffold for [context]"
 
-Do **not** trigger for: SMS / text drafts, internal Slack messages, Klaviyo broadcasts (those are marketing flows, not 1:1), or generic "write a blog post about X" prose. Route those elsewhere.
+Do **not** trigger for: SMS / text drafts, internal Slack messages, Klaviyo broadcasts (those are marketing flows, not 1:1), generic "write a blog post about X" prose, or **portfolio-level co-op scans** like "draft co-op claims" / "what co-op is about to expire" / "co-op deadline scan" — those route to `coop-claim-drafter`, which then delegates back here per-vendor.
+
+**Boundary vs. coop-claim-drafter (crisp rule):** If Michael names exactly one vendor (or one specific co-op claim window), this skill handles it. If the trigger is plural, time-driven, or asks AccentOS to find the claims, `coop-claim-drafter` runs first and calls this skill once per qualifying vendor.
 
 If the request is genuinely ambiguous between two email types, pick the highest-signal type from the [type catalog](references/email-types.md) and state the choice in the output's reasoning block.
 
@@ -58,7 +64,15 @@ If `ANTHROPIC_API_KEY` is missing, return:
 
 > warning: email-drafter requires ANTHROPIC_API_KEY. Set it in env, then retry. Skill activates automatically once key is present.
 
-If the handle resolves to 0 or >1 rows, return the candidate list and stop. Do not draft against ambiguous context.
+If the handle resolves to 0 or >1 rows, return the candidate list (id + display name + last-touch date) and stop. Do not draft against ambiguous context — picking "the highest-value match" silently is the failure mode this gate prevents.
+
+**Failure-path notes (Pass-2 hardening):**
+
+- **Missing referenced table** (e.g. `customer_interactions` or `pipeline_deals` not yet migrated): Step 2 catches the SQL error, downgrades the CONTEXT block to whatever the primary table returned, marks affected facts as `[unknown — table not yet migrated]`, and tags the draft `HOLD-FOR-REVIEW: thin-context`. Never silently drop the field.
+- **Supabase rate-limit / network error during context fetch**: Step 2 retries once with 2-second backoff. On second failure, return the partial CONTEXT block plus an explicit `error: supabase fetch failed — [error]` line and stop *before* calling the Anthropic API. Drafting on stale/empty context is a worse failure than no draft.
+- **Concurrent run on the same handle**: if the same `(handle, type)` pair was drafted in the last 60 seconds (check via `action-queue` if companion exists, else best-effort), surface a one-line warning and ask Michael to confirm before continuing — duplicate drafts spam the queue.
+- **Reference files missing** (e.g. invoked by `coop-claim-drafter` delegation in a fresh checkout where `references/email-types.md`, `references/voice-calibration.md`, `references/supabase-context-map.md`, or `references/send-or-hold-rules.md` haven't been pulled): Step 0 fails fast with `error: email-drafter references/ missing — [list of missing files]; re-pull skill repo` and stops. Never substitute hardcoded fallback rules — voice drift is the failure mode.
+- **Ambiguous handle with one high-value match**: never pick the highest-value match silently. Always return the candidate list and let Michael disambiguate. (Same reason vendor-cascade surfaces ties instead of breaking them.)
 
 ---
 
@@ -74,9 +88,9 @@ Map Michael's phrasing to one of five types using the trigger heuristics in `ref
 | quote-revival | "revive quote", "wake up Q-####", "quote went cold" | `quotes` + `quote_lines` | low-pressure, surfaces price/availability change as the hook |
 | vendor-correspondence | "email vendor about", "ask vendor for" | `vendors` | direct, names the ask, attaches PO/invoice when relevant |
 
-If Michael's phrasing maps to >1 type, pick the one whose table the handle naturally points to (e.g. `quote_id` → quote-revival).
+If Michael's phrasing maps to >1 type, pick the one whose table the handle naturally points to (e.g. `quote_id` → quote-revival; `vendor_id` + "co-op" word → co-op-claim). If no handle disambiguates, walk this fixed precedence list and pick the first match: co-op-claim → quote-revival → follow-up → outreach → vendor-correspondence.
 
-Output a one-line classification: `TYPE: [name] | HANDLE: [id] | RATIONALE: [why this type]`.
+Output a one-line classification: `TYPE: [name] | HANDLE: [id] | RATIONALE: [why this type]`. This line is mandatory — never start drafting without it.
 
 ---
 
@@ -137,7 +151,7 @@ Per-call user message:
 
 Model: claude-opus-4-7 or claude-sonnet-4-7 (default sonnet for cost; bump to opus if Michael flags the email as high-stakes — co-op claim with deadline ≤7d, deal ≥$10k, or vendor escalation).
 
-If the API call fails: return the context block + a stub "[draft would go here — Anthropic API call failed: [error]]". Do not fabricate the draft locally.
+If the API call fails: return the context block + a stub "[draft would go here — Anthropic API call failed: [error]]". Do not fabricate the draft locally. If the failure is a 429/overloaded, retry once with 5-second backoff before stubbing. If the failure is auth (401/403), surface "ANTHROPIC_API_KEY rejected — verify in env" and stop.
 
 ---
 
@@ -149,7 +163,7 @@ After the draft is generated, classify it as **SEND**, **HOLD-FOR-REVIEW**, or *
 - **HOLD-FOR-REVIEW** if: deal value ≥$5k, mentions price quote, mentions discount, references a stage change, or a co-op claim with $ amount.
 - **DO-NOT-SEND** if: Michael's prompt indicated cold outreach to a customer flagged as `do_not_contact` in `customers`, or vendor flagged in `vendor_overrides.notes` as "no email", or fact-confidence <0.7.
 
-Output the recommendation with one-line reasoning. The recommendation is advisory — Michael decides.
+Output exactly one of the three labels with one-line reasoning. The label is advisory — Michael decides — but the label itself is contractual: a draft without one of those three labels is malformed.
 
 ---
 
@@ -186,6 +200,8 @@ If sent, queue a follow-up via action-queue in [N] days based on type defaults:
 
 The block is the entire output. No preamble. No "here's the draft:" framing.
 
+**Partial output (Pass-2 hardening):** If Step 2 returned thin context (rate-limit fallback, missing table) or Step 4 returned an Anthropic stub, still emit the full block — but `SEND-OR-HOLD` becomes `HOLD-FOR-REVIEW` automatically, the body section reads `[stub — partial context, see reasoning]`, and the reasoning block lists every missing field. Never suppress the block; partial visibility beats silent failure.
+
 ---
 
 ## AccentOS context
@@ -213,3 +229,5 @@ The block is the entire output. No preamble. No "here's the draft:" framing.
 - **Never** classify a HOLD-FOR-REVIEW draft as SEND because the model "feels confident". The rules in `references/send-or-hold-rules.md` are the gate.
 - **Never** ask Michael which type he wants — pick the highest-signal type per Step 1 and state it.
 - **Never** correct Michael's typos / lowercase / comma splices in the email body. Match his register per `voice-calibration.md`.
+- **Never** silently swallow a Supabase fetch error or schema-missing column — surface it in the reasoning block and degrade to `HOLD-FOR-REVIEW: thin-context`. A "successful" draft built on missing facts is worse than a stub.
+- **Never** call the Anthropic API before the CONTEXT block has at least the entity row + one supporting fact. Drafting on a single-row resolve with no relationship data produces a generic email that fails the voice match.

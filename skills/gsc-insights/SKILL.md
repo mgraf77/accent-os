@@ -10,10 +10,13 @@ description: >
   row includes a paste-ready suggested action — most often "→ run
   bulk-meta-description for [URL]" — making this skill the work-order
   generator that feeds bulk-meta-description for SEO triage. Use this
-  skill when Michael says: "GSC report", "search console insights",
-  "what's moving in search", "ranking drops", "missed impressions",
-  "GSC weekly", "search query report", or any phrasing that asks for
-  a Google Search Console pull or organic-search performance review.
+  skill when Michael says: "gsc report", "search console insights",
+  "pull gsc", "run gsc", "what's moving in search", "what's ranking",
+  "ranking drops", "rankings dropping", "missed impressions", "gsc
+  weekly", "search query report", "what urls need better meta", "what
+  pages need meta work", "serp check", "/gsc", or any phrasing that
+  asks for a Google Search Console pull or organic-search performance
+  review.
   Do not use for paid-search (Google Ads is separate) or for
   on-page SEO crawling (use broken-link-rescue). Always produces three
   Markdown sections (movers / missed-impressions / drops) with
@@ -29,25 +32,27 @@ description: >
 
 ## Trigger Recognition
 
-Run this skill when Michael says:
-- "GSC report" / "search console insights"
-- "what's moving in search" / "GSC weekly"
-- "ranking drops" / "missed impressions"
-- "search query report"
-- "what URLs need better meta"
-- "GSC for [vendor / category]"
+Run this skill when Michael says (all-lowercase, terse — match Michael's profile):
+- "gsc report" / "gsc weekly" / "search console insights" / "pull gsc" / "run gsc"
+- "what's moving in search" / "what's ranking" / "what's ranking now"
+- "ranking drops" / "missed impressions" / "we're losing rankings" / "rankings dropping"
+- "search query report" / "queries this week" / "top queries"
+- "what urls need better meta" / "what needs a meta rewrite" / "what pages need meta work"
+- "gsc for [vendor / category]" / "gsc for [brand]"
+- "are we losing serp" / "serp check"
+- "/gsc"
 
-Do not trigger for: Google Ads / paid-search performance, on-page crawl audits (use `broken-link-rescue`), or GMC product-feed health (use `gmc-feed-audit`).
+Do not trigger for: Google Ads / paid-search performance, on-page crawl audits (use `broken-link-rescue`), GMC product-feed health (use `gmc-feed-audit`), or on-site behavior / sessions / conversions (use `ga4-insights`).
 
 ---
 
-## Step 0 — Preflight (BLOCKED gate)
+## Step 0 — Preflight (BLOCKED gate on M06)
 
-This skill is gated on **M06 (Google Search Console credentials provisioned — same service-account task as GA4)** per `BUILD_PLAN_MICHAEL.md` lines 186–194. Until M06 resolves the skill ships in stub mode.
+This skill is gated on **M06 — Google Analytics 4 + Search Console service account** per `BUILD_PLAN_MICHAEL.md` lines 186–194 (shared blocker with `ga4-insights`). Until that resolves the skill ships in stub mode.
 
-1. Check whether the blocking dependency exists. For `gsc-insights`, that means **both** of these env vars must be set in the active session:
-   - `GSC_PROPERTY_URL` (e.g. `sc-domain:accentlightinginc.com` or `https://www.accentlightinginc.com/`)
-   - `GSC_CREDENTIALS_JSON` (filesystem path to the service-account JSON, OR the JSON contents inline)
+1. Check whether the blocking dependency exists. For `gsc-insights`, **both** of these env vars must be set in the active session:
+   - `GSC_PROPERTY_URL` — the GSC property identifier (e.g. `sc-domain:accentlightinginc.com` or `https://www.accentlightinginc.com/`)
+   - `GSC_CREDENTIALS_JSON` — filesystem path to the service-account JSON, OR the JSON contents inline
 
    Run this check exactly:
 
@@ -57,9 +62,9 @@ This skill is gated on **M06 (Google Search Console credentials provisioned — 
 
 2. If either is missing, return this exact stub and exit — do **not** attempt to call the API, generate fake data, or "skip the check just this once":
 
-   > ⚠ skill `gsc-insights` is BLOCKED on **M06** (Google Search Console + GA4 service-account credentials).
+   > ⚠ skill `gsc-insights` is BLOCKED on **M06** (Google Analytics 4 + Search Console service-account credentials — shared with `ga4-insights`).
    >
-   > **To unblock (per `BUILD_PLAN_MICHAEL.md` M06):**
+   > **To unblock (per `BUILD_PLAN_MICHAEL.md` M06, lines 186–194):**
    > 1. Open `https://console.cloud.google.com/iam-admin/serviceaccounts` — reuse the M05 service account or create `accentos-ga4@`.
    > 2. In Search Console (`https://search.google.com/search-console`) → **Settings → Users and permissions → Add user** → paste the service-account email → grant **Restricted** access.
    > 3. Download the service-account JSON if not already done in M05.
@@ -68,11 +73,11 @@ This skill is gated on **M06 (Google Search Console credentials provisioned — 
    >    export GSC_PROPERTY_URL="sc-domain:accentlightinginc.com"
    >    export GSC_CREDENTIALS_JSON="/home/user/accent-os/.secrets/gsc-sa.json"
    >    ```
-   > 5. Paste to Claude → `M06 done — GA4 + GSC service account configured. Property: <paste>. Sites verified: <paste>.`
+   > 5. Paste to Claude → `M06 done — GA4 + GSC service account configured. Property ID: <paste>. Sites verified: <paste>.`
    >
-   > **What this skill produces once active:** three Markdown sections — *Top Movers*, *Missed Impressions*, *Ranking Drops* — each row with query, current position, prior position, impressions, CTR, suggested action. Companion handoff: rows tagged `→ bulk-meta-description [URL]` feed directly into the `bulk-meta-description` skill as a work order.
+   > **What this skill produces once active:** three Markdown sections — *Top Movers*, *Missed Impressions*, *Ranking Drops* — each row with query, current position, prior position, impressions, CTR, suggested action. Companion handoff: BLOCK 5 emits a paste-ready URL list that feeds the `bulk-meta-description` skill as a work order.
    >
-   > Skill activates automatically on the next invocation once both env vars resolve.
+   > Skill activates automatically on the next invocation once both env vars resolve and a smoke-test GSC API call succeeds.
 
 3. If both env vars are present, proceed to Step 1.
 
@@ -102,9 +107,14 @@ Authenticate with the service-account JSON (from `GSC_CREDENTIALS_JSON`) against
 3. **Current period — by page only** (dimensions: `page`; rows: 5000) — for the missed-impressions filter
 4. **Tracked-SKU drops** — same query+page rows but joined on the AccentOS tracked-SKU URL list (Supabase `products.canonical_url` when available, else BigCommerce sitemap)
 
-If the API returns `403 forbidden`, the service account exists but isn't attached to the property — re-surface the M06 stub's step 2 (Search Console → Users and permissions).
+If the API returns `403 forbidden`, the service account exists but isn't attached to the property — re-surface the M06 stub's step 2 (Search Console → Users and permissions). Do not retry with a different identity.
 
 If a query returns 0 rows for a period, mark the report as `EMPTY_PERIOD` and continue — don't fail the whole run.
+
+**Failure paths in Step 2:**
+- **API 429 / quota exceeded:** 25k-row pulls can blow the per-day quota for the GSC search-analytics endpoint. On 429, back off 60s and retry once with `rowLimit=10000`. If the second attempt fails, run the per-page report (R3) only, mark Top Movers + Ranking Drops as `QUOTA_PARTIAL`, and emit a partial run (see Output format below).
+- **Tracked-SKU URL list empty:** if the Supabase `products.canonical_url` join in R4 returns 0 rows (schema not yet populated, or `canonical_url` column missing), skip the Ranking Drops view entirely and surface a one-line note: `Ranking Drops unavailable — Supabase products.canonical_url is empty. Populate via product-self-knowledge or BC sitemap import.` Never substitute "all product URLs" for the tracked list silently — the threshold contract assumes a curated tracked-SKU set.
+- **Supabase unreachable for the canonical_url join used in Step 4:** see Step 4's fallback (emit BLOCK 5b only).
 
 ---
 
@@ -135,9 +145,15 @@ If no action pattern fits, write `→ review manually` rather than guessing.
 
 ## Step 4 — Produce the work-order list for `bulk-meta-description`
 
-Every row across Missed Impressions + Ranking Drops + product-URL Top Mover losers tagged `→ bulk-meta-description` is collected into a deduplicated **URL list** at the end of the report. This list is the canonical handoff: the `bulk-meta-description` skill's Step 1 input source `output from a prior gmc-feed-audit run` extends to "or output from a prior `gsc-insights` run."
+Every row across Missed Impressions + Ranking Drops + product-URL Top Mover losers tagged `→ bulk-meta-description` is collected into a deduplicated work-order at the end of the report.
 
-Format the handoff list as one URL per line, no headers, ready to pipe directly into `bulk-meta-description` as input.
+**Handoff contract (must match `bulk-meta-description` Step 1 input shapes — that skill accepts product IDs / CSV path / prior-skill output, NOT raw URL strings):**
+
+1. Resolve each candidate URL to a BigCommerce product ID via Supabase `hsyjcrrazrzqngwkqsqa` table `products` on `canonical_url`. Use the same lookup join as the tracked-SKU URL list in Step 2.
+2. Emit two sub-blocks in BLOCK 5:
+   - **5a — Resolved product IDs:** one `bc_product_id` per line — paste-ready into `bulk-meta-description` Step 1 ("Direct product ID list in Michael's prompt"). Header line is exactly `# bulk-meta-description input — paste below this line` so the format is unambiguous.
+   - **5b — Unresolved URLs:** one URL per line whose `canonical_url` lookup failed (non-product page, redirect, or schema gap). Tagged `→ review manually` — these do NOT feed `bulk-meta-description`.
+3. If Supabase is unreachable for the lookup, emit only 5b with every URL and a one-line note: `Supabase unreachable for canonical_url join — paste the URL list to Michael, who will re-resolve when Supabase is back.` Do not silently produce a list of URLs labeled as product IDs.
 
 ---
 
@@ -187,11 +203,21 @@ High impressions, low CTR, top-10 position = meta description is the lever.
 | ...
 
 ═══ BLOCK 5: BULK-META-DESCRIPTION HANDOFF (paste-ready) ═══
-# Pipe into: bulk-meta-description
-/outdoor/sconces
-/flush-mount
-/p/acme-bronze
+
+5a — Resolved product IDs (paste into bulk-meta-description Step 1):
+# bulk-meta-description input — paste below this line
+12345
+67890
+24680
 ...
+
+5b — Unresolved URLs (no canonical_url match — review manually, do NOT pipe to bulk-meta-description):
+/non-product/page-without-sku       → review manually
+/redirected/old-url                 → review manually
+...
+
+[If Supabase was unreachable for the lookup, BLOCK 5 contains only 5b plus:]
+Supabase unreachable for canonical_url join — paste the URL list to Michael, who will re-resolve when Supabase is back.
 
 ═══ BLOCK 6: NEXT-STEP HINTS ═══
 - Pair this run with `gmc-feed-audit` if any losers are product URLs flagged disapproved
@@ -199,6 +225,22 @@ High impressions, low CTR, top-10 position = meta description is the lever.
 - Add notable rows to `decision-log` if they reflect a strategy shift
 - Snapshot this run via `analysis-snapshot` if the deltas are unusual
 ```
+
+### Partial output (when one or more reports fail mid-run)
+
+If R1–R4 hits an unrecoverable error (429 after retry, 403 auth, Supabase down for tracked-SKU join), emit a partial run header — DO NOT replace missing data with zeros or fabricated rows:
+
+```
+═══ PARTIAL RUN — [YYYY-MM-DD HH:MM] ═══
+Completed: [list of report IDs that returned data]
+Failed:    [list of report IDs that errored, with error code per ID]
+Cause:     [quota | auth | supabase-down | tracked-sku-list-empty]
+
+[Render BLOCKs whose underlying reports completed.]
+[For BLOCKs whose reports failed, show the BLOCK header followed by:]
+  ⚠ data unavailable — [error code]. Re-run after [next-window-suggestion] or fix [auth | quota | populate canonical_url].
+```
+
 
 ---
 
@@ -229,3 +271,5 @@ High impressions, low CTR, top-10 position = meta description is the lever.
 - **Never** suggest an action that isn't in the Step 3 lookup. If no pattern fits, write `→ review manually` — don't guess at marketing strategy.
 - **Never** overwrite a same-day run artifact. Append a timestamp suffix so drop history is preserved.
 - **Never** treat GSC rankings as causal. A position drop with no traffic loss is data; the action is investigate, not panic-rewrite.
+- **Never** emit raw URL paths in BLOCK 5a as if they were `bulk-meta-description` input. That skill expects product IDs; BLOCK 5a must hold resolved `bc_product_id` values from the Supabase `products.canonical_url` lookup. Unresolved URLs go to BLOCK 5b tagged `→ review manually`.
+- **Never** substitute "all product URLs" for the curated tracked-SKU list when Supabase returns 0 rows for the canonical_url join. Skip the Ranking Drops view and surface the populate-`canonical_url` note instead — the drop-threshold contract is calibrated on a curated set.

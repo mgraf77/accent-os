@@ -9,8 +9,9 @@ description: >
   financial or inventory truth. Read-only is a HARD POLICY, not a soft default —
   Windward is the system of record for finance and inventory; AccentOS does not,
   cannot, and must never write to it. Use this skill when Michael says: "pull
-  from Windward", "Windward customer balance", "invoice aging", "what's on hand
-  for SKU X", "vendor balance from ERP", "Windward orders this week", or any
+  from Windward", "Windward customer balance", "invoice aging", "whats on hand
+  for SKU X", "vendor balance from ERP", "Windward orders this week", "Track
+  6.11", "Windward live", "ERP truth", "what does Windward say", or any
   phrasing that asks for ERP truth on customers, invoices, inventory, or
   vendor AP. This skill is heavily gated on **M03 + M10** — until both are
   resolved, it ships a documentary stub enumerating the unblock steps for both.
@@ -28,14 +29,14 @@ description: >
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
-- "pull from Windward" / "what does Windward say"
-- "Windward customer balance for [name/id]"
-- "invoice aging" / "AR aging from ERP" / "invoice aging summary"
-- "what's on hand for SKU [X]" / "Windward inventory for [SKU]"
-- "vendor balance from ERP" / "what do we owe [vendor]"
+- "pull from Windward" / "what does Windward say" / "Windward live"
+- "Windward customer balance for [name/id]" / "customer balance"
+- "invoice aging" / "AR aging from ERP" / "invoice aging summary" / "AR aging"
+- "whats on hand for SKU [X]" / "Windward inventory for [SKU]" / "on hand for [SKU]"
+- "vendor balance from ERP" / "what do we owe [vendor]" / "vendor AP"
 - "Windward orders this week" / "recent orders from Windward"
-- "fetch invoice [id] from Windward" / "ERP truth on [customer/invoice]"
-- "Windward query"
+- "fetch invoice [id] from Windward" / "ERP truth on [customer/invoice]" / "ERP truth"
+- "Windward query" / "Track 6.11" / "6.11 Windward" / "Windward integration"
 
 Do NOT run for:
 - BigCommerce orders / web revenue → `bc-business-review` or `bc-rest-bridge`
@@ -98,6 +99,13 @@ Until both resolve:
    > **Once unblocked, this skill produces:** structured tables for six query patterns (customer_balance_by_id, invoice_by_id, invoice_aging_summary, inventory_by_sku, vendor_balance_by_id, recent_orders_by_date_range) — each with a literal "as of [ISO-8601 timestamp]" header because Windward is the financial source-of-truth and timing matters for aging and balance reads.
 
 3. If at least one method is configured AND at least one query pattern's underlying table/endpoint responds, proceed to Step 1. Note in the output which method (A or B) was used.
+
+**Failure-mode handling for Step 0:**
+
+- **One of M03/M10 resolved but not the other** — both are required. Even if M03 is done (written confirmation in hand), without M10 (Curtis approval + credentials) there is no way to authenticate against Windward. Return the stub with the partially-resolved status surfaced explicitly: `M03 [x] M10 [ ]` so Michael sees what's left.
+- **Method A configured but `windward_etl_runs.completed_at` is older than 24 hours** — treat as stale. Return the stub with a "Method A ETL stale — last successful run was [N] hours ago" line and direct Michael to re-trigger the ETL or fall back to Method B if available.
+- **Method B credentials expired (401/403)** — surface as `M10-credential-rotation` failure mode. Direct Michael back to Curtis to re-issue the WebAPI user password. Do NOT retry — silently retrying with bad creds risks account lockout on the ERP side.
+- **Both methods report ready but a probe query against Windward returns zero rows where rows are expected** (e.g. `windward_invoices` has 0 rows when Accent's open AR is ~500) — flag possible ETL truncation; return the stub with a "data integrity check failed — surface to skill-health-monitor" line. Do not proceed to query.
 
 ---
 
@@ -212,6 +220,13 @@ Next: [optional companion-skill hand-off line]
 ```
 
 If BLOCKED, output is the Step 0 stub message and nothing else.
+
+**Partial-output rules:**
+
+- If a query returns 0 rows where rows were expected (e.g. `customer_balance_by_id` for a known customer returns empty), still emit the header block + a `(no rows — verify [param] against Windward customer master)` body. Never a silent empty response.
+- If the chosen method's `As of` timestamp is older than 24h (Method A stale), keep the query but prepend a `⚠ stale: ETL last ran [N]h ago` warning to the header. Caller can decide to re-run after ETL refresh.
+- If a query exceeds the expected rowcount band (per `references/windward-queries.md` per-pattern band), emit the header + a `⚠ rowcount [N] exceeds expected band [low-high] — possible join error` line and the first 50 rows. Do NOT silently paginate the rest.
+- Never emit a partial structured table without the header block — header is mandatory because downstream skills cite the `As of` timestamp.
 
 ---
 

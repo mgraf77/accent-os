@@ -9,15 +9,23 @@ description: >
   + draft PO) that the existing UI can render unchanged. Two modes:
   `forecast` (project demand for a SKU/vendor/category over 30/60/90 days)
   and `recommend-po` (per-vendor list of SKUs to reorder now, paste-ready).
+  Skill (natural-language) vs UI page (Track 6.9) disambiguation: UI-routing
+  phrasings ("open demand forecast", "show the demand forecast tab", "go to
+  demand forecast") route to the page; everything else routes here.
   Pulls velocity from PO_LINES (BigCommerce store-cwqiwcjxes path) when
   Windward is not yet connected, and from Windward sales-line history once
   available — the same fallback the Track 6.11 plan describes. Use this
-  skill when Michael says: "what should I reorder", "demand forecast for
-  X", "draft a PO for vendor Y", "/forecast", "/po", "what's running out",
-  "30/60/90 day forecast", "build a buy list", or any phrasing asking for
-  forward-looking inventory intelligence. Do not use this skill for past
-  sell-through reporting (use bc-business-review) or for the UI itself
-  (Track 6.9). Always returns a ranked SKU table with reorder kinds plus
+  skill (the natural-language skill — NOT the Track 6.9 UI page) when
+  Michael says: "what should i reorder", "demand forecast for X",
+  "draft a po for vendor Y", "/forecast", "/po", "what's running out",
+  "30/60/90 day forecast", "build a buy list", "reorder list this week",
+  "stockout risk", or any phrasing asking for forward-looking inventory
+  intelligence via natural language. Do not use this skill for past
+  sell-through reporting (use bc-business-review) or for the UI page
+  itself (Track 6.9 — served by js/demand_forecast.js; phrasings like
+  "open demand forecast page" / "show the demand forecast tab" route to
+  the UI, not this skill). The `-skill` suffix in the directory name
+  exists specifically to disambiguate skill from UI in _index.md. Always returns a ranked SKU table with reorder kinds plus
   a paste-ready PO draft routed to action-queue — never returns prose-only
   "you should restock soon" advice.
 ---
@@ -32,16 +40,22 @@ This is a **Capability Ladder L5 (Predictive)** skill. Companion to the existing
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "what should I reorder"
-- "demand forecast for [SKU / vendor / category]"
-- "draft a PO for [vendor]"
-- "build a buy list"
-- "30 / 60 / 90 day forecast"
-- "what's running out"
-- "/forecast" or "/po"
-- "reorder list this week"
-- "stockout risk"
+Run this skill (the natural-language **skill** path, NOT the Track 6.9 UI page) when Michael says anything like (all-lowercase / terse, matching Michael's profile):
+- "what should i reorder" / "what's running out" / "what to reorder this week"
+- "demand forecast for [sku / vendor / category]" / "forecast [vendor]" / "forecast for [vendor]"
+- "draft a po for [vendor]" / "build me a po" / "build a buy list" / "draft po"
+- "reorder list" / "reorder list this week" / "reorder now list"
+- "30 60 90" / "30/60/90 day forecast" / "30/60/90"
+- "stockout risk" / "what am i about to stock out of" / "what's about to stock out"
+- "/forecast" or "/po" (slash form invokes the **skill**, not the UI)
+
+**Disambiguation from Track 6.9 UI (skill vs page):** the UI lives at the Demand Forecast page in `index.html` (rendered by `js/demand_forecast.js`). UI-routing phrasings (do NOT trigger this skill) include:
+- "open the demand forecast page" / "open demand forecast"
+- "show me the demand forecast tab" / "show the demand forecast tab"
+- "go to demand forecast" / "navigate to demand forecast"
+- Any "open / show / go to / navigate" verb + "demand forecast"
+
+This skill activates only on natural-language asks (above) or the `/forecast` / `/po` slash commands. The directory name carries the `-skill` suffix specifically to make the skill-vs-page split explicit in `_index.md` — when in doubt, the slash command always routes to the skill, not the UI page.
 
 Also trigger when `daily-brief-composer` requests the morning reorder-now tile, when `bc-business-review` asks for forecast vs actual, or when `coop-claim-drafter` needs to identify under-spent co-op windows by SKU.
 
@@ -60,6 +74,7 @@ This skill has a **soft dependency** on Windward — it does not BLOCK on Windwa
    - Probe Supabase `hsyjcrrazrzqngwkqsqa` for table `windward_sales_lines` (or whatever the windward-bridge skill writes). If present and rows in last 90 days > 0, source = `windward`.
    - Else probe BigCommerce store `store-cwqiwcjxes` orders staging (or in-page `POS` + `PO_LINES`). If present, source = `bc-po-lines` (matches current Track 6.9 UI proxy).
    - Else return stub: "no PO history and no Windward sales history — populate `PO_LINES` (Track 6.9 path) or run `windward-bridge` first."
+   - **Inventory-empty precondition:** also probe `INVENTORY` (Supabase `inventory_items`) for non-zero row count. If 0 rows, return stub: "INVENTORY table is empty — populate inventory rows (Track 6.x bulk import) before running a forecast. Velocity without on-hand counts produces no actionable reorder qty." Do not proceed to Step 1 with an empty inventory set.
 3. **Load the heuristic constants** from `references/model.md` (must match the UI's `js/demand_forecast.js`):
    - `LEAD_WEEKS = 4`, `SAFETY_WEEKS = 2`, `REORDER_THRESHOLD = 6`, `TARGET_WEEKS = 14`, `OVERSTOCK_WEEKS = 26`, `VELOCITY_WINDOW_DAYS = 90`.
    - If Michael overrides any constant in-prompt ("use 8 weeks lead time"), record the override and pass through to Step 1.
@@ -94,6 +109,11 @@ Apply the seasonally-adjusted multiplier from `references/seasonality.md` (52-we
 
 Produce a working set per SKU: `(sku, vendor_id, vendor_name, qty_available, qty_on_order, velocity_per_week, weeks_of_stock, seasonality_factor)`.
 
+**Failure paths in Step 1:**
+- **NULL `qty` or NULL `order_date` in `PO_LINES`:** treat as "row excluded from velocity sum" — do NOT coalesce to 0 (that would silently lower velocity for the SKU). Log the excluded count and surface it in the summary: `[N] PO_LINES rows excluded for NULL qty or NULL order_date — schema gap.` If excluded rows > 25% of total for any SKU, flag the SKU's `kind = no_data` instead of a velocity-derived kind.
+- **`qty_available` resolves NULL after the COALESCE fallback:** the SKU has neither `qty_available` nor a `qty_on_hand - qty_committed` pair. Emit the row with `kind = no_data` and `weeks_of_stock = null`. Never substitute 0; 0 weeks-of-stock would push the SKU to the top of `reorder_now`.
+- **Constants drift detected at runtime:** if `references/model.md` constants do not match the values currently in `js/demand_forecast.js` (compare both file timestamps + grep the constants), surface a one-line warning at the top of every output: `⚠ heuristic constants drift detected — sync references/model.md and js/demand_forecast.js before relying on this run.` Do not silently use one set; this is the L5/L6 ladder gate.
+
 ---
 
 ## Step 2 — Project 30/60/90-day forecast
@@ -118,7 +138,7 @@ Match Track 6.9 UI's classification kinds exactly: `reorder_now`, `reorder_soon`
 
 ---
 
-## Step 3 — Branch on mode
+## Step 3 — Branch on mode (forecast vs recommend-po)
 
 ### Mode A: `forecast`
 
@@ -222,6 +242,21 @@ Action queue: 1 PROPOSED row queued (id=[uuid]). Approve via /approve [uuid] or 
 Snapshot:     skills/analysis-snapshot/runs/demand-forecaster-skill-YYYY-MM-DD-po-[vendor].md
 ```
 
+### Partial output (when data is incomplete)
+
+If a run completes but the underlying data has gaps (NULL-heavy `PO_LINES`, missing `qty_available`, constants drift, partial Windward sync), emit the table or PO draft as normal AND prepend a `═══ DATA QUALITY ═══` block listing every gap. Do not silently produce a clean-looking forecast over dirty data:
+
+```
+═══ DATA QUALITY (partial-data run) ═══
+Source:                 [windward | bc-po-lines]
+Excluded PO_LINES rows: [N] (NULL qty or NULL order_date)
+SKUs with no qty_available: [N] (forced to kind=no_data)
+Constants drift:        [none | references/model.md vs js/demand_forecast.js — see warning above]
+
+Re-run after [populate-step] to clean the working set.
+```
+
+
 ---
 
 ## AccentOS context
@@ -254,3 +289,6 @@ Snapshot:     skills/analysis-snapshot/runs/demand-forecaster-skill-YYYY-MM-DD-p
 - **Never** output prose-only advice ("you should reorder some pendants from Hinkley"). Output the table + reorder qty + vendor — that's the contract.
 - **Never** skip the snapshot. Every forecast run is re-runnable via `analysis-snapshot`. Prose-only is a failed run.
 - **Never** silently merge SKUs across vendors. The compute key is `sku|vendor_id` (matches `js/demand_forecast.js`). If one SKU is sourced from two vendors, emit two rows.
+- **Never** coalesce NULL `qty` or NULL `order_date` in `PO_LINES` to 0 when computing velocity. NULL means "data missing" — a 0 silently lowers velocity and dampens the reorder signal. Exclude the row, count the exclusions, surface in the summary.
+- **Never** substitute 0 for a NULL `qty_available`. A SKU without an on-hand count would land at the top of `reorder_now` (0 weeks of stock), drowning real signals. Emit `kind = no_data` instead.
+- **Never** proceed past Step 0 with an empty INVENTORY table. The forecast contract requires on-hand counts to compute weeks-of-stock; without inventory rows the output is structurally meaningless.

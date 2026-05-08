@@ -17,35 +17,46 @@ description: >
   hydrate cycle) or to surface a single alert in a brief (that's
   `daily-brief-composer`). Always emits a routing report + action_queue
   upserts + a daily-brief alerts block — never returns prose-only triage.
+  Top trigger phrases (matched against this description by the harness):
+  "route alerts", "process alerts", "what fired", "what fired today",
+  "alert triage", "knock out the alerts", "wire alerts to action queue",
+  "escalate stale alerts".
 ---
 
 # alert-router
 
 **Purpose:** Convert the 9-signal alert generator output (Track 6.8 / `js/alerts.js`) into structured, owner-tagged, deduplicated, escalation-aware `action_queue` rows so AccentOS's agentic capability ladder advances from L3 (proactive alerts) to L4 (drafted actions).
 
-Companion skills (downstream consumers / siblings):
-- `action-queue` — receives PROPOSED rows this skill writes
-- `daily-brief-composer` — surfaces this skill's per-role "Alerts" block
+Companion skills (orchestration triangle: this skill is one of two upstream feeders writing into `action_queue`; the brief renderer at the apex consumes both):
+- `action-queue` — receives PROPOSED rows this skill writes (downstream sink, also the back-pressure source `next-action-recommender` reads)
+- `daily-brief-composer` — surfaces this skill's per-role "Alerts" block at the triangle apex (consumer)
+- `next-action-recommender` — sibling feeder; reads `action_queue` PROPOSED depth (this skill's writes) as a back-pressure signal in its Step 0 — closes the triangle
 - `email-drafter` — invoked when a routed alert's `suggested_action` is `send_email`
 - `supabase-sql-magic` — fallback for raw alert reads when MCP is degraded
 - `coop-claim-drafter` — owner of `coop_deadline` alerts
-- `next-action-recommender` — pulls top-3 from action_queue (downstream of this)
 
 ---
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "route the alerts" / "route alerts"
-- "process new alerts" / "triage the alerts"
-- "who owns this alert" / "assign alert ownership"
-- "escalate stale alerts" / "what alerts are old"
-- "wire alerts into action queue"
-- "alert triage" / "alert routing"
-- "merge duplicate alerts"
-- "alerts to brief" / "send alerts to daily brief"
+Run this skill when Michael says anything like (lowercase, often no apostrophes — match his terse register):
+- "route the alerts" / "route alerts" / "route em"
+- "process new alerts" / "process alerts" / "triage the alerts" / "triage alerts"
+- "who owns this alert" / "whos this alert for" / "assign alert ownership"
+- "escalate stale alerts" / "what alerts are old" / "stale alerts"
+- "wire alerts into action queue" / "hook alerts into the queue" (Michael uses "hook up" / "wire up" — confirmed in PROMPT_LOG profile)
+- "alert triage" / "alert routing" / "alerts triage"
+- "merge duplicate alerts" / "dedup alerts"
+- "alerts to brief" / "send alerts to daily brief" / "alerts for the brief"
+- "what fired" / "what fired today" / "whats firing" (Michael's terse form for "what alerts came in")
+- "knock out the alerts" / "knock em out" (Michael uses "knock out" as autonomy verb — confirmed in PROMPT_LOG profile)
+- "intelligent alerts" / "Intelligent Alerts" (Track 6.8 module name — surfaces when he references the module directly per profile vocab)
+- "process the bell" / "what's in the bell" (the topbar bell icon from Track 6.8 v6.10.22)
+- "/route" (slash form for fast invocation)
 
 Auto-trigger when `daily-brief-composer` requests its "Alerts" section and the watermark is older than 1 hour, or when `js/alerts.js` reports new rows since the last route.
+
+Disambiguation: if Michael asks for the morning rundown / "whats on my plate" → run `daily-brief-composer` (which auto-pulls this skill's Alerts block). If he asks "what should i do next" / "top 3" without an alert anchor → defer to `next-action-recommender`. This skill is the router, not the brief renderer or the recommender.
 
 ---
 
@@ -64,15 +75,17 @@ Run these checks in parallel:
 
    If `alerts` exists but `action_queue` does not, return a softer notice that `action_queue` schema needs to be applied (paste `references/proposed-schema.md` into SQL Editor) and continue in **dry-run mode** — emit the routing report only, skip the upsert step.
 
-2. **Read routing table.** `/home/user/accent-os/skills/alert-router/references/routing-table.md` — single source of truth mapping each of the 9 signal types to (owner_role, suggested_skill, urgency_tier, dedup_key_template, suggested_action).
+2. **Read routing table.** `/home/user/accent-os/skills/alert-router/references/routing-table.md` — single source of truth mapping each of the 9 signal types to (owner_role, suggested_skill, urgency_tier, dedup_key_template, suggested_action). **If the file is missing**, abort with a one-line stub `⚠ alert-router: routing-table.md missing — re-clone or restore. Do not route from inferred defaults.` Routing without a table is unsafe — it produces silent owner-role drift.
 
-3. **Read signal contract.** `/home/user/accent-os/skills/alert-router/references/alert-signals.md` — the 9 enumerated types pulled from `js/alerts.js` lines 101–249. If a row's `type` is not one of the 9, route it to the catch-all bucket (owner=Owner, tier=2) and flag in the report as `unknown_signal`.
+3. **Read signal contract.** `/home/user/accent-os/skills/alert-router/references/alert-signals.md` — the 9 enumerated types pulled from `js/alerts.js` lines 101–249. If a row's `type` is not one of the 9, route it to the catch-all bucket (owner=Owner, tier=2) and flag in the report as `unknown_signal`. **If `js/alerts.js` has shipped a 10th type since `alert-signals.md` was last synced**, treat the new type as unknown (catch-all + flag) — never auto-extend the contract. Surface a one-line trailer `_signal-contract drift: [type] in alerts.js but not alert-signals.md — sync references_`.
 
 4. **Read last-route watermark.** `/home/user/accent-os/skills/alert-router/last-route.md` (created on first run). The `routed_at` timestamp is the cutoff for the "new since last route" delta. If the file does not exist, treat as `NOW() - INTERVAL '24 hours'`.
 
-5. **Read active vibe-speak voice.** `/home/user/accent-os/skills/vibe-speak/profiles/_active.md` → resolve mode → apply mode rules to the routing report's narration only (the action_queue rows themselves are structured data, voice does not apply).
+5. **Read active vibe-speak voice.** `/home/user/accent-os/skills/vibe-speak/profiles/_active.md` → resolve mode → apply mode rules to the routing report's narration only (the action_queue rows themselves are structured data, voice does not apply). If `_active.md` is missing, default to `vibe` and continue — voice never blocks routing.
 
-Output of Step 0: one-line preflight — `alerts=[count] new_since_watermark=[count] action_queue=[present/dry-run] mode=[vibe-mode]`.
+6. **Concurrent-run guard.** Probe `last-route.md` for a `routed_at` newer than `NOW() - 30s`. If present, another router run is mid-flight — emit `⚠ alert-router: another run completed [N]s ago. Aborting to avoid double-routing.` and exit. Routing twice in 30s creates `action_queue` row duplication that breaks the dedup contract.
+
+Output of Step 0: one-line preflight — `alerts=[count] new_since_watermark=[count] action_queue=[present/dry-run] mode=[vibe-mode] guards=[ok|drift|other]`.
 
 ---
 
@@ -227,6 +240,8 @@ After Steps 1–4 complete:
 
 Single sectioned report (structure in Step 5). The report itself, the action_queue upserts (executed or paste-ready), the watermark file write, and a `last-route.md` overwrite — those are the four artifacts. No prose preamble, no closing summary.
 
+**Partial-output contract:** if `action_queue` schema is missing (dry-run mode per Step 0), the report still emits — the `action_queue UPSERTS` block becomes a paste-ready SQL block instead of executed statements, and the watermark still advances (so the next run's "new since" delta stays correct). If `routing-table.md` is missing or the concurrent-run guard fires, the skill aborts cleanly with a one-line stub and does NOT advance the watermark — those are the only paths that skip the artifact contract.
+
 ---
 
 ## AccentOS context
@@ -251,3 +266,6 @@ Single sectioned report (structure in Step 5). The report itself, the action_que
 - **Never** modify `/home/user/accent-os/sql/M02_core_schema.sql` or any sql/ migration. The `action_queue` schema lives in `references/proposed-schema.md` until Michael adopts it.
 - **Never** skip the escalation pass. Stale Tier-1 alerts that don't escalate are the single biggest failure mode of "we have alerts but nobody acts on them."
 - **Never** emit a prose-only triage. The four artifacts (report + queue upserts + watermark + brief block) are the contract — anything less is a failed run.
+- **Never** auto-extend `alert-signals.md` from a freshly-shipped `js/alerts.js` type. New types route to the Owner catch-all + drift trailer; the human syncs the contract.
+- **Never** route when the concurrent-run guard fires. Aborting in <30s is correct — duplicate routing breaks the dedup window.
+- **Never** route from inferred defaults when `routing-table.md` is missing. Abort with the missing-table stub and exit.

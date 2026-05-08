@@ -14,12 +14,12 @@ This file is the **only** place where action_type → executor binding lives. To
 |---|---|---|---|
 | `send_email` | `email-drafter` | Composes and saves a draft email in Michael's Gmail drafts folder. Never auto-sends. | `{ "to": [...], "cc": [...], "subject": str, "body_md": str, "thread_context": str?, "vendor_id": uuid? }` |
 | `claim_coop` | `coop-claim-drafter` | Generates a co-op claim packet (line items, invoice refs, vendor portal field map) ready for Michael to submit. | `{ "vendor_id": uuid, "claim_period": "YYYY-Q#", "line_items": [...], "total": number, "deadline": "YYYY-MM-DD" }` |
-| `update_bc_product` | `bc-rest-bridge` | Pushes a product field change to BigCommerce store `store-cwqiwcjxes` via REST. | `{ "product_id": int, "field": str, "value": any, "reason": str }` |
-| `send_klaviyo_flow` | `klaviyo-flows` | Triggers a Klaviyo flow for a customer or segment. | `{ "flow_id": str, "profile_id": str?, "segment_id": str?, "context": object }` |
+| `update_bc_product` | `bc-rest-bridge` | Pushes one or more product field changes to BigCommerce store `store-cwqiwcjxes` via REST. Matches `bc-rest-bridge` `product_field_edit` variant in `references/payload-schemas.md`. | `{ "product_id": int, "fields": { "<col>": <new_value>, ... }, "reason": str, "proposed_by_skill": str }` |
+| `propose_klaviyo_edit` | `klaviyo-flows` | Records a paste-ready Klaviyo flow edit (subject-line A/B, segment refinement, send-time change) — read+propose only, never auto-applies. Matches Mode B output in `klaviyo-flows/SKILL.md` Step 2B. | `{ "flow_id": str, "flow_name": str, "edit_type": "subject_line\|segment\|send_time", "field_label": str, "current_value": any, "proposed_value": any, "rationale": str }` |
 | `route_alert` | `alert-router` | Sends a structured alert to the appropriate channel (Slack, email, dashboard tile). | `{ "severity": "info\|warn\|crit", "channel": str, "title": str, "body_md": str, "source_skill": str }` |
 | `churn_nudge` | `churn-predictor` | Issues a churn-prevention touch (email, Klaviyo, manual call task) for an at-risk customer. | `{ "customer_id": uuid, "risk_score": number, "tactic": "email\|klaviyo\|call_task", "context": object }` |
 | `vendor_outreach` | `email-drafter` | Specialised email draft addressed to a vendor rep — uses `email-drafter` with a `vendor_outreach` template. | `{ "vendor_id": uuid, "rep_email": str, "campaign": str, "merge_fields": object }` |
-| `price_change_push` | `bc-rest-bridge` | Bulk price change to BC products — wraps `update_bc_product` for multi-SKU pushes. | `{ "changes": [ { "product_id": int, "new_price": number, "reason": str } ], "vendor_id": uuid }` |
+| `price_change_push` | `bc-rest-bridge` | Bulk price change to BC products — produces one `price_list_record` call per change in `bc-rest-bridge` Step 2 (or a `product_field_edit` batch when not on a price list). | `{ "changes": [ { "product_id": int, "variant_id": int?, "price_list_id": int?, "new_price": number, "reason": str } ], "vendor_id": uuid }` |
 
 ---
 
@@ -100,7 +100,7 @@ These skills produce rows for the queue. They should never execute the underlyin
 | `churn-predictor` | `churn_nudge` | when a customer's risk_score crosses threshold |
 | `alert-router` | `route_alert` | when a signal needs a structured alert delivery |
 | `bc-rest-bridge` | `update_bc_product`, `price_change_push` | when a price/field change is detected as needed |
-| `klaviyo-flows` | `send_klaviyo_flow` | when a flow trigger is needed for a segment |
+| `klaviyo-flows` | `propose_klaviyo_edit` | when Mode B (propose) drafts a paste-ready edit — read+propose only, Michael applies in the Klaviyo UI |
 | `next-action-recommender` | any | when promoting a recommendation to a queued action |
 | `vendor-cascade` | `vendor_outreach` | when the cascade pipeline reaches outreach stage |
 

@@ -8,13 +8,15 @@ description: >
   joins eligible spend windows from `coop_tracker` + `purchase_orders` +
   `invoices`, prioritizes vendors by deadline-urgency × claim-amount, and
   emits one paste-ready draft per active window plus a portfolio summary.
-  Use this skill when Michael says: "draft co-op claims", "what co-op is
-  about to expire", "find unclaimed co-op", "co-op deadline scan", "claim
-  vendor co-op", "draft the co-op claims", "what's the co-op claim
-  pipeline", or any phrasing that asks AccentOS to surface and prepare
-  co-op fund claims. Do not use this skill for one-off ad-hoc co-op
-  emails (those go to email-drafter), for rebate tracking that isn't
-  co-op (that's a separate program), or for actually sending the claim
+  Use this skill when Michael says: "draft co-op claims", "draft the
+  co-op claims", "what co-op is about to expire", "find unclaimed co-op",
+  "co-op deadline scan", "scan co-op deadlines", "claim vendor co-op",
+  "what's the co-op pipeline", "co-op pipeline", "money left on the
+  table from co-op", "knock out co-op claims", or any phrasing that asks
+  AccentOS to surface and prepare co-op fund claims across the whole
+  portfolio. Do not use this skill for one-off ad-hoc co-op emails to a
+  named single vendor (those go to email-drafter), for rebate tracking
+  that isn't co-op (separate program), or for actually sending the claim
   (the draft is consumed by email-drafter and queued by action-queue).
   Always produces per-vendor claim drafts with a required-documentation
   checklist plus a portfolio table — never sends, never auto-approves,
@@ -46,16 +48,18 @@ This skill is a **specialization** of `email-drafter`, not a replacement:
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "draft co-op claims" / "draft the co-op claims"
-- "what co-op is about to expire"
-- "find unclaimed co-op" / "where's our co-op money"
-- "co-op deadline scan" / "scan co-op deadlines"
-- "claim vendor co-op" (no specific vendor named — if a vendor *is* named, route to email-drafter)
-- "what's the co-op claim pipeline" / "co-op pipeline"
-- "money left on the table from co-op"
+Run this skill when Michael says anything like (lowercase / terse / typo variants all count — match his register per `vibe-speak/profiles/michael.md`):
+- "draft co-op claims" / "draft the co-op claims" / "knock out co-op claims"
+- "what co-op is about to expire" / "what's expiring"
+- "find unclaimed co-op" / "where's our co-op money" / "money left on the table from co-op"
+- "co-op deadline scan" / "scan co-op deadlines" / "co-op scan"
+- "claim vendor co-op" (no specific vendor named — if a vendor *is* named, route to `email-drafter`)
+- "what's the co-op claim pipeline" / "co-op pipeline" / "co-op status"
+- "run the co-op drafter" / "co-op drafter"
 
 Also trigger when `daily-brief-composer` surfaces a co-op deadline tile within 30 days, or when `next-action-recommender` proposes promoting a co-op claim to a queued action.
+
+**Boundary vs. email-drafter (crisp rule):** if Michael names exactly one vendor (e.g., "claim co-op from Kichler", "ping Visual Comfort about co-op"), `email-drafter` runs. If the trigger is plural, time-driven, or asks AccentOS to *find* the claims, this skill runs first and delegates per-vendor drafting back to `email-drafter`.
 
 ---
 
@@ -86,6 +90,12 @@ This skill has a **partial-blocked gate** — the per-claim records (`coop_track
 > Until then, this run will fall back to deadline-only scanning of `coop_tracker.deadline` — see Step 1's stub branch.
 
 **Active-mode branch.** If all three columns exist, proceed to Step 1.
+
+**Failure-path notes (Pass-2 hardening):**
+
+- **Columns exist but all rows NULL** (schema landed but no backfill): Step 1's query returns 0 rows. Surface explicitly — don't fall through to "no claims" silently. Output: `Schema present, but no vendor has co-op rules configured. Backfill top-N vendors per references/proposed-schema.md. Falling back to coop_tracker.deadline scan.` Then run the stub-mode `coop_tracker` scan as a partial pass.
+- **Zero purchase_orders in computed window** (e.g., newly-onboarded vendor with co-op rules but no spend yet): Step 2 returns `gross_spend = 0`. Filter rows where `eligible_amount = 0` to the watch list with reason `no spend in window`, never to the draft list. Drafting a $0 claim wastes the vendor's review cycle.
+- **email-drafter partial failure during Step 5** (e.g., Anthropic API 429 on draft 4 of 7): emit the drafts that succeeded, list the failed-vendors with their CONTEXT block intact in BLOCK 3, and append a remediation entry in BLOCK 4: `email-drafter failed for vendors [list] — re-run skill or invoke email-drafter directly`. Never abort the whole portfolio for one failure.
 
 ---
 
@@ -196,7 +206,7 @@ For each draft from Step 5, build an `action-queue` row:
 }
 ```
 
-Invoke `action-queue` with `queue this action` for each draft. The `idempotency_key` ensures re-running this skill the same day doesn't duplicate queue rows for the same vendor/period.
+Invoke `action-queue` once per draft (one invocation per row, not a batch call) with the row above as the payload. The `idempotency_key` ensures re-running this skill the same day doesn't duplicate queue rows for the same `(vendor_id, period_end)` pair — `action-queue` returns the existing row id on collision rather than creating a duplicate.
 
 ---
 
@@ -260,7 +270,10 @@ Reasoning: [email-drafter reasoning block]
 - Schema additions still pending: [list, or "none — all 3 columns present"]
 - Vendors missing co-op config (in vendors table but no vendor_overrides row): [count + names]
 - Stale coop_tracker rows (status='open' with deadline < today): [count + IDs]
+- Partial-pass failures (vendors where email-drafter delegation failed): [list + reason] — re-run this skill or invoke email-drafter directly per vendor
 ```
+
+**Partial output (Pass-2 hardening):** if Step 5 fails for a subset of vendors, the four-block structure still ships — failed vendors appear in BLOCK 3 as `[draft pending — email-drafter failed: <reason>]` with the CONTEXT block visible, and BLOCK 4 lists them in the remediation row above. Never collapse to a single error; partial portfolio visibility beats silent abort.
 
 ---
 
@@ -291,3 +304,5 @@ Reasoning: [email-drafter reasoning block]
 - **Never** drop a vendor below the threshold without surfacing it on the watch list. Money-left-on-the-table is the failure mode this skill exists to prevent — silence on a near-threshold vendor is a bug.
 - **Never** fall back to prose-only output. The four-block structure (Draft list / Watch list / Per-vendor drafts / Remediation) is the contract.
 - **Never** auto-approve a draft. Even when the deadline is < 3 days, Michael's explicit approval is required — `action-queue` is the gate, not the bypass.
+- **Never** abort the portfolio scan because one vendor's draft fails. Emit the successes, list the failures in BLOCK 4 with CONTEXT preserved. Half a portfolio is recoverable; a silent abort isn't.
+- **Never** drop a $0-spend vendor from output silently. Surface on watch list with reason `no spend in window` so Michael knows the rule exists but didn't fire.

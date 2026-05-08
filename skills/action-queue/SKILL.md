@@ -9,12 +9,13 @@ description: >
   through a five-state machine — PROPOSED → APPROVED → EXECUTED → ARCHIVED
   (or DISMISSED) — and delegates the actual execution to a registry of
   executor skills (email-drafter, coop-claim-drafter, bc-rest-bridge,
-  klaviyo-flows, alert-router). Use this skill when Michael says: "queue this
-  action", "what's pending approval", "show the action queue", "approve action
-  N", "approve all pending", "dismiss action N", "execute action N", "archive
-  executed actions", "what actions are waiting", "run the queue", "show
-  proposed actions", or any phrasing that touches the propose/approve/execute
-  loop. Do not use this skill for one-off ad-hoc emails (those go straight
+  klaviyo-flows, alert-router). Use this skill when Michael says: "queue
+  this", "whats pending", "show the queue", "approve N", "approve all",
+  "confirm bulk approve", "dismiss N", "kill that action", "blow out action N",
+  "fire action N", "fire it", "run action N", "execute N", "knock out the queue",
+  "ship the queue", "push approved", "queue depth", "whats waiting on me",
+  "archive executed", "clean up the queue", or any phrasing that touches the
+  propose/approve/execute/dismiss loop. Do not use this skill for one-off ad-hoc emails (those go straight
   through email-drafter without queueing) or for read-only data questions
   (use supabase-sql-magic). Always persists to Supabase with an
   idempotency_key, requires explicit per-action approval (never auto-
@@ -35,16 +36,17 @@ Closes: Capability Ladder L6 (Autonomous execution after approval) · MASTER §1
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
-- "queue this action" / "queue this for approval"
-- "what's pending" / "what's pending approval" / "show the queue"
-- "approve action 7" / "approve [id]" / "approve all pending"
-- "dismiss action 3" / "kill that action" / "throw out action [id]"
-- "execute action 5" / "run it" / "fire that action"
-- "archive executed" / "clean up the queue"
-- "show me proposed actions" / "what's waiting on me"
-- "queue depth" / "how many actions are pending"
+- "queue this" / "queue it" / "queue for approval"
+- "whats pending" / "show the queue" / "show pending" / "show me the queue"
+- "approve 7" / "approve [id]" / "approve all" / "approve all pending" / "confirm bulk approve"
+- "dismiss 3" / "kill that action" / "blow out action [id]" / "blow it out" / "throw out [id]"
+- "fire action 5" / "fire that" / "fire it" / "run it" / "run action 5" / "execute 5" / "execute that"
+- "knock out the queue" / "knock out pending" / "archive executed" / "clean up the queue"
+- "whats waiting on me" / "whats waiting" / "whats in the queue"
+- "queue depth" / "how many pending" / "how deep is the queue"
+- "ship the queue" / "push the queue" / "push approved" / "ship approved"
 
-Also trigger when a sibling skill (email-drafter, coop-claim-drafter, churn-predictor, alert-router, daily-brief-composer) emits a "should we queue this?" suggestion or when `next-action-recommender` proposes promoting a recommendation to a queued action.
+Also trigger when a sibling skill (email-drafter, coop-claim-drafter, churn-predictor, alert-router, daily-brief-composer, bc-rest-bridge, klaviyo-flows) emits a "should we queue this?" suggestion or when `next-action-recommender` proposes promoting a recommendation to a queued action.
 
 ---
 
@@ -72,7 +74,7 @@ This skill is gated on the `action_queue` table existing in Supabase project `hs
    > EXECUTED, DISMISSED, ARCHIVED. Action_type enum drawn from
    > `references/executor-registry.md`.
 
-3. If the table exists, also verify the `action_state` and `action_type_enum` enum types exist (per proposed-schema.md). If either is missing, return the same stub. Otherwise proceed to Step 1.
+3. If the table exists, also verify the `action_state` and `action_type_enum` enum types exist (per proposed-schema.md). If either is missing, return the same stub. Then verify `references/executor-registry.md` exists and is readable — if missing or unreadable, abort with "executor-registry.md missing — re-clone the action-queue skill directory" (the skill cannot route Step 5 without it). Otherwise proceed to Step 1.
 
 4. Branch on Michael's verb. Each verb maps to one sub-step below:
    - "queue" / "propose"          → Step 1 (propose)
@@ -143,7 +145,7 @@ Emit a list-view table (see Output format). Include a footer line with queue-dep
 Two sub-paths:
 
 **3A. Single approval** (`approve [id]`):
-1. Read the action by id. Confirm `state = PROPOSED`. If not, abort with "action [id] is in state X — cannot approve".
+1. Read the action by id. Confirm `state = PROPOSED`. If not, abort with "action [id] is in state X — cannot approve" (covers concurrent-approve race: only one Update will return a row because the WHERE clause includes `state = 'PROPOSED'`).
 2. Update to APPROVED:
    ```sql
    UPDATE action_queue
@@ -151,7 +153,8 @@ Two sub-paths:
    WHERE id = $2 AND state = 'PROPOSED'
    RETURNING id, action_type, payload;
    ```
-3. Immediately proceed to Step 5 (execute) for that single action — approval and execution chain by default unless Michael says "approve only".
+   If `RETURNING` is empty → another approver beat us; abort with "race lost — action [id] no longer PROPOSED". Never patch state forward without the row returning.
+3. Immediately proceed to Step 5 (execute) for that single action — approval and execution chain by default unless Michael's prompt contains the literal phrase "approve only" or "approve don't execute" (then stop after the UPDATE and emit an approval-only receipt; the row stays APPROVED until a later `execute [id]`).
 4. Emit single-action approval-and-execution receipt.
 
 **3B. Bulk approval** (`approve all`):
@@ -193,9 +196,13 @@ Action-queue **never executes business logic directly**. It only routes APPROVED
 
 For each approved action:
 
-1. Look up the executor skill name for `action_type` in `references/executor-registry.md`. If missing → mark `executor_result = {"error": "no executor registered"}`, leave state at APPROVED, surface in receipt, stop.
+1. Look up the executor skill name for `action_type` in `references/executor-registry.md`. If missing → mark `executor_result = {"error": "no executor registered", "action_type": "<value>"}`, leave state at APPROVED, surface in receipt with the literal text "register the executor in references/executor-registry.md and re-approve", stop.
 
-2. Invoke the executor skill via the harness (Skill tool, with `skill: <executor-name>` and `args: payload`). Treat the executor's structured return as `executor_result`.
+   1a. **Executor in BLOCKED stub mode** (e.g. `bc-rest-bridge` blocked on M04, `klaviyo-flows` blocked on M09): the executor will return `{"error": "<skill> blocked on <M-task>"}`. Treat this as a partial-failure: keep state at APPROVED, record the blocker in `executor_result`, and surface the unblock steps from the executor's stub message in the receipt. Do not auto-retry — the row will execute on the next run after the M-task lands without re-approval.
+
+   1b. **Executor refuses the action_type** (e.g. klaviyo-flows is read+propose only and will refuse `send_klaviyo_flow`): the executor returns `{"error": "action_type not supported by this executor"}`. Treat as a registry-binding bug: keep state at APPROVED, surface "registry says executor X handles Y but X refuses — fix references/executor-registry.md" in the receipt, stop.
+
+2. Invoke the executor skill via the harness (Skill tool, with `skill: <executor-name>` and `args: payload`). Treat the executor's structured return as `executor_result`. Wrap the invocation with a 90-second soft timeout — if the executor does not return in 90s, mark `executor_result = {"error": "executor timeout 90s", "executor": "<name>"}`, keep state at APPROVED, surface RETRY-OR-DISMISS, stop.
 
 3. Update the row:
    ```sql
@@ -306,6 +313,26 @@ Active queue depth after sweep:
   PROPOSED: [n]   APPROVED: [n]   EXECUTED: [n]   ARCHIVED: [n]
 ```
 
+### Partial-success / blocked-executor receipt (Step 5 sub-output)
+
+When an executor returns BLOCKED-stub or a bulk run completes with mixed outcomes, the row state stays at APPROVED for the failed/blocked items. Receipt format:
+
+```
+═══ ACTION [id] — APPROVED (execution deferred) ═══
+
+action_type:        [type]
+routed_to_executor: [skill name]
+result_status:      blocked | error | timeout
+blocker:            [M-task id, e.g. M04 / M09 / "executor timeout 90s"]
+unblock_steps:      [verbatim from executor stub, OR "register executor in registry"]
+auto_retry:         no — retries on next manual `execute [id]` once blocker clears
+                    (no re-approval required; idempotency_key preserved)
+
+Next available actions: [execute N (after unblock)] [dismiss N]
+```
+
+For bulk runs in Step 3B/5, append a per-row line for each non-ok outcome under the bulk summary header — never silently swallow a blocked row.
+
 ---
 
 ## AccentOS context
@@ -331,3 +358,5 @@ Active queue depth after sweep:
 - **Never advance state out of order.** Allowed transitions: PROPOSED→APPROVED, APPROVED→EXECUTED, EXECUTED→ARCHIVED, PROPOSED→DISMISSED, APPROVED→DISMISSED. Anything else aborts with a state-error receipt.
 - **Never mutate other skills.** If an `action_type` needs a new executor, add the row to `references/executor-registry.md` and instruct Michael to forge the executor skill — do not edit the executor skill from here.
 - **Never write SQL migration files.** The schema lives in `references/proposed-schema.md` for Michael to paste into Supabase SQL Editor — per AccentOS hard rule, no `sql/*.sql` migration files are authored by skills.
+- **Never silently swallow a BLOCKED-stub return from an executor.** If `bc-rest-bridge` returns "blocked on M04" or `klaviyo-flows` returns "blocked on M09", the row stays at APPROVED, the receipt shows the unblock steps verbatim, and the Step 5 retry path uses the existing idempotency_key — no re-approval. Treating the stub as an EXECUTED erases the M-task tracking and double-executes once the blocker clears.
+- **Never trust the registry without reverifying executor capability.** If an executor refuses an `action_type` it's listed for (e.g. klaviyo-flows is read+propose only and will refuse `send_klaviyo_flow`-shaped sends), the failure mode is a registry-binding bug, not a runtime error. Receipt must surface "fix references/executor-registry.md" — do not patch the row to EXECUTED, do not silently re-route.

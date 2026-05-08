@@ -7,11 +7,52 @@
 
 ### Next Claude session — paste this prompt to resume:
 
-> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md / MODULE_MODES.md / `skills/efficiency-monitor/session-end-summary.md` / `skills/gap-optimizer/candidate-queue.md`. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean on `claude/accentos-gap-analysis-Dcvcf` after gap-optimizer + skill-health-monitor ship.** Closed-loop skill ecosystem now wired: `gap-optimizer` (proposes from vision) → `skill-forge` (builds with approval gate) → `skill-health-monitor` (audits) → `gap-optimizer` re-runs. First gap-optimizer cycle landed: 15 ranked gaps in `skills/gap-optimizer/candidate-queue.md`, top-3 = email-drafter, daily-brief-composer, next-action-recommender. **To act on the queue: reply `forge top 3`** or `forge [name]` per gap-optimizer SKILL.md Step 5d. Other slash protocols still active: `/mode <key> <state>` for module modes, `/override allow|deny|clear <user> <module>` for per-user grants, `/skill-health` to audit existing skills. New M-task candidate from prior session: **M30 — Supabase `user_module_overrides` table** (server-side per-user grants). Next pickable WITHOUT new permissions: act on gap-optimizer queue, **MODULE_REGISTRY refactor**, **Saved Filter Sets**, **Bulk action bars**. Blocked: 5.13 + 6.1/6.2/6.3/6.4/6.10/6.11 still wait on M03/M04/M05/M06/M09/M10/M18; M24-M29 schema runs still pending but UIs already ship working.
+> Read WORK_IN_PROGRESS.md FIRST. Then PROMPT_LOG.md / SESSION_LOG.md / BUILD_PLAN_CLAUDE.md / BUILD_INTELLIGENCE.md / MODULE_MODES.md / `skills/efficiency-monitor/session-end-summary.md` / `skills/gap-optimizer/candidate-queue.md` / `skills/gap-optimizer/gap-log.md`. Log this prompt to PROMPT_LOG.md before any build work. Run `bash /workspaces/accent-os/scripts/status.sh`. **Tree clean on `claude/accentos-gap-analysis-Dcvcf` after gap-run-002 (full-queue drain).** Skill ecosystem now 45 skills (was 30). All 15 unforged gap-candidates from gap-run-001 are BUILT + Ralph-optimized; 7 ship in BLOCKED stub mode pending M-tasks. Closed-loop discipline preserved: vision → optimizer ranks → forge builds → optimizer logs closure. **Next /gap run** scores the 5 newly surfaced candidates (ralph-loop-runner, M-task-tracker, executor-registry-validator, skill-eval-runner, trigger-phrase-miner) and produces a fresh top-3. **Recommend running /skill-health next** — first audit on the 15 new skills (companion-link drift, broken refs, merge candidates from parallel forge). Slash protocols active: `/gap` to rescan, `/skill-health` to audit, `/mode <key> <state>` for module modes, `/override allow|deny|clear <user> <module>` for per-user grants, `forge [name]` to drain queue items. M-tasks now blocking 7 skills directly: M06 (ga4 + gsc), M04 (bc-rest-bridge), M09 (klaviyo-flows), M03+M10 (windward-bridge), action_queue schema (action-queue), heavy gate on trade-vendor-portal. Unblocking any of those auto-activates the corresponding skill. M30 still on deck (per-user-overrides server-side persistence). Next pickable WITHOUT new permissions: act on the 5 new gap candidates, **MODULE_REGISTRY refactor**, **Saved Filter Sets**, **Bulk action bars**.
 
 ### Standing instructions:
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
+
+### 2026-05-08 — gap-run-002: full-queue drain via parallel forge + Ralph optimization — SHIPPED
+**Skills:** 15 NEW shipped end-to-end (forged + Ralph-optimized + landed in `_index.md`). Skill ecosystem: 30 → **45 skills** in one session.
+**Built/Changed:**
+- **15 new skills** (full SKILL.md + references/ each): `email-drafter`, `daily-brief-composer`, `next-action-recommender`, `alert-router`, `churn-predictor`, `ga4-insights`, `gsc-insights`, `action-queue`, `klaviyo-flows`, `bc-rest-bridge`, `coop-claim-drafter`, `windward-bridge`, `skill-performance-tracker`, `demand-forecaster-skill`, `trade-vendor-portal`. 7/15 ship in BLOCKED stub mode pending M-tasks; 8/15 immediately invocable.
+- **`skills/gap-optimizer/references/forge-briefing.md`** (NEW) — shared briefing read once per agent. Wave 1 token-efficiency mechanism.
+- **`skills/gap-optimizer/references/optimizer-briefing.md`** (NEW) — shared Ralph-loop briefing. 3-pass spec: trigger-phrase + voice match / failure-mode hardening / validation + ambiguity scrub.
+- **`skills/gap-optimizer/candidate-queue.md`** (overwritten) — all 15 marked BUILT; 5 next-cycle candidates seeded.
+- **`skills/gap-optimizer/gap-log.md`** (appended) — gap-run-002 entry: 15/15 closed_since_last, wave architecture notes, stub-mode inventory table.
+- **`skills/_index.md`** — 15 new entries inserted at correct alphabetical positions.
+- **`PROMPT_LOG.md`** — new entry.
+
+**Architecture:**
+- **Wave 1: forge** — 15 parallel general-purpose subagents, one per gap. Shared `forge-briefing.md` cut prompt size ~70%. Each agent wrote SKILL.md + references/ to its own skill dir; auto-WIP commits captured progress mid-flight (4 checkpoints between agents finishing).
+- **Wave 2: Ralph optimize** — 5 parallel subagents, each handled 3 skills × 3 passes (45 pass-ops). Logical clustering: customer-agentic / orchestration triangle / action pipeline / analytics / blocked-meta. All 15 skills landed at PASS within 3 passes. Caught executor-registry contract drift between action-queue and klaviyo-flows; fixed in same pass.
+- **Aggregation** — 11 batched Edit operations to insert _index.md entries at proper alphabetical positions.
+
+**Decisions:**
+- **15 parallel agents in Wave 1, 5 in Wave 2.** Wave 2 batched at 3-skills-per-agent because one Wave-1 agent (skill-performance-tracker) hit "extra usage" cap. The 5-agent shape kept Wave 2 inside budget while still parallel.
+- **No SQL migration files written** — schema proposals (action-queue's `action_queue`, churn-predictor's RFM tables, coop-claim-drafter's vendor_overrides additions) all live in `references/proposed-schema.md`. Per the briefing's hard "do not modify sql/" rule. Schema runs are M-tasks.
+- **BLOCKED stub mode is shipped state, not a TODO.** Each of the 7 stubbed skills has a Step-0 gate that returns a concrete unblock message citing the M-task ID + exact unblock steps from BUILD_PLAN_MICHAEL.md. They activate automatically once the env var or schema check passes.
+- **Two-gate discipline preserved.** Michael's "forge all 15" was the gap-level approval; each skill-forge run still went through its own structural validation. Wave 2 added a third quality gate (Ralph passes).
+
+**Coordination wins surfaced by parallel pass:**
+- action-queue executor-registry: `send_klaviyo_flow` action_type was wrong — klaviyo-flows is read+propose-only. Renamed to `propose_klaviyo_edit`. Caught only because Wave 2 agent C optimized all three (action-queue + bc-rest-bridge + klaviyo-flows) and could see the contract drift across them.
+- bc-rest-bridge `update_bc_product` payload: original `{field_name, new_value}` shape didn't match bc-rest-bridge's actual `product_field_edit` variant; fixed to `{product_id, fields:{}, reason, proposed_by_skill}`.
+- Triangle alignment: daily-brief-composer ↔ next-action-recommender ↔ alert-router companion links now reciprocal in all three SKILL.md files.
+
+**Next-cycle candidates surfaced (seed of gap-run-003):**
+1. ralph-loop-runner (the 3-pass discipline as a reusable skill)
+2. M-task-tracker (every BLOCKED skill mapped to its blocking M-tasks)
+3. executor-registry-validator (catches action-queue ↔ executor contract drift)
+4. skill-eval-runner (distinct from skill-eval-suite — runs evals on cadence)
+5. trigger-phrase-miner (Wave 2 Pass 1 mining as a skill)
+
+**Open loops:**
+- skill-health-monitor full audit not yet run on the 45-skill ecosystem (lite check passed: 8–14 anti-patterns each, 1271–2023 char descriptions, no broken companion refs). Recommend full /skill-health next session.
+- 5 newly surfaced gap candidates need scoring via /gap.
+- M-tasks gating 7 stubbed skills: M03, M04, M06, M09, M10, action_queue schema, trade-portal heavy.
+
+**Next prompt:** "/gap" to score the 5 next-cycle candidates, OR "/skill-health" to audit the 45-skill ecosystem.
 
 ### 2026-05-07 — gap-optimizer + skill-health-monitor (closed-loop skill ecosystem) — SHIPPED
 **Skills:** `skills/gap-optimizer/` (NEW) + `skills/skill-health-monitor/` (NEW). Closed-loop completion: vision → optimizer ranks → forge builds → health audits → optimizer re-runs.

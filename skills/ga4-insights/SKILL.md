@@ -8,11 +8,13 @@ description: >
   pages, conversion funnel by audience split, week-over-week deviations,
   and >2σ anomaly flags. Reads via the GA4 Data API using the service
   account provisioned in M06; writes nothing, mutates nothing, only
-  reports. Use this skill when Michael says: "GA4 insights", "what's
-  GA4 saying", "weekly traffic report", "where is traffic coming from",
-  "GA4 anomalies", "trade vs consumer traffic", "landing page movers",
-  "conversion drops this week", or any phrasing that asks for a
-  Google-Analytics-derived view of Accent Lighting site performance.
+  reports. Use this skill when Michael says: "ga4 insights", "what's
+  ga4 saying", "pull ga4", "run ga4", "weekly traffic", "where is
+  traffic coming from", "ga4 anomalies", "anomalies in ga4", "trade vs
+  consumer traffic", "landing page movers", "conversion drops", "is
+  conversion down", "anything weird in ga4", "/ga4", or any phrasing
+  that asks for a Google-Analytics-derived view of Accent Lighting
+  site performance.
   Do not use this skill for Google Search Console queries (use
   gsc-insights), per-deal investigation (use supabase-sql-magic), or
   full executive recap (use bc-business-review). This skill is gated on
@@ -33,58 +35,65 @@ Stolen from: bc-business-review's WoW + z-score pattern, adapted to the GA4 Data
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "GA4 insights" / "GA4 weekly" / "what's GA4 saying"
-- "weekly traffic report" / "where is traffic coming from"
-- "GA4 anomalies" / "conversion drops this week"
-- "trade vs consumer traffic" / "trade portal traffic"
-- "landing page movers" / "top movers this week"
-- "is anything weird in analytics"
+Run this skill when Michael says anything like (all-lowercase / terse register — match Michael's profile):
+- "ga4 insights" / "ga4 weekly" / "what's ga4 saying" / "pull ga4" / "run ga4"
+- "weekly traffic" / "where is traffic coming from" / "traffic report" / "site traffic"
+- "ga4 anomalies" / "anomalies in ga4" / "conversion drops" / "is conversion down"
+- "trade vs consumer traffic" / "trade portal traffic" / "consumer site traffic"
+- "landing page movers" / "top movers this week" / "what's moving on site"
+- "is anything weird in analytics" / "anything weird in ga4" / "anything off in ga4"
+- "what's the site doing" / "how's the site doing" (when context is web traffic, not pipeline)
+- "/ga4"
 
 Do NOT run for:
-- Search Console / SERP / keyword data → `gsc-insights`
-- BigCommerce-side revenue / orders → `bc-business-review`
+- Search Console / SERP / keyword / impressions / rankings → `gsc-insights`
+- BigCommerce-side revenue / orders / pipeline → `bc-business-review`
 - Single-page deep dive → `supabase-sql-magic` against page logs
+- SKU / inventory / reorder forecasts → `demand-forecaster-skill`
 
 ---
 
 ## Step 0 — Preflight (BLOCKED gate on M06)
 
-This skill is gated on **M06 (Google Analytics 4 + Search Console service account)** from `BUILD_PLAN_MICHAEL.md`. Until that resolves:
+This skill is gated on **M06 — Google Analytics 4 + Search Console service account** per `BUILD_PLAN_MICHAEL.md` lines 186–194 (shared blocker with `gsc-insights`). Until that resolves the skill ships in stub mode.
 
-1. Check whether the blocking dependencies exist. For ga4-insights, that means:
-   - Env var `GA4_PROPERTY_ID` is set (the GA4 property ID for accentlightinginc.com)
-   - Env var `GA4_CREDENTIALS_JSON` is set (path to the service-account JSON, OR the JSON contents inline)
+1. Check whether the blocking dependency exists. For `ga4-insights`, **both** of these env vars must be set in the active session:
+   - `GA4_PROPERTY_ID` — the GA4 property ID for accentlightinginc.com (e.g. `123456789`)
+   - `GA4_CREDENTIALS_JSON` — filesystem path to the service-account JSON, OR the JSON contents inline
    - Optional: `GA4_TRADE_PROPERTY_ID` for the trade portal if it's a separate property; otherwise the skill uses an audience filter on the single property
 
-   Run:
+   Run this check exactly:
+
    ```bash
-   test -n "$GA4_PROPERTY_ID" && test -n "$GA4_CREDENTIALS_JSON" && echo OK || echo MISSING
+   test -n "$GA4_PROPERTY_ID" && test -n "$GA4_CREDENTIALS_JSON" && echo OK || echo BLOCKED
    ```
 
-2. If either is missing, return this stub verbatim and exit:
+2. If either is missing, return this exact stub and exit — do **not** attempt to call the API, generate fake data, or "skip the check just this once":
 
-   > ⚠ skill `ga4-insights` is BLOCKED on **M06** (Google Analytics 4 service account).
+   > ⚠ skill `ga4-insights` is BLOCKED on **M06** (Google Analytics 4 + Search Console service-account credentials — shared with `gsc-insights`).
    >
-   > **To unblock — concrete steps from `BUILD_PLAN_MICHAEL.md` M06:**
-   > 1. Go to `https://console.cloud.google.com/iam-admin/serviceaccounts` and either reuse the M05 service account or create a dedicated `accentos-ga4@` account.
-   > 2. Add that service-account email as a **Viewer** in GA4 Admin → Property Access Management.
-   > 3. Download the service-account JSON if not already saved from M05.
-   > 4. Set env vars in `/home/user/accent-os/.claude/settings.local.json` (or `.env`):
-   >    - `GA4_PROPERTY_ID=<paste GA4 property ID, e.g. 123456789>`
-   >    - `GA4_CREDENTIALS_JSON=/path/to/service-account.json`
-   >    - (Optional) `GA4_TRADE_PROPERTY_ID=<trade portal property ID>`
-   > 5. Paste to Claude: `M06 done — GA4 service account configured. Property ID: <paste>. Sites verified: <paste>.`
+   > **To unblock (per `BUILD_PLAN_MICHAEL.md` M06, lines 186–194):**
+   > 1. Open `https://console.cloud.google.com/iam-admin/serviceaccounts` — reuse the M05 service account or create `accentos-ga4@`.
+   > 2. In GA4 Admin → **Property Access Management** → add the service-account email with **Viewer** role.
+   > 3. Download the service-account JSON if not already done in M05.
+   > 4. Export both env vars in this Codespace (and add to `.env` for persistence):
+   >    ```bash
+   >    export GA4_PROPERTY_ID="<paste GA4 property ID, e.g. 123456789>"
+   >    export GA4_CREDENTIALS_JSON="/home/user/accent-os/.secrets/ga4-sa.json"
+   >    # optional, only if trade portal is a separate GA4 property:
+   >    export GA4_TRADE_PROPERTY_ID="<paste trade-portal GA4 property ID>"
+   >    ```
+   > 5. Paste to Claude → `M06 done — GA4 + GSC service account configured. Property ID: <paste>. Sites verified: <paste>.`
    >
-   > **Once unblocked, this skill produces:** a 4-block paste-ready weekly brief — headline KPIs (sessions, users, conversions) with WoW deltas; trade-portal vs consumer-site split; top 10 landing pages by movement; >2σ anomaly flags on traffic source × landing page combinations. Pulled fresh from GA4 Data API on each invocation (no cache).
+   > **What this skill produces once active:** a 4-block paste-ready weekly brief — headline KPIs (sessions, users, conversions) with WoW deltas; trade-portal vs consumer-site split; top 10 landing pages by movement; >2σ anomaly flags on traffic source × landing page combinations. Pulled fresh from the GA4 Data API on each invocation (no cache).
    >
-   > Skill will activate automatically once both env vars are set and a smoke-test GA4 API call succeeds.
+   > Skill activates automatically on the next invocation once both env vars resolve and a smoke-test GA4 API call succeeds.
 
-3. If both env vars exist, proceed to Step 1.
+3. If both env vars are present, proceed to Step 1.
 
 ---
 
-## Step 1 — Set the window
+## Step 1 — Resolve the analysis date window
 
 Defaults:
 - **This week** = last 7 complete days (yesterday minus 6, through yesterday) — GA4 same-day data is unstable
@@ -109,6 +118,11 @@ Reports to run for the headline block (`references/ga4-reports.md` IDs **R1–R3
 Run R1 twice (this week, comparison window) and compute WoW % for each metric. If R1 returns zero rows for a metric, flag the metric as "no data" rather than treating as zero.
 
 If R3's custom dimension isn't configured, output a one-line note in BLOCK 2: "Audience split using hostname proxy — recommend configuring GA4 custom event `audience_segment` for cleaner split."
+
+**Failure paths in Step 2:**
+- **API 429 / quota exceeded:** GA4 Data API has per-property daily quotas. On 429, back off 60s and retry once; if the second attempt fails, return a partial brief covering whatever reports completed (with a `═══ PARTIAL RUN ═══` header) plus a `quota exhausted — retry tomorrow or request quota increase in GCP` line. Never invent numbers to fill the missing reports.
+- **Service-account JSON expired / 401 unauthenticated:** the env var resolves but auth fails. Re-surface M06 stub Step 1–2 (rotate the key in GCP, re-add the email in GA4 Admin → Property Access Management). Do not retry silently.
+- **Custom dimension absent:** already handled above (hostname proxy + recommendation line). Never silently drop the audience split.
 
 ---
 
@@ -202,6 +216,23 @@ Currently: [N] qualifying dimensions across all tiers.
 - Save this brief as: snapshot-NNN-ga4-insights-YYYY-WW
 ```
 
+### Partial output (when one or more reports fail mid-run)
+
+If any of R1–R6 returns an unrecoverable error (429 after retry, 401 auth, 5xx after retry), emit a partial brief — DO NOT replace missing data with zeros or invented numbers:
+
+```
+═══ PARTIAL RUN — [YYYY-MM-DD HH:MM] ═══
+Completed: [list of report IDs that returned data]
+Failed:    [list of report IDs that errored, with error code per ID]
+Cause:     [quota | auth | upstream-5xx]
+
+[Render the BLOCKs that have full data — skip BLOCKs whose reports failed]
+
+For failed reports, show the BLOCK header followed by:
+  ⚠ data unavailable — [error code]. Re-run after [next-window-suggestion] or fix [auth | quota].
+```
+
+
 ---
 
 ## AccentOS context
@@ -233,3 +264,5 @@ Currently: [N] qualifying dimensions across all tiers.
 - **Never** skip the trade-vs-consumer split — that audience cut is the entire reason this skill exists for Accent Lighting.
 - **Never** mutate GA4 config or fire test events from this skill — read+report only.
 - **Never** silently drop the audience split when the custom dimension isn't configured — fall back to hostname proxy AND output the recommendation in BLOCK 2.
+- **Never** fabricate numbers to fill BLOCKs whose underlying reports failed. On API 429, 401, or 5xx after retry, emit a `═══ PARTIAL RUN ═══` header and mark each failed BLOCK as `⚠ data unavailable`. A partial brief is a feature; an invented brief is a silent bug.
+- **Never** retry a 401-unauthenticated call without re-surfacing the M06 stub. An expired or rotated key needs human action — silent retries waste quota and hide the problem.

@@ -12,13 +12,15 @@ description: >
   via the BigCommerce store-cwqiwcjxes ingest path) and runs entirely
   inside AccentOS — no Klaviyo/CRM SaaS dependency. Use this skill when
   Michael says: "who's about to churn", "churn risk", "at-risk
-  customers", "RFM scan", "find quiet customers", "predict churn",
-  "/churn", or any phrasing asking for forward-looking customer-loss
-  intelligence. Do not use this skill for past-tense win/loss reporting
-  (use bc-business-review) or single-customer deep dives (use the
-  Customer 360 module). Always returns a ranked customer table with
-  reason codes plus paste-ready SQL — never returns prose-only "your
-  customers might be churning" advice.
+  customers", "who went quiet", "find quiet customers", "RFM scan",
+  "run RFM", "predict churn", "who are we losing", "customers we're
+  losing", "/churn", or any phrasing asking for forward-looking
+  customer-loss intelligence. Do not use this skill for past-tense
+  win/loss reporting (use bc-business-review) or single-customer deep
+  dives (use the Customer 360 module). Always returns a ranked customer
+  table with reason codes plus paste-ready SQL — never returns prose-only
+  "your customers might be churning" advice. Hands intervention drafts
+  to email-drafter and routes PROPOSED rows through action-queue.
 ---
 
 # churn-predictor
@@ -31,15 +33,14 @@ This is a **Capability Ladder L5 (Predictive)** skill: it answers "what's about 
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "who's about to churn"
-- "churn risk"
-- "at-risk customers"
-- "RFM scan"
-- "find quiet customers"
-- "predict churn"
-- "who went quiet"
-- "customers we're losing"
+Run this skill when Michael says anything like (lowercase / terse / typo variants all count — match his register per `vibe-speak/profiles/michael.md`):
+- "who's about to churn" / "whos about to churn"
+- "churn risk" / "churn scan" / "predict churn"
+- "at-risk customers" / "at risk customers" / "customers at risk"
+- "RFM scan" / "run RFM" / "rfm"
+- "find quiet customers" / "who's quiet" / "who went quiet"
+- "who are we losing" / "customers we're losing"
+- "knock out a churn scan"
 - "/churn"
 
 Also trigger when `daily-brief-composer` requests the top-3 churn risks for the morning brief, or when `next-action-recommender` asks for retention-suggestion candidates.
@@ -68,11 +69,18 @@ This skill is gated on a usable customer-orders dataset in Supabase `hsyjcrrazrz
    - `references/tier-thresholds.md` — Trade vs. Consumer vs. Designer churn thresholds
    - Then proceed to Step 1.
 
+**Failure-path notes (Pass-2 hardening):**
+
+- **`customer_orders` has < 90 days of history total** (early-ingest case): baselines from 365-day window are meaningless. Step 1 detects via `MAX(order_date) - MIN(order_date) < 90 days`. Surface explicitly: `warning: insufficient order history for RFM baseline (need ≥ 90 days, have N). Falling back to recency-only ranking.` Then run only the recency leg of Step 2 and tag every row with reason code `RECENCY_ONLY_INSUFFICIENT_HISTORY`.
+- **`customer_records.segment` is NULL for >20% of customers**: tier-aware thresholds depend on segment. Step 2 falls back to the `Unknown` segment row of the tier table (1.5× / -50% / -50%) for those rows and surfaces a one-line warning: `warning: N customers (X%) missing segment — using Unknown thresholds. Backfill customer_records.segment to sharpen ranking.` Never silently treat NULL as Trade.
+- **`email-drafter` BLOCKED** (no `ANTHROPIC_API_KEY`, or its references missing): Step 5's `Suggested skill` column still emits `email-drafter` so the action-queue row is forward-compatible — but the in-message output prepends a one-line: `note: email-drafter is currently BLOCKED — interventions queued but cannot draft until key is set.` Don't suppress the route.
+- **`action-queue` companion not yet forged**: Step 5 emits PROPOSED rows to `analysis-snapshot` only and surfaces: `action-queue not available — interventions captured in snapshot for manual processing.` Output table still ships.
+
 ---
 
 ## Step 1 — Compute baselines and current windows
 
-Run two SQL passes against Supabase `hsyjcrrazrzqngwkqsqa`. Hand them to `supabase-sql-magic` if Michael wants to inspect them; otherwise execute directly.
+Run two SQL passes against Supabase `hsyjcrrazrzqngwkqsqa` via `supabase-sql-magic` (the executor, always). If Michael says "show me the SQL" or "preview only", emit the SQL block to chat without executing; otherwise execute and proceed to Step 2 with the result set.
 
 **Pass A — Baseline (rolling 365 days, excluding the last 90):**
 
@@ -262,6 +270,8 @@ Action queue:    [N] PROPOSED rows queued for approval
 [the Step 1 baseline + current-window SQL, parameterized for re-run]
 ```
 
+**Partial output (Pass-2 hardening):** if Step 0 fell into a fallback (insufficient history, segment NULL >20%, email-drafter blocked, action-queue not forged), the ranked table still ships — but a `═══ DEGRADED MODE ═══` header replaces the standard banner, every fallback that fired is listed, and reason codes affected are tagged with the `RECENCY_ONLY_INSUFFICIENT_HISTORY` or `Unknown`-tier marker. Snapshot still writes; daily-brief feed still writes (top-3 with degradation note). Never suppress output on partial degradation.
+
 ---
 
 ## AccentOS context
@@ -291,3 +301,5 @@ Action queue:    [N] PROPOSED rows queued for approval
 - **Never** include inactive customers (e.g. closed accounts, businesses out of business) in the ranking. Filter on `customer_records.status = 'active'` if available.
 - **Never** invent customers. If `customer_orders` is empty for a customer, only flag them as `BIG_SPENDER_GONE_QUIET` if `customer_records.lifetime_monetary > $5K` confirms historical revenue exists.
 - **Never** output prose advice ("you should reach out to your top customers"). Output the ranked table with reason codes and suggested skill — that's the contract.
+- **Never** treat NULL `customer_records.segment` as Trade by default. Map to Unknown-tier thresholds (1.5× / -50% / -50%) and surface the count of NULL-segment rows. Misclassifying as Trade silently inflates the recency-tolerance and hides real Consumer churners.
+- **Never** suppress output on partial degradation. Insufficient history, missing segment, BLOCKED email-drafter, or unforged action-queue all produce a DEGRADED-MODE table — never a "skill failed" stub.

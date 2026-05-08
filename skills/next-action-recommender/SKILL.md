@@ -16,7 +16,10 @@ description: >
   or for vague-priority articulation (that's priority-articulation). Always
   cites a Supabase row or named gap for every recommendation and includes a
   <5-minute first concrete step — never returns generic advice like "review
-  your email" or "look at your KPIs."
+  your email" or "look at your KPIs." Top trigger phrases (matched against
+  this description by the harness): "whats next", "top 3", "what should i
+  do next", "/next", "highest leverage", "move the needle", "knock out
+  whatever", "what should i knock out", "whats worth my time".
 ---
 
 # next-action-recommender
@@ -29,15 +32,23 @@ This is the L3→L4 closer in the Capability Ladder: proactive surfacing (L3) of
 
 ## Trigger Recognition
 
-Run this skill when Michael says anything like:
-- "what should I do next" / "what's next"
-- "what are my top 3" / "three things to act on"
-- "highest-leverage move" / "what would move the needle"
-- "what's worth my time today"
-- "next action" / "/next"
-- "rank my actions" / "give me a recommendation"
+Run this skill when Michael says anything like (lowercase, often no apostrophes — match his terse register):
+- "whats next" / "what next"
+- "what should i do next" / "what should i work on"
+- "top 3" / "my top 3" / "three things to act on" / "give me three"
+- "highest leverage" / "highest-leverage move" / "biggest leverage"
+- "what would move the needle" / "what moves the needle"
+- "whats worth my time" / "whats worth my time today"
+- "next action" / "/next" / "next move"
+- "rank my actions" / "give me a recommendation" / "whats the play"
+- "what should i knock out" / "knock out whatever" / "what can i knock out" (Michael uses "knock out" as autonomy verb — confirmed in PROMPT_LOG)
+- "what should i ship next"
+- "give me three things" / "three things i should do"
+- "what's unblocked" / "whats unblocked" (when Michael wants the autonomous-build-friendly subset)
 
-Also auto-invokable by `daily-brief-composer` Step 3 (top-actions slot).
+Also auto-invokable by `daily-brief-composer` Step 2 (it consumes BLOCK 1 from this skill — orchestration triangle apex).
+
+Disambiguation: if Michael says "morning brief" / "daily brief" / "todays rundown" / "whats on my plate" → defer to `daily-brief-composer` (this skill is the upstream feeder, not the renderer). If he says "whats blocking" / "whats blocked on me" → defer to `bottleneck-finder` for the build-plan view. If he says "alert" / "what fired" → defer to `alert-router`. If he says "/gap" → defer to `gap-optimizer` (vision-driven candidates, complementary to live-state candidates this skill produces).
 
 ---
 
@@ -53,11 +64,13 @@ Run these reads in parallel; abort with a stub only on the explicit blockers bel
    - `deals` stalls: deals at the same stage ≥14d with `value_usd >= 1000`
    - `kpi_catalog` deviations: KPIs where `latest_value` is outside `target_band` (if `kpi_catalog` table exists; otherwise use KPI_CATALOG.md)
    - `alerts` queue: rows where `status = 'OPEN'` and `severity in ('HIGH','CRITICAL')`
-   - `action_queue` PROPOSED: rows where `status = 'PROPOSED'` and `created_at >= now() - interval '7d'` (skip if `action_queue` table doesn't exist yet — see soft-block below)
+   - `action_queue` PROPOSED: rows where `status = 'PROPOSED'` and `created_at >= now() - interval '7d'`. Two uses: (a) each row is a candidate this skill ranks alongside the others; (b) the row count is read as **PROPOSED-depth back-pressure** — a high depth (>20) signals "many alerts already pending in queue" and slightly demotes redundant overlapping candidates from this skill (avoids stacking duplicate proposals). Skip if `action_queue` table doesn't exist yet — see soft-block below.
 
 **Soft-block (graceful degrade, not full stub):**
 - If `kpi_catalog` table is missing, fall back to reading `/home/user/accent-os/KPI_CATALOG.md` and flag deviations heuristically. Note the degrade in output BLOCK 0.
-- If `action_queue` table is missing (action-queue skill not yet built), skip that source and note it. Recommendations still ship from the other four sources.
+- If `action_queue` table is missing (action-queue skill not yet built), skip that source and note it. Recommendations still ship from the other four sources. Also: `action_queue` PROPOSED depth is the back-pressure signal that lets this skill know which alert-router-routed actions are already pending — when missing, treat depth as 0 (no back-pressure adjustment to candidate scoring).
+- If `references/leverage-rubric.md` is missing or unreadable, fall back to the inline composite formula in Step 2 with default dimension weights (each 1–5 integer). Note `rubric-default` in BLOCK 0. Do NOT abort — a coarse ranking beats no ranking.
+- If `BUILD_PLAN_MICHAEL.md` is missing or empty, skip the M-task source. The other four still produce candidates. Do not synthesize fake M-tasks.
 - If Supabase MCP is unreachable, return: `⚠ next-action-recommender: Supabase unreachable. Re-run after MCP restore.` and exit. Do not fabricate candidates from stale memory.
 
 This skill is NOT M-task blocked — its blockers are degrade-gracefully, not stop-the-world.
@@ -190,14 +203,16 @@ See Step 4. The literal block structure is the contract — `daily-brief-compose
 - **Tables read (read-only):** `vendor_scores`, `deals`, `kpi_catalog`, `alerts`, `action_queue` (when present).
 - **Files read (read-only):** `BUILD_PLAN_MICHAEL.md`, `MASTER.md` §13/§14, `KPI_CATALOG.md` (fallback).
 - **Files written:** `skills/next-action-recommender/run-log.md` (append).
-- **Companion skills:**
-  - `daily-brief-composer` — consumer of BLOCK 1 (downstream)
+- **Companion skills (orchestration triangle: this skill is the upstream feeder for the brief; both this and `alert-router` write into the same downstream `action_queue`):**
+  - `daily-brief-composer` — consumer of BLOCK 1 (downstream renderer; see triangle apex)
+  - `alert-router` — sibling feeder; routes alerts into `action_queue` PROPOSED rows whose depth this skill reads as a back-pressure signal in Step 0
+  - `action-queue` — receives `queue [N]` approvals from BLOCK 3 and is also the PROPOSED-depth source read in Step 0
   - `priority-articulation` — input source for what "impact" means today (upstream)
   - `bottleneck-finder` — TOC build-plan view; provides M-task candidates
   - `supabase-sql-magic` — used by Step 0 for the five preflight queries
-  - `action-queue` — receives `queue [N]` approvals from BLOCK 3
   - `vendor-cascade` — used in concrete first steps for vendor-score candidates
   - `kpi-data-audit` — used for `kpi_deviation` candidates when the deviation looks like a data problem rather than a business problem
+  - `gap-optimizer` — complementary candidate source: this skill produces live-state candidates, gap-optimizer produces vision-driven candidates. When BLOCK 1 is empty (no live candidates), suggest `/gap`.
 
 ---
 
@@ -210,3 +225,6 @@ See Step 4. The literal block structure is the contract — `daily-brief-compose
 - **Never** recommend a candidate that's blocked by a person who isn't Michael without applying the blocked-by penalty. If the action is "wait for vendor X to send file," that goes in BLOCK 2 at best.
 - **Never** modify `vendor_scores`, `deals`, `alerts`, `kpi_catalog`, or `action_queue` rows. This skill is read-only on Supabase. Approvals get queued via `action-queue`, not direct writes.
 - **Never** run when Supabase MCP is unreachable. Return the unreachable stub and exit. Recommendations from stale cached memory are worse than no recommendation.
+- **Never** abort on a missing `leverage-rubric.md` — fall back to the inline default formula and flag `rubric-default` in BLOCK 0.
+- **Never** synthesize `action_queue` PROPOSED depth when the table doesn't exist. Treat back-pressure as 0 and continue. Faking depth corrupts the orchestration triangle's signal.
+- **Never** silently swallow an empty candidate pool. If sources A–E produce zero candidates total, emit the explicit "no live candidates" stub and recommend `/gap` or `/skill-health` — do not return a blank BLOCK 1.

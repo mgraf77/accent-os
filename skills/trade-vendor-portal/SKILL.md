@@ -6,10 +6,12 @@ description: >
   documents the auth model, data flows, RBAC boundaries, hosting plan, and source-of-truth
   bindings so that when the blocking M-tasks resolve, AccentOS can build the actual portal
   surfaces without re-deriving the contract from scratch. Use this skill when Michael says:
-  "trade portal", "designer portal", "vendor portal", "vendor rep portal", "external portal
-  spec", "portal RBAC", "portal contract", "portal data flow", "portal SSO", "Track 6.5 plan",
-  "Track 6.6 plan", or any phrasing that asks for portal scoping, portal access design, or
-  "what's the plan for the portals." Do not use this skill to actually build portal pages
+  "6.5/6.6 portal phase 2", "trade portal", "designer portal", "vendor portal", "vendor rep
+  portal", "portal phase 2", "portal preview phase 2", "scope the portals", "scoping the
+  portals", "what's blocking the portals", "external portal spec", "portal RBAC", "portal
+  contract", "portal data flow", "portal SSO", "Track 6.5", "Track 6.6", "Trade & Designer
+  Portal", or any phrasing that asks for portal scoping, portal access design, or "whats the
+  plan for the portals." Do not use this skill to actually build portal pages
   (those tracks are auth-walled until the blocking M-tasks land — Cloudflare Pages subdomain
   spin-up, Supabase RLS portal policies, and BigCommerce trade pricing list provisioning all
   belong to the eventual Track 6.5/6.6 build skills, not here). Always ships portal-spec
@@ -28,15 +30,18 @@ This skill is intentionally narrow in shipped behavior because Tracks 6.5 + 6.6 
 ## Trigger Recognition
 
 Run this skill when Michael says anything like:
-- "trade portal" / "designer portal" / "trade and designer portal"
-- "vendor portal" / "vendor rep portal"
-- "Track 6.5" / "Track 6.6" / "external-facing portal"
+- "6.5/6.6 portal phase 2" / "portal phase 2" / "portals phase 2"
+- "trade portal" / "designer portal" / "trade and designer portal" / "Trade & Designer Portal"
+- "vendor portal" / "vendor rep portal" / "Vendor Rep Portal"
+- "Track 6.5" / "Track 6.6" / "6.5" / "6.6" / "external-facing portal"
+- "portal preview phase 2" / "Portal Preview phase 2" (phase 1 already shipped as Portal Preview)
+- "scope the portals" / "scoping the portals" / "needs scoping" (portal context)
 - "portal RBAC" / "portal SSO" / "portal access model"
 - "portal contract" / "portal data flow" / "what data goes into the portals"
-- "what's the plan for the portals" / "are we ready to build the portals yet"
+- "whats the plan for the portals" / "are we ready to build the portals yet"
 - "portal hosting" / "portal subdomain"
 
-Also trigger when Michael asks "is anything blocking the portals" or "what M-tasks does the trade portal need."
+Also trigger when Michael asks "is anything blocking the portals", "what M-tasks does the trade portal need", or "are the portals unblocked yet."
 
 ---
 
@@ -44,7 +49,7 @@ Also trigger when Michael asks "is anything blocking the portals" or "what M-tas
 
 This skill is gated on a **stack of M-tasks** spanning auth, schema, ERP credentials, and external-API access. Until the gating set resolves, this skill produces only the portal contract — not portal interactions.
 
-1. Read the blocking-M-task list from `/home/user/accent-os/skills/trade-vendor-portal/references/blocking-m-tasks.md`. This is the canonical list (mirrors BUILD_PLAN_MICHAEL.md). Cross-check against the live BUILD_PLAN_MICHAEL.md to surface any items that have flipped to `[x]` since the reference file was last updated.
+1. Read the blocking-M-task list from `/home/user/accent-os/skills/trade-vendor-portal/references/blocking-m-tasks.md`. This is the canonical list (mirrors BUILD_PLAN_MICHAEL.md). Cross-check against the live BUILD_PLAN_MICHAEL.md to surface any items that have flipped to `[x]` since the reference file was last updated. **Failure path:** if the reference file is missing, fall back to BUILD_PLAN_MICHAEL.md as the sole source and surface a one-line "reference drift — blocking-m-tasks.md missing, used BUILD_PLAN_MICHAEL.md only" warning. If BUILD_PLAN_MICHAEL.md itself is unreadable, abort with the BLOCKED stub and a "cannot verify M-task status — check repo integrity" note.
 2. For each M-task in the reference list, check status:
    - **M01** (RLS tightened on vendor_* tables) — `[x]` per BUILD_PLAN_MICHAEL.md as of 2026-05-04. Required for any external-facing read of vendor data.
    - **M03** + **M10** (Windward written confirmation + Curtis approval) — `[ ]`. Trade Portal trade-customer balances and Vendor Portal cost/inventory feeds depend on Windward live data.
@@ -79,7 +84,7 @@ This skill is gated on a **stack of M-tasks** spanning auth, schema, ERP credent
 
 ---
 
-## Step 1 — Identify which portal Michael is asking about
+## Step 1 — Pick scope (Trade / Vendor / Both) and state it; never ask
 
 Parse the trigger phrase to determine scope:
 
@@ -105,6 +110,8 @@ Read `/home/user/accent-os/skills/trade-vendor-portal/references/portal-spec.md`
 - Companion-skill data feeds
 
 Output the relevant per-portal section(s) as a paste-ready block. If scope is "Both", concatenate Trade then Vendor sections with a divider.
+
+**Failure path:** if `references/portal-spec.md` is missing or empty, do not fabricate a portal contract. Emit the BLOCKED stub with an extra line: "spec file missing — cannot produce contract from memory; restore `references/portal-spec.md` before re-running" and exit. Surface to skill-health-monitor for structural fix.
 
 ---
 
@@ -217,6 +224,13 @@ Vendor portal feeds: vendor-cascade, coop-claim-drafter, demand-forecaster-skill
 
 A single message containing all six blocks above when unblocked. When blocked (Step 0), a single stub message naming every blocking M-task and the unblock priority order. Both forms are paste-ready — no prose intro, no follow-up questions.
 
+**Partial-output rules:**
+
+- If a companion skill cited as a data feed (e.g. `bc-rest-bridge`, `vendor-cascade`) does not yet exist in `skills/_index.md`, render its row in BLOCK 5 with a `(skill not yet forged)` annotation rather than removing the row. The contract still names the intended feed; the gap is explicit.
+- If only a subset of blocking M-tasks have flipped to `[x]` (e.g. M01 done, M03/M04/M11/M24/M40 still `[ ]`), the BLOCKED stub still wins — never produce a "partial portal contract" because the read-side RBAC isolation hinges on every blocker, not just the cheapest one.
+- If `references/portal-spec.md` parses but is missing the in-scope portal section (e.g. asks for Trade but spec only documents Vendor), emit the BLOCKED stub with a "spec section missing — [Trade|Vendor] block absent in portal-spec.md" line.
+- If BUILD_PLAN_MICHAEL.md and `references/blocking-m-tasks.md` disagree on a task's status, BUILD_PLAN_MICHAEL.md wins and the reference file gets a one-line "reference drift detected" footer in the output.
+
 ---
 
 ## AccentOS context
@@ -245,3 +259,5 @@ A single message containing all six blocks above when unblocked. When blocked (S
 - **Never** modify the AccentOS internal SKILL.md / RBAC for staff users while editing portal contracts. The internal AccentOS app and the portals are separate audiences with separate auth scopes.
 - **Never** ask Michael to disambiguate "which portal" — pick from Step 1's table and state the choice in the output.
 - **Never** push portal credentials, BC tokens, or Windward passwords into Cloudflare Pages env vars at the portal layer. Portal AI/ERP calls route through a Cloudflare Worker proxy that holds the secrets.
+- **Never** silently swallow a missing `references/portal-spec.md` or a missing companion-skill cite — both are explicit failure paths in Steps 2 and 6's partial-output rules. Fabricating a contract from memory or omitting a feed row is how RBAC drift starts.
+- **Never** treat a partial M-task unblock (e.g. M01+M04 done but M03/M11/M24 still `[ ]`) as "good enough to start the build." The read-side isolation contract requires the full blocking set; downgrade-by-default is the only safe failure mode.
