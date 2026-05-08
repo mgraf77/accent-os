@@ -17,7 +17,7 @@
 3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
 4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL
 5. Read BUILD_INTELLIGENCE.md — apply all lessons before touching any code
-6. Run bash /workspaces/accent-os/scripts/status.sh
+6. Run `bash scripts/status.sh` from the repo root
 7. Begin building without waiting for Michael input
 8. **At session end** (user signals "wrap up" / "done" / final commit): per `skills/efficiency-monitor/SKILL.md` Step 2, append this session's flags to `efficiency-log.md`, overwrite `session-end-summary.md`. Aggregator runs automatically via Stop hook. Bundle these writes into the session-end commit (per OPERATING RULES batched-doc-update).
 
