@@ -374,4 +374,194 @@ Long-term laws:
 
 ---
 
+## 16. Rollout metrics + gates (operationally measurable)
+
+> Added in v1.1 reconciliation pass. Replaces vague "no regressions" / "Owner sign-off" language with measurable thresholds. Authority order: this section is advisory; `STABILIZATION_PROTOCOL.md` (canonical) supersedes on conflict.
+
+### 16.1 Per-phase go / no-go criteria
+
+| Phase | GO requires (all) | NO-GO if any |
+|---|---|---|
+| Phase 0 Stabilize | WIP empty; Anthropic proxy 200 on 5/5 Parse Notes calls; SESSION_LOG.md initialized | WIP non-empty; CF deploy red <24h |
+| Phase 1 Beachhead | New module entry at `building`; Owner-only verified on 2 devices (desktop + iPhone 390px); v1 surface unchanged on snapshot diff | Visible to non-Owner; v1 snapshot diff non-trivial |
+| Phase 2 Admin testing | Owner+Admin verified; 7 calendar days at `building` with 0 P0/P1; rollback dry-run on staging passes | Any P0/P1 in last 7d; rollback dry-run failure |
+| Phase 3 Read-only live | 7 calendar days at `testing`, 0 P0/P1; ≥3 Admin sessions logged opening the module; per-role visibility check passes for all 5 roles | <3 Admin sessions; any role-visibility mismatch |
+| Phase 4 Per-module reads | Per module: parity checklist passes; mobile parity at 390px; `source: 'shell_v2'` tag absent (read-only phase) | Parity miss; mobile fails; v1 surface broken |
+| Phase 5 Smallest writes | Per write: 0 data-loss in 14d; v1↔v2 row parity = 100% on byte-level Supabase diff; `source: 'shell_v2'` tag present on 100% of writes | Any parity miss; any untagged v2 write |
+| Phase 6 Deprecate | 30 calendar days zero `deprecated`-route hits in audit_log | Any hit in window |
+
+### 16.2 Rollout readiness score (per module, 0–10)
+
+Compute before each phase advancement. Module advances only at score ≥8.
+
+| Component | Weight | Source |
+|---|---|---|
+| Golden-path checklist pass rate | 2 | manual |
+| Mobile parity at 390px (binary) | 2 | manual |
+| Rollback dry-run success on staging (binary) | 2 | manual |
+| Days since last P0/P1 on this module ≥ 7 | 1 | audit_log / report |
+| `module_modes.json` parses cleanly (binary) | 1 | `jq .` |
+| Cloudflare last deploy green (binary) | 1 | CF dashboard |
+| Captain go logged in SESSION_LOG (binary; required only for `→ live` and `→ deprecated`) | 1 | SESSION_LOG.md |
+
+Score <8 = no advancement. Score <5 = freeze candidate.
+
+### 16.3 Rollback trigger thresholds (auto-rollback recommended)
+
+Any one triggers an immediate flip-back of the offending module:
+
+- ≥1 P0 (data loss, role-visibility breach, write-write conflict involving v2) — instant.
+- ≥3 P1 (broken module load, blank panel, mobile unusable) within 24h — instant.
+- ≥5 user reports of stale-client behavior on the module within 24h — flip-back; bump cachebust.
+- `module_modes.json` parse failure on `main` — instant `git revert`.
+- v1↔v2 byte-level row diff >0 on a sample of 20 records during Phase 5 — instant; freeze writes.
+- Cloudflare deploy red for >5 minutes following a flip — investigate; flip-back if not green within 15 min.
+
+### 16.4 Operational stability metrics (running gauges)
+
+Tracked manually in SESSION_LOG until telemetry is wired:
+
+| Metric | Healthy | Warn | Freeze |
+|---|---|---|---|
+| `index.html` size | <800KB | 800–860KB | ≥860KB |
+| Open WIP count | 0 | 1 | ≥2 |
+| Days since last green deploy | <2 | 2–5 | ≥5 |
+| Active P0 | 0 | n/a | ≥1 |
+| Active P1 | ≤2 | 3–4 | ≥5 |
+| Per-user override count vs. justified | match | +1 | +2 or more |
+| `module_modes.json` modules in `building` | <5 | 5–8 | ≥9 (rollout congestion) |
+| Days since last `STABILIZATION_PROTOCOL.md` review | <30 | 30–60 | ≥60 |
+
+### 16.5 Cognitive-load metrics
+
+Heuristic, but operationally useful:
+
+- Sessions per week handling rollout > 4 → slow down (one phase per week max).
+- New surfaces in `building` at once > 3 → freeze new entries until ≤3.
+- Number of `claude/*` branches open > 4 → triage and close stale.
+- Captain context-switches per session (different modules touched) > 3 → consolidate.
+
+### 16.6 Mobile readiness gates
+
+A shell-v2 module cannot leave `building` without all of:
+
+- iPhone Safari 390px viewport: zero horizontal scroll on the default view.
+- All interactive elements ≥44×44pt.
+- No `position: fixed` overlay obscuring primary content at 390×844 viewport.
+- Initial mount on a cold cache <2.5s on a throttled 4G profile (manual estimate acceptable).
+- Captain confirms "usable on iPhone" in SESSION_LOG.
+
+### 16.7 Shell adoption signals
+
+Observable, no telemetry required:
+
+- Phase 3 (`live`) advancement requires ≥80% of target-role users having opened the module ≥1× within 7 days, OR Captain waiver in SESSION_LOG.
+- Phase 5 (`writes`) advancement requires the v2 write path being used in ≥50% of writes by target users for 7 days, with v1 still available — measured via `source: 'shell_v2'` tag on Supabase rows.
+- Phase 6 (`deprecate`) requires 30 days of zero v1-route hits per audit_log.
+
+---
+
+## 17. Shell-v2 coexistence hardening
+
+> Added in v1.1. Deepens §2 (coexistence strategy) with operational rules.
+
+### 17.1 Coexistence lifecycle (per module)
+
+```
+v1 only
+   │
+   ▼
+v1 + v2(read, building) ──── Owner only
+   │
+   ▼
+v1 + v2(read, testing) ───── Owner + Admin
+   │
+   ▼
+v1 + v2(read, live) ──────── Per-role gating; both surfaces clickable; v1 default
+   │
+   ▼
+v1 + v2(read+write split) ── v1 default; v2 write behind a "Try new" toggle
+   │
+   ▼
+v2 default + v1(deprecated) ─ v1 reachable only via override
+   │
+   ▼
+v2 only ──────────────────── after 30-day cooldown
+```
+
+Each transition is one `module_modes.json` flip + (optional) one default-toggle flip. Never combined.
+
+### 17.2 v1 / v2 synchronization philosophy
+
+**Synchronization is rejected as a goal.** v1 and v2 do not synchronize state. They share *only* the database. Implications:
+
+- No client-side event bus between v1 and v2.
+- No shared in-memory cache between v1 and v2.
+- No "live update v1 when v2 writes" mechanism.
+- A user with both surfaces open in different tabs is responsible for refreshing — and during Phase 4–5, this is rare because v2 writes are gated.
+
+The only synchronization point is **Supabase**. The contract is: read-after-write within a single tab; eventual consistency across tabs.
+
+### 17.3 State ownership boundaries
+
+| State category | Owned by | Who may write |
+|---|---|---|
+| Supabase rows (canonical data) | DB | v1 *or* v2 — never both for same record type per Phase |
+| `sessionStorage['aos-sb-key']` | Auth bootstrap (in `index.html`) | Bootstrap only; both shells read |
+| `sessionStorage['aos-api']` | Settings UI | Settings only; both shells read |
+| `localStorage['accentos_user_overrides']` | Owner machine | Owner UI only; both shells read |
+| In-memory module state | The shell that mounted it | That shell only; never cross-shell |
+| URL hash route | Whichever shell handles the route | Single owner per route — `module_modes.json` decides |
+| Design tokens (CSS) | `index.html` `<style>` | Captain; both shells consume |
+
+### 17.4 Module authority boundaries
+
+- A module has exactly one *active* surface per user per phase. Either v1 or v2, never both visible to the same user simultaneously for the same module.
+- `canSeeModule` is the arbitrator. If both v1 and v2 entries exist for the same module key, the resolver returns at most one as visible based on phase.
+- Two module *keys* may coexist (e.g., `pipeline` and `pipeline_v2`) during transition; the resolver shows one or the other, never both.
+
+### 17.5 Event propagation philosophy
+
+- **No global event bus.** Any cross-module signal goes through Supabase (write a row, the other module reads it next mount).
+- **Mount/unmount is the only lifecycle event.** No `onShow`, `onHide`, `onFocus` hooks. Modules that need polling implement their own interval, scoped to their `mount` lifetime, cleared on `unmount`.
+- **No `window`-scoped pub/sub.** Reduces cross-shell leakage and stale-listener bugs.
+- **No `BroadcastChannel`.** Cross-tab coordination is out of scope until Phase 6.
+
+### 17.6 Lazy-load governance
+
+- Shell-v2 modules load via `import('/js/shell_v2/<name>.js?v=<commit-sha>')` from `mount`-time code paths only. Never on shell init.
+- One dynamic-import level per module (per F2 prevention).
+- Sub-dependencies are static `import` statements at the top of the module file.
+- A module that fails to load logs to console and presents a passive "Module unavailable — retry later" placeholder; it does not throw to the parent shell.
+- Bundle/chunk caching is governed by the `?v=<commit-sha>` cachebust — the only cache key the rollout depends on.
+
+### 17.7 Rollback-safe injection mechanics
+
+Each shell-v2 module exports:
+
+```
+mount(rootEl, ctx) → handle    // returns { unmount, version }
+```
+
+Mechanics:
+
+- `rootEl` is the only DOM node the module may write to.
+- The module attaches *one* event-listener registration helper that auto-cleans on `unmount`.
+- The module never adds nodes to `document.body` outside `rootEl` (no portals, no tooltips appended to body during the rollout — they leak across mounts).
+- `ctx` carries: current user, role, `sbFetch`, design tokens reference, `canSeeModule` resolver. The module never reaches outside `ctx` for these.
+- `unmount()` is idempotent. Calling it twice is safe.
+- Rollback = host calls `unmount` on every active v2 mount, then refuses to mount until the flip is reversed.
+
+### 17.8 Coexistence anti-patterns (forbidden during rollout)
+
+- Mixing v1 and v2 markup inside the same panel.
+- v2 importing v1 helpers from `index.html` inline scope (use `js/shared/*` or pass via `ctx`).
+- v2 writing to `localStorage` keys v1 owns.
+- v1 reading `localStorage` keys v2 added.
+- Cross-shell DOM queries (`document.querySelector` reaching into the other shell's tree).
+- Any `setTimeout`/`setInterval` not anchored to a `mount` lifetime.
+- Any third-party script tag added during rollout (zero new dependencies — MASTER §12).
+
+---
+
 *End of ACCENTOS_PRODUCTION_ROLLOUT_STRATEGY.md — planning only. No production files modified.*
