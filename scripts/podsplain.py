@@ -184,23 +184,46 @@ def tts_elevenlabs(text: str, voice_id: str, api_key: str) -> bytes:
 
 
 def _call_tts(text: str, speaker: str, backend: str, openai_key: str, elevenlabs_key: str, model: str) -> bytes:
-    """Route to the correct backend, chunk long text, retry up to 3×."""
-    chunks = _chunk_text(text) if backend == "openai" else [text]
+    """Route to the correct backend, chunk long text, with 429-aware retry.
+
+    429 rate-limit responses honor the Retry-After header and do NOT consume
+    the 3-attempt retry budget (which is reserved for real errors).
+    """
+    chunks = _chunk_text(text)   # applied to both backends
     parts = []
     for chunk in chunks:
-        for attempt in range(3):
+        attempt = 0
+        deadline = time.monotonic() + 120   # hard ceiling: 2 min total waiting per chunk
+        while attempt < 3:
+            if time.monotonic() > deadline:
+                raise RuntimeError(f"TTS timed out after 2m of retries: {chunk[:60]!r}")
             try:
                 if backend == "openai":
                     parts.append(tts_openai(chunk, OPENAI_VOICES[speaker], openai_key, model))
                 else:
                     parts.append(tts_elevenlabs(chunk, ELEVENLABS_VOICES[speaker], elevenlabs_key))
                 break
+            except requests.HTTPError as e:
+                status = e.response.status_code if e.response is not None else 0
+                if status == 429:
+                    wait = min(int(e.response.headers.get("Retry-After", 15)), 60)
+                    print(f"\n  [429 rate-limited] waiting {wait}s...", file=sys.stderr)
+                    time.sleep(wait)
+                    # intentionally do NOT increment attempt — rate limits aren't failures
+                else:
+                    if attempt >= 2:
+                        raise
+                    wait = 2 ** attempt
+                    print(f"\n  [retry {attempt+1}/2 in {wait}s] HTTP {status}", file=sys.stderr)
+                    time.sleep(wait)
+                    attempt += 1
             except requests.RequestException as e:
-                if attempt == 2:
+                if attempt >= 2:
                     raise
                 wait = 2 ** attempt
                 print(f"\n  [retry {attempt+1}/2 in {wait}s] {e}", file=sys.stderr)
                 time.sleep(wait)
+                attempt += 1
     return _merge_wav_parts(parts)
 
 
@@ -418,6 +441,11 @@ def update_index(podsplains_dir: Path, topic: str, scenario: str, duration_s: fl
         index_path.write_text(header, encoding="utf-8")
 
     existing = index_path.read_text(encoding="utf-8")
+
+    # Guard against duplicate rows when re-running the same command
+    if f"`{slug}/episode.wav`" in existing:
+        return
+
     data_rows = [l for l in existing.split("\n") if l.startswith("| ") and "---" not in l and not l.startswith("| #")]
     ep_num = len(data_rows) + 1
     date_str = datetime.now().strftime("%Y-%m-%d")
@@ -463,6 +491,7 @@ def main():
             sys.exit(1)
 
         topic = args.topic
+        scenario = args.scenario
         slug = re.sub(r"[^a-z0-9]+", "-", topic.lower())[:50] + f"-{args.scenario}-{timestamp}"
         out_dir = Path(args.output_dir).resolve() if args.output_dir else Path("podsplains") / slug
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -498,7 +527,6 @@ def main():
         out_dir = Path(args.output_dir).resolve() if args.output_dir else script_path.parent
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    scenario = args.scenario if args.topic else (sm.group(1).strip() if sm else args.scenario)
 
     # ── TTS backend ──
     backend = args.tts
@@ -508,6 +536,13 @@ def main():
         print("ERROR: OPENAI_API_KEY not set", file=sys.stderr); sys.exit(1)
     if backend == "elevenlabs" and not elevenlabs_key:
         print("ERROR: ELEVENLABS_API_KEY not set", file=sys.stderr); sys.exit(1)
+
+    # ElevenLabs has strict concurrency limits (free=1, starter=3, creator=5).
+    # 8 workers would cause immediate 429 storms — cap automatically.
+    effective_workers = args.workers
+    if backend == "elevenlabs" and args.workers > 3:
+        effective_workers = 3
+        print(f"[podsplain] ElevenLabs: auto-capping workers {args.workers}→3 (API concurrency limit)")
 
     # ── Parse ──
     print(f"[podsplain] Parsing: {script_path.name}")
@@ -546,14 +581,17 @@ def main():
     segs_dir = None if args.no_checkpoint else (out_dir / "segments")
     wav_bytes, duration_s = assemble_wav(
         segments, backend, openai_key, elevenlabs_key, args.silence_ms,
-        model=args.model, workers=args.workers, segments_dir=segs_dir,
+        model=args.model, workers=effective_workers, segments_dir=segs_dir,
     )
 
     # ── Clean up segment cache ──
     if segs_dir and segs_dir.exists() and not args.keep_segments:
         for f in segs_dir.glob("*.wav"):
             f.unlink()
-        segs_dir.rmdir()
+        try:
+            segs_dir.rmdir()
+        except OSError:
+            pass  # unexpected files left — not critical
 
     # ── Save ──
     wav_path = out_dir / "episode.wav"
