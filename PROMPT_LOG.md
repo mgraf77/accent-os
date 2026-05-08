@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-08 — Organizational Cognition Engine Architecture
+**Prompt:** HANDOFF: ORGANIZATIONAL COGNITION ENGINE / ACCENTOS EVOLUTION — Strategic Architecture + Optimization + Build Delegation. Full 8-output architecture commission: Master Architecture Doc, Gap Analysis Matrix, System Ontology, Memory System, Agent Hierarchy, Bootstrapped Build Plan, Entropy Prevention System, Final Recommendations. Primary directive: build an Organizational Cognition Engine, not a chatbot. Analyze across 13 dimensions (conceptual, current repo, perfect system, unlimited budget, bootstrapped, human/AI gap, centralized/federated, static/self-evolving, knowledge/action, enterprise/consumer, local/cloud, prompt vs system engineering, intelligence vs reliability).
+**Context:** New session, branch `claude/cognition-engine-architecture-Czqa7`. WIP from prior session is blocked on Michael (Cloudflare Worker redeploy + browser test). Architecture task proceeds.
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"
