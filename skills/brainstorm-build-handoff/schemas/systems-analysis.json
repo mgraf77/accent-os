@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/systems-analysis",
+  "title": "Systems Analysis",
+  "description": "Phase 2 output — structural map of entities, workflows, and state",
+  "type": "object",
+  "required": ["entities", "workflows", "state", "dependencies", "governance", "scaling_axis"],
+  "properties": {
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "role", "owns"],
+        "properties": {
+          "name": { "type": "string" },
+          "role": { "type": "string", "description": "What this entity does in one line." },
+          "owns": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Data, state, or resources this entity is responsible for."
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "workflows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "steps", "trigger", "terminal"],
+        "properties": {
+          "name": { "type": "string" },
+          "steps": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 2,
+            "description": "Ordered steps. If steps can't be listed, this is a goal not a workflow."
+          },
+          "trigger": { "type": "string", "description": "What event starts this workflow." },
+          "terminal": { "type": "string", "description": "What condition ends this workflow." }
+        },
+        "additionalProperties": false
+      }
+    },
+    "state": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "owner", "transitions"],
+        "properties": {
+          "name": { "type": "string" },
+          "owner": { "type": "string", "description": "Which entity controls this state." },
+          "transitions": {
+            "type": "array",
+            "items": { "type": "string", "description": "Format: 'from → to (trigger)'" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "External systems, APIs, files, services, or skills this system depends on."
+    },
+    "governance": {
+      "type": "string",
+      "description": "Who controls what, what requires authorization, what is auditable."
+    },
+    "scaling_axis": {
+      "type": "string",
+      "description": "What grows as usage grows. Identifies the primary scaling constraint."
+    }
+  },
+  "additionalProperties": false
+}

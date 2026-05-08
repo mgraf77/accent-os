@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/mvp-reduction",
+  "title": "MVP Reduction",
+  "description": "Phase 5 input — scoping decision before handoff generation",
+  "type": "object",
+  "required": ["mvp_scope", "deferred", "explicit_exclusions", "scalability_path"],
+  "properties": {
+    "mvp_scope": {
+      "type": "object",
+      "required": ["include", "rationale"],
+      "properties": {
+        "include": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What is IN the MVP. Must be sufficient to validate the core hypothesis."
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Why this scope is the right minimum."
+        }
+      }
+    },
+    "deferred": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "defer_reason", "trigger_for_inclusion"],
+        "properties": {
+          "item": { "type": "string" },
+          "defer_reason": { "type": "string", "description": "Why this is not in MVP." },
+          "trigger_for_inclusion": { "type": "string", "description": "What event or condition would make this worth building." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Capabilities deferred to future phases with explicit triggers."
+    },
+    "explicit_exclusions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Things permanently out of scope — not deferred, not planned."
+    },
+    "scalability_path": {
+      "type": "string",
+      "description": "How the MVP architecture enables the deferred items without a rewrite."
+    }
+  },
+  "additionalProperties": false
+}

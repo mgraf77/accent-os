@@ -14,6 +14,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 
 ## Skills
 
+### brainstorm-build-handoff
+- summary: Transform rough ideas and brainstorming into deterministic, implementation-ready build handoff documents via a 5-phase pipeline (extract → analyze → audit → optimize → handoff).
+- triggers: "turn this brainstorm into a build plan", "make this buildable", "write a build plan for this idea", "what's the MVP of this", "convert this concept into a handoff", "clean up my brainstorm", "give this to Claude Code", "structure this for Codex"
+- when_to_use: moving from fuzzy concept to execution-ready spec; preparing a task for autonomous build; converting meeting notes or stream-of-consciousness into a Claude Code handoff
+- when_NOT: pure design discussion with no implementation intent; technology evaluation (use skill-forge or repo-scout); when Michael just wants to think out loud
+- companion: skill-forge, decision-log, build-plan-status, priority-articulation
+
 ### analysis-snapshot
 - summary: Capture an ad-hoc analysis (vendor query, deal investigation, GMC audit) as a named, re-runnable artifact.
 - triggers: "save this analysis", "snapshot this query", "make this re-runnable"

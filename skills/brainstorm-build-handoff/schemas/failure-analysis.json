@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/failure-analysis",
+  "title": "Failure + Entropy Analysis",
+  "description": "Phase 3 output — adversarial audit of the current design",
+  "type": "object",
+  "required": [
+    "bottlenecks",
+    "ambiguity_defects",
+    "token_explosion_risks",
+    "orchestration_drift",
+    "governance_failures",
+    "overengineering_risks",
+    "maintainability_risks",
+    "missing_implementation_detail"
+  ],
+  "properties": {
+    "bottlenecks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Where throughput or forward progress will collapse under real usage."
+    },
+    "ambiguity_defects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Things that will require mid-build clarification if not resolved now."
+    },
+    "token_explosion_risks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Prompts, contexts, or data flows that will exceed practical AI context limits."
+    },
+    "orchestration_drift": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Places where multiple agents or components will diverge or desync over time."
+    },
+    "governance_failures": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Points where authorization, ownership, or accountability is undefined."
+    },
+    "overengineering_risks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Complexity that wasn't requested and won't be needed at MVP scale."
+    },
+    "maintainability_risks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Design decisions that will be expensive to change in 6 months."
+    },
+    "missing_implementation_detail": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Gaps that prevent a builder from starting. Each one blocks the handoff until resolved."
+    }
+  },
+  "additionalProperties": false
+}

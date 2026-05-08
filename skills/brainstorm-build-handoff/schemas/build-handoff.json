@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/build-handoff",
+  "title": "Build Handoff Document",
+  "description": "Final output — machine-readable metadata for the build handoff",
+  "type": "object",
+  "required": [
+    "version",
+    "status",
+    "target_executor",
+    "objective",
+    "constraints",
+    "architecture_summary",
+    "implementation_phases",
+    "validation_gates",
+    "operating_rules",
+    "open_items",
+    "exclusions",
+    "next_phase"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Semver. Start at 1.0."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["DRAFT", "REVIEW", "BUILD_READY"],
+      "description": "BUILD_READY means a builder can start without clarification."
+    },
+    "target_executor": {
+      "type": "string",
+      "enum": ["claude-code", "codex", "engineering-team", "agent-orchestrator", "any"],
+      "description": "Primary intended executor of this handoff."
+    },
+    "objective": {
+      "type": "string",
+      "description": "One paragraph. What is being built and why. No ambiguity."
+    },
+    "constraints": {
+      "type": "object",
+      "required": ["must_use", "must_not_use", "scope_boundary"],
+      "properties": {
+        "must_use": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Required technologies, formats, or patterns."
+        },
+        "must_not_use": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Prohibited technologies, patterns, or approaches."
+        },
+        "scope_boundary": {
+          "type": "string",
+          "description": "One sentence defining where this system ends and external systems begin."
+        }
+      }
+    },
+    "architecture_summary": {
+      "type": "string",
+      "description": "2-3 paragraph description of the system architecture. Entities, key workflows, data flow."
+    },
+    "implementation_phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phase", "name", "deliverables", "entry_criteria", "exit_criteria"],
+        "properties": {
+          "phase": { "type": "integer" },
+          "name": { "type": "string" },
+          "deliverables": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "entry_criteria": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "What must be true before this phase starts."
+          },
+          "exit_criteria": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "What must be true for this phase to be complete."
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "validation_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate", "check", "pass_condition"],
+        "properties": {
+          "gate": { "type": "string", "description": "Gate name." },
+          "check": { "type": "string", "description": "How to verify." },
+          "pass_condition": { "type": "string", "description": "What success looks like." }
+        },
+        "additionalProperties": false
+      }
+    },
+    "operating_rules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Behavioral constraints for the builder. Non-negotiable."
+    },
+    "open_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "impact", "owner"],
+        "properties": {
+          "item": { "type": "string" },
+          "impact": { "type": "string", "description": "What gets blocked if this isn't resolved." },
+          "owner": { "type": "string", "description": "Who needs to decide this." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Unresolved decisions. Minimize. BUILD_READY status requires zero blocker-level open items."
+    },
+    "exclusions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Explicit list of what NOT to build. Prevents scope creep."
+    },
+    "next_phase": {
+      "type": "string",
+      "description": "First recommended follow-on after MVP is shipped."
+    }
+  },
+  "additionalProperties": false
+}

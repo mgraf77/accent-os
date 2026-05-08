@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "brainstorm-build-handoff/optimization-pass",
+  "title": "Ralph Loop Optimization Pass",
+  "description": "Phase 4 output — one iteration of the critique-simplify-improve cycle",
+  "type": "object",
+  "required": ["pass_number", "focus_axis", "critique", "simplify", "improve", "delta"],
+  "properties": {
+    "pass_number": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Pass index. Minimum 3 passes required."
+    },
+    "focus_axis": {
+      "type": "string",
+      "enum": ["workflow-correctness", "entropy-reduction", "mvp-boundary", "determinism", "interoperability"],
+      "description": "Primary focus of this pass."
+    },
+    "critique": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "What is wrong or suboptimal in the current design."
+    },
+    "simplify": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "What can be removed, collapsed, or merged without losing capability."
+    },
+    "improve": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Specific architectural or workflow changes to make."
+    },
+    "delta": {
+      "type": "string",
+      "description": "One sentence: what materially changed vs the previous pass."
+    },
+    "resolved_ambiguity_defects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Items from failure-analysis.ambiguity_defects resolved in this pass."
+    },
+    "open_items_added": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "New OPEN ITEMS surfaced during this pass that require human decision."
+    }
+  },
+  "additionalProperties": false
+}
