@@ -14,6 +14,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 
 ## Skills
 
+### accentos-sentinel-audit
+- summary: Periodic AI-governed code audit for AccentOS — architecture drift, Worker security, Supabase/RLS, AI patch integrity, vendor logic, integration readiness, and doc drift. Produces scored report, Codex delegation prompts, and GitHub issue drafts.
+- triggers: "run a sentinel audit", "code audit", "security audit", "audit AccentOS", "how healthy is the codebase", "pre-deploy check", "vendor module audit", "integration audit", "check worker security", "RLS audit", "is index.html too big"
+- when_to_use: before deploys, weekly cadence, after major AI patches, whenever codebase health is uncertain, before starting a new feature phase
+- when_NOT: one-off syntax fixes, quick bug investigations (use direct tools)
+- companion: codex-review, doc-drift, schema-contract-tests, vendor-cascade, decision-log
+
 ### analysis-snapshot
 - summary: Capture an ad-hoc analysis (vendor query, deal investigation, GMC audit) as a named, re-runnable artifact.
 - triggers: "save this analysis", "snapshot this query", "make this re-runnable"
