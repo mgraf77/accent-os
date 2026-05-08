@@ -1,44 +1,37 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-08 — sentinel audit skill complete, stabilization docs written
+**Status:** CLEAN PAUSE — stabilization mode entered for governance restructuring
+**Resume trigger:** "resume after governance restructure" or "continue with NEXT_STEPS.md"
 
 ---
 
 ## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+Session completed the `accentos-sentinel-audit` skill — a periodic code audit system for AccentOS. All files committed to branch `claude/accentos-sentinel-audit-Q9E8o` and pushed.
 
-## NEXT STEPS PENDING
+A dry-run audit was executed: **57/100 health score (NO-GO).**
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+## OPEN ISSUES (pre-existing, not introduced this session)
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
+**Worker 400 bug (ISSUE-001):**
+Commit `2dca2a6` fixed the proxy code but was never redeployed via `wrangler deploy`. The live Worker still runs old code.
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+**Worker critical security (ISSUE-002 — SEC-001 through SEC-007):**
+Worker is an open relay. API key read from client headers. Wildcard CORS. No body size limit, no timeout, no rate limiting. Full Codex remediation prompt in `skills/accentos-sentinel-audit/examples/sample-codex-delegation.md`.
 
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+**RLS verification needed (ISSUE-003 — DB-004 through DB-010):**
+M31, M32, M34, M36, M37, M38, M39 may lack inline RLS enablement. Verify in Supabase Dashboard.
 
-Pick up from step 1.
+**Patch markers needed (ISSUE-004):**
+index.html (718KB) has no START/END patch boundary markers. Codex task ready in sample-codex-delegation.md.
+
+## NEXT STEPS (after governance restructure)
+
+See NEXT_STEPS.md for ordered P0/P1/P2 task list.
+
+## BRANCH STATE
+
+`claude/accentos-sentinel-audit-Q9E8o` — pushed, clean, 5 commits ahead of main.
+DO NOT merge to main without explicit approval.
