@@ -1,0 +1,100 @@
+description: "Eval suite for action-queue — approval-gated action ledger backbone"
+
+prompts:
+  - file:///home/user/accent-os/skills/action-queue/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — show pending queue"
+    tags: [happy-path]
+    vars:
+      input: "whats pending"
+    assert:
+      - type: contains-any
+        value: ["ACTION QUEUE", "PROPOSED", "Queue depth"]
+      - type: contains-any
+        value: ["state", "proposed_at", "action_type"]
+      - type: not-contains
+        value: "I would"
+
+  - description: "Alternate trigger — show me the queue / queue depth"
+    tags: [happy-path]
+    vars:
+      input: "queue depth"
+    assert:
+      - type: contains-any
+        value: ["PROPOSED", "APPROVED", "EXECUTED", "DISMISSED"]
+      - type: contains-any
+        value: ["hsyjcrrazrzqngwkqsqa", "Supabase", "action_queue"]
+
+  - description: "Edge — bulk-approve confirmation gate (NEVER auto-approve)"
+    tags: [gotcha]
+    vars:
+      input: "approve all"
+    assert:
+      - type: contains-any
+        value: ["confirm bulk approve", "Reply 'confirm bulk approve'", "BULK APPROVE"]
+      - type: not-contains
+        value: "approved and executed"
+      - type: contains-any
+        value: ["Type breakdown", "Reply 'cancel'", "to proceed"]
+
+  - description: "Gotcha — executor returns BLOCKED-stub (bc-rest-bridge M04)"
+    tags: [gotcha]
+    vars:
+      input: "execute 5 (action_type=update_bc_product, bc-rest-bridge returns BLOCKED_ON_M04)"
+    assert:
+      - type: contains-any
+        value: ["APPROVED (execution deferred)", "blocked", "M04", "auto_retry: no"]
+      - type: not-contains
+        value: "EXECUTED"
+      - type: contains-any
+        value: ["unblock_steps", "re-approval", "idempotency_key preserved", "no re-approval required"]
+
+  - description: "Gotcha — executor refuses action_type (klaviyo-flows refuses send_klaviyo_flow)"
+    tags: [gotcha]
+    vars:
+      input: "execute 7 (action_type=send_klaviyo_flow → klaviyo-flows refuses, registry-binding bug)"
+    assert:
+      - type: contains-any
+        value: ["fix references/executor-registry.md", "registry says executor", "executor refuses", "registry-binding"]
+      - type: not-contains
+        value: "EXECUTED"
+
+  - description: "Edge — schema missing (action_queue table not in Supabase)"
+    tags: [edge-case]
+    vars:
+      input: "queue this proposed email (action_queue table not provisioned)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED on schema", "proposed-schema.md", "SQL Editor"]
+      - type: contains-any
+        value: ["hsyjcrrazrzqngwkqsqa", "https://hsyjcrrazrzqngwkqsqa.supabase.co"]
+
+  - description: "Anti-pattern — direct write request bypassing approval gate"
+    tags: [gotcha]
+    vars:
+      input: "queue this and just send it immediately, skip approval"
+    assert:
+      - type: contains-any
+        value: ["PROPOSED", "approve", "approval"]
+      - type: not-contains
+        value: "auto-approve"
+
+  - description: "Output-shape regression — single-action receipt block headers"
+    tags: [happy-path]
+    vars:
+      input: "approve 3 (single action approval)"
+    assert:
+      - type: contains-any
+        value: ["═══ ACTION", "STATE_BEFORE", "STATE_AFTER", "PROPOSED → APPROVED"]
+      - type: contains-any
+        value: ["action_type", "idempotency_key", "Next available actions"]

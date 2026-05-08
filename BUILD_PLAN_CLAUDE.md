@@ -153,6 +153,27 @@
 
 ---
 
+## TRACK 7 — L4-L6 Capability Skill Activations (post-skill-forge gap closures)
+
+> Each item below ships AccentOS app-side wiring for one or more L4–L6 skills the
+> 2026-05-08 skill-forge run produced. Skills currently ship in BLOCKED stub mode;
+> these tasks land the UI / route plumbing once Michael runs the corresponding M-task.
+
+- [ ] **7.1** — Wire `action_queue` table consumers (after M42)
+  - BLOCKS ON MICHAEL: **M42** (action_queue schema)
+  - What: produce one paste-once SQL file consolidating the canonical action_queue DDL (decide between action-queue/proposed-schema.md and alert-router/proposed-schema.md OR superset both). Then update `alert-router`, `action-queue`, `next-action-recommender`, `churn-predictor`, `coop-claim-drafter`, `klaviyo-flows` Step 0 BLOCKED gates to flip active. Add an Action Queue page to the app (CORE sidebar, Owner/Manager): list PROPOSED rows, approve/dismiss buttons, executor receipt rendering.
+- [ ] **7.2** — Activate `coop-claim-drafter` full-mode (after M43)
+  - BLOCKS ON MICHAEL: **M43** (vendor_overrides 3 co-op cols)
+  - What: nothing app-side; the skill auto-detects the new columns at next invocation. Verify with a test run on a backfilled vendor; surface the eligibility-percent + deadline-pattern + documentation checklist in the claim draft output.
+- [ ] **7.3** — Wire `klaviyo-flows` cache upserts (after M09 + M44)
+  - BLOCKS ON MICHAEL: **M09** (Klaviyo API key) + **M44** (klaviyo cache schema)
+  - What: nothing app-side; the skill auto-detects the new tables at next `klaviyo-flows audit` and starts upserting. UI surface (Marketing Hub → Klaviyo sub-tab) deferred until cross-run trends accumulate (~14 days of daily snapshots).
+- [ ] **7.4** — Wire `rfm_scores` cache refresh (after M45)
+  - BLOCKS ON MICHAEL: **M45** (rfm_scores schema)
+  - What: schedule a Supabase Edge Function (or Postgres cron) that runs nightly and recomputes rfm_scores from customers + customer_orders. churn-predictor auto-detects the cache and switches to it.
+
+---
+
 ## How to use this file
 
 When you start a session:

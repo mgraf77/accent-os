@@ -1,0 +1,100 @@
+description: "Eval suite for demand-forecaster-skill — SKU-level demand forecast + PO drafter"
+
+prompts:
+  - file:///home/user/accent-os/skills/demand-forecaster-skill/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — what should I reorder (forecast mode)"
+    tags: [happy-path]
+    vars:
+      input: "what should i reorder"
+    assert:
+      - type: contains-any
+        value: ["DEMAND-FORECASTER", "DEMAND FORECAST", "reorder_now", "Weeks of stock"]
+      - type: contains-any
+        value: ["bc-po-lines", "windward", "source:"]
+
+  - description: "Mode B trigger — draft a PO for vendor (recommend-po mode)"
+    tags: [happy-path]
+    vars:
+      input: "draft a po for Kichler"
+    assert:
+      - type: contains-any
+        value: ["PO DRAFT", "PURCHASE ORDER — DRAFT", "Line items", "TOTAL"]
+      - type: contains-any
+        value: ["action-queue", "PROPOSED", "DRAFT-"]
+
+  - description: "Skill-vs-page disambiguation — UI phrasing routes to page, NOT this skill"
+    tags: [gotcha]
+    vars:
+      input: "open the demand forecast page"
+    assert:
+      - type: contains-any
+        value: ["UI page", "Track 6.9", "js/demand_forecast.js", "navigate", "page route"]
+      - type: not-contains-any
+        value: ["DEMAND FORECAST ===", "PO DRAFT"]
+
+  - description: "Edge — INVENTORY empty precondition (BLOCKED stub)"
+    tags: [edge-case]
+    vars:
+      input: "stockout risk (INVENTORY table has 0 rows)"
+    assert:
+      - type: contains-any
+        value: ["INVENTORY table is empty", "populate inventory rows", "Track 6.x bulk import"]
+      - type: not-contains
+        value: "weeks_of_stock"
+
+  - description: "Gotcha — NULL qty in PO_LINES must be excluded, never coalesced to 0"
+    tags: [gotcha]
+    vars:
+      input: "30/60/90 day forecast (PO_LINES has 30% NULL qty rows)"
+    assert:
+      - type: contains-any
+        value: ["excluded", "NULL qty", "schema gap", "DATA QUALITY", "no_data"]
+      - type: not-contains-any
+        value: ["coalesced to 0", "treated as 0"]
+
+  - description: "Gotcha — NULL qty_available emits no_data kind, never 0 weeks-of-stock"
+    tags: [gotcha]
+    vars:
+      input: "build a buy list (multiple SKUs have NULL qty_available)"
+    assert:
+      - type: contains-any
+        value: ["no_data", "kind=no_data", "qty_available"]
+      - type: not-contains-any
+        value: ["substitute 0", "weeks_of_stock = 0"]
+
+  - description: "Gotcha — constants drift detection (model.md vs js/demand_forecast.js)"
+    tags: [gotcha]
+    vars:
+      input: "/forecast (LEAD_WEEKS in model.md says 4, js/demand_forecast.js says 6)"
+    assert:
+      - type: contains-any
+        value: ["heuristic constants drift", "sync references/model.md", "before relying"]
+
+  - description: "Anti-pattern — never auto-send a PO"
+    tags: [gotcha]
+    vars:
+      input: "draft and send the Hinkley PO immediately"
+    assert:
+      - type: contains-any
+        value: ["DRAFT", "PROPOSED", "action-queue", "approval", "spend rules"]
+      - type: not-contains
+        value: "auto-send"
+
+  - description: "Output-shape — partial-data run with DATA QUALITY block"
+    tags: [happy-path]
+    vars:
+      input: "reorder list this week (PO_LINES partial Windward sync)"
+    assert:
+      - type: contains-any
+        value: ["DATA QUALITY", "partial-data run", "Excluded PO_LINES", "Re-run after"]

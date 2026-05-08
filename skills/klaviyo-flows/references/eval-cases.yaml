@@ -1,0 +1,114 @@
+description: "Eval suite for klaviyo-flows — Klaviyo flow audit/propose/engagement (BLOCKED on M09)"
+
+prompts:
+  - file:///home/user/accent-os/skills/klaviyo-flows/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "BLOCKED stub — M09 gate fires when KLAVIYO_API_KEY is unset"
+    tags: [blocked-mode]
+    vars:
+      input: "audit klaviyo (KLAVIYO_API_KEY not set, no cached table)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED on **M09**", "BLOCKED on M09", "Klaviyo API key"]
+      - type: contains-any
+        value: ["api-keys", "Create Private API Key", "read-only"]
+      - type: not-contains
+        value: "RANKED FLOW LEADERBOARD"
+
+  - description: "BLOCKED stub — structured error returned to action-queue"
+    tags: [blocked-mode]
+    vars:
+      input: "execute approved propose_klaviyo_edit (no API key)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED_ON_M09", "retryable", "unblock_m_task"]
+
+  - description: "Canonical happy path — Mode A audit (M09 unblocked)"
+    tags: [happy-path]
+    vars:
+      input: "audit klaviyo flows (M09 done, key set)"
+    assert:
+      - type: contains-any
+        value: ["KLAVIYO-FLOWS", "MODE: A", "RANKED FLOW LEADERBOARD", "UNDERPERFORM"]
+      - type: contains-any
+        value: ["revenue_per_send", "open_rate", "cohort_median"]
+
+  - description: "Mode B trigger — propose paste-ready edits for one flow"
+    tags: [happy-path]
+    vars:
+      input: "propose new subjects for Browse Abandon flow"
+    assert:
+      - type: contains-any
+        value: ["MODE: B", "PROPOSED EDITS", "Subject Line", "spam-score"]
+      - type: contains-any
+        value: ["paste-ready", "candidate"]
+
+  - description: "Gotcha — refuse send_klaviyo_flow action_type (read+propose only)"
+    tags: [gotcha]
+    vars:
+      input: "execute action 9 (action_type=send_klaviyo_flow from action-queue routing)"
+    assert:
+      - type: contains-any
+        value: ["ACTION_TYPE_NOT_SUPPORTED", "read+propose only", "send_klaviyo_flow is not implemented"]
+      - type: contains-any
+        value: ["fix action-queue/references/executor-registry.md", "executor-registry"]
+
+  - description: "Gotcha — never auto-edit Klaviyo, every edit is paste-ready"
+    tags: [gotcha]
+    vars:
+      input: "fix the Win-Back flow and apply the changes"
+    assert:
+      - type: contains-any
+        value: ["paste-ready", "PROPOSED", "manual paste", "applies in the Klaviyo UI"]
+      - type: not-contains-any
+        value: ["auto-applied", "auto-edited"]
+
+  - description: "Gotcha — churn-overlap missing snapshot does not fabricate rows"
+    tags: [gotcha]
+    vars:
+      input: "klaviyo churn overlap (no churn-predictor snapshot exists yet)"
+    assert:
+      - type: contains-any
+        value: ["Churn overlap skipped", "run `churn-predictor` first", "populate snapshot"]
+      - type: not-contains-any
+        value: ["fabricated", "fictional matches"]
+
+  - description: "Gotcha — action-queue schema missing → persist proposals to file"
+    tags: [gotcha]
+    vars:
+      input: "propose flow edits for Post-Purchase 30d (action_queue table missing)"
+    assert:
+      - type: contains-any
+        value: ["proposed-edits-pending.md", "action-queue schema missing", "saved to references"]
+      - type: not-contains
+        value: "silently lose"
+
+  - description: "Anti-pattern — 401/403 must NOT silently degrade to cached data"
+    tags: [gotcha]
+    vars:
+      input: "klaviyo report (key was rotated, API returns 403)"
+    assert:
+      - type: contains-any
+        value: ["Klaviyo auth failed", "re-check M09", "abort the run"]
+      - type: not-contains-any
+        value: ["silent fallback", "stale cache used"]
+
+  - description: "Output-shape — three-mode dispatch line + handoffs section"
+    tags: [happy-path]
+    vars:
+      input: "klaviyo last 30 (engagement mode)"
+    assert:
+      - type: contains-any
+        value: ["MODE: C", "ENGAGEMENT SUMMARY", "List growth"]
+      - type: contains-any
+        value: ["═══ HANDOFFS ═══", "Snapshot:", "Action queue:"]

@@ -1,0 +1,96 @@
+description: "Eval suite for churn-predictor — RFM-deviation churn ranking for Accent Lighting customers"
+
+prompts:
+  - file:///home/user/accent-os/skills/churn-predictor/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — who is about to churn"
+    tags: [happy-path]
+    vars:
+      input: "whos about to churn"
+    assert:
+      - type: contains-any
+        value: ["RANKED CHURN RISK", "Reason code", "Suggested skill", "Rank"]
+      - type: contains-any
+        value: ["TRIPLE_DROP", "BIG_SPENDER_GONE_QUIET", "RECENCY_DROP_TRADE"]
+      - type: contains
+        value: "hsyjcrrazrzqngwkqsqa"
+
+  - description: "Alternate trigger — slash command + RFM scan phrasing"
+    tags: [happy-path]
+    vars:
+      input: "/churn"
+    assert:
+      - type: contains-any
+        value: ["CHURN-PREDICTOR", "Trade", "Consumer", "Designer"]
+      - type: contains-any
+        value: ["recency", "frequency", "monetary"]
+
+  - description: "Edge — BLOCKED on customer-orders dataset (no orders in last 90d)"
+    tags: [edge-case]
+    vars:
+      input: "run RFM (customer_orders empty, customer_records lacks last_order_date)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED", "needs customer-orders data", "Track 1.4", "BigCommerce orders ingest"]
+      - type: contains
+        value: "hsyjcrrazrzqngwkqsqa"
+
+  - description: "Gotcha — < 90 days history → fall back to RECENCY_ONLY"
+    tags: [gotcha]
+    vars:
+      input: "predict churn (customer_orders has only 60 days of data)"
+    assert:
+      - type: contains-any
+        value: ["RECENCY_ONLY_INSUFFICIENT_HISTORY", "insufficient order history", "DEGRADED MODE"]
+      - type: not-contains
+        value: "TRIPLE_DROP"
+
+  - description: "Gotcha — NULL segment must NOT default to Trade"
+    tags: [gotcha]
+    vars:
+      input: "find quiet customers (20% of customer_records.segment is NULL)"
+    assert:
+      - type: contains-any
+        value: ["Unknown", "missing segment", "Backfill", "1.5×"]
+      - type: not-contains-any
+        value: ["defaulted to Trade", "treat NULL as Trade"]
+
+  - description: "Gotcha — degraded-mode output still ships (never suppress)"
+    tags: [gotcha]
+    vars:
+      input: "churn scan (email-drafter is BLOCKED, action-queue not yet forged)"
+    assert:
+      - type: contains-any
+        value: ["DEGRADED MODE", "email-drafter is currently BLOCKED", "action-queue not available"]
+      - type: contains-any
+        value: ["RANKED CHURN RISK", "Suggested skill"]
+
+  - description: "Anti-pattern — never auto-send retention action"
+    tags: [gotcha]
+    vars:
+      input: "find at-risk customers and just email them now"
+    assert:
+      - type: contains-any
+        value: ["PROPOSED", "action-queue", "approval", "Michael", "approved"]
+      - type: not-contains-any
+        value: ["sent email", "auto-send"]
+
+  - description: "Output-shape regression — paste-ready SQL block + snapshot path"
+    tags: [happy-path]
+    vars:
+      input: "rfm scan top 20"
+    assert:
+      - type: contains-any
+        value: ["═══ PASTE-READY SQL ═══", "PERCENTILE_CONT", "median_interval"]
+      - type: contains-any
+        value: ["analysis-snapshot", "snapshot", "daily-brief"]

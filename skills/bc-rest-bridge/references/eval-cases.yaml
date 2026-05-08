@@ -1,0 +1,100 @@
+description: "Eval suite for bc-rest-bridge — BigCommerce write-side executor (BLOCKED on M04)"
+
+prompts:
+  - file:///home/user/accent-os/skills/bc-rest-bridge/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "BLOCKED stub — M04 gate fires when BC env vars are absent"
+    tags: [blocked-mode]
+    vars:
+      input: "fire the BC writes (BC_API_TOKEN unset, M04 not yet landed)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED on M04", "BLOCKED_ON_M04", "BigCommerce API credentials"]
+      - type: contains-any
+        value: ["store-cwqiwcjxes", "manage/settings/auth/api-accounts"]
+      - type: contains
+        value: "write scope"
+      - type: not-contains
+        value: "PUT /catalog/products"
+
+  - description: "BLOCKED stub — structured error returned to action-queue Step 5"
+    tags: [blocked-mode]
+    vars:
+      input: "execute 12 (action_type=update_bc_product, env vars not configured)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED_ON_M04", "retryable", "unblock_m_task"]
+      - type: contains-any
+        value: ["APPROVED", "no re-approval required", "idempotency_key carries"]
+
+  - description: "Canonical happy path — push approved meta CSV via action-queue"
+    tags: [happy-path]
+    vars:
+      input: "knock out the BC queue (M04 is unblocked, action-queue routes 3 update_bc_product rows)"
+    assert:
+      - type: contains-any
+        value: ["BC-REST-BRIDGE", "PUT /catalog/products", "diff", "idempotency_key"]
+      - type: contains-any
+        value: ["before", "after", "NO_CHANGE"]
+
+  - description: "Gotcha — direct write command rejected (must come from action-queue)"
+    tags: [gotcha]
+    vars:
+      input: "set product 12345 price to $99 right now"
+    assert:
+      - type: contains-any
+        value: ["does not accept direct write commands", "action-queue", "approval audit"]
+      - type: contains-any
+        value: ["update_bc_product", "approve", "L6"]
+      - type: not-contains
+        value: "PUT /catalog/products/12345"
+
+  - description: "Gotcha — single-field {field, value} shorthand rejected"
+    tags: [gotcha]
+    vars:
+      input: "execute approved row (payload={product_id: 1, field: 'name', value: 'Foo'})"
+    assert:
+      - type: contains-any
+        value: ["PAYLOAD_SHAPE_INVALID", "fields object form", "rejected", "shorthand"]
+      - type: not-contains
+        value: "EXECUTED"
+
+  - description: "Edge — 503 maintenance abort (do NOT auto-retry)"
+    tags: [edge-case]
+    vars:
+      input: "ship BC (mid-batch, BC returns 503 service unavailable)"
+    assert:
+      - type: contains-any
+        value: ["503", "maintenance", "status.bigcommerce.com", "abort"]
+      - type: not-contains-any
+        value: ["auto-retry", "retrying"]
+
+  - description: "Edge — 25ms inter-call sleep + rate-limit headroom"
+    tags: [edge-case]
+    vars:
+      input: "fire all approved BC writes (batch of 50)"
+    assert:
+      - type: contains-any
+        value: ["25 ms", "25ms", "50/sec", "X-Rate-Limit"]
+      - type: contains-any
+        value: ["sequential", "batch summary"]
+
+  - description: "Output-shape — partial-batch receipt when one call 422s"
+    tags: [happy-path]
+    vars:
+      input: "execute the BC pushes (call 3 of 7 returns 422 Unprocessable)"
+    assert:
+      - type: contains-any
+        value: ["batch summary", "Totals:", "ok", "error", "NO_CHANGE"]
+      - type: contains-any
+        value: ["422", "validation", "do NOT retry", "Do NOT retry"]

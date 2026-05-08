@@ -1,0 +1,104 @@
+description: "Eval suite for ga4-insights — Google Analytics 4 weekly insights brief (BLOCKED on M06)"
+
+prompts:
+  - file:///home/user/accent-os/skills/ga4-insights/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "BLOCKED stub — M06 gate fires when GA4 env vars are absent"
+    tags: [blocked-mode]
+    vars:
+      input: "ga4 insights (GA4_PROPERTY_ID and GA4_CREDENTIALS_JSON unset)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED on **M06**", "BLOCKED on M06", "Google Analytics 4 + Search Console"]
+      - type: contains-any
+        value: ["GA4_PROPERTY_ID", "GA4_CREDENTIALS_JSON", "service-account"]
+      - type: not-contains-any
+        value: ["═══ BLOCK 1: HEADLINE TRAFFIC", "Sessions:"]
+
+  - description: "BLOCKED stub — alternate trigger surfaces same M06 unblock"
+    tags: [blocked-mode]
+    vars:
+      input: "/ga4 (no env vars)"
+    assert:
+      - type: contains-any
+        value: ["unblock", "service-account", "Property Access Management"]
+      - type: contains
+        value: "M06"
+
+  - description: "Canonical happy path — weekly traffic report (unblocked)"
+    tags: [happy-path]
+    vars:
+      input: "weekly traffic (GA4 env vars configured, M06 done)"
+    assert:
+      - type: contains-any
+        value: ["═══ BLOCK 1: HEADLINE TRAFFIC KPIs ═══", "═══ BLOCK 2: TRADE vs CONSUMER SPLIT ═══"]
+      - type: contains-any
+        value: ["WoW", "Sessions:", "Conversions:", "Conv. Rate:"]
+
+  - description: "Disambiguation — GSC/SERP phrasing routes to gsc-insights, NOT here"
+    tags: [gotcha]
+    vars:
+      input: "are we losing rankings in search"
+    assert:
+      - type: contains-any
+        value: ["gsc-insights", "Search Console", "SERP"]
+      - type: not-contains
+        value: "═══ BLOCK 1: HEADLINE TRAFFIC"
+
+  - description: "Gotcha — never use same-day GA4 data (latency)"
+    tags: [gotcha]
+    vars:
+      input: "ga4 insights for today"
+    assert:
+      - type: contains-any
+        value: ["GA4 same-day data is unstable", "yesterday", "ends at", "latency"]
+      - type: not-contains
+        value: "today's numbers"
+
+  - description: "Gotcha — custom dimension absent → hostname proxy + recommendation line"
+    tags: [gotcha]
+    vars:
+      input: "trade vs consumer traffic (GA4 audience_segment custom dim not configured)"
+    assert:
+      - type: contains-any
+        value: ["hostname proxy", "audience_segment", "recommend configuring"]
+      - type: not-contains
+        value: "silently dropped"
+
+  - description: "Gotcha — <4 weeks of history → no anomaly flags (don't fake)"
+    tags: [gotcha]
+    vars:
+      input: "ga4 anomalies (GA4 has only 3 weeks of history)"
+    assert:
+      - type: contains-any
+        value: ["Anomaly detection unavailable", "needs ≥4 weeks", "qualifying dimensions"]
+      - type: not-contains-any
+        value: ["z=", "z="]
+
+  - description: "Edge — partial run on 429 quota exhaustion"
+    tags: [edge-case]
+    vars:
+      input: "pull ga4 (R3 audience report 429s after retry)"
+    assert:
+      - type: contains-any
+        value: ["PARTIAL RUN", "Failed:", "quota exhausted", "data unavailable"]
+      - type: not-contains-any
+        value: ["fabricated", "invented numbers"]
+
+  - description: "Output-shape — five-block brief structure when active"
+    tags: [happy-path]
+    vars:
+      input: "ga4 weekly"
+    assert:
+      - type: contains-any
+        value: ["═══ BLOCK 4: ANOMALY FLAGS", "═══ BLOCK 5: NEXT-STEP HINTS"]

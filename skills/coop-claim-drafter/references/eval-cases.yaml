@@ -1,0 +1,102 @@
+description: "Eval suite for coop-claim-drafter — vendor co-op fund claim portfolio drafter"
+
+prompts:
+  - file:///home/user/accent-os/skills/coop-claim-drafter/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — draft co-op claims (portfolio scan)"
+    tags: [happy-path]
+    vars:
+      input: "draft co-op claims"
+    assert:
+      - type: contains-any
+        value: ["COOP CLAIM DRAFTER", "BLOCK 1: DRAFT LIST", "BLOCK 2: WATCH LIST", "BLOCK 3: PER-VENDOR DRAFTS", "BLOCK 4: REMEDIATION"]
+      - type: contains-any
+        value: ["deadline", "eligible", "vendor_overrides"]
+
+  - description: "Alternate trigger — what co-op is about to expire"
+    tags: [happy-path]
+    vars:
+      input: "what co-op is about to expire"
+    assert:
+      - type: contains-any
+        value: ["DRAFT LIST", "Days left", "Eligible", "deadline"]
+      - type: contains
+        value: "hsyjcrrazrzqngwkqsqa"
+
+  - description: "Gotcha — single-vendor request routes to email-drafter, not here"
+    tags: [gotcha]
+    vars:
+      input: "claim co-op from Kichler"
+    assert:
+      - type: contains-any
+        value: ["email-drafter", "single vendor", "delegates", "specifically named"]
+      - type: not-contains-any
+        value: ["BLOCK 1: DRAFT LIST", "portfolio scan"]
+
+  - description: "Edge — partial stub mode (vendor_overrides columns missing)"
+    tags: [edge-case]
+    vars:
+      input: "scan co-op deadlines (coop_eligibility_pct not yet on vendor_overrides)"
+    assert:
+      - type: contains-any
+        value: ["partial stub mode", "Missing column", "proposed-schema.md", "apply_migration"]
+      - type: contains-any
+        value: ["coop_tracker", "fall back", "deadline-only"]
+
+  - description: "Gotcha — schema present but all rows NULL (no backfill)"
+    tags: [gotcha]
+    vars:
+      input: "co-op pipeline (3 columns exist on vendor_overrides but all NULL)"
+    assert:
+      - type: contains-any
+        value: ["Schema present", "no vendor has co-op rules configured", "Backfill"]
+      - type: not-contains
+        value: "no claims"
+
+  - description: "Gotcha — never invent a deadline; vendor without source goes to watch list"
+    tags: [gotcha]
+    vars:
+      input: "find unclaimed co-op (vendor X has no coop_tracker.deadline and no coop_deadline_pattern)"
+    assert:
+      - type: contains-any
+        value: ["watch list", "no deadline source", "WATCH LIST"]
+      - type: not-contains
+        value: "auto-generated deadline"
+
+  - description: "Gotcha — partial portfolio failure when email-drafter 429s mid-run"
+    tags: [gotcha]
+    vars:
+      input: "knock out co-op claims (email-drafter rate-limits on vendor 4 of 7)"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 4: REMEDIATION", "email-drafter failed", "draft pending", "re-run"]
+      - type: not-contains
+        value: "abort"
+
+  - description: "Anti-pattern — never auto-approve, never bypass action-queue"
+    tags: [gotcha]
+    vars:
+      input: "draft and send the co-op claims now"
+    assert:
+      - type: contains-any
+        value: ["action-queue", "PROPOSED", "Michael", "approval"]
+      - type: not-contains-any
+        value: ["auto-approve", "auto-send"]
+
+  - description: "Output-shape — vendor-risk pre-check + HOLD-FOR-REVIEW tag"
+    tags: [happy-path]
+    vars:
+      input: "draft co-op claims (vendor Hubbardton Forge is in active dispute per vendor-risk-register)"
+    assert:
+      - type: contains-any
+        value: ["HOLD-FOR-REVIEW", "vendor-risk", "Risk flag", "vendor-risk-register"]

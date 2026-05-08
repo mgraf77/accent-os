@@ -1,0 +1,102 @@
+description: "Eval suite for gsc-insights — Google Search Console triage (BLOCKED on M06)"
+
+prompts:
+  - file:///home/user/accent-os/skills/gsc-insights/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "BLOCKED stub — M06 gate fires when GSC env vars are absent"
+    tags: [blocked-mode]
+    vars:
+      input: "gsc weekly (GSC_PROPERTY_URL and GSC_CREDENTIALS_JSON unset)"
+    assert:
+      - type: contains-any
+        value: ["BLOCKED on **M06**", "BLOCKED on M06", "Google Analytics 4 + Search Console"]
+      - type: contains-any
+        value: ["GSC_PROPERTY_URL", "GSC_CREDENTIALS_JSON", "Users and permissions"]
+      - type: not-contains
+        value: "═══ BLOCK 2: TOP MOVERS"
+
+  - description: "BLOCKED stub — slash-command path"
+    tags: [blocked-mode]
+    vars:
+      input: "/gsc (no env vars)"
+    assert:
+      - type: contains-any
+        value: ["service-account", "Restricted", "Search Console"]
+      - type: contains
+        value: "M06"
+
+  - description: "Canonical happy path — pull gsc (unblocked)"
+    tags: [happy-path]
+    vars:
+      input: "pull gsc (M06 done, env vars set)"
+    assert:
+      - type: contains-any
+        value: ["═══ BLOCK 1: SCOPE", "═══ BLOCK 2: TOP MOVERS", "═══ BLOCK 3: MISSED IMPRESSIONS", "═══ BLOCK 4: RANKING DROPS"]
+      - type: contains-any
+        value: ["bulk-meta-description", "broken-link-rescue"]
+
+  - description: "Disambiguation — on-site behavior phrasing routes to ga4-insights"
+    tags: [gotcha]
+    vars:
+      input: "is conversion down on the site"
+    assert:
+      - type: contains-any
+        value: ["ga4-insights", "GA4", "on-site behavior"]
+      - type: not-contains
+        value: "═══ BLOCK 4: RANKING DROPS"
+
+  - description: "Gotcha — BLOCK 5a contains product IDs, NOT raw URLs"
+    tags: [gotcha]
+    vars:
+      input: "what urls need better meta (canonical_url join works)"
+    assert:
+      - type: contains-any
+        value: ["bc_product_id", "Resolved product IDs", "paste into bulk-meta-description Step 1"]
+      - type: contains-any
+        value: ["BLOCK 5a", "5a — Resolved", "Unresolved URLs"]
+
+  - description: "Gotcha — Supabase products.canonical_url empty → skip Ranking Drops"
+    tags: [gotcha]
+    vars:
+      input: "ranking drops (products.canonical_url is empty)"
+    assert:
+      - type: contains-any
+        value: ["canonical_url is empty", "Ranking Drops unavailable", "populate"]
+      - type: not-contains-any
+        value: ["substituted all product URLs", "all-products fallback"]
+
+  - description: "Gotcha — never include last 2 days (GSC ~48h lag)"
+    tags: [gotcha]
+    vars:
+      input: "search query report last 7 days"
+    assert:
+      - type: contains-any
+        value: ["48h", "2-day", "lag", "today - 3", "today minus 3"]
+
+  - description: "Edge — 429 quota fallback to per-page report"
+    tags: [edge-case]
+    vars:
+      input: "gsc report (R1+R2 429 after retry, R3 still works)"
+    assert:
+      - type: contains-any
+        value: ["QUOTA_PARTIAL", "PARTIAL RUN", "rowLimit=10000", "data unavailable"]
+      - type: not-contains
+        value: "fabricated rows"
+
+  - description: "Anti-pattern — never silently change thresholds"
+    tags: [gotcha]
+    vars:
+      input: "missed impressions report"
+    assert:
+      - type: contains-any
+        value: ["impressions ≥ 100", "CTR < 1%", "position < 10", "≥100"]

@@ -60,3 +60,44 @@
 - Loop closure verified: vision → optimizer ranks → forge builds → optimizer logs closure. End-to-end works.
 
 ---
+
+### gap-run-003 — 2026-05-08 (next-cycle scoring + emergent-gap surface)
+- branch: claude/accentos-gap-analysis-Dcvcf
+- head: 4a091c9
+- gaps_total: 8 (5 seeded by gap-run-002 + 3 newly surfaced from 17-skill scan)
+- gaps_top3: [M-task-tracker, executor-registry-validator, trigger-phrase-miner]
+- prior_queue_diff:
+    - closed_since_last: [] (no skills landed between gap-run-002 close and gap-run-003 open — same HEAD 4a091c9; gap-run-003 is the post-drain re-scan)
+    - new_gaps: 3 surfaced beyond the 5 seeded:
+        - customer-card-builder (MASTER §14 "profiles build themselves" + Appendix A 25-field card; agentic L4-L5; heavy M03/M11/enrichment-API block; score 7.5)
+        - skill-deprecator (closes skill-performance-tracker underperformer-feed → retirement loop; meta-infra; score 12.0)
+        - win-loss-predictor (Capability Ladder L5 Predictive — currently partial; needs win_loss_log + pipeline_events volume; score 7.5)
+- approval: pending (queue saved, awaiting Michael's `forge top N` reply)
+- next_action: queue stays for next session; recommend `forge top 3` (all unblocked LOW-effort meta-infra / governance — M-task-tracker, executor-registry-validator, trigger-phrase-miner can ship in one cycle)
+
+### Scoring summary (gap-run-003)
+| Rank | Candidate | I | F | B | C | Score |
+|---|---|---|---|---|---|---|
+| 1 | M-task-tracker | 3 | 4 | 5 | 1 | 60.0 |
+| 2 | executor-registry-validator | 3 | 3 | 5 | 1 | 45.0 |
+| 3 | trigger-phrase-miner | 3 | 3 | 5 | 1 | 45.0 |
+| 4 | ralph-loop-runner | 3 | 3 | 5 | 2 | 22.5 |
+| 5 | skill-eval-runner | 3 | 3 | 4 | 2 | 18.0 |
+| 6 | skill-deprecator | 3 | 2 | 4 | 2 | 12.0 |
+| 7 | customer-card-builder | 5 | 3 | 2 | 4 | 7.5 |
+| 8 | win-loss-predictor | 5 | 3 | 2 | 4 | 7.5 |
+
+### Newly surfaced gap analysis
+- **Executor registry coverage check** — scan of `action-queue/references/executor-registry.md` shows all 8 registered action_types (send_email, claim_coop, update_bc_product, propose_klaviyo_edit, route_alert, churn_nudge, vendor_outreach, price_change_push) are bound to existing skills. NO missing executor. The `executor-registry-validator` candidate remains valuable as a drift-catcher (watches for future contract divergence), not as a gap-filler — confirmed via direct scan.
+- **Drafts → execute pipeline** — agentic skills produce drafts; action-queue persists; executors execute. The "between drafts and execute" surface is fully covered (action-queue Step 4 = approval, Step 5 = invoke). No missing skill in the pipe today.
+- **skill-performance-tracker → retirement loop** — confirmed gap. Tracker emits "underperformers" report; skill-health-monitor proposes Edits but does not retire/archive. `skill-deprecator` is the missing closer.
+- **Capability Ladder L5** — `churn-predictor` + `demand-forecaster-skill` cover L5 partially but only single-signal predictions. `win-loss-predictor` would close pipeline-prediction gap. Gates on data volume, not blockers.
+
+### Notes for next run
+- Saturation: GREEN. Queue fully drained from gap-run-002; 8 fresh candidates ranked; top-3 are LOW-effort and unblocked.
+- Forge cadence recommendation: SHIP TOP-3 NEXT SESSION — all three are <2h LOW-effort meta-infra/governance skills with no M-task blockers. They strengthen the closed loop's measurement and safety surfaces (M-task-tracker = unblock cadence, executor-registry-validator = boundary safety, trigger-phrase-miner = forge accuracy). Combined effort budget ~5-6h, within one focused session.
+- After top-3 land, /gap re-scans with 5 candidates remaining (ranks 4-8). Ranks 4-6 (ralph-loop-runner, skill-eval-runner, skill-deprecator) become the new top-3 unless emergent demand shifts the picture. Ranks 7-8 (customer-card-builder, win-loss-predictor) are M-task-gated parking lot.
+- Companion cadence: /skill-health is OVERDUE since gap-run-002 added 15 skills without an audit. Run /skill-health BEFORE /gap next-next session to catch any companion-link drift the parallel forge introduced.
+- efficiency-monitor PROMOTE feed: still empty (0 sessions logged in efficiency-log.md). Once it accrues sessions, those entries merge into future gap-runs.
+
+---

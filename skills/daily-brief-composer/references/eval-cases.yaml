@@ -1,0 +1,102 @@
+description: "Eval suite for daily-brief-composer — role-aware morning brief renderer"
+
+prompts:
+  - file:///home/user/accent-os/skills/daily-brief-composer/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — morning brief (Owner default)"
+    tags: [happy-path]
+    vars:
+      input: "morning brief"
+    assert:
+      - type: contains-any
+        value: ["Top 3 today", "Deals at risk", "Vendors needing attention", "KPI deviations", "New since last brief"]
+      - type: contains-any
+        value: ["Composed:", "watermark", "role:", "voice:"]
+
+  - description: "Alternate trigger — terse rundown phrasing"
+    tags: [happy-path]
+    vars:
+      input: "whats on my plate"
+    assert:
+      - type: contains-any
+        value: ["Morning brief", "Top 3", "## "]
+      - type: contains
+        value: "Owner"
+
+  - description: "Disambiguation — sales brief routes to Sales role, not Owner"
+    tags: [happy-path]
+    vars:
+      input: "sales brief"
+    assert:
+      - type: contains-any
+        value: ["sales", "Sales"]
+      - type: not-contains-any
+        value: ["role: Owner", "role:Owner"]
+
+  - description: "Failure mode A — recommender returns 'no live candidates'"
+    tags: [gotcha]
+    vars:
+      input: "todays rundown (next-action-recommender returns no live candidates)"
+    assert:
+      - type: contains-any
+        value: ["AccentOS state is clean", "no Top-3 today", "/gap", "/skill-health"]
+      - type: not-contains
+        value: "fabricated"
+
+  - description: "Failure mode C — Supabase MCP error on a single section"
+    tags: [gotcha]
+    vars:
+      input: "give me the brief (Supabase MCP times out on KPI deviations query)"
+    assert:
+      - type: contains-any
+        value: ["section unavailable", "Supabase MCP error", "degraded"]
+      - type: contains-any
+        value: ["Top 3 today", "Deals at risk"]
+
+  - description: "Gotcha — ≤1 screen cap (don't shrink the Top-3)"
+    tags: [gotcha]
+    vars:
+      input: "the brief (10 vendors and 8 deals at risk this morning)"
+    assert:
+      - type: contains-any
+        value: ["Top 3", "1.", "2.", "3."]
+      - type: not-contains-any
+        value: ["Top 5 today", "Top 4 today"]
+
+  - description: "Gotcha — concurrent-run guard skips watermark advance"
+    tags: [gotcha]
+    vars:
+      input: "rundown (last-brief.md composed_at 30s ago)"
+    assert:
+      - type: contains-any
+        value: ["composed", "re-running", "ago", "concurrent"]
+      - type: contains-any
+        value: ["Top 3", "## "]
+
+  - description: "Failure mode D — unsupported role falls back to Owner shape"
+    tags: [edge-case]
+    vars:
+      input: "warehouse brief"
+    assert:
+      - type: contains-any
+        value: ["not templated", "Owner shape", "role-templates.md", "add to role-templates"]
+
+  - description: "Output-shape regression — sectioned Markdown, no prose preamble"
+    tags: [happy-path]
+    vars:
+      input: "give me the bullets"
+    assert:
+      - type: regex
+        value: "(^|\n)# Morning brief"
+      - type: not-contains-any
+        value: ["Here's your brief", "I would include", "you might consider"]

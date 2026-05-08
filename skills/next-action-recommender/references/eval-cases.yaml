@@ -1,0 +1,102 @@
+description: "Eval suite for next-action-recommender — top-3 highest-leverage daily actions"
+
+prompts:
+  - file:///home/user/accent-os/skills/next-action-recommender/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — what should I do next"
+    tags: [happy-path]
+    vars:
+      input: "what should i do next"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 1: TOP-3 RECOMMENDED ACTIONS", "TOP-3 RECOMMENDED ACTIONS", "#1 —", "#2 —", "#3 —"]
+      - type: contains-any
+        value: ["leverage", "first step", "first_step"]
+
+  - description: "Alternate trigger — top 3 / highest leverage phrasing"
+    tags: [happy-path]
+    vars:
+      input: "top 3"
+    assert:
+      - type: contains-any
+        value: ["#1", "#2", "#3", "leverage"]
+      - type: contains-any
+        value: ["BLOCK 0", "BLOCK 1", "Sources"]
+
+  - description: "Disambiguation — morning brief routes to daily-brief-composer"
+    tags: [gotcha]
+    vars:
+      input: "morning brief"
+    assert:
+      - type: contains-any
+        value: ["daily-brief-composer", "morning brief", "defer"]
+      - type: not-contains-any
+        value: ["═══ BLOCK 1: TOP-3 RECOMMENDED", "BLOCK 1: TOP-3 RECOMMENDED ACTIONS"]
+
+  - description: "Edge — empty candidate pool emits explicit 'no live candidates' stub"
+    tags: [edge-case]
+    vars:
+      input: "whats next (clean state — zero candidates from all 5 sources)"
+    assert:
+      - type: contains-any
+        value: ["no live candidates", "AccentOS state is clean", "/gap", "/skill-health"]
+      - type: not-contains-any
+        value: ["fabricated", "filler"]
+
+  - description: "Gotcha — Supabase MCP unreachable returns abort stub (do not fabricate)"
+    tags: [gotcha]
+    vars:
+      input: "/next (Supabase MCP unreachable)"
+    assert:
+      - type: contains-any
+        value: ["Supabase unreachable", "Re-run after MCP restore"]
+      - type: not-contains-any
+        value: ["BLOCK 1: TOP-3", "stale memory"]
+
+  - description: "Gotcha — back-pressure adjustment when action_queue PROPOSED depth >20"
+    tags: [gotcha]
+    vars:
+      input: "highest leverage move (action_queue has 25 PROPOSED rows already)"
+    assert:
+      - type: contains-any
+        value: ["back-pressure", "PROPOSED-depth", "demote", "redundant", "depth"]
+
+  - description: "Gotcha — leverage-rubric.md missing → fall back to inline default"
+    tags: [gotcha]
+    vars:
+      input: "rank my actions (leverage-rubric.md unreadable)"
+    assert:
+      - type: contains-any
+        value: ["rubric-default", "inline default", "fallback"]
+      - type: contains
+        value: "BLOCK 1"
+
+  - description: "Anti-pattern — never recommend generic action without citation"
+    tags: [gotcha]
+    vars:
+      input: "give me three things"
+    assert:
+      - type: not-contains-any
+        value: ["review your email", "check on vendors", "look at the dashboard"]
+      - type: contains-any
+        value: ["source:", "vendor_id", "deal_id", "alert_id", "kpi", "M0", "M1", "M2"]
+
+  - description: "Output-shape — block markers parsed by daily-brief-composer"
+    tags: [happy-path]
+    vars:
+      input: "whats worth my time today"
+    assert:
+      - type: contains-any
+        value: ["═══ BLOCK 0: STATE ═══", "═══ BLOCK 1: TOP-3 RECOMMENDED ACTIONS ═══", "═══ BLOCK 2: RUNNERS-UP", "═══ BLOCK 3: NEXT-STEP HOOKS"]
+      - type: contains-any
+        value: ["first step:", "expected:", "effort:"]

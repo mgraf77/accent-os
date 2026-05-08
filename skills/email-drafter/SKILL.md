@@ -212,8 +212,8 @@ The block is the entire output. No preamble. No "here's the draft:" framing.
 - **Schema sources:** `/home/user/accent-os/sql/M02_core_schema.sql` (customers, quotes, coop_tracker), `M30_customers_segment.sql`, `M32_deals_stage_history.sql`, `M34_invoices_payments.sql`.
 - **Companion skills:**
   - `supabase-sql-magic` — context fetch (Step 2)
-  - `coop-claim-drafter` — specialization for the co-op-claim type (delegates to this skill with a richer template; future skill)
-  - `action-queue` — post-draft handoff for approval-then-send (future skill — Step 6 surfaces the hook)
+  - `coop-claim-drafter` — specialization for the co-op-claim type (delegates to this skill with a richer template)
+  - `action-queue` — post-draft handoff for approval-then-send (Step 6 surfaces the hook)
   - `vendor-cascade` — surfaces vendor priority for outreach prioritization (used when batching outreach to multiple vendors)
   - `vibe-speak` — supplies voice profile (`profiles/michael.md`)
 

@@ -1,0 +1,90 @@
+description: "Eval suite for alert-router — Track 6.8 alerts → action_queue routing"
+
+prompts:
+  - file:///home/user/accent-os/skills/alert-router/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — route the alerts"
+    tags: [happy-path]
+    vars:
+      input: "route the alerts"
+    assert:
+      - type: contains-any
+        value: ["ALERT ROUTING", "ROUTING TABLE", "DAILY-BRIEF ALERTS BLOCK", "action_queue UPSERTS"]
+      - type: contains-any
+        value: ["dedup_key", "owner_role", "urgency_tier"]
+
+  - description: "Alternate trigger — what fired today / Michael's terse phrasing"
+    tags: [happy-path]
+    vars:
+      input: "what fired today"
+    assert:
+      - type: contains-any
+        value: ["alerts", "ALERT ROUTING", "alert_id"]
+      - type: contains-any
+        value: ["hsyjcrrazrzqngwkqsqa", "Supabase"]
+
+  - description: "Gotcha — routing-table.md missing → abort, never infer defaults"
+    tags: [gotcha]
+    vars:
+      input: "route alerts (routing-table.md is missing/unreadable)"
+    assert:
+      - type: contains-any
+        value: ["routing-table.md missing", "re-clone", "Do not route from inferred defaults", "restore"]
+      - type: not-contains
+        value: "owner_role"
+
+  - description: "Gotcha — unknown signal type (10th type in alerts.js, drift)"
+    tags: [gotcha]
+    vars:
+      input: "route the alerts (alerts.js shipped a 10th signal type not in alert-signals.md)"
+    assert:
+      - type: contains-any
+        value: ["unknown", "catch-all", "Owner", "drift", "sync references"]
+      - type: not-contains
+        value: "auto-extend"
+
+  - description: "Edge — concurrent-run guard (another router run within 30s)"
+    tags: [edge-case]
+    vars:
+      input: "route the alerts (last-route.md shows routed_at 12s ago)"
+    assert:
+      - type: contains-any
+        value: ["concurrent", "another run", "Aborting", "double-routing", "30s"]
+      - type: not-contains
+        value: "ALERT ROUTING — Out:"
+
+  - description: "Edge — schema dry-run mode (action_queue table missing)"
+    tags: [edge-case]
+    vars:
+      input: "route alerts (action_queue table not yet provisioned)"
+    assert:
+      - type: contains-any
+        value: ["dry-run", "paste-ready", "SQL Editor", "schema needs"]
+      - type: contains-any
+        value: ["INSERT", "action_queue UPSERTS"]
+
+  - description: "Output-shape regression — partial-output contract sections"
+    tags: [happy-path]
+    vars:
+      input: "wire alerts to action queue"
+    assert:
+      - type: contains-any
+        value: ["═══ ROUTING TABLE ═══", "═══ DEDUP / ESCALATION ═══", "═══ DAILY-BRIEF ALERTS BLOCK"]
+
+  - description: "Companion-link — daily-brief-composer emits per-role Alerts block"
+    tags: [happy-path]
+    vars:
+      input: "alerts for the brief"
+    assert:
+      - type: contains-any
+        value: ["Alerts", "per role", "Owner", "daily-brief", "top-5"]

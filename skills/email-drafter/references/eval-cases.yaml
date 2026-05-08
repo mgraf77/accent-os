@@ -1,0 +1,102 @@
+description: "Eval suite for email-drafter — paste-ready voice-calibrated outreach drafter"
+
+prompts:
+  - file:///home/user/accent-os/skills/email-drafter/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — draft an email to a named customer"
+    tags: [happy-path]
+    vars:
+      input: "draft an email to Bob from XYZ Lighting"
+    assert:
+      - type: contains-any
+        value: ["═══ EMAIL DRAFT ═══", "TYPE:", "HANDLE:", "ENTITY:", "SEND-OR-HOLD"]
+      - type: contains-any
+        value: ["═══ REASONING ═══", "═══ FOLLOW-UP HOOK ═══"]
+      - type: contains
+        value: "hsyjcrrazrzqngwkqsqa"
+
+  - description: "Alternate trigger — wake up cold quote phrasing"
+    tags: [happy-path]
+    vars:
+      input: "wake up quote Q-1234"
+    assert:
+      - type: contains-any
+        value: ["quote-revival", "TYPE: quote-revival", "Subject:"]
+      - type: contains-any
+        value: ["quotes", "quote_lines", "low-pressure"]
+
+  - description: "Boundary — portfolio-level co-op scan routes to coop-claim-drafter"
+    tags: [gotcha]
+    vars:
+      input: "draft co-op claims"
+    assert:
+      - type: contains-any
+        value: ["coop-claim-drafter", "portfolio", "deadline scan", "delegates back"]
+      - type: not-contains
+        value: "═══ EMAIL DRAFT ═══"
+
+  - description: "Edge — ANTHROPIC_API_KEY missing"
+    tags: [edge-case]
+    vars:
+      input: "draft an email to Sarah at Hinkley (ANTHROPIC_API_KEY not set)"
+    assert:
+      - type: contains-any
+        value: ["requires ANTHROPIC_API_KEY", "Set it in env", "activates automatically"]
+
+  - description: "Gotcha — ambiguous handle (multiple customers match) → return candidates"
+    tags: [gotcha]
+    vars:
+      input: "email Bob (3 customers named Bob in Supabase)"
+    assert:
+      - type: contains-any
+        value: ["candidate list", "multiple matches", "id", "last-touch"]
+      - type: not-contains-any
+        value: ["highest-value match silently", "auto-picked"]
+
+  - description: "Gotcha — Supabase fetch fails → HOLD-FOR-REVIEW with thin-context tag"
+    tags: [gotcha]
+    vars:
+      input: "ping Sarah (Supabase rate-limit on context fetch)"
+    assert:
+      - type: contains-any
+        value: ["HOLD-FOR-REVIEW", "thin-context", "supabase fetch failed", "stub"]
+      - type: not-contains
+        value: "SEND"
+
+  - description: "Anti-pattern — never invent facts; never sign as Michael"
+    tags: [gotcha]
+    vars:
+      input: "draft outreach to Bob at XYZ Lighting (no recent interaction data)"
+    assert:
+      - type: not-contains-any
+        value: ["[Your Name]", "Best regards,", "Sincerely,"]
+      - type: contains-any
+        value: ["unknown", "verify", "no signature", "Michael appends"]
+
+  - description: "Anti-pattern — banned salesperson boilerplate"
+    tags: [gotcha]
+    vars:
+      input: "draft me something for Tim at HVAC Designs"
+    assert:
+      - type: not-contains-any
+        value: ["I hope this email finds you well", "circling back", "touching base", "per my last email"]
+
+  - description: "Output-shape — paste-ready block with REASONING + FOLLOW-UP HOOK"
+    tags: [happy-path]
+    vars:
+      input: "knock out a quick email to vendor Hubbardton Forge about overdue PO"
+    assert:
+      - type: contains-any
+        value: ["TYPE: vendor-correspondence", "TYPE:vendor-correspondence", "vendor-correspondence"]
+      - type: contains-any
+        value: ["═══ FOLLOW-UP HOOK ═══", "follow-up via action-queue"]

@@ -1,0 +1,100 @@
+description: "Eval suite for skill-performance-tracker — cross-session skill usage rollup"
+
+prompts:
+  - file:///home/user/accent-os/skills/skill-performance-tracker/SKILL.md
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+defaultTest:
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
+
+tests:
+  - description: "Canonical happy path — leaderboard report"
+    tags: [happy-path]
+    vars:
+      input: "skill performance"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 1: LEADERBOARD", "BLOCK 2: UNDERPERFORMERS", "BLOCK 3: OPPORTUNITY"]
+      - type: contains-any
+        value: ["composite", "Match", "Inv", "Sat", "TokSv"]
+
+  - description: "Alternate trigger — slash command /leaderboard"
+    tags: [happy-path]
+    vars:
+      input: "/leaderboard"
+    assert:
+      - type: contains-any
+        value: ["LEADERBOARD", "skill", "30d", "Trend"]
+
+  - description: "Disambiguation — structural audits route to skill-health-monitor"
+    tags: [gotcha]
+    vars:
+      input: "audit my skills for broken refs"
+    assert:
+      - type: contains-any
+        value: ["skill-health-monitor", "structural", "fail fast"]
+      - type: not-contains-any
+        value: ["BLOCK 1: LEADERBOARD", "composite score"]
+
+  - description: "Edge — efficiency-log.md missing returns warning stub"
+    tags: [edge-case]
+    vars:
+      input: "skill perf (efficiency-log.md does not exist)"
+    assert:
+      - type: contains-any
+        value: ["cannot run", "no `efficiency-log.md` data", "Wait for >=3 sessions"]
+      - type: not-contains
+        value: "BLOCK 1: LEADERBOARD"
+
+  - description: "Gotcha — registry drift surfaces in footer (don't silently pick)"
+    tags: [gotcha]
+    vars:
+      input: "leaderboard (skill X in directory but not in _index.md)"
+    assert:
+      - type: contains-any
+        value: ["registry drift", "skill-health-monitor", "drifted"]
+      - type: not-contains-any
+        value: ["silently pick", "auto-register"]
+
+  - description: "Gotcha — never auto-deprecate; surface via skill-health-monitor"
+    tags: [gotcha]
+    vars:
+      input: "deprecate the dead skills automatically"
+    assert:
+      - type: contains-any
+        value: ["never auto-deprecate", "skill-health-monitor", "PROPOSE-DEPRECATION", "Michael's explicit approval"]
+      - type: not-contains-any
+        value: ["auto-removed", "deleted skill"]
+
+  - description: "Gotcha — concurrent-run lock prevents double snapshot append"
+    tags: [gotcha]
+    vars:
+      input: "skill-perf (.run.lock exists, <5 min old)"
+    assert:
+      - type: contains-any
+        value: ["concurrent run", "skipping", ".run.lock", "Re-run after"]
+      - type: not-contains
+        value: "snapshots.csv"
+
+  - description: "Edge — no eval-results.json anywhere → Qual rendered as em-dash"
+    tags: [edge-case]
+    vars:
+      input: "leaderboard (zero eval-results.json across registry)"
+    assert:
+      - type: contains-any
+        value: ["—", "Qual: —", "skill-eval-suite to populate", "data sparse"]
+
+  - description: "Output-shape — three blocks always emit, snapshot always appends"
+    tags: [happy-path]
+    vars:
+      input: "skill metrics"
+    assert:
+      - type: contains-any
+        value: ["BLOCK 1: LEADERBOARD", "BLOCK 2: UNDERPERFORMERS", "BLOCK 3: OPPORTUNITY"]
+      - type: contains-any
+        value: ["snapshots.csv", "snapshot", "longitudinal"]

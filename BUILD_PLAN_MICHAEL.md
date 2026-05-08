@@ -430,6 +430,66 @@ These M-tasks already exist above (M24/M27/M29). The audit confirms running them
 
 ---
 
+## CATEGORY: L4–L6 CAPABILITY SKILLS — schema gaps surfaced by skill-forge (2026-05-08)
+
+> Each unblocks a count of newly-forged AccentOS skills currently shipping in
+> BLOCKED stub mode. These came out of the gap-optimizer / skill-forge run that
+> produced 15 new skills (action-queue, alert-router, bc-rest-bridge, churn-predictor,
+> coop-claim-drafter, daily-brief-composer, demand-forecaster-skill, email-drafter,
+> ga4-insights, gsc-insights, klaviyo-flows, next-action-recommender,
+> skill-performance-tracker, trade-vendor-portal, windward-bridge). Each skill
+> documents the exact DDL it needs in its own `references/proposed-schema.md`.
+
+**Recommended order:**
+1. **M42** (action_queue) first — single largest unlock, gates the L4/L6 ledger that 5+ skills write to
+2. **M43** (vendor_overrides co-op cols) — pure ALTER TABLE, immediately flips coop-claim-drafter active
+3. **M44** (klaviyo cache) — only matters once M09 lands, but cheap to pre-stage
+4. **M45** (rfm_scores cache) — optional perf boost for churn-predictor; skill already runs without it
+
+- [ ] **M42** — Run `action_queue` schema (L4 drafted-actions ledger + L6 autonomous-execution ledger)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Two skills propose schemas for this same table — `action-queue/references/proposed-schema.md` (the L6 executor-state-machine version with `action_type_enum`, `idempotency_key`, `state` enum, `executor_result jsonb`) and `alert-router/references/proposed-schema.md` (the L4 router version with `signal_type`, `owner_role`, `urgency_tier`, `dedup_key`, `escalation_at`). Decide which is canonical, OR merge the supersets into a single CREATE TABLE.
+    2. Open the chosen `references/proposed-schema.md` from the repo. Copy the DDL block.
+    3. Paste into the SQL Editor → click **Run**.
+    4. Verify the table exists: `SELECT to_regclass('public.action_queue');` should return non-null. Verify enums (action-queue version): `SELECT 1 FROM pg_type WHERE typname IN ('action_state','action_type_enum');` should return 2 rows.
+    5. No UI ships yet — UI work will be queued in BUILD_PLAN_CLAUDE.md once the table is live.
+  - Then: paste to Claude → `M42 done — action_queue table is live. Wire alert-router + action-queue + churn-predictor + klaviyo-flows + next-action-recommender to it.`
+  - Unlocks: full L4/L6 capability ladder. Skills currently shipping in BLOCKED stub mode that flip active: `action-queue` (executor backbone), `alert-router` (writes routed alerts), `next-action-recommender` (queues approved actions), `churn-predictor` (writes intervention proposals), `coop-claim-drafter` (writes claim drafts as approval-required actions). Indirect: `daily-brief-composer` reads action_queue depth as a signal.
+
+- [ ] **M43** — Add 3 co-op rule columns to `vendor_overrides` (coop-claim-drafter active mode)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `/home/user/accent-os/skills/coop-claim-drafter/references/proposed-schema.md`. Copy the `ALTER TABLE vendor_overrides ADD COLUMN IF NOT EXISTS ...` block (3 columns: `coop_eligibility_pct numeric(5,2)`, `coop_deadline_pattern text`, `coop_documentation_required jsonb`) plus the partial index.
+    2. Paste into the SQL Editor → click **Run**.
+    3. Verify with the included verification query: should return 3 rows in `information_schema.columns`.
+    4. Backfill top-5 vendors by FY 2025 spend with eligibility % + deadline pattern + documentation array (Kichler, Hubbardton Forge, Visual Comfort, etc. — example values in the proposed-schema.md table).
+  - Then: paste to Claude → `M43 done — vendor_overrides has co-op rule columns. Backfilled top-N vendors. coop-claim-drafter unblocked.`
+  - Unlocks: `coop-claim-drafter` flips from partial-blocked (deadline-only) to active mode (full claim draft generation with eligibility + documentation checklist). Each backfilled vendor adds one more vendor's worth of claim-drafting coverage.
+
+- [ ] **M44** — Run Klaviyo flow cache schema (klaviyo-flows persistent mode)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `/home/user/accent-os/skills/klaviyo-flows/references/proposed-schema.md`. Copy all 3 CREATE TABLE blocks (`klaviyo_flows`, `klaviyo_flow_metrics`, `klaviyo_flow_proposals`) plus indexes + RLS.
+    2. Paste into the SQL Editor → click **Run**.
+    3. Verify: `SELECT to_regclass('public.klaviyo_flows'), to_regclass('public.klaviyo_flow_metrics'), to_regclass('public.klaviyo_flow_proposals');` should return 3 non-null OIDs.
+    4. No backfill needed — tables populate on next `klaviyo-flows audit` run after M09 lands.
+  - Then: paste to Claude → `M44 done — Klaviyo cache tables live.`
+  - Unlocks: `klaviyo-flows` upgrades from stateless (live API only) to cached + cross-run trends + proposal state machine. Mode A leaderboard becomes "this week vs last week"; Mode B proposals link to apply timestamp.
+  - Blocked on: not strictly blocked, but only meaningful after **M09** (Klaviyo API key) — pre-stage if convenient.
+
+- [ ] **M45** — Run `rfm_scores` cache schema (churn-predictor perf boost — optional)
+  - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
+  - Action:
+    1. Open `/home/user/accent-os/skills/churn-predictor/references/proposed-schema.md`. Copy the `rfm_scores` CREATE TABLE block (cache for per-customer baseline RFM stats).
+    2. Paste into the SQL Editor → click **Run**.
+    3. Verify: `SELECT to_regclass('public.rfm_scores');` non-null.
+    4. Schedule a nightly Edge Function or cron to refresh `rfm_scores` from `customers` + `customer_orders` (sample SQL in proposed-schema.md).
+  - Then: paste to Claude → `M45 done — rfm_scores cache live. churn-predictor switches to cached baselines.`
+  - Unlocks: `churn-predictor` performance boost (much faster than recomputing baselines on every run). Skill works without M45 — falls back to inline computation per top-N candidate. Pure perf optimization, not a hard blocker.
+
+---
+
 ## How to use this file
 
 When Michael has time:
