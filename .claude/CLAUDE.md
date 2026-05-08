@@ -13,6 +13,7 @@
    h. Read `skills/_index.md` for the AccentOS skill registry — used by Step 23 (skill router) to detect when a task could be handled by an existing skill instead of brute-forcing.
    i. SKILL.md Step 7 expanded auto-disengage rules + Step 12 pre-send accuracy gate + Step 23 skill discovery apply to every response.
    j. Activate `efficiency-monitor` (always-on observer): read `skills/efficiency-monitor/session-end-summary.md`. If it has flags or PROMOTE-status candidates, surface them in current vibe-speak mode as the first thing after boot status. Per `skills/efficiency-monitor/SKILL.md` Step 1, silently track signals (retry-loops, redundant-reads, recurring-sequences, skill-bypass, clarification-loops, redone-wip) during the session — never narrate mid-flow. Stop hook in `.claude/settings.json` triggers aggregation at session end.
+   k. **Run AIRLOCK gate** — `node skills/airlock/engine/runner.js`. If verdict is BLOCK: surface block reason and halt before any build work. If WARN: surface warnings and continue. If PASS: continue silently. On AIRLOCK internal failure, continue (fail-open — never block builds on AIRLOCK's own errors).
 2. Log session start to PROMPT_LOG.md: `### [date] — Auto-session start`
 3. Read WORK_IN_PROGRESS.md — if shows incomplete task, finish it before anything else
 4. Read BUILD_PLAN_CLAUDE.md — find first [ ] item with no unresolved BLOCKS ON MICHAEL

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "branch-match",
+    "description": "claimed_branch (extracted from session-handoff.md) must match actual git branch",
+    "severity": "block",
+    "check": "branchMatch"
+  },
+  {
+    "id": "wip-coherence",
+    "description": "WORK_IN_PROGRESS.md must not contain obvious internal contradictions",
+    "severity": "warn",
+    "check": "wipCoherence"
+  },
+  {
+    "id": "injection-pattern",
+    "description": "Payload strings must not match any known prompt injection signatures",
+    "severity": "block",
+    "check": "injectionPattern"
+  }
+]
