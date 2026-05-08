@@ -697,14 +697,16 @@ Google Sheets ID: `1EETnYq9pl8OwvbOVdCG-g6uaddjFezzPNPDo2PNnk5I`
 AccentOS is being built to be an **agentic operating system** for Accent Lighting — a system that doesn't just store data but actively recommends, drafts, and executes actions on behalf of the business.
 
 **End state (Phase 4, EOY 2026):**
-- Every role has a daily brief waiting when they log in — what to do today, what's at risk, what's an opportunity
+- Every role has a daily brief waiting when they log in — what to do today, what's at risk, what's an opportunity ✅ shipped (`daily-brief-composer`, `next-action-recommender`, `alert-router`)
 - Sales quotes are auto-generated from a takeoff photo, refined with one voice note, submitted without touching a keyboard
 - Customer profiles build themselves from Windward, Google, LinkedIn, and Gmail — no manual entry
-- The system knows which customers are about to churn before any human notices
-- Vendor co-op money is claimed automatically before deadlines
+- The system knows which customers are about to churn before any human notices ✅ shipped (`churn-predictor`)
+- Vendor co-op money is claimed automatically before deadlines ✅ shipped — draft stage (`coop-claim-drafter`); execution pending L6 `action-queue` schema
 - Google Shopping feed is self-healing — product quality issues flagged and queued for fix
 - The website is personalized per visitor type (trade vs. consumer vs. designer)
 - All integrations are self-maintained; no vendor dependency on Curtis or any individual
+- Demand forecasting feeds inventory and PO decisions ✅ shipped (`demand-forecaster-skill`)
+- Customer communications drafted automatically from triggers, awaiting human approval ✅ shipped (`email-drafter`)
 
 ### Why Internal vs. SaaS
 If built as off-the-shelf tools, AccentOS would cost **$8,300+/month** in software alone, plus **$151K/year** in labor value. Current monthly cost: **$30**. Every capability is built for exactly how Accent operates — no feature bloat, no seat fees, no integrations that half-work.
@@ -714,10 +716,23 @@ If built as off-the-shelf tools, AccentOS would cost **$8,300+/month** in softwa
 |---|---|---|
 | 1 | ✅ Done | Passive data store — read/write vendor scores |
 | 2 | ✅ Done | Reactive display — show rankings, reps, history |
-| 3 | 🔲 In Progress | Proactive alerts — tell you what needs attention |
-| 4 | 🔲 Planned | Draft actions — email scaffolds, claim drafts, outreach |
-| 5 | 🔲 Phase 3 | Predictive — know what's going to happen before it does |
-| 6 | 🔲 Phase 4 | Autonomous — execute approved actions without being asked |
+| 3 | ✅ Covered | Proactive alerts — tell you what needs attention. Shipped: `alert-router`, `daily-brief-composer`, `next-action-recommender`, `churn-predictor` |
+| 4 | 🟡 Partial | Draft actions — email scaffolds, claim drafts, outreach. Shipped: `email-drafter`, `coop-claim-drafter`, `bc-rest-bridge` (stub — pending M-task creds) |
+| 5 | 🟡 Partial | Predictive — know what's going to happen before it does. Shipped: `churn-predictor`, `demand-forecaster-skill` |
+| 6 | 🟡 Partial | Autonomous — execute approved actions without being asked. Shipped: `action-queue` (stub — lifecycle pipeline only). Full L6 requires `action_queue` schema run + executor maturation |
+
+### Closed-loop skill ecosystem
+
+A four-skill quartet now keeps the AccentOS skill library self-evolving:
+
+1. **`gap-optimizer`** — scans MASTER.md vision text + Capability Ladder weekly, proposes the top 3 highest-leverage gap-closing skill candidates. Output: `skills/gap-optimizer/candidate-queue.md`.
+2. **`skill-forge`** — builds approved candidates with Michael's go-ahead, scaffolds SKILL.md + worker code, registers in `skills/_index.md`.
+3. **`skill-health-monitor`** — monthly audit. Flags drift, broken triggers, stale or duplicated skills; feeds the cleanup half of the loop.
+4. **`skill-performance-tracker`** — measures usage frequency, success rate, and time-saved per skill so low-value skills get pruned and high-value ones get more triggers.
+
+**Run cadence:** weekly `/gap` (vision-driven demand) + monthly `/skill-health` (drift cleanup). `efficiency-monitor` (always-on observer) and `gap-optimizer` together feed `skill-forge`: efficiency-monitor surfaces emergent demand, gap-optimizer surfaces vision-driven demand.
+
+**Architecture diagram:** see `GAP_ANALYSIS.md` for the full closed-loop diagram and the gap-run-002 evidence chain (30 → 45 skills, 7/15 BLOCKED stubs pending M-tasks, 8/15 immediately invocable).
 
 ### Projected Business Impact
 - **E-commerce conversion lift:** +10–25% from site redesign + better feed
