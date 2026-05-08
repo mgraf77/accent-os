@@ -140,6 +140,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: build-or-adapt (use skill-forge)
 - companion: skill-forge, community-skill-vet
 
+### repo-state-governance
+- summary: Generalized, repo-agnostic governance framework for declaring and operating a code repo's lifecycle state (stabilize / pause / freeze / handoff / resume / audit / recovery / deploy-prep / extraction-prep / governance-transition / sandbox). Defines modes, transitions, workflows, evaluators, schemas, and templates so multi-agent / multi-session work has a single source of truth instead of implicit assumptions.
+- triggers: "stabilize the repo", "pause this work", "freeze for X", "hand this off to [agent]", "resume where we left off", "audit the repo", "recover from Y", "prep for deploy", "extract module X to its own repo", "transition governance", "sandbox this experiment", "what state is this repo in", "set up state governance"
+- when_to_use: any time the repo's operational state needs to be declared, validated, or transitioned across modes — especially before HIGH-risk operations (deploy, extraction, governance change) or to establish clean handoff between agents / sessions
+- when_NOT: routine feature development inside an already-declared mode (just do the work); orchestration / scheduling (future Command Center concern)
+- companion: decision-log, doc-drift, efficiency-monitor, codex-review
+
 ### schema-contract-tests
 - summary: Generate dbt-style contract test SQL for AccentOS Supabase tables (NOT NULL, UNIQUE, FK).
 - triggers: "contract tests", "schema tests", "data integrity", "constraint check"
