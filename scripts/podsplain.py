@@ -72,14 +72,25 @@ OPENAI_MAX_CHARS = 4000   # hard limit 4096; buffer to stay under
 # that causes unnatural pauses or robot-sounding output.
 
 _TTS_REPLACEMENTS = [
-    (r" — ",              ", "),     # em-dash → natural comma pause
-    (r"—",                ", "),     # bare em-dash
-    (r"\.\.\.",           ", "),     # ellipsis → brief pause, not dead air
-    (r"\*\*(.+?)\*\*",   r"\1"),    # strip bold
-    (r"\*(.+?)\*",        r"\1"),    # strip italic
-    (r"`(.+?)`",          r"\1"),    # strip code ticks
-    (r"\[interrupts?\]\s*", ""),     # leftover interrupt markers
+    (r" — ",              ", "),      # em-dash → natural comma pause
+    (r"—",                ", "),      # bare em-dash
+    (r"\.\.\.",           ", "),      # ellipsis → brief pause, not dead air
+    (r"\*\*(.+?)\*\*",   r"\1"),     # strip bold
+    (r"\*(.+?)\*",        r"\1"),     # strip italic
+    (r"`(.+?)`",          r"\1"),     # strip code ticks
+    (r"\[interrupts?\]\s*", ""),      # leftover interrupt markers
     (r"\[HOST_\d+\s+interrupts?\]\s*", ""),
+    # Symbols TTS reads literally without guidance
+    (r"\$(\d+(?:\.\d+)?)\s*[Bb]",   r"\1 billion dollars"),
+    (r"\$(\d+(?:\.\d+)?)\s*[Mm]",   r"\1 million dollars"),
+    (r"\$(\d+(?:\.\d+)?)\s*[Kk]",   r"\1 thousand dollars"),
+    (r"(\d+(?:\.\d+)?)\s*%",         r"\1 percent"),
+    (r" & ",                          " and "),
+    (r"\be\.g\.",                     "for example"),
+    (r"\bi\.e\.",                     "that is"),
+    (r"\betc\.",                      "and so on"),
+    (r"\bvs\.",                       "versus"),
+    (r"\bw/\b",                       "with"),
 ]
 
 
@@ -94,7 +105,10 @@ def _normalize_for_tts(text: str) -> str:
 def parse_script_file(script_path: Path) -> list[dict]:
     """Parse a podsplain .md script into segments.
 
-    Skips header/metadata lines; only yields HOST_1/HOST_2 and PAUSE entries.
+    Handles multi-line dialogue: if a line after HOST_X: doesn't start with
+    HOST_, [PAUSE, or a markdown marker, it's treated as a continuation of
+    the previous speech segment and appended (handles Claude line-wrapping).
+
     Returns: [{type: "speech"|"pause", speaker: str, text: str, ms: int}]
     """
     segments = []
@@ -111,6 +125,10 @@ def parse_script_file(script_path: Path) -> list[dict]:
             segments.append({"type": "pause", "ms": 500})
         elif line.startswith("[PAUSE_MED]"):
             segments.append({"type": "pause", "ms": 1000})
+        elif (segments and segments[-1]["type"] == "speech"
+              and not line.startswith(("#", "|", "-", "*", ">", "**", "```"))):
+            # Continuation of the previous HOST line (Claude wrapped a long line)
+            segments[-1]["text"] += " " + line
     return segments
 
 
@@ -169,7 +187,9 @@ def tts_elevenlabs(text: str, voice_id: str, api_key: str) -> bytes:
             "text": _normalize_for_tts(text),
             "model_id": "eleven_multilingual_v2",
             "output_format": "pcm_24000",
-            "voice_settings": {"stability": 0.50, "similarity_boost": 0.75, "style": 0.10, "use_speaker_boost": True},
+            # Lower stability = more natural variation; higher style = more expressive.
+            # These are tuned for podcast speech, not narration or audiobook.
+            "voice_settings": {"stability": 0.38, "similarity_boost": 0.80, "style": 0.20, "use_speaker_boost": True},
         },
         timeout=90,
     )
@@ -229,6 +249,28 @@ def _call_tts(text: str, speaker: str, backend: str, openai_key: str, elevenlabs
 
 def _make_silence(sample_rate: int, channels: int, sampwidth: int, ms: int) -> bytes:
     return b"\x00" * (int(sample_rate * ms / 1000) * channels * sampwidth)
+
+
+def _add_audio_padding(wav_bytes: bytes, lead_ms: int = 500, tail_ms: int = 700) -> bytes:
+    """Prepend lead silence and append tail silence to a WAV file.
+
+    Lead silence prevents the first word being clipped on Bluetooth/AirPods
+    during buffer initialisation. Tail silence prevents abrupt cutoff at end.
+    """
+    r = wave.open(io.BytesIO(wav_bytes))
+    p = r.getparams()
+    r.close()
+    lead = _make_silence(p.framerate, p.nchannels, p.sampwidth, lead_ms)
+    tail = _make_silence(p.framerate, p.nchannels, p.sampwidth, tail_ms)
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as out:
+        out.setparams(p)
+        out.writeframes(lead)
+        r = wave.open(io.BytesIO(wav_bytes))
+        out.writeframes(r.readframes(r.getnframes()))
+        r.close()
+        out.writeframes(tail)
+    return buf.getvalue()
 
 
 # ─── Concurrent WAV assembly ──────────────────────────────────────────────────
@@ -309,7 +351,7 @@ def assemble_wav(
                 r.close()
                 out.writeframes(inter_silence)
 
-    wav_bytes = out_buf.getvalue()
+    wav_bytes = _add_audio_padding(out_buf.getvalue())
     r = wave.open(io.BytesIO(wav_bytes))
     duration_s = r.getnframes() / r.getframerate()
     r.close()
