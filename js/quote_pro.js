@@ -13,8 +13,7 @@
 //
 // Dependencies (all already in index.html shell):
 //   $, esc, openModal, closeModal, toast, sbFetch, sbConfigured, sbKey,
-//   getS, sbSaveQuote, sbDeleteQuote, QUOTES, QUOTE_ID, VD (vendor list),
-//   formatCurrency.
+//   getApi, getS, sbSaveQuote, QUOTES, QUOTE_ID, curPage.
 //
 // Schema: sql/M42_quote_templates_schema.sql (quote_templates table).
 
@@ -927,9 +926,5 @@ window.qpConfirmDeleteTemplate = qpConfirmDeleteTemplate;
 window.qpOpenIngestModal = qpOpenIngestModal;
 window.qpIngestTrainingPair = qpIngestTrainingPair;
 window.qpRefreshIngestChips = qpRefreshIngestChips;
-window.qpStaged = qpStaged;
-window.qpDraft = qpDraft;
-window.QP_TEMPLATES = QP_TEMPLATES;
-window.qpTemplateFilter = qpTemplateFilter;
 
 console.log('[quote_pro] module loaded');
