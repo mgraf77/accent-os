@@ -1,44 +1,41 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-08 — STABILIZATION PAUSE (governance restructuring incoming)
+**Resume trigger:** governance restructuring complete; see HANDOFF_FOR_GOVERNANCE_RESTRUCTURE.md for recommended starting points
 
 ---
 
-## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
+## STATUS: CLEAN PAUSE
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+All unblocked build items in BUILD_PLAN_CLAUDE.md are complete.
+All commits pushed. Working tree clean.
 
-## NEXT STEPS PENDING
+No in-progress tasks. No WIP commits.
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+---
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
+## OUTSTANDING (all blocked on Michael)
+
+**1. Cloudflare Worker redeploy**
+Code committed at `2dca2a6` (arrayBuffer passthrough + explicit header forwarding). Must be deployed via:
 ```
 cd C:\Users\Michael\Desktop\accent-os
 git pull origin main
 wrangler deploy
 ```
+Verify with: `fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)` → should return `{"error":"Missing x-api-key header"}`
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+**2. M02 core schema** — run `sql/M02_core_schema.sql` in Supabase SQL editor.
 
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+**3. M22–M40 schemas** — run sequentially in Supabase SQL editor to activate Phase 3 module persistence.
 
-Pick up from step 1.
+---
+
+## SESSION DOCS CREATED THIS PAUSE
+
+- `SESSION_SUMMARY.md` — what was built
+- `CURRENT_STATE.md` — operational status table
+- `KNOWN_ISSUES.md` — active bugs + design limitations
+- `NEXT_STEPS.md` — recommended next actions
+- `HANDOFF_FOR_GOVERNANCE_RESTRUCTURE.md` — architectural map for restructuring decisions
