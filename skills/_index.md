@@ -161,6 +161,13 @@ Auto-regenerable: run `/vibe regenerate skill index` to rebuild from SKILL.md fr
 - when_NOT: install as-is (use repo-scout)
 - companion: repo-scout, codex-review, skill-eval-suite
 
+### skill-optimizer
+- summary: Always-on AccentOS skill intelligence layer — self-reports every skill invocation, generates ML-style improvement suggestions, surfaces optimize-or-defer gate at session end.
+- triggers: "optimize [skill-name]", "check [skill-name] for improvements", "what's wrong with [skill-name]", "skill health check on [skill-name]", "how can [skill-name] be better", "analyze [skill-name]"
+- when_to_use: auto-active always; direct invocation for on-demand skill analysis
+- when_NOT: mid-session interruptions (never), one-off tasks that aren't skill-shaped
+- companion: efficiency-monitor, skill-forge, skill-eval-suite
+
 ### supabase-sql-magic
 - summary: Convert natural-language data questions to ready-to-run SQL against AccentOS Supabase.
 - triggers: "query for", "SQL for", "show me data on", "ask the db"
