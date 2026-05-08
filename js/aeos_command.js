@@ -411,6 +411,9 @@ function _computeRoute() {
       : 'Select a task type above for a precise recommendation. Defaulting to Claude as the safe general-purpose choice.';
   }
 
+  // Store for _sendToHandoffGen() — avoids embedding user text in onclick attributes
+  window._lastRouteResult = { taskType, description, ai };
+
   const aiBadge = { Claude: 'bg-purple', Codex: 'bg-blue', ChatGPT: 'bg-yellow', Gemini: 'bg-green', 'Human Review': 'bg-red' };
   const aiBorderColor = { Claude: 'var(--purple)', Codex: 'var(--blue)', ChatGPT: 'var(--yellow)', Gemini: 'var(--green)' };
 
@@ -431,14 +434,15 @@ function _computeRoute() {
           <div style="background:var(--red-bg);border-left:3px solid var(--accent);padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;">
             ⚠ <strong>High-risk task.</strong> Requires human review and approval before any AI executes. Document the rollback plan in your handoff packet.
           </div>` : ''}
-        <button class="btn btn-accent" onclick="_sendToHandoffGen(${JSON.stringify(taskType)}, ${JSON.stringify(description)}, ${JSON.stringify(ai)})">↗ Generate Handoff Packet</button>
+        <button class="btn btn-accent" onclick="_sendToHandoffGen()">↗ Generate Handoff Packet</button>
       </div>
     </div>
   `;
 }
 
-function _sendToHandoffGen(taskType, description, recommendedAI) {
-  window._hgPreset = { taskType, description, recommendedAI };
+function _sendToHandoffGen() {
+  const r = window._lastRouteResult || {};
+  window._hgPreset = { taskType: r.taskType || '', description: r.description || '', recommendedAI: r.ai || '' };
   goTo('handoffgen');
 }
 
@@ -716,11 +720,14 @@ ${s.output}
   if (history.length > 25) history.pop();
   localStorage.setItem('aeos_handoffs', JSON.stringify(history));
 
+  // Store latest for copy button (avoids embedding packet text in onclick attribute)
+  window._hgLastPacket = packet;
+
   el.innerHTML = `
     <div class="card">
       <div class="card-hd">
         <span class="card-title">Generated Handoff</span>
-        <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(packet)}).then(()=>toast('Copied to clipboard','ok'))">Copy</button>
+        <button class="btn btn-outline btn-sm" onclick="_hgCopyPacket()">Copy</button>
       </div>
       <div class="card-body" style="padding:0;">
         <pre style="background:#1a1a1a;color:#d4d4d4;padding:18px 20px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.75;border-radius:0 0 var(--radius) var(--radius);overflow-x:auto;white-space:pre-wrap;margin:0;">${esc(packet)}</pre>
@@ -730,17 +737,22 @@ ${s.output}
   toast('Handoff generated', 'ok');
 }
 
+function _hgCopyPacket() {
+  navigator.clipboard.writeText(window._hgLastPacket || '').then(() => toast('Copied to clipboard', 'ok'));
+}
+
 function _hgLoadHistory(i) {
   const history = JSON.parse(localStorage.getItem('aeos_handoffs') || '[]');
   const h = history[i];
   if (!h) return;
+  window._hgLastPacket = h.packet || '';
   const el = $('hg-output');
   if (!el) return;
   el.innerHTML = `
     <div class="card">
       <div class="card-hd">
         <span class="card-title">${esc(h.objective || 'Handoff')}</span>
-        <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(h.packet || '')}).then(()=>toast('Copied','ok'))">Copy</button>
+        <button class="btn btn-outline btn-sm" onclick="_hgCopyPacket()">Copy</button>
       </div>
       <div class="card-body" style="padding:0;">
         <pre style="background:#1a1a1a;color:#d4d4d4;padding:18px 20px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.75;border-radius:0 0 var(--radius) var(--radius);overflow-x:auto;white-space:pre-wrap;margin:0;">${esc(h.packet || '')}</pre>
