@@ -13,6 +13,19 @@
 1. **Claude:** work from BUILD_PLAN_CLAUDE.md top to bottom. Skip blocked items, don't idle.
 2. **Michael:** work BUILD_PLAN_MICHAEL.md on his own timeline. Each completed M## unlocks downstream Claude work.
 
+### 2026-05-07 — wiki/modules/ enrichment 35/35 (sequential batches 1-5 + 4-agent parallel batch 6) — SHIPPED
+**Branch:** `claude/custom-rag-system-rIT34-KoMaP`
+**Commits:** d76f650 → 79bcd5d → 538772a → 926af8d → b59f053 → f658f45 → 3bfcf54 (7)
+**Built/Changed:**
+- Module-stub backlog from 2026-05-06 session-2 fully cleared. All 35 wiki/modules/<slug>.md pages enriched: frontmatter bumped to `confidence: high` + `updated: 2026-05-07`, Functions table per JS source, domain sections (workflow steps / score formulas / severity ladders / etc.), Read dependencies, Shell touchpoints, Failure modes, cross-link `## Related` to ADRs + sibling modules.
+- Batches 1–5 ran sequential (3 pages each, 15 total): wiki, digest, vendor-score-import · alerts, customers, inventory · pipeline-analytics, purchase-orders, price-book · deal-optimizer, demand-forecast, decision-engine · jobs, deliveries, warranty
+- Batch 6 ran parallel: 4 general-purpose subagents, 5 modules each, isolated to non-overlapping module files. Vendor cluster (trade-partners, bulk-vendor-ops, competitive-pricing, commission, showroom-displays). External + Knowledge (portal-preview, marketing, calendar, labels, module-modes). Cross-cut UX helpers (activity-feed, bulk-select, global-search, quick-actions, saved-filters). System + Ops (health, inventory-analytics, my-tasks, reports, employees).
+- wiki/index.md: 35 module rows updated. wiki/log.md: 6 batch entries logged. wiki/hot.md: current-task IDLE, ~~Wiki module enrichment~~ struck from "What Claude can build". Methodology documented for reuse on vendor-entity stub backlog.
+**Decisions:** Kept work on this RAG branch rather than merging into `claude/accentos-continuation-D0X6A` (which has unrelated internal-meetings + mobile work). Each branch stays its own PR. 4-agent parallel pattern (5 modules/agent, agents only touch module files, orchestrator handles index.md/log.md/hot.md/commit) is the template for any future stub backlog.
+**Verified:** `wiki_lint.py` — 108 pages checked, 0 errors, 2 pre-existing warnings unchanged (`source-build-intelligence` orphan, `rag-eval-matrix-v1` 892w oversized). Branch pushed and synced with origin.
+**Open loops:** Same M-task blockers as prior session (M41, M04, M05, M06, M09, M03+M10, M40). Vendor-entity enrichment (30 stubs in wiki/entities/vendors/) is now the top-ranked unblocked work item.
+**Next prompt:** see WORK_IN_PROGRESS.md "Next step if interrupted" — vendor-entity enrichment via the same 4-agent pattern is the natural continuation.
+
 ### 2026-05-06 — Portal + Embed shipped (v6.11.2 → v6.11.3) — SHIPPED
 **Version:** v6.11.2 (external portals) + v6.11.3 (embed)
 **Built/Changed:**
