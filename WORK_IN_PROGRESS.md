@@ -1,9 +1,9 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-08 — governance baseline session
+**Last updated:** 2026-05-08 — Phase 1 hardening complete
 **Session:** governance-snapshot-prep-k3dBs
-**Resume trigger:** "begin Phase 1 hardening" or "continue governance"
+**Resume trigger:** "begin Phase 2" / "Wave 1 extraction go" — only after R-02 cleared
 
 ---
 
@@ -12,39 +12,53 @@
 Previous session paused at commit `969de17` (worker proxy 400 debug) on 2026-05-07.
 That task is **deferred to post-restructure** — see ACTIVE_SESSION_REGISTRY.md S-000.
 
-Current session executed **Phase 0 (Governance Baseline)** of STABILIZATION_PROTOCOL.md.
+This session executed **Phase 0 (Governance Baseline)** and **Phase 1 (Pre-Restructure Hardening)** of STABILIZATION_PROTOCOL.md.
 
 ## CURRENT STATE
 
-Phase 0 actions completed:
+Phase 0 actions completed (commit `690dc23`):
 - ✅ SYSTEM_STATE.md — repo snapshot at HEAD `969de17`
 - ✅ ACTIVE_SESSION_REGISTRY.md — registered S-000 (paused-clean) and S-001 (this session)
 - ✅ MODULE_OWNERSHIP_MAP.md — every path mapped to STAY / agentos-core / agentos-command-center / agentos-skills / HOLD
 - ✅ EXTRACTION_CANDIDATES.md — per-asset classification + decouple steps + lift order
-- ✅ GOVERNANCE_RISKS.md — 12 risks ranked, 4 require mitigation before restructure
-- ✅ STABILIZATION_PROTOCOL.md — 7-phase sequence with entry/exit criteria + rollback per phase
+- ✅ GOVERNANCE_RISKS.md — 12 risks ranked
+- ✅ STABILIZATION_PROTOCOL.md — 7-phase sequence
 
-## REPO RESTRUCTURING SAFE NOW? **NO**
+Phase 1 actions completed:
+- ✅ **R-06 MITIGATED** (commit `112c181`) — `.claude/settings.json` Stop hook + startupPrompt and `.claude/CLAUDE.md` step 6 use `${CLAUDE_PROJECT_DIR:-$PWD}` or relative paths. Verified working both with and without env var.
+- ✅ **R-09 MITIGATED** (commit `fad519e`) — `scripts/boot-smoke.sh` validates all CLAUDE.md AUTO-EXECUTE file refs + JSON validity + R-06 regression. `.github/workflows/boot-smoke.yml` is hard CI gate. SessionStart hook runs advisory `|| true`.
+- ✅ **R-01 PLAN DOCUMENTED** (this commit) — `R-01_LOCKSTEP_PLAN.md` defines the atomic-commit contract, strategy options (A/B/C), 5-step cold-boot test, and rollback for the eventual vibe-speak / efficiency-monitor move to agentos-core.
+- ✅ **R-08 MITIGATED** (this commit) — `git fetch origin` ran; no behind status; Phase 0+1 commits are the only diff against origin/main.
+- ✅ **R-10 MITIGATED** (commit `690dc23`) — single canonical multi-session tracker (ACTIVE_SESSION_REGISTRY.md); WIP.md is per-session.
 
-Blockers requiring resolution before Phase 1 → Phase 2 transition:
-1. **R-02** — worker proxy redeploy still pending (Michael action: `wrangler deploy` from local).
-2. **R-09** — no boot smoke test exists; vibe-speak/efficiency-monitor moves are blind without it.
-3. **R-01** — `.claude/CLAUDE.md` AUTO-EXECUTE step 1 not yet bridged for post-move vibe-speak path.
-4. **R-06** — Stop hook absolute path needs parameterization.
+## REPO RESTRUCTURING SAFE NOW? **NO** — but only one blocker remains.
 
-See GOVERNANCE_RISKS.md for the full list and mitigation plan.
+**Remaining blocker:**
+- **R-02 (Michael action)** — Cloudflare Worker `accentos-anthropic-proxy` needs `wrangler deploy` from Michael's local machine to ship commit `2dca2a6`. Verify with:
+  ```js
+  fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST'})
+    .then(r=>r.text()).then(console.log)
+  ```
+  Expected post-deploy: `{"error":"Missing x-api-key header"}`. Until cleared, `worker/` directory is scope-out for any restructure wave.
+
+**Deferred to Phase 2 entry (next session, first actions):**
+- Confirm no open PRs on `mgraf77/accent-os` (use `mcp__github__list_pull_requests`).
+- Confirm no Supabase migrations pending (read BUILD_PLAN_CLAUDE.md for last applied marker).
+
+**Scope-out enforced:**
+- `worker/` — frozen until R-02 clears.
+- `index.html` — frozen for entire restructure (R-04, never moves).
 
 ## NEXT STEPS PENDING
 
-1. Michael reviews the 6 governance artifacts.
-2. If approved, next session begins **Phase 1 — Pre-Restructure Hardening** per STABILIZATION_PROTOCOL.md:
-   - Resolve R-02 (Michael deploys worker)
-   - Resolve R-09 (build boot smoke test)
-   - Resolve R-06 (parameterize Stop hook path)
-   - Confirm scope freeze on `worker/` and `index.html`
-3. **Do NOT begin Phase 2 (Wave 1 extraction) until Phase 1 exit criteria are met.**
+1. Michael deploys worker proxy (resolves R-02).
+2. Michael creates destination repos: `mgraf77/agentos-core`, `mgraf77/agentos-command-center`, `mgraf77/agentos-skills` with branch protection on `main`.
+3. Next session opens to begin **Phase 2 — Wave 1 Extraction**:
+   - Confirm pre-flight (Supabase + open PRs).
+   - Lift `community-skill-vet`, `skill-eval-suite`, `skills/vibe-speak/modes/` per STABILIZATION_PROTOCOL.md Phase 2.
+   - One asset at a time, full cycle each (decouple → move with history → invocation test → delete from accentos in separate commit).
 
 ## SESSION END
 
-Final commit + push pending. Branch: `claude/governance-snapshot-prep-k3dBs`.
-First push uses `git push -u origin claude/governance-snapshot-prep-k3dBs` per project Git Operations rules.
+Phase 1 final commit + push pending. Branch: `claude/governance-snapshot-prep-k3dBs`.
+After this commit, the branch is at 4 commits ahead of `origin/main` — all governance/hardening, all rollback-safe.
