@@ -71,6 +71,13 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 .mode-banner-exit{cursor:pointer;opacity:.7;font-size:.6875rem;text-transform:uppercase;letter-spacing:.05em}
 .mode-banner-exit:hover{opacity:1}
 
+/* ── Table empty state ── */
+.table-empty{display:none;padding:40px 24px;text-align:center}
+.table-empty.show{display:block}
+.table-empty-icon{font-size:2rem;margin-bottom:8px}
+.table-empty-msg{color:var(--text-secondary);font-size:.875rem}
+.table-empty-sub{font-size:.75rem;margin-top:4px;color:var(--text-muted)}
+
 /* ── Notif panel ── */
 .notif-panel{display:none;position:fixed;top:calc(56px + env(safe-area-inset-top));right:16px;width:340px;background:var(--layer-elevated);border:1px solid var(--border-strong);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:500;overflow:hidden}
 .notif-panel.open{display:block}
@@ -360,7 +367,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 
 <!-- Header -->
 <header class="aos-header">
-  <button class="aos-icon-btn" data-toggle-sidebar title="Sidebar">☰</button>
+  <button class="aos-icon-btn" data-toggle-sidebar aria-label="Toggle sidebar" title="Sidebar">☰</button>
   <a href="#" class="aos-header-logo">
     <div class="logo-mark">A</div>
     <span class="hide-mobile">AccentOS</span>
@@ -392,7 +399,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 
   <!-- Notifications -->
   <div class="notif-bell-wrap">
-    <button class="aos-icon-btn" id="notifBtn" title="Notifications">🔔</button>
+    <button class="aos-icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications">🔔</button>
     <span class="notif-count" id="notifCount">2</span>
   </div>
 
@@ -542,6 +549,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>Vendor</th><th>Tier</th><th>Score</th><th class="hide-mobile">Rep</th><th class="hide-mobile">Co-op Open</th><th class="hide-mobile">Last Activity</th></tr></thead>
       <tbody id="vendorRows"></tbody>
     </table>
+    <div class="table-empty" id="v-empty"><div class="table-empty-icon">🏭</div><div class="table-empty-msg">No vendors match this filter.</div><div class="table-empty-sub">Clear the search or saved view to see all vendors.</div></div>
   </div>
 
   <!-- QUOTES -->
@@ -564,6 +572,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>Quote ID</th><th>Customer</th><th>Value</th><th>Age</th><th>Status</th><th class="hide-mobile">Assignee</th></tr></thead>
       <tbody id="quoteRows"></tbody>
     </table>
+    <div class="table-empty" id="q-empty"><div class="table-empty-icon">📋</div><div class="table-empty-msg">No quotes match this filter.</div><div class="table-empty-sub">Clear the search or saved view to see all quotes.</div></div>
   </div>
 
   <!-- CUSTOMERS -->
@@ -581,6 +590,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>Customer</th><th>Segment</th><th>Last Contact</th><th class="hide-mobile">LTV</th><th>Follow-Up</th></tr></thead>
       <tbody id="customerRows"></tbody>
     </table>
+    <div class="table-empty" id="c-empty"><div class="table-empty-icon">👥</div><div class="table-empty-msg">No customers match this filter.</div><div class="table-empty-sub">Clear the search or saved view to see all customers.</div></div>
   </div>
 
   <!-- INVENTORY -->
@@ -601,6 +611,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
       <thead><tr><th class="cb-col"><span class="row-cb" data-bulk-all></span></th><th>SKU</th><th>Product</th><th>Stock</th><th class="hide-mobile">Reorder At</th><th class="hide-mobile">Vendor</th><th class="hide-mobile">List Price</th></tr></thead>
       <tbody id="inventoryRows"></tbody>
     </table>
+    <div class="table-empty" id="i-empty"><div class="table-empty-icon">📦</div><div class="table-empty-msg">No inventory items match this filter.</div><div class="table-empty-sub">Clear the search or saved view to see all SKUs.</div></div>
   </div>
 
   <!-- PIPELINE -->
@@ -730,7 +741,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 <aside class="aos-rail" id="rightRail">
   <div class="aos-rail-header">
     <span class="aos-rail-title" id="railTitle">Inspector</span>
-    <button class="aos-icon-btn" data-close-rail>✕</button>
+    <button class="aos-icon-btn" data-close-rail aria-label="Close detail panel">✕</button>
   </div>
   <div class="aos-rail-body" id="railBody"><div style="color:var(--text-muted);font-size:.875rem">Click any row or card to inspect.</div></div>
 </aside>
@@ -738,20 +749,20 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 </div><!-- /body -->
 
 <!-- FAB -->
-<button class="aos-fab" title="Quick actions (⌘K)" onclick="AccentOS.shell.openCommandLauncher()">＋</button>
+<button class="aos-fab" aria-label="Quick actions" title="Quick actions (⌘K)" onclick="AccentOS.shell.openCommandLauncher()">＋</button>
 
 <!-- BOTTOM BAR (mobile) -->
 <div class="aos-bottom-bar" id="bottomBar">
   <div class="aos-bottom-nav-item active" data-module="dashboard"><span class="icon">🏠</span><span class="label">Home</span></div>
   <div class="aos-bottom-nav-item" data-module="quotes"><span class="icon">📋</span><span class="label">Quotes</span></div>
-  <button class="aos-bottom-bar-fab">＋</button>
+  <button class="aos-bottom-bar-fab" aria-label="Quick actions">＋</button>
   <div class="aos-bottom-nav-item" data-module="inventory"><span class="icon">📦</span><span class="label">Products</span></div>
   <div class="aos-bottom-nav-item" data-module="pipeline"><span class="icon">💼</span><span class="label">Pipeline</span></div>
 </div>
 
 <!-- COMMAND LAUNCHER -->
 <div class="aos-command-backdrop" id="commandLauncher">
-  <div class="aos-command-modal">
+  <div class="aos-command-modal" role="dialog" aria-modal="true" aria-label="Command launcher">
     <div class="aos-command-input-row">
       <span class="search-icon">🔍</span>
       <input class="aos-command-input" placeholder="Search or run a command…" autocomplete="off" spellcheck="false">
@@ -832,17 +843,17 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 </div>
 
 <!-- RECENT ITEMS PANEL (Cmd+P quick switcher) -->
-<div class="recent-panel" id="recentPanel">
+<div class="recent-panel" id="recentPanel" role="dialog" aria-modal="true" aria-label="Recent items">
   <div class="recent-hdr">Recent Items · ↑↓ navigate · ↵ jump · Esc close</div>
   <div class="recent-list" id="recentList"><div class="recent-empty">No recent items yet — open a vendor, quote, or customer to start tracking.</div></div>
 </div>
 
 <!-- KEYBOARD SHORTCUTS OVERLAY (?) -->
 <div class="kb-overlay" id="kbOverlay" onclick="if(event.target.id==='kbOverlay')closeShortcutHelp()">
-  <div class="kb-modal">
+  <div class="kb-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
     <div class="kb-hdr">
       <h3>⌨ Keyboard Shortcuts</h3>
-      <button class="aos-icon-btn" onclick="closeShortcutHelp()">✕</button>
+      <button class="aos-icon-btn" aria-label="Close keyboard shortcuts" onclick="closeShortcutHelp()">✕</button>
     </div>
     <div class="kb-grid">
       <div class="kb-section">
@@ -884,7 +895,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
 </div>
 
 <!-- NOTIFICATION PANEL -->
-<div class="notif-panel" id="notifPanel">
+<div class="notif-panel" id="notifPanel" role="dialog" aria-modal="true" aria-label="Notifications">
   <div class="notif-hdr">
     <span>Notifications</span>
     <span class="aos-badge alert" style="font-size:.6875rem">2 new</span>
@@ -1697,9 +1708,15 @@ function applyRole(role) {
 function filterTable(input, tableId) {
   const q = input.value.toLowerCase();
   const rows = document.querySelectorAll('#'+tableId+' tbody tr');
+  let visible = 0;
   rows.forEach(row => {
-    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    const show = row.textContent.toLowerCase().includes(q);
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
   });
+  const emptyMap = {vtable:'v-empty',qtable:'q-empty',ctable:'c-empty',itable:'i-empty'};
+  const el = document.getElementById(emptyMap[tableId]);
+  if (el) el.classList.toggle('show', visible === 0);
 }
 
 /* ═══════════════════════════════════════════
@@ -2292,6 +2309,13 @@ function applyView(table, viewId) {
     const item = (DATA[table]||[]).find(x=>(x.id||x.sku)===r.dataset.rowId);
     r.style.display = (item && def.pred(item)) ? '' : 'none';
   });
+  // show empty state if all rows filtered out by view
+  const emptyMap = {vendors:'v-empty',quotes:'q-empty',customers:'c-empty',inventory:'i-empty'};
+  const emptyEl = document.getElementById(emptyMap[table]);
+  if (emptyEl) {
+    const anyVisible = Array.from(rows).some(r=>r.style.display!=='none');
+    emptyEl.classList.toggle('show', !anyVisible);
+  }
   renderViewChips(table);
   if (def) AccentOS.shell.showToast(`View · ${def.label}`,'info');
 }
