@@ -1,13 +1,12 @@
 # Queue Snapshot
 
-**Updated:** 2026-05-08T22:30:00Z
-**Totals:** 3 ready · 7 blocked · 0 in flight · 11 complete
+**Updated:** 2026-05-09T21:30:00Z
+**Totals:** 2 ready · 7 blocked · 0 in flight · 12 complete
 
 ---
 
 ## READY
 
-- [r-01-prototype-hardening](r-01-prototype-hardening.md) — medium · 1 session
 - r-02-decision-lock-doc — high · 0.5 sessions (queue file pending)
 - r-03-feature-flag-scaffold — low · 0.25 sessions (queue file pending)
 
@@ -36,11 +35,11 @@ _(none)_
 
 ## COMPLETE (last 5)
 
-- mvhb-phase-1 — 2026-05-08 · runtime foundation, this commit
+- r-01-prototype-hardening — 2026-05-09 · `86ff903` · empty states, aria, role=dialog
+- mvhb-first-exec-layer — 2026-05-09 · `1062dc5` · MVHB_ROADMAP, SESSION_LIFECYCLE, EXECUTION_TOPOLOGY, MICHAEL_ATTENTION_BUDGET
+- mvhb-phase-1 — 2026-05-08 · `99f4f6e` · runtime foundation
 - impl-hub-layer — 2026-05-08 · `7d761fd`
 - phase-2c-prototype — 2026-05-08 · `ff17ba1`
-- phase-2b-prototype — 2026-05-08 · `b22a9d5`
-- phase-2a-prototype — 2026-05-08 · `b9e7f58`
 
 ---
 
