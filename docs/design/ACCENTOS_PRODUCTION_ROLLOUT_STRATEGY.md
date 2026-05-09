@@ -10,23 +10,28 @@
 
 ## 0. Required-reading reconciliation
 
-The strategist prompt named four documents that do **not** currently exist in the repo:
+The strategist prompt named four canonical governance documents:
 
 - `SYSTEM_STATE.md`
 - `GOVERNANCE_RISKS.md`
 - `STABILIZATION_PROTOCOL.md`
 - `MODULE_OWNERSHIP_MAP.md`
-- `docs/design/*` (directory was empty until this doc)
 
-This strategy is therefore derived from the canonical sources that **do** exist:
+These documents **exist canonically on branch `claude/governance-snapshot-prep-k3dBs`** at the repository root. They are not in this branch's working tree because this branch is a planning spoke; canonical content is read by reference, never recreated or superseded here. See `docs/design/ACCENTOS_CANONICAL_DELTA.md` for the full read-only reconciliation against those four files.
+
+This rollout-strategy doc consumes the canonical files **by reference until they are merged or otherwise adopted onto `main`**. Until then:
+
+- This branch must not author parallel versions of those four files.
+- This branch must not contradict them on questions of repo topology, extraction sequencing, ownership, or restructure freeze rules.
+- This branch may extend governance with shell-v2-specific concerns that the canonical files do not cover.
+
+This strategy is also derived from the canonical sources already present in this repo:
 
 - `MASTER.md` (sections 3, 4, 5, 12 — current state, architecture, build plan, hard rules)
 - `MODULE_MODES.md` + `module_modes.json` (the existing rollout-state machine)
 - `WORK_IN_PROGRESS.md` (active bug surface — Anthropic worker / Quote Generator parse)
 - `BUILD_PLAN_CLAUDE.md`, `BUILD_PLAN_MICHAEL.md`, `BUILD_INTELLIGENCE.md`
 - Live repo layout: `index.html` (7,169 lines), `js/*.js` (37 module files), `worker/anthropic-proxy.js`, `sql/`, `wrangler.toml`
-
-**Recommendation (governance):** before this strategy is executed, the four named documents should be authored or explicitly retired. They are referenced in this plan as "future governance artifacts" wherever useful. See §11 — Governance Checkpoints.
 
 ---
 
@@ -254,12 +259,14 @@ A flip from one phase to the next requires **all** of:
 4. ✅ WORK_IN_PROGRESS.md is empty (no in-flight WIP commit).
 5. ✅ The module's golden-path checklist passes.
 
-Future governance artifacts to author (currently missing — see §0):
+Canonical governance artifacts consumed by reference (per §0 — they exist on `claude/governance-snapshot-prep-k3dBs`):
 
-- `SYSTEM_STATE.md` — single-page snapshot of monolith state, module modes, worker state, DB schema version. Updated each session-end.
-- `GOVERNANCE_RISKS.md` — running risk register: each row = (risk, owner, mitigation, status). Phase advancement requires no `🔴` rows.
-- `STABILIZATION_PROTOCOL.md` — the freeze rules in §12 below, formalized.
-- `MODULE_OWNERSHIP_MAP.md` — for every module key in `module_modes.json`, who owns the spec, who owns the code, who owns the data contract.
+- `SYSTEM_STATE.md` — authoritative repo snapshot (system state, filesystem inventory, coupling, active work, external dependencies).
+- `GOVERNANCE_RISKS.md` — running risk register R-01 through R-12, severity-classified. Restructure-scoped; this branch's Appendix B is shell-v2-rollout-scoped (advisory).
+- `STABILIZATION_PROTOCOL.md` — formal restructure phase protocol (canonical Phase 0–7) and STOP CONDITIONS. Authoritative for restructure freeze rules; this doc's §12 is rollout-scoped and provisional until `STABILIZATION_PROTOCOL.md` adopts onto `main`.
+- `MODULE_OWNERSHIP_MAP.md` — per-path future-home classification (STAY / agentos-core / agentos-command-center / agentos-skills / HOLD).
+
+This branch must not recreate, supersede, or re-author any of the above. Edits to those files require a `claude/governance-*` branch and Captain authorization (see `ACCENTOS_GOVERNANCE_RECONCILIATION.md` §1).
 
 ---
 
