@@ -1,47 +1,62 @@
 # LAST KNOWN GOOD STATE (LKG)
 
-## Purpose
-The exact state to roll back to in Emergency Recovery mode. Updated only on a verified-green
-checkpoint. If unsure whether the current state is good, do not update this file.
+> Provisional seed at P1. Bumped only on verified-green Clean Pause checkpoints.
+> tag: CORE
 
-## Required Sections
-1. **Meta** — checkpoint_id, captured_at, captured_by_mode.
-2. **Commit** — full SHA, branch, tag (if any), parent SHA.
-3. **Verified-Green Evidence** — what was verified (tests passed, manual smoke, deploy reachable).
-4. **State Snapshot Pointers** — paths to the runtime-state files at this checkpoint.
-5. **Known Caveats** — anything green but partial; do not pretend it's perfect.
-6. **Restore Procedure** — exact commands to return repo + deploys to this state.
+## Meta
+checkpoint_id:    lkg-0001
+captured_at:      2026-05-09
+captured_by_mode: Clean Pause Stabilization (P1 bootstrap)
 
-## Update Rules
-- Updated **only** when ALL of:
-  - All P0/P1 priorities have a green status, OR are explicitly suspended.
-  - No CRIT/HIGH risks are open without mitigation in flight.
-  - Verified-green evidence is recorded (not assumed).
-- Update is atomic: all sections written in one commit, signed-off by Clean Pause mode.
-- Never update during Auto-Fix mode.
+## Commit
+sha:    940e7f8
+branch: main
+tag:    (none)
+parent: (the commit immediately preceding the CORS proxy work)
 
-## Ownership Rules
-- Write owner: Clean Pause mode (human-approved).
-- Read owner: Emergency Recovery mode.
+## Verified-Green Evidence
+- Quote Generator v2 UI shipped and exercised at this commit (manual workflow path).
+- internal-meetings v1.0 (57940d6) operational at this commit.
+- earlier shipped features (vendor 360, customer 360, prompt-queue, efficiency-monitor)
+  not regressed at this commit.
 
-## Allowed Mutation Rules
-- Replacement only — never partial edits.
-- Old LKG records archived; current file always reflects newest verified-green checkpoint.
+## State Snapshot Pointers
+At lkg-0001 the canonical state layer did not exist yet. Pointers from the perspective
+of THIS commit (95bcc8a) describing the LKG operational scope:
+- runtime-state/CANONICAL_RUNTIME_STATE.md @ cp-0001 (this seed)
+- runtime-state/CURRENT_PRIORITIES.md @ cycle-2026-W19
+- ACTIVE_RISKS.md @ cycle-2026-W19
 
-## Compression Standards
-- Hard cap: 60 lines.
-- Restore procedure: bash-only, copy-pasteable, no prose.
+## Known Caveats (do not pretend it is perfect)
+- AI Parse Notes path (Quote Gen → Anthropic) was NOT functional from the browser at
+  940e7f8. Browser-side calls were CORS-blocked. AI Parse only became reachable after
+  the worker proxy was added (87f20a2), which is currently broken pending redeploy.
+- Therefore "verified scope" of this LKG = Quote Gen v2 UI + manual flow + CSV export +
+  internal-meetings + all earlier shipped features. NOT AI Parse Notes.
+- This is a P1 bootstrap LKG. Promote to a stronger LKG once the worker is redeployed
+  and AI Parse is verified end-to-end.
 
-## Archival Rules
-- Each replacement archives the prior LKG to `audits/lkg-archive/<checkpoint_id>.md`.
-- Retention: last 20 LKG records on disk; older summarized in AUDIT_LOG.
+## Restore Procedure
+```bash
+# Catastrophic rollback only. For a worker-only issue, prefer reverting the worker
+# commits without disturbing the rest of the tree.
+git fetch origin
+git checkout main
+git reset --hard 940e7f8         # destructive — confirm with operator first
+# Redeploys required after restore:
+#   - Cloudflare Worker: not present at this LKG (no proxy code). AI Parse will be
+#     CORS-blocked from browser. Acceptable for non-AI workflows.
+#   - Cloudflare Pages: redeploy current main if pages-deployed assets diverge.
+# Secrets to re-check (do not store here):
+#   - sessionStorage['aos-api'] in user's browser (client-side only).
+```
 
-## Restore Contract
-A valid restore procedure must:
-- Reach a working tree at the recorded SHA without manual conflict resolution.
-- State which deploy artifacts (worker, pages, etc.) need redeploy.
-- State which env/secrets must be re-checked (never written in this file).
+## When to Bump LKG
+A new LKG may be written when ALL hold:
+- All P0/P1 priorities green or explicitly suspended.
+- No CRIT/HIGH risks open without mitigation in flight.
+- A Clean Pause has been completed.
+- Verified-green evidence is recorded (test pass / manual smoke / deploy reachable).
 
-## Initial Content (v0.1, unseeded)
-First LKG to be captured at end of P1 rollout, when the layer is bootstrapped without
-disturbing the active build.
+Earliest realistic LKG-0002 candidate: after R1 (worker-redeploy) is closed and one
+end-to-end Parse Notes call succeeds.

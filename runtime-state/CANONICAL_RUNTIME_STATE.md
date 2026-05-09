@@ -1,46 +1,60 @@
-# CANONICAL RUNTIME STATE
+# CANONICAL RUNTIME STATE — checkpoint cp-0001
 
-## Purpose
-The single low-entropy source of "what is true in this repo right now." All audits,
-modes, and patch plans read this file first. If a fact is not here, it is not canonical.
+> Single low-entropy "what is true now". Overwritten per checkpoint.
+> Read this BEFORE any other doc each session.
+> tag: CORE
 
-## Required Sections (fixed order)
+## 1. Meta
+last_updated:        2026-05-09
+last_checkpoint_id:  cp-0001
+current_mode:        Passive Audit
+phase:               P1 (hardening + canonicalization)
 
-1. **Meta** — last_updated, last_checkpoint_id, current_mode.
-2. **Active Build Surface** — module → status (one line each).
-3. **In-Flight Work** — pointer to WORK_IN_PROGRESS.md + summary.
-4. **Last Known Good** — commit SHA + checkpoint id (mirrors LKG file).
-5. **Open Mutations** — patches in flight, each with owner + ETA.
-6. **Active Risks (top 5)** — pointer to ACTIVE_RISKS.md, top 5 inline.
-7. **Suspended Areas** — modules under freeze; reason + thaw condition.
-8. **Runtime Health (snapshot)** — RCI, entropy_delta, governance_lag, complexity_velocity.
-9. **Next Required Read** — list of 1–3 files the next session must consult before action.
+## 2. Active Build Surface
+- quote-gen:        UI shipped at 940e7f8; AI Parse blocked by proxy 400 (see WIP).
+- worker-proxy:     code at 2dca2a6 in tree, NOT redeployed; previous deploy still live.
+- internal-meetings: v1.0 shipped at 57940d6; stable.
+- runtime-stabilizer: P0 landed at 95bcc8a; P1 hardening this commit.
+- vibe-speak:       active skill (default mode `vibe`).
+- efficiency-monitor: always-on observer skill.
+- skills-router:    `skills/_index.md` registry.
 
-## Update Rules
-- Updated **only** by the runtime loop after a successful checkpoint, or by Clean Pause mode.
-- Each update increments `last_checkpoint_id` (monotonic).
-- A field that cannot be filled is written as `unknown` — never omitted.
-- Diffs go to `RUNTIME_DELTA_REPORT.md`; this file is overwritten with the new state.
+## 3. In-Flight Work
+pointer: WORK_IN_PROGRESS.md
+summary: Worker proxy redeploy verification + 400 root-cause for AI Parse.
+         Three-step plan in WIP (verify deploy; capture upstream response; verify model id).
+         No code on this stabilization branch touches the worker.
 
-## Ownership Rules
-- Write owner: runtime loop; Clean Pause mode (human-approved).
-- Read owner: every mode, every session start.
-- Hand-edit allowed only via Plan-Then-Execute mode with patch plan.
+## 4. Last Known Good
+commit:        940e7f8
+checkpoint_id: lkg-0001
+captured_at:   2026-05-09 (provisional seed; see LAST_KNOWN_GOOD_STATE.md caveats)
 
-## Allowed Mutation Rules
-- Append-only sections: none — this file is overwritten in full per checkpoint.
-- Forbidden in this file: speculation, future ideas, brainstorming. Those go to DER.
+## 5. Open Mutations
+- patch:patch-0001 owner:human ETA:next-session status:proposed
+  scope: CLAUDE.md AUTO-EXECUTE step — pre-read CANONICAL_RUNTIME_STATE before BUILD_PLAN.
+  class: C5 (governance). Plan only at P1; not applied.
 
-## Compression Standards
-- Hard cap: 200 lines. If exceeded, runtime loop must compact (move detail to registers).
-- One fact per line where possible. No prose paragraphs > 3 lines.
-- Use module slugs (e.g. `quote-gen`, `worker-proxy`) consistently across all files.
+## 6. Active Risks (top 5)
+pointer: runtime-state/ACTIVE_RISKS.md
+- R1 sev:HIGH worker-redeploy-uncertainty       AI Parse blocked until verified.
+- R2 sev:MED  model-id-sunset-unknown           `claude-sonnet-4-20250514` unverified.
+- R3 sev:MED  oversized-files                   index.html >700KB; tracked gotcha.
+- R4 sev:MED  stale-doc-divergence              canonical state vs WIP/BUILD_PLAN drift.
+- R5 sev:MED  governance-overhead-for-solo      P0 surface area large for one operator.
 
-## Archival Rules
-- On overwrite, previous version is archived to `audits/state-archive/<checkpoint_id>.md`
-  (created lazily by runtime loop; no archive at v0.1).
-- Archive retention: last 50 checkpoints; older summarized into `audits/AUDIT_LOG.md`.
+## 7. Suspended Areas
+- (none)
 
-## Initial Content (v0.1, unseeded)
-This file is **unseeded** at v0.1. P1 rollout populates it from current
-WORK_IN_PROGRESS.md + BUILD_PLAN_CLAUDE.md. Until seeded, treat as `state: bootstrapping`.
+## 8. Runtime Health (snapshot)
+RCI:           null   (M2/M3 not computable until P3)
+entropy_delta: null   (baseline missing)
+gov_lag:       0d     (DER seed item promoted same cycle)
+cv:            null
+rv:            null
+runtime_health: null
+
+## 9. Next Required Read
+1. runtime-state/CURRENT_PRIORITIES.md
+2. runtime-state/ACTIVE_RISKS.md
+3. WORK_IN_PROGRESS.md

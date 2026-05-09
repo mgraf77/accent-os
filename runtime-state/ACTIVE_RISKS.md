@@ -1,52 +1,59 @@
-# ACTIVE RISKS
+# ACTIVE RISKS — cycle-2026-W19
 
-## Purpose
-Open risks that could destabilize the runtime, with severity, likelihood, mitigation, and
-trigger condition. Read by every mode before mutation.
+> Open risks that could destabilize the runtime.
+> tag: CORE
 
-## Required Sections
-1. **Meta** — last_review, next_review (≤ 7 days out).
-2. **Risk table** — id, title, severity, likelihood, owner, mitigation, trigger, status.
-3. **Closed since last review** — id + resolution one-liner.
-4. **Watchlist (sub-threshold)** — risks not yet active but tracked.
+## Meta
+last_review: 2026-05-09
+next_review: 2026-05-16
 
-## Update Rules
-- Reviewed at every checkpoint and at every cycle start.
-- Any new risk surfaced by gap analysis is appended within the same session.
-- A risk with severity ≥ HIGH and no mitigation = automatic escalation to ESCALATION_POLICY.
+## Risk Table
 
-## Ownership Rules
-- Append: any mode (including Passive Audit).
-- Edit existing entry: Plan-Then-Execute or human.
-- Close entry: human or Clean Pause mode.
-
-## Allowed Mutation Rules
-- Severity may only be lowered after evidence is logged in `audits/AUDIT_LOG.md`.
-- Status transitions: `open → mitigating → contained → closed`. No skipping.
-
-## Compression Standards
-- Hard cap: 100 lines.
-- Each risk ≤ 5 lines in the table; full discussion goes to `audits/AUDIT_LOG.md`.
-
-## Archival Rules
-- Closed risks archived weekly to `audits/risk-archive/<cycle_id>.md`.
-
-## Severity Scale
-- **CRIT** — could brick runtime, destroy data, or block all work.
-- **HIGH** — destabilizes a major module or causes silent corruption.
-- **MED** — degrades reliability or user experience meaningfully.
-- **LOW** — annoyance, cosmetic, or contained.
-
-## Likelihood Scale
-`unlikely (<10%)` / `possible (10–40%)` / `likely (40–70%)` / `expected (>70%)` over the next cycle.
-
-## Schema (entry)
 ```
-R<n>. <title>           id: <slug>
-      severity: <CRIT|HIGH|MED|LOW>
-      likelihood: <unlikely|possible|likely|expected>
-      owner: <name>
-      trigger: <observable condition that materializes the risk>
-      mitigation: <action under way OR none>
-      status: <open|mitigating|contained|closed>
+R1. worker-redeploy-uncertainty           id: r-worker-redeploy
+    severity:    HIGH
+    likelihood:  expected
+    owner:       Michael
+    trigger:     Worker at 2dca2a6 not yet redeployed → AI Parse 400 persists.
+    mitigation:  Run wrangler deploy from local terminal; verify via console fetch.
+    status:      open
+
+R2. model-id-sunset-unknown               id: r-model-id
+    severity:    MED
+    likelihood:  possible
+    owner:       Michael
+    trigger:     `claude-sonnet-4-20250514` may be deprecated or renamed at any time.
+    mitigation:  Verify model id on next Parse call; pin to a confirmed id.
+    status:      open
+
+R3. oversized-files                       id: r-oversized-index
+    severity:    MED
+    likelihood:  expected
+    owner:       (deferred)
+    trigger:     index.html is currently ~700KB; refactor pressure increasing each cycle.
+    mitigation:  No active mitigation; tracked as gotcha `oversized-files`.
+    status:      open
+
+R4. stale-doc-divergence                  id: r-doc-divergence
+    severity:    MED
+    likelihood:  likely
+    owner:       runtime-stabilizer
+    trigger:     CANONICAL_RUNTIME_STATE may drift from WIP/BUILD_PLAN if not refreshed.
+    mitigation:  Pre-read CANONICAL state at session start (CLAUDE.md patch proposed).
+    status:      mitigating
+
+R5. governance-overhead-for-solo          id: r-gov-overhead
+    severity:    MED
+    likelihood:  likely
+    owner:       runtime-stabilizer
+    trigger:     27 P0 spec files + 7 modes + 11 metrics may exceed solo-operator budget.
+    mitigation:  GOVERNANCE_COMPRESSION_REVIEW + P1_SIMPLIFICATION_PASS this commit.
+    status:      mitigating
 ```
+
+## Watchlist (sub-threshold)
+- w1. orchestration-load-creep — chains of agent/tool calls trending longer; revisit at cycle close.
+- w2. canonical-state-bypass — if next session ignores pre-read order, R4 escalates.
+
+## Closed Since Last Review
+(none — first review)

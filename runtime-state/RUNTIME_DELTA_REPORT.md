@@ -1,58 +1,61 @@
 # RUNTIME DELTA REPORT
 
-## Purpose
-The diff between checkpoints — the "git for cognition and orchestration." Read to
-understand what *changed* between the last canonical state and now, including changes in
-governance, priorities, risks, and metrics — not just code.
+> Append-only. Newest at top. "Git for cognition and orchestration."
+> tag: CORE
 
-## Required Sections (per delta entry, newest at top)
-1. **Header** — delta_id, from_checkpoint → to_checkpoint, range timestamps, mode used.
-2. **State Delta** — what changed in CANONICAL_RUNTIME_STATE.md (added / removed / changed).
-3. **Priority Delta** — promotions, demotions, new entries.
-4. **Risk Delta** — new, escalated, mitigated, closed.
-5. **Mutation Delta** — patches landed (commit refs), patches reverted.
-6. **Governance Delta** — policy edits, escalations issued, hard-stops triggered.
-7. **Metric Delta** — RCI, entropy_delta, complexity_velocity, governance_lag (before → after).
-8. **Architecture Delta** — module added / removed / boundary changed.
-9. **DER Delta** — items intaked, promoted, declined, archived.
-10. **Open Items Carried Over** — anything not resolved this delta.
+---
 
-## Update Rules
-- Append-only. Newest entry at top. Never edit historical entries.
-- Written at every successful checkpoint by the runtime loop.
-- One delta per checkpoint; no batching across checkpoints.
+## delta-001     cp-0000 → cp-0001     2026-05-09     mode: Clean Pause Stabilization
 
-## Ownership Rules
-- Write owner: runtime loop (Patch Loop + Checkpoint Loop).
-- Read owner: every audit, every cycle review, every Plan-Then-Execute.
+State:        + canonical state seeded (cp-0001)
+              + provisional LKG (lkg-0001 → 940e7f8)
+              + current priorities populated (cycle-2026-W19)
+              + active risks populated (R1–R5)
 
-## Allowed Mutation Rules
-- Cannot be edited retroactively. Errata appended as a new entry titled `ERRATA on <delta_id>`.
-- Quotes from other files must include the file's checkpoint id.
+Priorities:   + P1 pri-worker-redeploy
+              + P2 pri-model-id-verify
+              + P3 pri-p1-hardening
+              + P4 pri-claude-md-canonical-read
 
-## Compression Standards
-- Each delta ≤ 60 lines.
-- Use compact notation: `+ added`, `- removed`, `~ changed`, `→ status transition`.
-- Numeric metrics shown as `<before> → <after> (Δ<+/-n>)`.
+Risks:        + R1 worker-redeploy-uncertainty sev:HIGH
+              + R2 model-id-sunset-unknown sev:MED
+              + R3 oversized-files sev:MED
+              + R4 stale-doc-divergence sev:MED
+              + R5 governance-overhead-for-solo sev:MED
 
-## Archival Rules
-- File hard cap: 800 lines or 30 entries (whichever first).
-- On overflow, oldest entries moved to `audits/delta-archive/<year>-<week>.md`.
+Mutations:    landed:   95bcc8a P0 specs (no behavior change)
+              landed:   <this commit> P1 hardening + canonical seed
+              reverted: (none)
 
-## Schema (entry)
-```
-## delta-<id>     <from_cp> → <to_cp>     <ISO timestamp>     mode: <mode>
+Governance:   policy: governance/GOVERNANCE_COMPRESSION_REVIEW.md added (review only)
+              policy: policies/OPERATIONAL_ERGONOMICS.md added (Mobile Handoff Mode)
+              policy: policies/ARCHITECTURE_TAGS.md added (lightweight 5-tag scheme)
+              policy: evolution-memory/FUTURE_CORE_CONCEPTS.md added (TOR, EGR placeholders)
+              audit:  audits/P1_SIMPLIFICATION_PASS.md added
+              audit:  audits/P1_VALIDATION_REPORT.md added
+              patch-plan: audits/patch-plans/patch-0001-claude-md-canonical-read.md proposed
+              escalation: (none)
 
-State:        + ... | - ... | ~ ...
-Priorities:   + ... | - ... | ~ ...
-Risks:        + R<id> ... | ~ R<id> sev<old>→sev<new> | closed R<id>
-Mutations:    landed: <sha> ... | reverted: <sha> ...
-Governance:   policy: <file>:<section> changed | escalation: <id>
-Metrics:      RCI <a>→<b>  entropy_delta <a>→<b>  cv <a>→<b>  gov_lag <a>→<b>
-Architecture: + module:<slug> | - module:<slug> | ~ boundary:<slug>↔<slug>
-DER:          intaked: <ids> | promoted: <ids> | declined: <ids> | archived: <ids>
-Carryover:    <one-liner per open item>
-```
+Metrics:      RCI null→null   entropy_delta null→null
+              cv null→null    rv null→null
+              gov_lag null→0d  runtime_health null→null
+              (M2/M3 not computable until P3; baselines pending)
 
-## Initial Content (v0.1)
-No deltas yet. First delta will be `delta-000` when P1 seeds CANONICAL_RUNTIME_STATE.md.
+Architecture: + concept: AccentOS reframed as incubation/proving-ground deployment
+              + concept: AgentOS Core as future extraction target
+              + tag system: CORE / DEPLOYMENT / BUSINESS_SPECIFIC / UNIVERSAL / EXPERIMENTAL
+
+DER:          intaked:  der-0002 (TOR placeholder, Q4)
+                        der-0003 (EGR placeholder, Q4)
+                        der-0004 (governance compression candidates, Q3)
+                        der-0005 (mode count reduction 7→5, Q3)
+                        der-0006 (metric count reduction 11→4 active, Q3)
+              promoted: der-0001 → P4 (pri-claude-md-canonical-read)
+              declined: (none)
+              archived: (none)
+
+Carryover:
+  - Worker proxy redeploy is OUTSIDE this branch's scope. WIP remains the source of
+    truth for that thread.
+  - CLAUDE.md AUTO-EXECUTE amendment is PROPOSED only; not applied this commit.
+  - No new automation activated this commit. P1 = state seed + hardening only.
