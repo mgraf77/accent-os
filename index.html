@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AccentOS v6.10.2 — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -353,6 +353,10 @@ tbody tr:hover td{background:var(--bg);}
   .modal{width:calc(100vw - 24px)!important;max-width:none!important;}
   .qa-fab{right:16px;bottom:16px;width:52px;height:52px;}
   .qa-menu{right:16px;bottom:80px;left:16px;min-width:0;}
+  /* M2: Safe-area insets — viewport-fit=cover standalone mode */
+  .topbar{padding-top:env(safe-area-inset-top);height:calc(64px + env(safe-area-inset-top));}
+  .content{padding-bottom:env(safe-area-inset-bottom);}
+  #toasts{bottom:calc(24px + env(safe-area-inset-bottom));right:12px;left:12px;}
 }
 @media (max-width:560px){
   .topbar{padding:0 10px;}
