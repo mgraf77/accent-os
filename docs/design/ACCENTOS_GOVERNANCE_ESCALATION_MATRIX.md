@@ -12,6 +12,7 @@ A single page so an on-call session can resolve in seconds, not minutes.
 | Action | Authorizer | Executor | Default if unreachable |
 |---|---|---|---|
 | Phase advance to `live` | Captain | Primary session | NO-GO |
+| Phase advance to `deprecated` (rollout-scope `live → deprecated`) | Captain | Primary session | NO-GO |
 | Phase advance internal (`building`↔`testing`) | Primary session | Primary session | Hold at lower mode |
 | Per-user override add (`allow`/`deny`) | Captain (Owner UI) | Captain | NO add |
 | Per-user override clear | Captain or Primary | Either | Leave as-is |
@@ -28,6 +29,8 @@ A single page so an on-call session can resolve in seconds, not minutes.
 | Emergency rollback (P0 active) | Primary session | Primary session | EXECUTE (no Captain wait) |
 
 **Default-safe principle:** when unsure, the default is the action that *removes* state change. Freeze, rollback, hold — never advance, never overwrite.
+
+**Scope note on `→ deprecated`:** the `live → deprecated` row above governs **shell-v2 rollout deprecation** only — i.e., flipping a v1 module to `deprecated` mode in `module_modes.json` per Rollout Strategy §3 Phase 6 (after the 30-day cooldown). It does **not** supersede canonical restructure governance. Asset deletion / repo relocation / multi-repo split decisions remain governed by canonical `STABILIZATION_PROTOCOL.md` and `MODULE_OWNERSHIP_MAP.md` on `claude/governance-snapshot-prep-k3dBs` per Rollout Strategy §0.1 precedence rules. Repo-level v1 code deletion (after 30 days zero `deprecated` usage, per Rollout Strategy §3 Phase 6 exit criterion) is also Captain authority.
 
 ---
 
