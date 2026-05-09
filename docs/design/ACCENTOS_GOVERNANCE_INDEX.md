@@ -151,15 +151,17 @@ A future session reading this branch cold consumes documents in this order:
 3. `ACCENTOS_GOVERNANCE_TERMINOLOGY.md` — vocabulary.
 4. `MASTER.md` §3, §4, §12 — system context + hard rules.
 5. `MODULE_MODES.md` + `module_modes.json` — the rollout instrument.
-6. `ACCENTOS_PRODUCTION_ROLLOUT_STRATEGY.md` — what we are doing.
-7. `ACCENTOS_GOVERNANCE_RECONCILIATION.md` — authority basics.
-8. `ACCENTOS_GOVERNANCE_ESCALATION_MATRIX.md` — decisions.
-9. `ACCENTOS_ROLLOUT_READINESS_SYSTEM.md` — measurement.
-10. `ACCENTOS_ROLLOUT_FAILURE_SCENARIOS.md` — what can go wrong.
-11. `ACCENTOS_ROLLOUT_FREEZE_PROTOCOL.md` — what to do about it.
-12. `ACCENTOS_MULTI_SESSION_GOVERNANCE.md` — multi-agent rules.
-13. `ACCENTOS_GOVERNANCE_CONTRADICTIONS.md` — known internal disagreements.
-14. `docs/design/test/*.md` — runbooks.
+6. **Canonical `STABILIZATION_PROTOCOL.md`** on branch `claude/governance-snapshot-prep-k3dBs` — restructure phase ladder (canonical Phase 0–7) and STOP CONDITIONS. **Read before the rollout strategy** so the canonical-vs-rollout phase distinction is encountered first; canonical authority precedence (per rollout strategy §0.1) is established here.
+7. `ACCENTOS_CANONICAL_DELTA.md` — read-only reconciliation of this branch against the four canonical files. Read immediately after canonical `STABILIZATION_PROTOCOL.md` to see how this branch's planning maps to canonical scope.
+8. `ACCENTOS_PRODUCTION_ROLLOUT_STRATEGY.md` — what we are doing (rollout Phase 0–6, distinct from canonical Phase 0–7).
+9. `ACCENTOS_GOVERNANCE_RECONCILIATION.md` — authority basics.
+10. `ACCENTOS_GOVERNANCE_ESCALATION_MATRIX.md` — decisions.
+11. `ACCENTOS_ROLLOUT_READINESS_SYSTEM.md` — measurement.
+12. `ACCENTOS_ROLLOUT_FAILURE_SCENARIOS.md` — what can go wrong.
+13. `ACCENTOS_ROLLOUT_FREEZE_PROTOCOL.md` — what to do about it (in-branch authority for shell-v2 rollout freezes; canonical `STABILIZATION_PROTOCOL.md` STOP CONDITIONS apply to restructure scope).
+14. `ACCENTOS_MULTI_SESSION_GOVERNANCE.md` — multi-agent rules.
+15. `ACCENTOS_GOVERNANCE_CONTRADICTIONS.md` — known internal disagreements.
+16. `docs/design/test/*.md` — runbooks.
 
 ---
 
