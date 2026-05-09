@@ -389,7 +389,15 @@ Long-term laws:
 
 ---
 
-## Appendix B — Risks ranked
+## Appendix B — Shell-v2 rollout risks (advisory)
+
+> **Scope.** This appendix governs **shell-v2 rollout-specific operational risks** only. It is advisory, not authoritative.
+>
+> **Restructure-scoped risks** (R-01 through R-12) are catalogued in canonical `GOVERNANCE_RISKS.md` on branch `claude/governance-snapshot-prep-k3dBs`. That register is **authoritative** for risks concerning repo topology, multi-repo split, framework relocation (vibe-speak / efficiency-monitor), canonical ownership, or extraction sequencing.
+>
+> **The two risk systems coexist without superseding each other.** Restructure risks govern the canonical scope (per §0.1); shell-v2 rollout risks govern progressive UI integration inside `accent-os`. A risk that appears in both registers (e.g., Anthropic-proxy worker WIP — canonical R-02 and rollout-Appendix-B #1) is a **shared hard block**; the canonical statement is authoritative on shared items.
+>
+> Use this table for shell-v2 rollout planning only. For restructure planning, read canonical `GOVERNANCE_RISKS.md` directly.
 
 | # | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
