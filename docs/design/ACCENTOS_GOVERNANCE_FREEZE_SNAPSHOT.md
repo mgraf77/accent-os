@@ -249,6 +249,7 @@ When the next phase consumes this branch:
 ## 15. Branch state at freeze
 
 - **Branch:** `claude/accentos-rollout-planning-UTElf`
+- **System-state baseline:** see canonical `SYSTEM_STATE.md` on branch `claude/governance-snapshot-prep-k3dBs` (snapshot 2026-05-08 against `969de17`) — authoritative for repo state, filesystem inventory, and coupling counts cited throughout this packet.
 - **Spoke planning files:** 13 (this Snapshot, Index, Terminology, Contradictions, Rollout Strategy, Reconciliation, Failure Scenarios, Escalation Matrix, Readiness System, Multi-Session Constitution, Freeze Protocol, plus 7 test checklists incl. template).
 - **Production touched:** none.
 - **`module_modes.json` touched:** none.
