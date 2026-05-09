@@ -107,7 +107,7 @@ Today there is exactly one Worker (Anthropic proxy). Until the WIP bug (`2dca2a6
 Each phase has: a single dial (`module_modes.json` entry), an exit criterion, a rollback path, and a max-duration budget. **No phase advances until the prior phase's exit criterion is met.**
 
 ### Phase 0 — Stabilize (prerequisite — NOT part of rollout)
-- **Exit criteria:** WIP Anthropic-proxy bug closed (`2dca2a6` deployed, Parse Notes returns 200 on golden path); SESSION_LOG.md initialized; the four missing governance docs (§0) authored or retired; Supabase MCP either fixed or formally documented as "manual SQL paste only."
+- **Exit criteria:** WIP Anthropic-proxy bug closed (`2dca2a6` deployed, Parse Notes returns 200 on golden path — also canonical R-02 per §0.1 shared-block precedence); SESSION_LOG.md initialized; the four canonical governance docs cited in §0 read by reference and reconciled per `docs/design/ACCENTOS_CANONICAL_DELTA.md`; Supabase MCP either fixed or formally documented as "manual SQL paste only."
 - **Rollback:** N/A — pre-rollout.
 - **Budget:** 1–2 sessions.
 
