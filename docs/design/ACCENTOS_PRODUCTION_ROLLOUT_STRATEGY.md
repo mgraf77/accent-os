@@ -182,6 +182,8 @@ The boundaries below are where shell-v2 should plug into the live monolith. Each
 
 This keeps the 900KB-per-file split-trigger discipline intact and avoids growing `index.html` beyond its current 7,169 lines.
 
+> **Ownership footnote.** `js/shell_v2/*.js` is implicit **STAY** by precedent of `js/*.js` in canonical `MODULE_OWNERSHIP_MAP.md` (on `claude/governance-snapshot-prep-k3dBs`), which classifies all 37 existing `js/` files as STAY (AccentOS business modules). The explicit `js/shell_v2/*.js` row is a **D-priority Captain canonical edit** to be added to `MODULE_OWNERSHIP_MAP.md` when convenient; until then, the precedent applies.
+
 ---
 
 ## 6. Shell migration sequencing (dependency-first)
