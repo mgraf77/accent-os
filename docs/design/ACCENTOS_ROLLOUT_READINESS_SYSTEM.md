@@ -54,6 +54,8 @@ S ≥ 8 required for `→ live`. S ≥ 6 for `→ testing`.
 
 M ≥ 7 required to leave `building`. M ≥ 9 for `→ live`.
 
+> **Cross-reference.** The seven scoring components above are the measurable form of the qualitative mobile readiness gates listed in `docs/design/ACCENTOS_PRODUCTION_ROLLOUT_STRATEGY.md` §16.6. The two are intended to align: §16.6 names the gates a module must pass before leaving `building`; this section turns each into a point-weighted check. Any future divergence between the two should be resolved by tightening this scoring table — §16.6 is the qualitative anchor.
+
 ---
 
 ## 4. Workflow readiness score (W, 0–10)
