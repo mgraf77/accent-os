@@ -74,6 +74,13 @@ Today there is exactly one Worker (Anthropic proxy). Until the WIP bug (`2dca2a6
 
 ## 3. Rollout phases (rollback-safe)
 
+> **Phase-numbering disambiguation (read before reading anything else in this section).** Two independent phase ladders are active in AccentOS governance and they share digits without sharing meaning:
+>
+> - **Canonical Phase 0–7** — defined in canonical `STABILIZATION_PROTOCOL.md` on branch `claude/governance-snapshot-prep-k3dBs`. These phases govern the **multi-repo restructure** (lifting `skills/`, `scripts/`, framework code from `accent-os` into `agentos-core` / `agentos-command-center` / `agentos-skills`). Their Phase 1 is "pre-restructure hardening." Their Phase 4 includes the vibe-speak relocation.
+> - **Rollout Phase 0–6** — defined in this section. These phases govern the **shell-v2 progressive rollout** (mounting new command-center modules inside `index.html` via `js/shell_v2/*.js`, gated by `module_modes.json`). Their Phase 1 is "shell beachhead." Their Phase 6 is "v1 deprecation."
+>
+> The two ladders are **separate scopes**. Neither ladder replaces the other. Neither ladder's Phase N maps to the other ladder's Phase N. Any future prompt, commit subject, SESSION_LOG entry, or session handoff that uses a "Phase N" reference **must state which ladder it means** — write "canonical Phase 1" or "rollout Phase 1," never bare "Phase 1." Failure to disambiguate is a documentation bug.
+
 Each phase has: a single dial (`module_modes.json` entry), an exit criterion, a rollback path, and a max-duration budget. **No phase advances until the prior phase's exit criterion is met.**
 
 ### Phase 0 — Stabilize (prerequisite — NOT part of rollout)
