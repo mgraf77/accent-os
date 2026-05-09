@@ -290,16 +290,13 @@ This branch must not recreate, supersede, or re-author any of the above. Edits t
 
 ## 12. Production freeze conditions
 
-Freeze = no `module_modes.json` flips and no shell-v2 commits to `main`. Triggers:
+The full freeze and kill-trigger list for **shell-v2 rollout** is maintained in `docs/design/ACCENTOS_ROLLOUT_FREEZE_PROTOCOL.md` §1 (hard 🔴 / soft 🟡 triggers, rollback triggers, halt conditions). That document is the in-branch authority for shell-v2 rollout freeze conditions; do not duplicate the list here.
 
-- 🔴 **WIP bug open in WORK_IN_PROGRESS.md.** (Today: yes — Anthropic proxy.)
-- 🔴 Any P0/P1 reported on a `live` module within the last 48h.
-- 🔴 Cloudflare Pages most-recent deploy is failed/red.
-- 🔴 Supabase outage or MCP-permissions degradation that blocks SQL paste workflow.
-- 🟡 Showroom peak hours (Sat 10–3 CT) — soft freeze for cutovers.
-- 🟡 Any vendor / external-comm crisis active (MAP violation response, GMC enforcement event).
+The full STOP CONDITIONS for the **multi-repo restructure** are maintained in canonical `STABILIZATION_PROTOCOL.md` on branch `claude/governance-snapshot-prep-k3dBs`. Those conditions are restructure-scoped (cold-boot vibe-speak failure, worker-proxy state change mid-operation, parallel-session merge conflict, undocumented coupling, data-loss event). They do not govern shell-v2 rollout freezes; do not duplicate the list here.
 
-Unfreeze = explicit Owner sign-off + a SESSION_LOG entry naming the resolved trigger.
+**Where the two scopes intersect** — the Anthropic-proxy worker WIP per canonical R-02 — the canonical statement is authoritative (per §0.1 precedence rules). Shell-v2 rollout treats the same item as a hard 🔴 freeze trigger via `ACCENTOS_ROLLOUT_FREEZE_PROTOCOL.md` §1.
+
+Unfreeze authority is unchanged: explicit Captain sign-off + a SESSION_LOG entry naming the resolved trigger (per `ACCENTOS_GOVERNANCE_ESCALATION_MATRIX.md` §1).
 
 ---
 
