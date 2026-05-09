@@ -1,44 +1,29 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-09 — Operational HUD Design sprint complete
+**Resume trigger:** "resume" or "continue last session"
 
 ---
 
 ## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
+- Built 4 MVHB operational HUD design docs in `docs/mvhb/`
+- No code — pure spec/design as instructed
+- Branch: `claude/operational-hud-design-S1Eon`
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+## COMPLETED THIS SESSION
+1. `docs/mvhb/STATUS_MD_V1.md` — canonical STATUS.md schema, field defs, formatting rules, mobile constraints, 30-line hard limit, forbidden elements, example valid file
+2. `docs/mvhb/OPERATIONAL_HUD_SPEC.md` — all 9 HUD fields defined with write ownership, staleness signals, Michael action triggers, anti-patterns, field dependency map
+3. `docs/mvhb/PHONE_FIRST_DASHBOARD_CONCEPT.md` — 3-mode read UX, priority order, phone viewport constraints, escalation path, what NOT to build in v1
+4. `docs/mvhb/SESSION_STATE_SURFACE.md` — session state machine, branch visibility, queue ownership, resume semantics, multi-session model, 7 blind spots addressed
 
-## NEXT STEPS PENDING
+## NEXT STEPS
+- This design sprint is COMPLETE
+- Next: implement STATUS.md itself (write the actual file based on the schema just defined)
+- Or: build the STATUS.md auto-update into Claude session hooks
+- Or: return to main build queue (BUILD_PLAN_CLAUDE.md) — worker 400 bug + WIP from prior session
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
-
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
-
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
-
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
-
-Pick up from step 1.
+## PRIOR WIP (from 2026-05-07 session — still unresolved)
+- Worker proxy `accentos-anthropic-proxy.mgraf77.workers.dev` needs redeploy (commit `2dca2a6`)
+- "Parse Notes" in Quote Generator returns 400
+- M-task: Michael must run `wrangler deploy` from local terminal (C:\Users\Michael\Desktop\accent-os)
