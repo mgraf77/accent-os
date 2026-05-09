@@ -72,6 +72,12 @@ A `git revert <commit>` operation. Always additive (creates a new commit). Disti
 ### Rollback
 Returning a module or system to a prior good state. Rollback is **always additive** (a new commit, a flip-back, a tag). Mechanisms: `module_modes.json` flip-back, per-user `deny`, `git revert`, `wrangler deploy` of prior worker. Distinct from **Revert** (revert is one mechanism). Distinct from **Reset** (forbidden).
 
+### Bake period
+The calendar interval a module spends at a given mode without P0/P1 incidents before it may advance to the next mode. Defined per phase in Rollout Strategy §3 (Phase 2: 7 days at `building`; Phase 3: 7+ days at `testing`; Phase 5 writes: ≥14 days). Distinct from **Re-score window** — bake measures absence-of-incident; re-score measures freshness-of-evaluation.
+
+### Re-score window
+The freshness interval after which a Readiness Score (per `ACCENTOS_ROLLOUT_READINESS_SYSTEM.md`) becomes stale and must be recomputed before the next flip. Per Readiness System §11: a module scored more than 7 days ago must be re-scored before any phase advance. Distinct from **Bake period** — re-score is about the evaluation; bake is about elapsed clean time.
+
 ### Score
 A 0–10 number from the Readiness System. There are five sub-scores (S/M/W/G/R) and one composite. Score does not equal **Gate**: a high score with a failing veto is still NO-GO.
 
@@ -80,6 +86,12 @@ A bounded run of a Claude agent on a branch. Has a class (Hub / Spoke). Ends at 
 
 ### Shell-v2
 The new command-center architecture, mounted inside `index.html` via lazy-loaded `js/shell_v2/<name>.js` files. Not a separate page, not a separate domain, not a separate auth. Born-extracted (Rollout Strategy §5).
+
+### Snapshot
+**Three distinct uses; never used unqualified in governance text.**
+- **`curl` snapshot** — the pre-flip / post-flip output of `curl https://accent-os.pages.dev` (and the `module_modes.json` URL) used for diff verification around a deploy. Operational, ephemeral. See Rollout Strategy §10.
+- **System-state snapshot** — canonical `SYSTEM_STATE.md` on `claude/governance-snapshot-prep-k3dBs` (snapshot 2026-05-08 against `969de17`). Authoritative repo state; updated by re-snapshot, not edit-in-place.
+- **Handoff packet snapshot** — `docs/design/ACCENTOS_GOVERNANCE_FREEZE_SNAPSHOT.md` on this branch. The 10-minute consumer guide for future sessions. A planning artifact, not a system state record.
 
 ### Spoke
 A non-authoritative planning session. Branch: `claude/<topic>-*`. Writes `docs/design/*.md` only. Drafts; does not adopt. See Multi-Session Constitution Article I.
