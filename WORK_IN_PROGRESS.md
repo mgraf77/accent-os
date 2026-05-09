@@ -1,71 +1,72 @@
 ## WORK IN PROGRESS
-> Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-08 — Implementation Hub layer complete, committing
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-08 — MVHB Phase 1 foundation complete, committing
+**Resume trigger:** read `runtime/handoffs/_latest.md`
+
+---
+
+## NEW PRIMARY ENTRY POINT
+
+This file is being deprecated as the primary handoff mechanism.
+Use `runtime/handoffs/_latest.md` instead.
+
+This file remains for backward compatibility with `CLAUDE.md` auto-execute.
 
 ---
 
 ## CONTEXT
 
-All UI prototype phases complete (2A/2B/2C). Session pivoted to:
-- Implementation orchestration authority
-- 7 implementation control documents (docs/implementation/)
-- Governance freeze acknowledged
-- No production changes this session
+MVHB Phase 1 foundation built this session. Runtime folder structure exists
+with all schemas and sample artifacts. Sessions can now externalize state
+into durable files.
 
 ---
 
 ## COMPLETED THIS SESSION
 
-### Implementation Hub Layer — 7 Documents
+### MVHB Phase 1 — Runtime Foundation
 
-| Document | Lines | Purpose |
-|----------|-------|---------|
-| ACCENTOS_IMPLEMENTATION_MASTER_QUEUE.md | 170 | Ordered work queue, all items with status |
-| ACCENTOS_ACTIVE_BRANCH_REGISTRY.md | 207 | Branch topology, file ownership, merge rules |
-| ACCENTOS_EXECUTION_STATE.md | 179 | Live system snapshot, blocked items, phase gates |
-| ACCENTOS_IMPLEMENTATION_SEQUENCE.md | 473 | 10-phase critical path, gates, rollbacks |
-| ACCENTOS_PARALLEL_WORK_RULES.md | 301 | Concurrency tiers, spawn authority, conflict prevention |
-| ACCENTOS_IMPLEMENTATION_RISK_MATRIX.md | 419 | 18 IRI-prefixed implementation risks, heat map, top-5 detail |
-| ACCENTOS_AGENT_AUTONOMY_RULES.md | 361 | AML 0–5 tiers, approval-gated actions, anti-chaos rules, BetIQ operator model |
+17 files in `runtime/`:
+- `README.md` — main architecture doc (240 lines)
+- `SCHEMA.md` — 6 artifact schemas + validation rules (380 lines)
+- 7 subdirectory READMEs
+- Sample handoff packet
+- Sample session entry
+- Sample queue item (r-01-prototype-hardening)
+- Sample branch record
+- Initial event log
+- Pointer files (`_latest.md`, `_active.md`, `_index.md`)
 
-**Total implementation docs:** 2,110 lines  
-**Zero production files touched.**
+**Total:** ~1,100 lines of durable runtime infrastructure.
 
----
+### Design constraints honored
 
-## CURRENT STATE
+- Phone-first (markdown + JSON only)
+- Human-inspectable (no hidden state)
+- Default-safe (no auto-execution)
+- Session-disposable (state persists, sessions don't)
+- Governance-compatible (additive only)
 
-- Branch: `claude/implement-claude-design-ui-eFn9b`
-- Boot smoke: 26/27 (only uncommitted-change check, clears post-commit)
-- 5 commits ahead of main
-- Phase 2A/2B/2C prototype: complete at `ff17ba1`
-- Implementation Hub: complete (this commit)
+### Deliberately excluded
 
----
-
-## BLOCKED (MICHAEL ACTION REQUIRED)
-
-| Priority | Action | Item |
-|----------|--------|------|
-| CRITICAL | `wrangler deploy` from local terminal | BUG-01 — Quote AI Parse 400 |
-| HIGH | Answer 5 questions in `docs/design/ACCENTOS_PROGRESSIVE_SHELL_ROLLOUT.md §11` | Phase A–F integration blocked |
-| HIGH | Run M01–M40 in Supabase SQL editor | Schema drift, Phase D–E will fail without |
+- No automation
+- No CI hooks
+- No daemon/server
+- No autonomous routing
+- No self-modification
 
 ---
 
-## READY TO START NEXT SESSION
+## NEXT SESSION
 
-1. **R-01: Prototype 2D hardening** — empty states, a11y, mobile 390px verify, keyboard reachability
-2. **R-02: Decision Lock document** — `ACCENTOS_PHASE_A_DECISION_LOCK.md` for Michael to answer inline
-3. **R-03: Feature flag scaffold** — `window.AccentOS.flags.isEnabled()` no-op stub in shell.js
+1. Read `runtime/handoffs/_latest.md`
+2. Pick next task from `runtime/queue/_index.md`
+3. Recommended: `r-01-prototype-hardening`
 
 ---
 
-## NEXT STEPS
+## BLOCKED (Michael)
 
-1. Michael: fix BUG-01 (`wrangler deploy`)
-2. Michael: answer 5 Phase-A decisions
-3. Michael: run SQL migrations
-4. Next Claude session: R-01 prototype hardening, R-02 decision lock doc, R-03 feature flag
+- BUG-01 — `wrangler deploy` from local terminal
+- DEC-01 — answer 5 questions in `docs/design/ACCENTOS_PROGRESSIVE_SHELL_ROLLOUT.md §11`
+- SQL-01 — run M01–M40 in Supabase SQL editor
