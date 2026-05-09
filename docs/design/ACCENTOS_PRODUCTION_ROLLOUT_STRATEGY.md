@@ -33,6 +33,24 @@ This strategy is also derived from the canonical sources already present in this
 - `BUILD_PLAN_CLAUDE.md`, `BUILD_PLAN_MICHAEL.md`, `BUILD_INTELLIGENCE.md`
 - Live repo layout: `index.html` (7,169 lines), `js/*.js` (37 module files), `worker/anthropic-proxy.js`, `sql/`, `wrangler.toml`
 
+### 0.1 Two coexisting governance scopes
+
+AccentOS governance currently spans **two independent scopes**, and every future session must keep them distinct:
+
+- **Restructure governance scope** — defined by canonical `SYSTEM_STATE.md`, `GOVERNANCE_RISKS.md`, `STABILIZATION_PROTOCOL.md`, `MODULE_OWNERSHIP_MAP.md` on `claude/governance-snapshot-prep-k3dBs`. Covers the **multi-repo split** (lifting `skills/`, `scripts/`, framework code into `agentos-core` / `agentos-command-center` / `agentos-skills`), per-path ownership, restructure phase ladder (canonical Phase 0–7), and restructure-scoped risks (R-01 through R-12).
+- **Shell-v2 rollout governance scope** — defined by this document and its sibling spoke planning docs (`ACCENTOS_GOVERNANCE_RECONCILIATION.md`, `ACCENTOS_ROLLOUT_FAILURE_SCENARIOS.md`, `ACCENTOS_GOVERNANCE_ESCALATION_MATRIX.md`, `ACCENTOS_ROLLOUT_READINESS_SYSTEM.md`, `ACCENTOS_MULTI_SESSION_GOVERNANCE.md`, `ACCENTOS_ROLLOUT_FREEZE_PROTOCOL.md`). Covers the **progressive shell-v2 integration** inside `accent-os` (mounting `js/shell_v2/*.js` modules inside `index.html` via `module_modes.json`), shell-v2 rollout phase ladder (rollout Phase 0–6), and rollout-scoped risks (Appendix B, advisory).
+
+**Both scopes coexist.** They describe different "big changes" to the same repository.
+
+**Precedence rules when the two scopes interact:**
+
+- **Restructure governance has precedence** when a question concerns repo topology, asset extraction, canonical ownership, multi-repo merging, framework relocation (vibe-speak / efficiency-monitor), or the canonical risk register. The four canonical files are authoritative on those questions.
+- **Shell-v2 rollout governance applies only to progressive UI integration inside `accent-os`** — module-mode flips, shell-v2 mounts, per-module readiness scoring, v1↔v2 coexistence mechanics, F1–F10 rollout failure scenarios. It has no authority over restructure decisions.
+- **Shared-block items** (e.g., the Anthropic-proxy worker WIP per canonical R-02) are recognized by **both** scopes and are hard blocks for both. Where canonical and rollout governance both speak to the same hard block, the canonical statement is authoritative.
+- **Scope-out boundaries** declared by canonical governance (e.g., R-04 "do not touch `index.html` in the big-change phase" — meaning the multi-repo restructure phase, not shell-v2 rollout) apply only within the canonical scope. Shell-v2 rollout legitimately touches `index.html` to mount shell-v2 surfaces; it does not violate R-04 because R-04's "big change" is the restructure, not the rollout.
+
+When this document or its siblings appear to conflict with canonical governance, defer to canonical and open a follow-up to align this branch.
+
 ---
 
 ## 1. Current shape of the system (what we are migrating *from*)
