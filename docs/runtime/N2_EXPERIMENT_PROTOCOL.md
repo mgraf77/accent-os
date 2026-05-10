@@ -35,6 +35,25 @@
 
 ---
 
+## SCOPE BOUNDARY
+
+**This experiment validates bounded supervised branch parallelism only.**
+
+It does NOT validate:
+- Generalized orchestration runtime scalability
+- Autonomous branch coordination
+- Unattended execution safety
+- N=3 or N=4 concurrency
+- Any claim about orchestration beyond two supervised operators on disjoint files
+
+A successful run produces one data point about coordination overhead under these specific conditions.
+A failed run produces one data point about failure modes under these specific conditions.
+Neither outcome extrapolates beyond these bounds.
+
+**Primary metric: OCL.** Operator cognitive saturation is the likely true scaling bottleneck. If OCL is high under the minimum-complexity experiment (pure metadata additions, disjoint files, known outputs), it will only increase with real extraction work. That is the signal this experiment is designed to surface.
+
+---
+
 ## HARD CONSTRAINTS
 
 Every constraint below is a hard stop if violated. No override. No "just this once."
@@ -155,6 +174,33 @@ T+2:00   HARD STOP
            Proceed to merge sequence (see MERGE SEQUENCE)
            Record merge friction metrics
 ```
+
+---
+
+## FREEZE TIMESTAMPS
+
+Fill in at experiment start (T+0:00). Do not estimate or backfill retroactively.
+
+```
+EXPERIMENT TIMING
+
+Experiment start:             [HH:MM]   ← fill at T+0:00
+Freeze cutoff (hard stop):    [HH:MM]   ← fill at T+0:00 (= start + 2:00)
+Checkpoint 1 due:             [HH:MM]   ← fill at T+0:00 (= start + 0:30)
+Checkpoint 2 due:             [HH:MM]   ← fill at T+0:00 (= start + 1:00)
+Checkpoint 3 due:             [HH:MM]   ← fill at T+0:00 (= start + 1:30)
+Merge checkpoint:             [HH:MM]   ← fill when both branches reach COMMITTED
+                                           (if this exceeds freeze cutoff: hard stop wins)
+
+Branch A entry gate actual:   [HH:MM]   ← fill when gate runs
+Branch B entry gate actual:   [HH:MM]   ← fill when gate runs
+Branch A first IN_PROGRESS:   [HH:MM]   ← fill when first packet starts
+Branch B first IN_PROGRESS:   [HH:MM]   ← fill when first packet starts
+Branch A COMMITTED:           [HH:MM]   ← fill when commit executes
+Branch B COMMITTED:           [HH:MM]   ← fill when commit executes
+```
+
+**Checkpoint discipline:** If a checkpoint time arrives and the coordinator has not called it — call it immediately. Do not slide checkpoints. A checkpoint that slips by 10 minutes is a data quality failure.
 
 ---
 
@@ -413,6 +459,57 @@ Ambiguity incidents that required protocol doc lookups: note which doc and which
 
 ---
 
+### Metric 8 — Semantic Collision Incidents (SCI)
+
+**What:** Collisions in runtime assumptions, dependencies, or initialization order — not detectable by file disjointness alone.
+
+**File disjointness is necessary but not sufficient.** Two branches can own completely separate files and still produce semantic collisions at runtime through shared globals, hidden dependency chains, or initialization coupling.
+
+**Four collision types to track:**
+
+| Type | Definition | How it surfaces |
+|------|-----------|-----------------|
+| Shared runtime assumption | Both batches assume a global (AOS_REGISTRY, sbFetch, VD_RAW, ROLES, etc.) is in a specific state at execution time | One batch's register() consumes something the other batch is also consuming, with conflicting expectations about its state |
+| Hidden dependency overlap | A module in Batch A's `provides[]` is consumed by a module in Batch B, or vice versa | Batch B's consumes[] lists something Batch A provides — creates an implicit load-order dependency |
+| Initialization coupling | Module A must be initialized before Module B, but both are being registered in parallel without that constraint visible | One module calls `window.[fn]` at load time where `[fn]` is provided by a module in the other batch |
+| Global mutation overlap | Two modules both write to the same global at load time, outside of their `register()` call | Grep for `window.X =` or direct registry mutations in module bodies |
+
+**Pre-execution SCI check (run before either branch starts):**
+```bash
+# These are the 13 modules — read the first 40 lines of each to extract provides/consumes:
+head -40 js/vendors_module.js js/vendor_scoring.js js/quotes_module.js \
+         js/dashboard_module.js js/mgmt_module.js js/pipeline_module.js \
+         js/repoutreach_module.js js/settings_module.js js/knowledge_module.js \
+         js/vendors_overflow.js js/vendor_filters.js js/vendor_scoring_helpers.js \
+         js/supabase_categories.js
+
+# Cross-check: does anything in Batch A's provides[] appear in Batch B's consumes[] (or vice versa)?
+# If yes: log as SCI-RISK before execution begins — do not start until documented
+```
+
+**Record each SCI incident:**
+```
+SCI INCIDENT [N]:
+  type:         [shared_assumption | hidden_dependency | init_coupling | global_mutation]
+  batch_A_file: [file involved]
+  batch_B_file: [file involved]
+  description:  [one sentence — what the collision is]
+  detected_at:  [pre-execution | checkpoint | post-commit | post-merge]
+  resolved_by:  [how it was resolved, or "unresolved"]
+```
+
+**How to measure:**
+```
+SCI = count(semantic_collision_incidents) over session
+SCI_type_breakdown: count per type
+SCI_detected_pre_execution: count (these are caught — good)
+SCI_detected_post_execution: count (these are missed pre-checks — bad)
+```
+
+SCI > 0 on a "trivially disjoint" experiment means file-level disjointness is less predictive of runtime safety than assumed. SCI detected only post-execution means the pre-execution check was insufficient. Both are key data points.
+
+---
+
 ## MEASUREMENT LOG TEMPLATE
 
 ```
@@ -465,6 +562,31 @@ AI (ambiguity incidents):
   Count:                     [count]
   Resolved by:               [doc + rule for each]
 
+SCI (semantic collision incidents):
+  Total count:               [count]
+  Detected pre-execution:    [count]
+  Detected post-execution:   [count]
+  By type:
+    shared_assumption:       [count]
+    hidden_dependency:       [count]
+    init_coupling:           [count]
+    global_mutation:         [count]
+  Incident log:              [list each SCI record]
+
+─────────────────────────────────────────────
+FREEZE TIMESTAMPS (actual)
+
+Experiment start:            [HH:MM]
+Freeze cutoff:               [HH:MM]
+Branch A entry gate:         [HH:MM]
+Branch B entry gate:         [HH:MM]
+Branch A first IN_PROGRESS:  [HH:MM]
+Branch B first IN_PROGRESS:  [HH:MM]
+Branch A COMMITTED:          [HH:MM]
+Branch B COMMITTED:          [HH:MM]
+Merge checkpoint:            [HH:MM]
+Experiment end:              [HH:MM]
+
 ─────────────────────────────────────────────
 CHECKPOINT DATA
 
@@ -492,13 +614,14 @@ A run succeeds if:
 - Both branches reached COMMITTED state without collision
 - Zero shared-file edits
 - Zero Class A conflicts
-- All 7 metrics recorded
+- All 8 metrics recorded (CO, OCL, SD, MF, SDI, IR, AI, SCI)
+- Freeze timestamps filled in completely
 - Experiment log complete
 
 A run fails if:
 - Shared-file edit detected (constraint violation — not just bad luck)
 - Hard stop triggered before both branches committed (timeout or abort)
-- Fewer than 5 of 7 metrics recorded (measurement failure)
+- Fewer than 6 of 8 metrics recorded (measurement failure)
 
 Note: a failed run still produces data. A "failed run" with complete measurements is more valuable than a "successful run" with no measurements.
 
@@ -526,6 +649,22 @@ Stop both branches immediately if any of these occur:
 | Clock reaches T+2:00 | Hard stop regardless of packet state. Freeze both. Record partial data. |
 | Coordinator loses track of state on either branch | Stop. Reconcile. Resume only after coordinator can state both branch states accurately. |
 | Any operator says "I don't know what state I'm in" | Stop. Reconcile. This is not failure — it is data. |
+
+---
+
+## OPERATOR ESCALATION THRESHOLDS
+
+These are the triggers at which an operator MUST stop execution and call the coordinator — not continue independently, not resolve silently, not assume.
+
+| Trigger | Threshold | Required action |
+|---------|-----------|-----------------|
+| Semantic ambiguity | Cannot determine `provides[]` or `consumes[]` for a module after reading the file for **> 3 minutes** | Stop. Call coordinator. Log as AI incident. Do not guess provides/consumes. |
+| Unexpected dependency overlap | A module's `consumes[]` references something in the other batch's `provides[]` | Stop both branches. Document as SCI incident type: hidden_dependency. Do not continue until resolved. |
+| State drift | Advisory state (WIP.md) doesn't match authoritative (git log) | Stop this branch. Run `git log --oneline -5`. Update WIP.md. Re-run entry gate. Log as SDI incident. |
+| Synchronization uncertainty | Cannot state the other branch's current packet state without asking | Stop. Coordinator calls an out-of-cycle checkpoint. Do not assume the other branch's state. |
+| Protocol lookup > 5 min | Looking up how to handle a situation takes more than 5 minutes | Stop. Log as AI incident. Document which protocol section was missing or unclear. This is a protocol gap, not operator failure. |
+
+**These thresholds are measurement instruments, not failure conditions.** Every escalation that fires is data about where the protocol is under-specified or where cognitive load exceeds the expected baseline. Log them precisely — they are the most useful telemetry this experiment produces.
 
 ---
 
@@ -588,3 +727,6 @@ Do not declare PROVEN without independent replication. One operator running thre
 | N2-7 | N=2 coordination overhead is acceptable | UNPROVEN — requires measurement |
 | N2-8 | Protocol is self-sufficient for an independent operator | UNPROVEN — requires replication |
 | N2-9 | N=2 is PROVEN viable | FALSE until maturity criteria met |
+| N2-10 | File disjointness alone prevents semantic collisions | UNPROVEN — SCI metric designed to test this |
+| N2-11 | OCL is the primary scaling bottleneck (not file conflicts) | UNPROVEN — primary hypothesis to measure |
+| N2-12 | Escalation thresholds capture operator saturation accurately | EXPERIMENTAL |
