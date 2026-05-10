@@ -1,44 +1,58 @@
-## WORK IN PROGRESS
-> Overwritten after every discrete build step.
+# WORK IN PROGRESS
 
-**Last updated:** 2026-05-10 — overnight session complete (6.5 + 6.6 shipped, model ID fixed, field name bugs fixed)
-**Resume trigger:** "continue" or "morning standup"
-
----
-
-## COMPLETED THIS SESSION (2026-05-10 overnight)
-- **Codex CLI installed:** `@openai/codex` v0.130.0 globally. Auth deferred — Codex pilot tomorrow.
-- **6.5 Trade & Designer Portal** shipped — `js/trade_designer_portal.js`, sidebar CORE entry (Owner/Admin/Manager/Sales). Relationship dashboard per trade partner: stats, expandable linked quotes/deals/jobs, inline actions.
-- **6.6 Vendor Rep Portal** shipped — `js/vendor_rep_portal.js`, sidebar ADMIN entry (Owner/Admin). Rep group dashboard: stats, expandable brand scores, co-op status, 30d deadline warnings, outreach shortcuts.
-- **Model ID fixed:** `claude-sonnet-4-20250514` → `claude-sonnet-4-6` in all 4 AI call sites in index.html.
-- **Field name bugs fixed (3 files):** `portal_preview.js`, `global_search.js`, `reports.js` used stale `partner_type` / `linked_customer_id` — corrected to `type` / `related_customer_id`.
+**Branch:** claude/setup-codex-integration-gMAyH  
+**Last commit:** 4a5d7f5 — docs(decomp): mark P1 complete, P2 ready  
+**Updated:** 2026-05-10
 
 ---
 
-## CURRENT BUG (still open — needs Michael's Windows terminal)
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker.
+## ✅ COMPLETED THIS SESSION
 
-**Root cause:** Worker code IS correct (commit `2dca2a6`). Model ID IS now fixed (`claude-sonnet-4-6`). **Worker has NOT been redeployed.** Wrangler not authenticated in this cloud environment.
-
-**Michael's action — run in Windows terminal:**
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
-
-**Verify** (browser console on accent-os.pages.dev):
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST'}).then(r=>r.text()).then(console.log)
-```
-Expected after redeploy: `{"error":"Missing x-api-key header"}`
+- **DECOMP_P1_VENDORS** — DONE
+  - Extracted 1,843 lines (2354–4196) → `js/vendors_module.js` (1,845 lines with header)
+  - 28 top-level functions extracted verbatim
+  - `index.html` reduced from 7,175 → 5,333 lines
+  - Script tag added: `<script src="js/vendors_module.js?v=6.11.1">` at line 5301
+  - Live `openRepOutreach` stays inline at line 2355 (P7 territory)
+  - `renderChangelog`, `openVP`, etc. at lines 4766+ remain inline (called globally)
+  - Commit: c345f23
+  - Docs updated: PHASE1_PACKETIZED_TASKS.md P1 ✅, P2 = Ready
 
 ---
 
-## TOMORROW MORNING — HIGHEST LEVERAGE ACTIONS
+## ⬜ NEXT: DECOMP_P2_VENDOR_SCORING
 
-1. **Deploy worker** (above — Michael's Windows terminal, 2 commands)
-2. **Codex auth** — create IP-unrestricted OpenAI key, set in `.claude/settings.local.json`, verify with test prompt
-3. **Codex pilot V1** — once auth verified, dispatch console.log audit task per `docs/codex/CODEX_PILOT_PLAN_V1.md`
+**P2 is unblocked. Actual line ranges in current index.html:**
+- Start: line 1214 (`// ── CO-OP / REBATE TRACKER (Track 2.3, coop_tracker table) ──`)
+- End: line 1895 (after `totalRawScore()`, before VD data at 1896)
+- Total: ~682 lines
 
-**All other open items blocked** on external credentials (M04 BigCommerce, M05 GMC, M06 GA4, M09 Klaviyo, M18 site approval, M03/M10 Windward).
+**What stays inline (do NOT extract):**
+`weightedScore`, `scoredCount`, `scoreColor`, `heatColor`, `fmt$`, `tier`, `tierBadge`, `logChange`
+
+**New file:** `js/vendor_scoring.js`  
+**Script tag placement:** after `js/vendors_module.js` tag (currently at line 5301)
+
+---
+
+## KNOWN BLOCKERS (Michael must act)
+
+1. **Worker deploy**: Run `git pull && wrangler deploy` from Windows terminal to fix Parse Notes 400 error (model ID was fixed in code; worker not yet redeployed)
+2. **Codex auth**: Create IP-unrestricted OpenAI API key at platform.openai.com/api-keys → write to `.claude/settings.local.json`
+
+---
+
+## PENDING DECOMP PACKETS
+
+| Packet | Status | Note |
+|---|---|---|
+| P1 vendors_module.js | ✅ c345f23 | Done |
+| P2 vendor_scoring.js | ⬜ Ready | Lines 1214-1895 in current index.html |
+| P3 quotes_module.js | ⬜ Ready | Independent, search `// ── QUOTES ───` |
+| P4 dashboard_module.js | ⬜ Ready | Independent |
+| P5 mgmt_module.js | ⬜ Ready | Independent |
+| P6 pipeline_module.js | ⬜ Ready | Independent |
+| P7 repoutreach_module.js | ⬜ Ready | P1 done → prereq met |
+| P8 settings_module.js | ⬜ Ready | Independent |
+| P9 knowledge_module.js | ⬜ Ready | Independent |
+
