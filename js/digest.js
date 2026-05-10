@@ -2,6 +2,7 @@
 // Generates a plaintext summary of the current Daily Brief tiles,
 // formatted for pasting into email or Slack. Reuses computeDailyBrief()
 // from the inline shell. No new schema, no API.
+register({ name: 'digest', provides: ['generateDailyDigest', 'showDailyDigest'], consumes: ['computeDailyBrief', 'weightedScore'] });
 
 function generateDailyDigest(){
   const role = (typeof CU !== 'undefined' && CU?.role) ? CU.role : 'Owner';

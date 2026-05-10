@@ -3,6 +3,7 @@
 // module (which globals are loaded, row counts, sample timestamps), schema
 // presence (does the underlying Supabase table exist), and current version
 // strings. No new schema, no API beyond a read-only ping per table.
+register({ name: 'health', provides: ['health'], consumes: ['sbFetch'] });
 
 let _hcResults = null;
 let _hcLastRun = 0;

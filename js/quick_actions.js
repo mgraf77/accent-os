@@ -2,6 +2,7 @@
 // Topbar "+" button opens a role-aware dropdown of quick-create actions
 // across every module. Each entry either calls openX(null) directly
 // (when the handler is global) or navigates first then calls.
+register({ name: 'quick_actions', provides: ['toggleQuickActions', 'qaActivate'], consumes: ['goTo'] });
 
 const QA_ITEMS = [
   {label:'New Deal', icon:'◈', roles:['Owner','Admin','Manager','Sales'], page:'pipeline', fn:'openAddDeal'},
