@@ -1394,14 +1394,14 @@
    MODE-SPECIFIC SHELL STATES
    ═══════════════════════════════════════════════════════ */
 
-[data-mode="focus"] .aos-sidebar { opacity: 0.5; pointer-events: none; }
-[data-mode="focus"] .aos-surface { background: var(--gray-950); }
-[data-mode="urgent"] .aos-header { border-bottom-color: var(--status-red); }
-[data-mode="urgent"] .aos-ticker { background: var(--status-red-dim); border-bottom-color: var(--status-red); }
-[data-mode="exec"] .aos-header { border-bottom-color: var(--gold-600); }
-[data-mode="readonly"] * { cursor: default !important; }
-[data-mode="readonly"] .aos-fab { display: none; }
-[data-mode="readonly"] .aos-bottom-bar-fab { display: none; }
+.accentos-shell[data-mode="focus"] .aos-sidebar { opacity: 0.5; pointer-events: none; }
+.accentos-shell[data-mode="focus"] .aos-surface { background: var(--gray-950); }
+.accentos-shell[data-mode="urgent"] .aos-header { border-bottom-color: var(--status-red); }
+.accentos-shell[data-mode="urgent"] .aos-ticker { background: var(--status-red-dim); border-bottom-color: var(--status-red); }
+.accentos-shell[data-mode="exec"] .aos-header { border-bottom-color: var(--gold-600); }
+.accentos-shell[data-mode="readonly"] * { cursor: default !important; }
+.accentos-shell[data-mode="readonly"] .aos-fab { display: none; }
+.accentos-shell[data-mode="readonly"] .aos-bottom-bar-fab { display: none; }
 
 /* ═══════════════════════════════════════════════════════
    BUTTON SCOPING — prevents legacy .btn style bleed
