@@ -122,16 +122,19 @@
   --ease-deliberate: 300ms ease;
 
   /* ── Z-Index ────────────────────────────────────────── */
+  /* Floor at 1100 — sits above legacy index.html max (1000).          */
+  /* Step sizes preserved from original: sidebar/ticker/header +50/50, */
+  /* then +100 per layer. Command layer ceiling leaves room above.      */
   --z-base:     0;
-  --z-sidebar:  100;
-  --z-ticker:   150;
-  --z-header:   200;
-  --z-rail:     300;
-  --z-fab:      400;
-  --z-dropdown: 500;
-  --z-modal:    600;
-  --z-toast:    700;
-  --z-command:  800;
+  --z-sidebar:  1100;
+  --z-ticker:   1150;
+  --z-header:   1200;
+  --z-rail:     1300;
+  --z-fab:      1400;
+  --z-dropdown: 1500;
+  --z-modal:    1600;
+  --z-toast:    1700;
+  --z-command:  1800;
 }
 
 /* Respect user motion preferences */
