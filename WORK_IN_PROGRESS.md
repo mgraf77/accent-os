@@ -1,59 +1,81 @@
 # WORK IN PROGRESS
 
 **Branch:** claude/setup-codex-integration-gMAyH  
-**Last commit:** b2736b3 — refactor(decomp/P9): extract knowledge module — PHASE 1 COMPLETE  
+**Last commit:** eeca1db — docs(decomp): Phase 1 COMPLETE  
 **Updated:** 2026-05-10
 
 ---
 
-## ✅ PHASE 1 DECOMPOSITION — COMPLETE
+## CURRENT STATE: PHASE 1 DECOMPOSITION COMPLETE
 
-| Packet | Module | Commit | Lines Removed |
-|---|---|---|---|
-| P1 | vendors_module.js | c345f23 | 1,843 |
-| P2 | vendor_scoring.js | 5168e6d | 682 |
-| P3 | quotes_module.js | b517b8e | 530 |
-| P4 | dashboard_module.js | 48c37bd | 506 |
-| P5 | mgmt_module.js | cf9d32c | 467 |
-| P6 | pipeline_module.js | 2f12a29 | 348 |
-| P7 | repoutreach_module.js | a43f37b | 568 |
-| P8 | settings_module.js | b1321b3 | 145 |
-| P9 | knowledge_module.js | b2736b3 | 79 |
-| **TOTAL** | **9 new modules** | — | **5,168 lines** |
+**index.html: 7,175 → 2,009 lines (−72%)**
 
-**index.html: 7,175 → 2,009 lines (−5,166 lines, −72%)**
+| Packet | Module | Commit |
+|---|---|---|
+| P1 | js/vendors_module.js | c345f23 |
+| P2 | js/vendor_scoring.js | 5168e6d |
+| P3 | js/quotes_module.js | b517b8e |
+| P4 | js/dashboard_module.js | 48c37bd |
+| P5 | js/mgmt_module.js | cf9d32c |
+| P6 | js/pipeline_module.js | 2f12a29 |
+| P7 | js/repoutreach_module.js | a43f37b |
+| P8 | js/settings_module.js | b1321b3 |
+| P9 | js/knowledge_module.js | b2736b3 |
 
----
-
-## KNOWN RESIDUAL INLINE CONTENT (expected, not a bug)
-
-Lines 1672–1933 in final index.html contain vendor page overflow functions that
-were originally after the repoutreach page block in the pre-P1 file. These are
-globally accessible and work correctly:
-- renderChangelog, revertChange, openVP, liveScore, saveVP, closeVP
-- exportCSV, openCSVImport, handleDrop, handleFileSelect, parseCSVFile
-- openAddVendor, confirmAddV
-- changelog() page function, exportChangeLog
-
-These can be extracted in a Phase 1.5 cleanup pass if desired, but are not
-required for correct app operation.
+All 9 script tags confirmed in index.html at lines 1969–1977. Working tree clean.
 
 ---
 
-## BLOCKERS (Michael must act)
+## KNOWN RESIDUAL INLINE (not a bug)
 
-1. **Worker deploy**: Run `git pull && wrangler deploy` from Windows terminal
-   to fix Parse Notes 400 error (model ID claude-sonnet-4-6 is correct in code,
-   worker just needs redeployment)
-2. **Codex auth**: Create IP-unrestricted OpenAI key at platform.openai.com/api-keys,
-   write to .claude/settings.local.json
+Lines 1672–1933 in current index.html (262 lines) — vendor overflow functions
+that were physically after the repoutreach block in the pre-P1 file:
+renderChangelog, revertChange, openVP, liveScore/saveVP/closeVP, exportCSV,
+openCSVImport/parseCSVFile, openAddVendor/confirmAddV, changelog() page,
+exportChangeLog. App functions correctly — all globally accessible.
+
+Full state map: docs/runtime/POST_P9_DECOMPOSITION_STATE.md
 
 ---
 
-## NEXT ACTIONS
+## NEXT SAFEST ACTION
 
-1. **Michael: merge branch to main** — Phase 1 decomposition complete, merge-safe
-2. **Michael: deploy** — push merged main to Cloudflare Pages, smoke-test all pages
-3. **Optional Phase 1.5**: extract the ~262-line inline overflow block (see above)
-4. **Phase 2**: module loader / import system (future scope, not planned)
+**Michael must act first:**
+1. Merge branch to main (branch is merge-safe)
+2. Deploy to Cloudflare Pages (auto-deploy on merge, or manual push)
+3. Smoke-test: Vendor Ranking, Quotes, Dashboard, Pipeline, Rep Outreach, Knowledge
 
+**After merge + deploy confirmed working:**
+
+Optional Phase 1.5 (new branch):
+- Extract lines 1672–1933 (262 lines) into js/vendors_overflow.js
+- index.html would reach ~1,747 lines
+- Risk: Low. All standalone vendor page residual functions.
+- See docs/runtime/POST_P9_DECOMPOSITION_STATE.md for full spec.
+
+DO NOT extract: SCORING_HELPERS, ADVANCED_FILTERS, AUTH, SUPABASE_CORE,
+VD data — these are Phase 2+ and require a module loader.
+
+---
+
+## BLOCKERS
+
+1. **Michael: merge + deploy** — branch must be merged and deployed before smoke-test
+2. **Worker redeploy**: git pull && wrangler deploy from Windows terminal (Parse Notes fix)
+3. **Codex auth**: create IP-unrestricted OpenAI key, write to .claude/settings.local.json
+
+---
+
+## ROLLBACK STRATEGY
+
+Any single packet: git revert <commit> --no-edit
+
+Full Phase 1 rollback:
+git revert b2736b3 b1321b3 a43f37b 2f12a29 cf9d32c 48c37bd b517b8e 5168e6d c345f23 --no-edit
+
+---
+
+## STALE SPECS — IGNORE
+
+Old P7-P12 specs from prior sessions reference pre-P1 line numbers and are invalid.
+Use only docs/runtime/POST_P9_DECOMPOSITION_STATE.md for next-corridor planning.
