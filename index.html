@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AccentOS v6.10.2 — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -359,6 +359,8 @@ tbody tr:hover td{background:var(--bg);}
   .stat-value{font-size:20px!important;}
 }
 </style>
+<link rel="stylesheet" href="ui/tokens.css">
+<link rel="stylesheet" href="ui/accentos-shell.css">
 </head>
 <body>
 
@@ -7165,5 +7167,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
 <script src="js/internal_meetings.js?v=6.10.74"></script>
+<script src="ui/accentos-shell.js"></script>
+<div id="aosShell" class="accentos-shell" style="display:none"></div>
+<script>if(window.AccentOS&&window.AccentOS.flags&&window.AccentOS.flags.isEnabled('shell-phase-a'))document.getElementById('aosShell').style.display='';</script>
 </body>
 </html>
