@@ -3,11 +3,13 @@ schema: v1
 type: queue_item
 id: qa-04-font-system-decision
 title: Font system decision — Outfit vs Inter during shell coexistence
-status: blocked
+status: complete
 priority: medium
 estimated_sessions: 0.25
 created: 2026-05-10T00:30:00Z
-updated: 2026-05-10T00:30:00Z
+updated: 2026-05-10T01:45:00Z
+completed: 2026-05-10T01:45:00Z
+decision: Inter (2026-05-10) — tokens.css already correct, no code change required
 
 owner_branch: claude/implement-claude-design-ui-eFn9b
 claimed_by: null

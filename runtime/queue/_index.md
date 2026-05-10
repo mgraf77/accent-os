@@ -1,7 +1,7 @@
 # Queue Snapshot
 
-**Updated:** 2026-05-10T01:30:00Z
-**Totals:** 0 ready · 13 blocked · 0 in flight · 16 complete
+**Updated:** 2026-05-10T01:45:00Z
+**Totals:** 0 ready · 12 blocked · 0 in flight · 17 complete
 
 ---
 
@@ -22,7 +22,7 @@ _(none)_
 - dec-03-phase-b-auth — MEDIUM · authorize Phase B integration (after Phase A verified)
 - dec-04-phase-f-auth — LOW · authorize Phase F decommission (far future)
 - rls-01-enforcement — MEDIUM · decide RLS enforcement timeline
-- [qa-04-font-system-decision](qa-04-font-system-decision.md) — MEDIUM · Outfit vs Inter during coexistence — needs Michael decision
+_(qa-04-font-system-decision — COMPLETE: Inter decided 2026-05-10, no code change needed)_
 
 ## BLOCKED — Phase A Auth Gate
 
@@ -45,8 +45,9 @@ _(none)_
 - gl-05-phase-e-modules — gated on Phase D verified
 - gl-06-phase-f-decommission — gated on Phase E + dec-04
 
-## COMPLETE (last 9)
+## COMPLETE (last 10)
 
+- qa-04-font-system-decision — 2026-05-10 · Inter selected; tokens.css already correct, no code change
 - r-03-feature-flag-scaffold — 2026-05-10 · window.AccentOS.flags.isEnabled() + override() in accentos-shell.js
 - qa-07-data-roles-collision — 2026-05-10 · shell data-roles → data-aos-roles, blocks Phase A mount resolved
 - qa-06-btn-class-scoping — 2026-05-10 · scoped .btn* rules added to accentos-shell.css, blocks Phase A mount resolved
