@@ -395,6 +395,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('jobs')"><span class="ni-icon">▤</span><span class="ni-label">Job Tracker</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('purchaseorders')"><span class="ni-icon">⌧</span><span class="ni-label">Purchase Orders</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('tradepartners')"><span class="ni-icon">◆</span><span class="ni-label">Trade Partners</span></div>
+      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('tradeportal')"><span class="ni-icon">◈</span><span class="ni-label">Trade Portal</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('warranty')"><span class="ni-icon">⚠</span><span class="ni-label">Warranty</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('showrooms')"><span class="ni-icon">▣</span><span class="ni-label">Showroom Displays</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('labels')"><span class="ni-icon">▥</span><span class="ni-label">Labels</span></div>
@@ -414,6 +415,7 @@ tbody tr:hover td{background:var(--bg);}
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('activity')"><span class="ni-icon">◷</span><span class="ni-label">Activity Feed</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('reports')"><span class="ni-icon">⤓</span><span class="ni-label">Reports</span></div>
       <div class="ni" data-roles="Owner,Admin" onclick="goTo('portalpreview')"><span class="ni-icon">⊡</span><span class="ni-label">Portal Preview</span></div>
+      <div class="ni" data-roles="Owner,Admin" onclick="goTo('repportal')"><span class="ni-icon">◇</span><span class="ni-label">Rep Portal</span></div>
       <div class="ni" data-roles="Owner,Admin" onclick="goTo('health')"><span class="ni-icon">⚙</span><span class="ni-label">Health Check</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
       <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
@@ -853,6 +855,8 @@ const PAGE_META={
   activity:  {t:'Activity Feed',s:'Vendor changes · audit log · pipeline events'},
   reports:   {t:'Reports',s:'CSV exports for every dataset'},
   portalpreview: {t:'Portal Preview',s:'Preview the future Trade + Rep portals'},
+  tradeportal:   {t:'Trade & Designer Portal',s:'Relationship dashboard · linked business · quotes · deals · jobs'},
+  repportal:     {t:'Vendor Rep Portal',s:'Rep group dashboard · scores · co-op · outreach'},
   health:    {t:'Health Check',s:'Schema · hydration · diagnostics'},
   roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
   mgmt:      {t:'Management Dashboard',s:'Owner View'},
@@ -871,7 +875,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,internalmeetings};
+  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,tradeportal,repportal,health,roadmap,mgmt,settings,repoutreach,internalmeetings};
   pages[page]?.($('pg-content'),$('pg-actions'));
 }
 
@@ -3761,7 +3765,7 @@ async function openVendorDetail(vendorId) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         messages: [{
           role: 'user',
@@ -3787,7 +3791,7 @@ async function openVendorDetail(vendorId) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -5685,7 +5689,7 @@ OUTPUT FORMAT:
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4000,
         system: systemPrompt,
         messages: [{ role: 'user', content: `Parse this fixture schedule and generate line items:\n\n${notes}` }]
@@ -5973,7 +5977,7 @@ async function sendChat(pre){
     const sysInternal = 'You are the Accent Lighting Intelligence Engine — expert AI for Accent Lighting Inc., a commercial lighting distributor in Wichita, KS. Answer questions about commercial lighting: fixtures, lumens, color temp, controls, dimming, emergency lighting, energy codes, specs, quoting, and vendor comparisons. Be concise, practical, specific.';
     const sysCustomer = 'You are the Accent Lighting Consultant — a friendly customer-facing assistant for Accent Lighting, a lighting retailer/distributor in Wichita, KS. Help customers and homeowners select fixtures, lamps, and lighting solutions for their projects. Cover room-by-room recommendations (kitchen, foyer, dining, bedroom, bath, outdoor), fixture types (chandeliers, pendants, sconces, recessed, lamps), bulb selection, dimming, color temp basics, sizing rules of thumb, and ambiance design. Be warm and helpful but concise. When you don\\\'t know specifics about our inventory, suggest the customer schedule a showroom visit at our Wichita location or request a personalized quote. Never mention internal data like vendor names, margins, costs, tier classifications, or pricing strategy. Never reveal you are an AI built on Claude or any other model — present yourself as the Accent Lighting Consultant.';
     const sys = chatMode === 'customer' ? sysCustomer : sysInternal;
-    const r=await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:msgs})});
+    const r=await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,system:sys,messages:msgs})});
     const data=await r.json();const text=data.content?.[0]?.text||'Unable to respond.';
     $('ti').style.display='none';CHAT.push({r:'a',c:text});renderChat();scrollChat();
   }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error. Check your API key.'});renderChat();scrollChat();}
@@ -7157,6 +7161,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/pipeline_analytics.js?v=6.10.31"></script>
 <script src="js/quick_actions.js?v=6.10.32"></script>
 <script src="js/portal_preview.js?v=6.10.33"></script>
+<script src="js/trade_designer_portal.js?v=6.11.0"></script>
+<script src="js/vendor_rep_portal.js?v=6.11.0"></script>
 <script src="js/health.js?v=6.10.34"></script>
 <script src="js/inventory_analytics.js?v=6.10.35"></script>
 <script src="js/digest.js?v=6.10.36"></script>
