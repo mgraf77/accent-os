@@ -6,6 +6,27 @@
 
 ---
 
+## REALITY AUDIT · 2026-05-10
+
+**Notation:** `[PROVEN]` = observed · `[EXPERIMENTAL]` = defined, not yet built · `[CONCEPTUAL]` = target only
+
+| Claim / Component | Status | Built? | Measured? |
+|-------------------|--------|--------|-----------|
+| Information requirements (what operator needs) | PROVEN | ✓ (identified from sessions 1–16) | ✓ |
+| Minimal implementation via WIP.md + corridor docs | PROVEN | ✓ (used in every session) | ✓ |
+| 30-second scan section (Section 1) | EXPERIMENTAL | requirements defined | no |
+| Corridor visibility section (Section 2) | EXPERIMENTAL | requirements defined | no |
+| Freeze visibility section (Section 3) | EXPERIMENTAL | requirements defined | no |
+| Merge visibility / go/no-go (Section 4) | EXPERIMENTAL | requirements defined | no |
+| Synchronization visibility (Section 5) | EXPERIMENTAL | requirements defined | no |
+| Alert system with priority levels (Section 6) | EXPERIMENTAL | requirements defined | no |
+| Software panel with color coding / hover states | CONCEPTUAL | not built | no |
+| Current panel population (text representation) | PROVEN | ✓ (populated from real state) | ✓ |
+
+**The information requirements are PROVEN (we know what the operator needs). The software surface is CONCEPTUAL (not built). The minimal doc-based implementation is PROVEN (WIP.md + corridor docs serve this role now).**
+
+---
+
 ## PURPOSE
 
 The operator control panel gives a human the information needed to:
@@ -236,4 +257,21 @@ This is what the operator would see right now if the panel existed:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  Session 10 can resume safely. Run entry gate before proceeding.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+---
+
+## CLAIM REGISTRY
+
+| ID | Claim | Status |
+|----|-------|--------|
+| OPR-1 | Information requirements (what the operator needs) | PROVEN |
+| OPR-2 | Minimal implementation via WIP.md + corridor docs | PROVEN |
+| OPR-3 | Current panel population populated from real state | PROVEN |
+| OPR-4 | 30-second scan section requirements | EXPERIMENTAL |
+| OPR-5 | Corridor visibility section requirements | EXPERIMENTAL |
+| OPR-6 | Freeze visibility section requirements | EXPERIMENTAL |
+| OPR-7 | Merge go/no-go checklist requirements | EXPERIMENTAL |
+| OPR-8 | Sync state / review debt section requirements | EXPERIMENTAL |
+| OPR-9 | Alert priority system requirements | EXPERIMENTAL |
+| OPR-10 | Software panel with UI indicators and color coding | CONCEPTUAL |
 ```

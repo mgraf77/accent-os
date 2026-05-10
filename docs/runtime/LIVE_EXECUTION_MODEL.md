@@ -5,6 +5,26 @@
 
 ---
 
+## REALITY AUDIT · 2026-05-10
+
+**Notation:** `[PROVEN]` = observed in completed sessions · `[EXPERIMENTAL]` = defined but not yet run end-to-end · `[CONCEPTUAL]` = architectural target only
+
+| Claim | Status | Observed? | Enforced? | Reversible? |
+|-------|--------|-----------|-----------|-------------|
+| Branch role separation (Train/Analysis/Integration) | PROVEN | ✓ | manual | ✓ |
+| Analysis never writes index.html or js/*.js | PROVEN | ✓ | manual | ✓ |
+| Rollback via `git revert` | PROVEN | ✓ | git | ✓ |
+| Freeze/resume procedure | PROVEN | ✓ | manual | ✓ |
+| Reconciliation procedure (rewrite stale corridor) | PROVEN | ✓ (session 3) | manual | ✓ |
+| Promotion flow (Analysis calibrates from Train HEAD) | PROVEN | ✓ | manual | ✓ |
+| Four-gate merge checklist (all 4 pass before merge) | EXPERIMENTAL | partial | no | ✓ |
+| Analysis re-calibrates immediately after every merge | EXPERIMENTAL | not yet | no | ✓ |
+| Re-extract only on fresh branch (never re-attempt on old) | EXPERIMENTAL | not yet | no | ✓ |
+
+**No claim implies runtime enforcement. Enforcement is manual. The operator checks. Nothing checks for the operator.**
+
+---
+
 ## BRANCH ROLES
 
 Three branch types. Each has exactly one role. Roles do not cross.
@@ -187,3 +207,19 @@ Integration (main) is a landing zone. It does not:
 - Know about Train or Analysis branches
 
 Integration only receives verified, complete, smoke-tested Train merges.
+
+---
+
+## CLAIM REGISTRY
+
+| ID | Claim | Status |
+|----|-------|--------|
+| LEM-1 | Three branch roles with strict separation | PROVEN |
+| LEM-2 | Analysis reads Train HEAD for calibration | PROVEN |
+| LEM-3 | git revert is always available | PROVEN |
+| LEM-4 | Freeze/resume via WIP commit | PROVEN |
+| LEM-5 | Reconciliation rewrites stale corridor | PROVEN |
+| LEM-6 | Four-gate merge checklist | EXPERIMENTAL |
+| LEM-7 | Analysis re-calibrates after each Integration merge | EXPERIMENTAL |
+| LEM-8 | No re-extraction on original branch after rollback | EXPERIMENTAL |
+| LEM-9 | Integration triggers no automation | PROVEN |

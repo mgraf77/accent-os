@@ -5,6 +5,26 @@
 
 ---
 
+## REALITY AUDIT · 2026-05-10
+
+**Notation:** `[PROVEN]` = observed · `[EXPERIMENTAL]` = defined, not yet validated at scale · `[CONCEPTUAL]` = target only
+
+| Entity / Claim | Status | Observed? | Machine-enforced? |
+|----------------|--------|-----------|-------------------|
+| Schema as vocabulary in WIP.md / SESSION_LOG.md | PROVEN | ✓ | no — manual |
+| FREEZE STATE entity fields | PROVEN | ✓ (used in ca7868e) | no |
+| BRANCH STATE — role, head_commit, state fields | PROVEN | ✓ (used in WIP.md) | no |
+| CORRIDOR STATE — freshness decay thresholds | EXPERIMENTAL | defined; decay counting used once | no |
+| PACKET STATE — rollback_command before IN_PROGRESS | EXPERIMENTAL | defined; not yet enforced pre-execution | no |
+| MERGE READINESS — 6-item checklist | EXPERIMENTAL | not yet run end-to-end | no |
+| STALENESS MARKER format | EXPERIMENTAL | format defined; used in corridor headers | no |
+| REVIEW DEBT thresholds (CURRENT/DRIFTED/CRITICAL) | EXPERIMENTAL | applied once (session 3); thresholds defined | no |
+| State transitions (ACTIVE→FROZEN→MERGED) | PROVEN | ✓ (observed lifecycle) | no |
+
+**This schema is vocabulary and discipline. No field is machine-read, no transition is machine-triggered, no threshold is machine-enforced.**
+
+---
+
 ## HOW TO USE THIS SCHEMA
 
 This document defines the fields that describe the state of every active branch, corridor, packet, and freeze. The operator populates these fields in WORK_IN_PROGRESS.md or SESSION_LOG.md at the start of each session and after each significant event.
@@ -253,3 +273,20 @@ REVIEW_DEBT
   debt_status:          CRITICAL (written for wrong state)
   resolution:           new LIVE_CORRIDOR_V2.md written on Train branch at 6eeb052
 ```
+
+---
+
+## CLAIM REGISTRY
+
+| ID | Claim | Status |
+|----|-------|--------|
+| ESS-1 | Schema fields used in WIP.md / SESSION_LOG.md | PROVEN |
+| ESS-2 | FREEZE STATE entity (freeze commit, resume trigger, remaining steps) | PROVEN |
+| ESS-3 | BRANCH STATE fields (role, state, head_commit) | PROVEN |
+| ESS-4 | State transitions (null→ACTIVE→FROZEN→MERGED) | PROVEN |
+| ESS-5 | CORRIDOR freshness thresholds (FRESH/AGED/STALE/EXPIRED) | EXPERIMENTAL |
+| ESS-6 | PACKET rollback_command written before IN_PROGRESS | EXPERIMENTAL |
+| ESS-7 | MERGE READINESS 6-item checklist run before every merge | EXPERIMENTAL |
+| ESS-8 | STALENESS MARKER in corridor doc headers | EXPERIMENTAL |
+| ESS-9 | REVIEW DEBT thresholds (CURRENT/DRIFTED/CRITICAL) | EXPERIMENTAL |
+| ESS-10 | Schema is machine-enforced at any point | FALSE — manual only |

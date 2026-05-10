@@ -6,6 +6,28 @@
 
 ---
 
+## REALITY AUDIT · 2026-05-10
+
+**Notation:** `[PROVEN]` = observed · `[EXPERIMENTAL]` = defined, not yet hit in practice · `[CONCEPTUAL]` = target only
+
+| Rule | Status | Trigger observed? | Response validated? |
+|------|--------|-------------------|---------------------|
+| R1 — Max 2 concurrent trains | EXPERIMENTAL | not yet (only 1 train run) | not yet |
+| R2 — One Class-A owner | PROVEN | ✓ (single train, single Class-A owner) | ✓ (maintained by discipline) |
+| R3 — Halt on trigger | PROVEN | ✓ (halt + rollback executed in prior sessions) | ✓ |
+| R4 — Age 5+ = EXPIRED, no exceptions | EXPERIMENTAL | decay model defined; 5+ not hit | not yet |
+| R5 — Reduce to single train when Train 1 in trouble | EXPERIMENTAL | not yet — N=2 not run | not yet |
+| R6 — Invalidation is immediate | PROVEN | ✓ (invalidation triggers deterministic) | ✓ |
+| R7 — Planning stale at 2+ merges behind | EXPERIMENTAL | once (session 3); threshold formal | not yet |
+| R8 — Reconciliation cannot be skipped | PROVEN | ✓ (reconciliation run in session 3) | ✓ |
+| R9 — Never merge under uncertainty | PROVEN | ✓ (merge gates maintained) | ✓ |
+| R10 — Freeze/rollback always available | PROVEN | ✓ (git revert; freeze used) | ✓ |
+| R11 — Max 2 corridors ahead | EXPERIMENTAL | violated once (sessions 2–3); now capped | not yet at scale |
+
+**Rules R1, R4, R5, R7, R11 are EXPERIMENTAL — the triggers have not been exercised under the formal protocol. Rules R3, R6, R8, R9, R10 are PROVEN in completed sessions.**
+
+---
+
 ## RULE 1 — MAX CONCURRENT TRAINS: 2
 
 At most two Train branches active simultaneously. Never three.
@@ -187,16 +209,16 @@ Planning farther than one SKETCH corridor ahead increases reconciliation debt fa
 
 ## RULE SUMMARY TABLE
 
-| Rule | Trigger | Response |
-|------|---------|----------|
-| 1 | 3rd Train branch needed | Merge or abandon one first |
-| 2 | 2nd Class A branch needed | Merge Class A #1 first |
-| 3 | Halt trigger fires | Stop. Assess. Rollback or fix pre-commit. |
-| 4 | Corridor age ≥ 5 | EXPIRED. Re-calibrate before executing. |
-| 5 | Train 1 regression or 72h age | Freeze Train 2. Resolve Train 1. |
-| 6 | Invalidation trigger fires | EXPIRED immediately. No assessment. |
-| 7 | Analysis 2+ merges behind Integration | CRITICAL debt. Re-calibrate before use. |
-| 8 | Train consumed stale corridor | Mandatory reconciliation. Cannot be skipped. |
-| 9 | Merge item uncertain | Run verification. Do not merge until true. |
-| 10 | "Can't roll back" claim | False. Find the missed step. |
-| 11 | Planning more than 2 corridors ahead | Stop. Sync to actual state. |
+| Rule | Trigger | Response | Status |
+|------|---------|----------|--------|
+| 1 | 3rd Train branch needed | Merge or abandon one first | EXPERIMENTAL |
+| 2 | 2nd Class A branch needed | Merge Class A #1 first | PROVEN |
+| 3 | Halt trigger fires | Stop. Assess. Rollback or fix pre-commit. | PROVEN |
+| 4 | Corridor age ≥ 5 | EXPIRED. Re-calibrate before executing. | EXPERIMENTAL |
+| 5 | Train 1 regression or 72h age | Freeze Train 2. Resolve Train 1. | EXPERIMENTAL |
+| 6 | Invalidation trigger fires | EXPIRED immediately. No assessment. | PROVEN |
+| 7 | Analysis 2+ merges behind Integration | CRITICAL debt. Re-calibrate before use. | EXPERIMENTAL |
+| 8 | Train consumed stale corridor | Mandatory reconciliation. Cannot be skipped. | PROVEN |
+| 9 | Merge item uncertain | Run verification. Do not merge until true. | PROVEN |
+| 10 | "Can't roll back" claim | False. Find the missed step. | PROVEN |
+| 11 | Planning more than 2 corridors ahead | Stop. Sync to actual state. | EXPERIMENTAL |

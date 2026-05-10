@@ -5,6 +5,26 @@
 
 ---
 
+## REALITY AUDIT · 2026-05-10
+
+**Notation:** `[PROVEN]` = observed · `[EXPERIMENTAL]` = defined, not yet executed · `[CONCEPTUAL]` = target only
+
+| Claim | Status | Observed? | Enforced? |
+|-------|--------|-----------|-----------|
+| File class model (A/B/C ownership rules) | PROVEN | ✓ (git mechanics) | manual |
+| One Class-A owner at a time | PROVEN | ✓ (one train so far) | manual |
+| git log checks for class ownership | PROVEN | ✓ (git mechanics) | manual |
+| Max 2 active Train branches | EXPERIMENTAL | not yet — N=2 not run | no |
+| Class B concurrent execution (non-overlapping) | EXPERIMENTAL | not yet | no |
+| Merge ordering (Class B first, A rebases) | EXPERIMENTAL | not yet | no |
+| Verification ordering (each branch verifies in isolation) | EXPERIMENTAL | not yet | no |
+| Escalation procedure (collision → re-cut) | EXPERIMENTAL | not yet | no |
+| Stale-branch thresholds (72h Class A / 7d Class B) | EXPERIMENTAL | thresholds defined; not hit | no |
+
+**N=2 concurrent execution is EXPERIMENTAL. Everything in the CONCURRENT BRANCH RULES and MERGE ORDERING sections describes intended protocol, not validated behavior.**
+
+---
+
 ## FILE CLASS MODEL
 
 Every file in the repo belongs to exactly one class. Classes define which branches can touch which files simultaneously.
@@ -173,3 +193,20 @@ This protocol is a set of rules the operator checks before acting. It is not:
 - Monitored — no process watches for violations
 
 Violations are caught when the operator runs the checks above. The checks are the coordination.
+
+---
+
+## CLAIM REGISTRY
+
+| ID | Claim | Status |
+|----|-------|--------|
+| TBC-1 | File class A = exclusive, B = non-overlapping, C = open | PROVEN |
+| TBC-2 | One Class-A owner at a time (enforced by operator check) | PROVEN |
+| TBC-3 | git log reveals class ownership | PROVEN |
+| TBC-4 | Max 2 active Train branches | EXPERIMENTAL |
+| TBC-5 | Class B concurrent execution works without conflict | EXPERIMENTAL |
+| TBC-6 | Merge ordering (B first, A rebases clean) | EXPERIMENTAL |
+| TBC-7 | Isolation verification (each branch verifies independently) | EXPERIMENTAL |
+| TBC-8 | Collision escalation → re-cut procedure | EXPERIMENTAL |
+| TBC-9 | 72h/7d staleness thresholds | EXPERIMENTAL |
+| TBC-10 | No distributed lock on index.html exists | PROVEN (absence) |
