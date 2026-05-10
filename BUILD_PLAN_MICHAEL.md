@@ -428,6 +428,20 @@ These M-tasks already exist above (M24/M27/M29). The audit confirms running them
   - Unlocks: codex-review skill (cross-agent peer review with auto-apply LOW-risk fixes); future cross-agent collaboration patterns
   - Note: blocked by Claude Code Web mobile not having a file editor; works fine from desktop.
 
+- [ ] **M42** — Redeploy Cloudflare Worker proxy (fixes Quote Generator "Parse Notes" 400)
+  - Where: Local terminal on desktop — `C:\Users\Michael\Desktop\accent-os`
+  - Action:
+    1. Open PowerShell or CMD at that path
+    2. Run: `git pull origin main`
+    3. Run: `wrangler deploy`
+    4. Confirm deploy success message (should show worker URL: `accentos-anthropic-proxy.mgraf77.workers.dev`)
+    5. Verify fix: open `https://accent-os.pages.dev` → Quote Generator → click "⚡ Parse Notes"
+       - If it works: 400 is resolved
+       - If still 400: open DevTools → Network → click the failed `messages` request → Response tab → paste body to Claude
+  - Then: paste to Claude → `M42 done — worker redeployed. Parse Notes working.`
+  - Unlocks: Quote Generator AI parse (currently 400 from stale worker code — commit 2dca2a6 has the fix but was never deployed)
+  - Context: worker was patched in commit 2dca2a6 (arrayBuffer body passthrough + CORS * + explicit 400 for missing x-api-key) but wrangler deploy was not run. Gate open since 2026-05-07.
+
 ---
 
 ## How to use this file
