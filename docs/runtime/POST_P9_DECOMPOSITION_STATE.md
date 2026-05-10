@@ -1,10 +1,10 @@
 # Post-P9 Decomposition State
 > Ground truth as of 2026-05-10. Branch: claude/setup-codex-integration-gMAyH.
-> index.html: 7,175 → 2,009 lines (−5,166 lines, −72%).
+> index.html: 7,175 → 1,310 lines (−5,865 lines, −82%).
 
 ---
 
-## Phase 1 Completed Packets
+## Phase 1 + Phase 1.5 Completed Packets
 
 | Packet | Module | Lines Extracted | Commit |
 |---|---|---|---|
@@ -17,142 +17,109 @@
 | P7 | js/repoutreach_module.js | 569 | a43f37b |
 | P8 | js/settings_module.js | 146 | b1321b3 |
 | P9 | js/knowledge_module.js | 80 | b2736b3 |
-| **Total** | **9 modules** | **5,175 lines** | — |
+| P1.5a | js/vendors_overflow.js | 265 | f241e1c |
+| P1.5b | js/vendor_filters.js | 165 | 60709b1 |
+| P1.5c | js/vendor_scoring_helpers.js | 172 | 37605a4 |
+| P1.5d | js/supabase_categories.js | 110 | b49b905 |
+| **Total** | **13 modules** | **5,887 lines** | — |
 
 ---
 
-## Confirmed Script Tag Load Order (post-P9 index.html, lines 1968–1977)
+## Confirmed Script Tag Load Order (post-P1.5d index.html)
 
 ```
-js/vendor_score_import.js   (pre-existing, v6.10.47)
-js/vendors_module.js        (P1, v6.11.1) — line 1969
-js/vendor_scoring.js        (P2, v6.11.1) — line 1970
-js/quotes_module.js         (P3, v6.11.1) — line 1971
-js/dashboard_module.js      (P4, v6.11.1) — line 1972
-js/mgmt_module.js           (P5, v6.11.1) — line 1973
-js/pipeline_module.js       (P6, v6.11.1) — line 1974
-js/repoutreach_module.js    (P7, v6.11.1) — line 1975
-js/settings_module.js       (P8, v6.11.1) — line 1976
-js/knowledge_module.js      (P9, v6.11.1) — line 1977
+js/vendor_score_import.js       (pre-existing, v6.10.47)
+js/vendor_filters.js            (P1.5b, v6.11.1) — BEFORE vendors_module (vFilters dep)
+js/vendors_module.js            (P1, v6.11.1)
+js/vendor_scoring.js            (P2, v6.11.1)
+js/supabase_categories.js       (P1.5d, v6.11.1) — after vendor_scoring
+js/vendor_scoring_helpers.js    (P1.5c, v6.11.1)
+js/quotes_module.js             (P3, v6.11.1)
+js/dashboard_module.js          (P4, v6.11.1)
+js/mgmt_module.js               (P5, v6.11.1)
+js/pipeline_module.js           (P6, v6.11.1)
+js/repoutreach_module.js        (P7, v6.11.1)
+js/vendors_overflow.js          (P1.5a, v6.11.1)
+js/settings_module.js           (P8, v6.11.1)
+js/knowledge_module.js          (P9, v6.11.1)
 ```
 
-All 9 Phase 1 modules confirmed present and in correct order.
+All 13 Phase 1/1.5 modules confirmed present and in correct dependency order.
 
 ---
 
-## Remaining Inline Blocks (current index.html = 2,009 lines)
+## Remaining Inline Blocks (current index.html = 1,310 lines)
 
-These are the blocks that MUST stay inline (global infrastructure, load-order
-dependent) or are the known vendor overflow block.
+These blocks MUST stay inline — all are synchronous global infrastructure or
+HTML/CSS structure. Phase 2+ (module loader) required to extract further.
 
-### MUST-STAY-INLINE (Phase 2+ territory — requires module loader to extract)
+### MUST-STAY-INLINE
 
-| Block | Lines | Why it stays |
+| Block | Approx Lines | Why it stays |
 |---|---|---|
 | HTML header + CSS | 1–525 | HTML structure, styles, viewport |
 | AUTH | 526–725 | jwtKey(), applyRoleVisibility() called synchronously at load |
-| SIDEBAR / UTILS / NAV | 726–881 | goTo(), toast(), openModal() are sync global helpers for every module |
+| SIDEBAR / UTILS / NAV | 726–881 | goTo(), toast(), openModal() — sync global helpers |
 | FEEDBACK + ACTIVITY_LOG | 882–911 | log() called by modules at load; _activityLog global |
 | PRODUCT_TAXONOMY | 912–1062 | vendorProductCats data needed by vendor scoring at load |
-| SUPABASE_CORE | 1063–1170 | sbFetch() is sync global; every module calls it |
-| VENDOR_SCORE_STATES | 1171–1213 | Score state helpers used inline before module load |
-| VD_RAW / REP_DIRECTORY data | 1214–1222 | 494-vendor array + 30-rep array, must exist before modules render |
-| CAT_DEFS / CHANGELOG init | 1223–1353 | Category definitions + changelog scaffolding |
-| SCORING_HELPERS | 1354–1509 | weightedScore(), scoreColor(), tier(), fmt$() etc. — global infrastructure |
-| ADVANCED_FILTERS | 1510–1671 | vFilters state + filter functions; called from vendors_module at render |
-| HELPERS + BOOT | 1934–2009 | getS(), boot sequence, session restore, script tags |
+| SUPABASE_CORE | 1063–1103 | sbFetch(), sbConfigured(), sbKey() — sync globals used everywhere |
+| VD_RAW / REP_DIRECTORY / CAT_DEFS | 1104–1230 | 494-vendor + 30-rep data arrays + category defs — must precede all modules |
+| HELPERS + BOOT | 1231–1310 | getS(), hydrateFromSupabase(), boot(), DOMContentLoaded sequence, script tags |
 
-**Total must-stay: ~1,747 lines** (HTML/CSS + global JS infrastructure)
+**Total must-stay: ~1,310 lines** (HTML/CSS + global JS infrastructure + data arrays)
 
-### KNOWN VENDOR OVERFLOW BLOCK (extractable — Phase 1.5 candidate)
-
-Lines 1672–1933 in current index.html (262 lines). These are vendor page and
-changelog functions that were physically located AFTER the repoutreach page block
-in the original file, outside the P1 extraction range (2354–4196).
-
-| Lines | Function(s) | Originally at (pre-P1) |
-|---|---|---|
-| 1672–1712 | renderChangelog(container), Vendor Ranking Changelog tab | ~4766 |
-| 1713–1737 | revertChange(changeId) | ~4807 |
-| 1738–1807 | openVP(id) — vendor price panel modal | ~4832 |
-| 1808–1822 | liveScore(id, cat, val) | ~4902 |
-| 1823–1829 | saveVP(id) | ~4917 |
-| 1829 | closeVP() | ~4923 |
-| 1831–1840 | exportCSV() | ~4926 |
-| 1841–1901 | openCSVImport(), handleDrop(), handleFileSelect(), parseCSVFile() | ~4936 |
-| 1886–1902 | openAddVendor(), confirmAddV() | ~4980 |
-| 1904–1933 | changelog() page function, exportChangeLog() | ~4998 |
-
-**These 262 lines work correctly inline** — all functions are globally available
-and are called by vendors_module.js at runtime. No extraction urgency.
+### NOT SAFE TO EXTRACT (Phase 2+ only)
+- AUTH block — deeply coupled to HTML session init, synchronous
+- SIDEBAR/UTILS/NAV — goTo(), toast() called synchronously by modules at parse time
+- SUPABASE_CORE — sbFetch() called by all modules; must exist before any module executes
+- VD_RAW / REP_DIRECTORY / CAT_DEFS — data arrays must exist before modules render
+- HELPERS + BOOT — hydrateFromSupabase(), boot() are the app entry points
 
 ---
 
 ## Stale Specs to Ignore
 
-The following spec documents were written against pre-P1 line numbers and are
-NO LONGER ACCURATE for the current file:
-
-- `docs/runtime/PHASE1_PACKETIZED_TASKS.md` — P7 spec listed lines ~4197–4621
-  (actual P7 was at 1672–2240 post-P2). All specs now obsolete — packets are done.
+- `docs/runtime/PHASE1_PACKETIZED_TASKS.md` — all P1–P9 line numbers are pre-extraction
+  stale. Packets are done. Do not use for any new extractions.
 - Any "Session 16" P7→P12 specs not in the current docs — do not use.
 - The PHASE1_DECOMPOSITION_EXECUTION_PLAN.md line number estimates are all stale.
+- Earlier versions of this doc with 2,009-line or 1,419-line index.html figures — stale.
 
 The canonical truth is the CURRENT index.html and this file.
 
 ---
 
-## Safe Next Cleanup Candidates (Phase 1.5)
+## Safe Next Cleanup Candidates
 
-### Option A: Vendor Overflow Extraction (low risk)
-Extract lines 1672–1933 (262 lines) → `js/vendors_overflow.js`
+All Phase 1.5 options (A–E) are now COMPLETE. The inline remainder is Phase 2+
+territory. No further safe extractions exist without a module loader architecture.
 
-- Contains: renderChangelog, revertChange, openVP, liveScore, saveVP, closeVP,
-  exportCSV, openCSVImport, parseCSVFile, openAddVendor, confirmAddV,
-  changelog() page function, exportChangeLog
-- Risk: Low — all functions are standalone, no inline dependencies
-- Prereq: None (inline globals like VD, CAT_DEFS already exist before script loads)
-- Result: index.html ~2,009 → ~1,747 lines
+### Option A — COMPLETE (P1.5a, commit f241e1c)
+js/vendors_overflow.js — 265 lines, 15 functions (renderChangelog, openVP, etc.)
 
-### Option B: changelog() page as separate module (low risk)
-Extract just lines 1904–1933 (30 lines) → `js/changelog_module.js`
+### Option B — superseded by Option A (changelog extracted within vendors_overflow)
 
-- Smallest possible next extraction
-- The changelog() page function + exportChangeLog() only
-- Risk: Very low
+### Option C — COMPLETE (P1.5b, commit 60709b1)
+js/vendor_filters.js — 165 lines, 5 functions (vFilters, passesAdvancedFilters, etc.)
 
-### Option C: Advanced Filters extraction (medium risk)
-Extract lines 1510–1671 (162 lines) → `js/vendor_filters.js`
+### Option D — COMPLETE (P1.5c, commit 37605a4)
+js/vendor_scoring_helpers.js — 172 lines, 16 functions (weightedScore, scoreColor, etc.)
 
-- Contains: vFilters state, activeFilterCount(), passesAdvancedFilters(),
-  resetAdvancedFilters(), openFilterModal(), toggleFilter()
-- Risk: Medium — vFilters state must be initialized BEFORE vendors_module.js runs
-  The script tag must load BEFORE vendors_module.js in the load order
-- This requires careful script tag placement (before vendors_module.js)
-
-### NOT SAFE TO EXTRACT (Phase 2+ only)
-- AUTH block — deeply coupled to HTML session init
-- SIDEBAR/UTILS/NAV — synchronous globals, no async load safe
-- SUPABASE_CORE — sbFetch() called synchronously by all modules at load
-- VD_RAW / REP_DIRECTORY / CAT_DEFS — data arrays must exist before modules render
-- SCORING_HELPERS — weightedScore() etc. called at module load time by vendors_module
+### Option E — COMPLETE (P1.5d, commit b49b905)
+js/supabase_categories.js — 110 lines, 4 functions (sbRealtime, sbLoadCategories, etc.)
 
 ---
 
-## Recommended Next Corridor
+## Phase Boundary: Phase 1 is DONE
 
-**Phase 1.5 — Vendor Overflow + Changelog**
+Phase 1 (verbatim extraction, no loader required) is complete. The 1,310-line
+remainder is all synchronous global infrastructure that requires Phase 2
+(async module loader or dynamic import) to extract further.
 
-Single clean extraction:
-1. Extract lines 1672–1933 → `js/vendors_overflow.js`
-   - All vendor page residual functions + changelog page
-   - Script tag: after `js/repoutreach_module.js` (these load after vendors_module.js
-     and repoutreach_module.js)
-   - Verify: `grep -n "function renderChangelog\|function openVP" index.html` → 0
-   - index.html target: ~1,747 lines
-
-**Do NOT attempt** in this corridor: SCORING_HELPERS, ADVANCED_FILTERS, AUTH,
-SUPABASE_CORE, VD data — these require Phase 2 module loader architecture.
+**Phase 2 prerequisites** (not yet designed):
+- Async module loader that defers BOOT until all modules signal ready
+- Auth state available before module init (or passed as argument)
+- VD/REP data injectable at module init time rather than relying on global scope
 
 ---
 
@@ -160,9 +127,9 @@ SUPABASE_CORE, VD data — these require Phase 2 module loader architecture.
 
 **YES — merge-safe.**
 
-Every extraction was verbatim, no logic changes, no renames. All 9 modules are
-independent script tags loaded in dependency order. The app's runtime behavior
-is identical before and after Phase 1 extraction.
+All 13 extractions were verbatim, no logic changes, no renames. All modules are
+independent script tags loaded in dependency order. App runtime behavior is
+identical before and after all Phase 1/1.5 extractions.
 
 Verification before merge:
 1. Navigate to Vendor Ranking → Scores tab → click vendor → edit a score ✓ needed
@@ -182,6 +149,14 @@ confirming app health.
 Each packet is independently revertible:
 ```bash
 git revert <commit> --no-edit
+```
+
+To roll back all Phase 1.5 extractions (4 reverts, newest first):
+```bash
+git revert b49b905 --no-edit   # P1.5d supabase_categories
+git revert 37605a4 --no-edit   # P1.5c vendor_scoring_helpers
+git revert 60709b1 --no-edit   # P1.5b vendor_filters
+git revert f241e1c --no-edit   # P1.5a vendors_overflow
 ```
 
 To roll back all of Phase 1 (9 reverts):
