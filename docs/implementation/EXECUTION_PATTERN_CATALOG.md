@@ -1,225 +1,408 @@
-# Execution Pattern Catalog
+# Execution Pattern Catalog — V2
 **Type:** Observational only — no skill framework, no automation
-**Purpose:** Identify recurring workflows meeting the bar for future procedural extraction
-**Updated:** 2026-05-10
-
-Criteria for inclusion:
-- Observed ≥2 times in session history
-- High reuse potential (recurs across phase boundaries)
-- Identifiable trigger + deterministic steps + verifiable exit
-- Measurable operational leverage (time saved, error prevented, or cognitive load removed)
+**Updated:** 2026-05-10 (V2 — refined classification taxonomy + deep specs)
 
 ---
 
-## PAT-01 — Verified Commit
+## Part 1 — Classification Taxonomy
 
-**Trigger:** Any code or doc change ready to commit
-**Observed frequency:** 9× this session, estimated 30–50×/project lifetime
-**Variance:** Very low — same sequence every time, only commit message content varies
+### Five Classification Dimensions
 
-**Steps (invariant):**
-1. `git add <specific files>` (never -A)
-2. `git commit -m "$(cat <<'EOF' ... EOF)"` with heredoc
-3. `bash scripts/boot-smoke.sh` — verify 27/27
-4. `git push -u origin <branch>`
-5. If smoke fails: fix, re-add, re-commit (new commit, not amend)
+Every pattern is scored across five dimensions. The combination determines archetype.
 
-**Classification:** Mechanical
-**Judgment component:** Commit message content, which files to stage
-**Verification:** Boot smoke pass required — not optional
-**Leverage:** Each manual execution takes ~4 min. At 40 executions → 2.7 hrs recoverable.
-Also prevents: unstaged file errors, skipped smoke checks, force-push temptations
-
-**Extraction readiness:** HIGH — clear trigger, fixed sequence, measurable output
-**Blocker for extraction:** None. Could be built now.
-**Notes:** Smoke check is the critical invariant. Any skill must treat it as non-optional.
+| Dimension | What it measures | Low | High |
+|-----------|-----------------|-----|------|
+| **Decision density** | Judgment calls per step | 0 → deterministic | Every step requires context-dependent choice |
+| **Context surface** | Prior state required to execute correctly | Local (just the files) | Domain (architecture + risk tolerance + phase state) |
+| **Output determinism** | Does same input → same output? | Yes — fully deterministic | No — varies with domain judgment |
+| **Verification type** | How correctness is confirmed | Automated (grep/smoke/count) | Semantic (human must interpret) |
+| **Blast radius** | Worst-case damage if wrong | Local, single file, instant revert | Persistent, multi-system, hard to undo |
 
 ---
 
-## PAT-02 — Queue Item Close
+### Five Archetypes
 
-**Trigger:** A task transitions to complete status
-**Observed frequency:** 6× this session, ~20×/project lifetime
-**Variance:** Low — same file edits, only content varies
+#### Type M — Mechanical
+- Decision density: **zero to low** (boundary inputs provided externally)
+- Context surface: **local** — acts on named files with deterministic rules
+- Output: **deterministic** — same input → same output, every time
+- Verification: **automated** — pass/fail from shell command
+- Blast radius: **local/reversible** — single file or git revert clears it
 
-**Steps (invariant):**
-1. Edit `runtime/queue/<id>.md`: `status: ready` → `status: complete`
-2. Edit same file: add `completed: <timestamp>`
-3. Edit `runtime/queue/_index.md`: move item from READY/BLOCKED to COMPLETE section
-4. Update totals line in `_index.md`
-5. Commit (triggers PAT-01)
+> The machine can run this. Human provides inputs at boundary. Human verifies at exit.
+> Suitable for Codex delegation with supervised inputs.
 
-**Classification:** Mechanical
-**Judgment component:** Zero — all fields deterministic
-**Verification:** Visual check that _index.md totals are consistent
-**Leverage:** Each manual execution takes ~6 min including context-switching. At 20 executions → 2 hrs recoverable.
-
-**Extraction readiness:** HIGH — pure mechanical, fully templatable
-**Blocker for extraction:** None.
-**Notes:** Often batched with PAT-01. A combined `queue-close-and-commit` pattern appears.
+Examples: PAT-01 execution, PAT-02, PAT-07 HTML pass
 
 ---
 
-## PAT-03 — Authorization Diff Preview
+#### Type O — Orchestration
+- Decision density: **low to medium** (coordinates multiple systems, but steps are structured)
+- Context surface: **session** — requires understanding current state across multiple files
+- Output: **structured** — format is fixed, content varies by context
+- Verification: **structural** — output matches expected schema, human spot-checks content
+- Blast radius: **session-scoped** — affects multiple files but still fully reversible
 
-**Trigger:** A phase gate requires frozen-file mutations — Michael must authorize before execution
-**Observed frequency:** 1× (Phase A), expected 5× more (Phase B–F)
-**Variance:** Low structure, content varies per phase
+> The pattern knows what to do. It must discover the specific content by reading state.
+> Suitable for supervised Codex with Claude providing the "what to look for" inputs.
 
-**Steps (invariant):**
-1. Read frozen target file(s) — identify exact insertion points (line numbers)
-2. Read rollout doc — extract approved scope for current phase
-3. Produce unified diff format showing: exact line context, exact additions, exact deletions
-4. Annotate with: files touched, lines added, rollback procedure
-5. Emit as single copy block — await authorization before any file mutation
-
-**Classification:** Orchestration-heavy (requires multi-file read + synthesis) + Verification-heavy (diff must be exact)
-**Judgment component:** Medium — identifying correct insertion points, ordering changes
-**Leverage:** ~20 min/phase, prevents unauthorized mutations, creates audit trail
-**Error prevention:** Without preview, frozen-file mutations could occur before authorization
-
-**Extraction readiness:** MEDIUM — structure is clear but content synthesis requires judgment
-**Blocker for extraction:** Judgment component in insertion point identification
-**Notes:** The output format is fully templatable. The read phase is the variable part.
+Examples: PAT-03, PAT-05, PAT-06 grep sub-step
 
 ---
 
-## PAT-04 — Integration Risk Audit
+#### Type J — Judgment-heavy
+- Decision density: **high** — every classification step requires domain knowledge
+- Context surface: **domain** — requires understanding architecture, risk, phase gate state
+- Output: **open** — cannot be predicted from inputs alone
+- Verification: **semantic** — only a domain expert can confirm correctness
+- Blast radius: **variable** — wrong classification can propagate through downstream decisions
 
-**Trigger:** Phase gate transition approaching — need to surface hidden collision vectors
-**Observed frequency:** 2× this session (Phase A pre-mount + stabilization pass)
-**Variance:** Low structure, content varies per audit scope
+> Cannot be templated. The "right answer" changes with context in non-deterministic ways.
+> Claude-only. Extracting the steps gives you a shell with no intelligence.
 
-**Steps (invariant):**
-1. Define audit scope: which files are interaction surfaces
-2. Grep collision vectors by category:
-   - CSS selector leakage (unscoped selectors, class name overlap)
-   - JS event handler collisions (same event, same element, both phases)
-   - DOM attribute collisions (shared attribute names, shared element ids)
-   - CSS variable namespace (shadowing, override)
-   - Z-index stacking (values in competing ranges)
-   - Initialization ordering (DOMContentLoaded race, async hydration race)
-   - localStorage key namespace (shared keys)
-3. Classify each finding: severity, blocking phase, resolution path
-4. Write queue items for actionable findings
-5. Write catalog document with recommended execution order
-
-**Classification:** Orchestration-heavy (multi-file, multi-category) + Judgment-heavy (severity classification)
-**Judgment component:** High — severity assignment, "safe vs latent vs blocking" distinction
-**Leverage:** ~40 min/audit. Prevents Phase B defects. Most time-valuable pattern in catalog.
-**Error prevention:** OBS-04 (data-mode unscoped) would have shipped to Phase B without this pass
-
-**Extraction readiness:** MEDIUM — grep commands are templatable; classification requires judgment
-**Blocker for extraction:** Severity/safety classification is judgment-heavy. A mechanical audit
-  that produces raw findings without classification is 60% of the value and fully extractable.
-**Notes:** The grep pass (mechanical) is separable from the synthesis pass (judgment).
-  Could extract `integration-grep-pass` as mechanical sub-skill feeding human synthesis.
+Examples: severity classification, phase assignment, fix-vs-document decisions
 
 ---
 
-## PAT-05 — Gate Status Check
+#### Type V — Verification-heavy
+- Decision density: **low** (the check itself is deterministic)
+- Context surface: **local + expected-state** (must know what correct looks like)
+- Output: **pass/fail with evidence** — structured finding set
+- Verification: **automated check + semantic interpretation** (grep finds it, human reads it)
+- Blast radius: **low** — read-dominant, no mutations
 
-**Trigger:** Need to understand what is ready, blocked, and gating what
-**Observed frequency:** 4× this session, ~15×/project lifetime
-**Variance:** Very low — same reads, same format
+> The grep is mechanical. Interpreting the grep is judgment.
+> Separable: mechanical sub-step (Codex-suitable) + interpretation (Claude-only).
 
-**Steps (invariant):**
-1. Read `runtime/queue/_index.md` — get current totals and READY items
-2. Read blocker items for each BLOCKED cluster — identify what Michael action clears them
-3. Read `docs/implementation/DECISION_LOCK_V1.md` — check answer fields
-4. Synthesize: what can proceed now, what waits on Michael, what waits on phase gate
-
-**Classification:** Mechanical + light synthesis
-**Judgment component:** Low — most outputs are deterministic from the file reads
-**Leverage:** ~10 min/check. Frequently needed at session start and transition points.
-
-**Extraction readiness:** HIGH — reads are mechanical, output format is consistent
-**Blocker for extraction:** None meaningful.
-**Notes:** Session start already reads WIP + BUILD_PLAN. Gate status could be folded
-  into session-start sequence or triggered by `?gate` query in conversational mode.
+Examples: CSS scope leak detection, z-index collision detection, namespace collision check
 
 ---
 
-## PAT-06 — Phase Stabilization Pass
+#### Type H — Hybrid
+Two or more primary types combined. The weakest type governs extraction readiness.
 
-**Trigger:** Phase mount completes — 7-day observation window begins
-**Observed frequency:** 1× (Phase A), expected 5× more (Phase B–F)
-**Variance:** Medium — same category checklist, different specific findings per phase
+> A hybrid is only as extractable as its least-extractable component.
+> Decompose into sub-steps before assessing Codex suitability.
 
-**Steps (invariant):**
-1. Read all active interaction surfaces: shell JS, legacy JS at collision points, CSS files
-2. Grep by category: keyboard handlers, z-index values, CSS selectors, localStorage keys,
-   DOM attribute names, initialization timing, API surface overlap
-3. For each finding: assess with-flag-OFF and with-flag-ON separately
-4. Classify: current risk vs Phase B risk vs latent risk
-5. Identify any immediate fix (pre-Phase-B, non-frozen files only)
-6. Write `PHASE_X_STABILIZATION_OBSERVATIONS.md`
-7. Identify skill candidate patterns (this meta-step)
-
-**Classification:** Orchestration-heavy + Judgment-heavy
-**Judgment component:** High — risk classification, phase assignment, fix-vs-document decision
-**Leverage:** ~60 min/pass. Prevents defects in subsequent phase. High leverage.
-
-**Extraction readiness:** LOW for full pattern. HIGH for the grep/read sub-steps.
-**Blocker for extraction:** Judgment component is too high for full extraction.
-  The checklist of grep commands is extractable; the risk synthesis is not.
-**Notes:** Separable into: `stabilization-grep-pass` (mechanical) + synthesis (human/judgment).
+| Pattern | Primary | Secondary | Governs |
+|---------|---------|-----------|---------|
+| PAT-03 Auth Diff Preview | O | V | Orchestration — requires session context |
+| PAT-04 Integration Risk Audit | O | J | Judgment — severity classification |
+| PAT-06 Stabilization Pass | O | J | Judgment — risk/phase classification |
 
 ---
 
-## PAT-07 — Data-Attribute Rename
+### Archetype Decision Tree (abbreviated)
 
-**Trigger:** Attribute collision discovered — must rename in all shell files
-**Observed frequency:** 1× (data-roles → data-aos-roles), likely 1–3× more in Phase B–E
+```
+Does execution require understanding domain risk?
+  YES → Type J (or H if also orchestrating)
+  NO  → Does it read multiple files to discover content?
+          YES → Type O (or H if classification follows)
+          NO  → Does output vary with same input?
+                  YES → Type J
+                  NO  → Is verification automated?
+                          YES → Type M
+                          NO  → Type V
+```
+
+---
+
+## Part 2 — Pattern Registry (revised with archetype scores)
+
+### PAT-01 — Verified Commit
+**Archetype:** M (with J boundary at inputs)
+**Frequency:** 9× this session · ~40× project lifetime
+**Variance:** Very low — execution steps invariant, only inputs vary
+
+**Required inputs (provided by Claude/human):**
+- `[file-list]` — explicit named files to stage (judgment: which files changed, which are sensitive)
+- `[commit-message]` — heredoc string (judgment: accurate, imperative mood, links session)
+
+**Required outputs:**
+- Working tree clean (`git status`)
+- Branch pushed to remote
+- Boot smoke: 27/27 exit 0
+
+**Invariants (must never be violated):**
+- Never `git add -A` or `git add .`
+- Never `--no-verify`, `--no-gpg-sign`, `--amend` (unless explicitly instructed)
+- Never `git push --force`
+- Smoke check runs AFTER commit, BEFORE push — not skippable
+- If smoke fails: fix → new commit → smoke again (not amend)
+
+**Rollback expectation:** `git revert HEAD` — creates new revert commit, preserves history
+
+**Verification steps:**
+1. `git status` → working tree clean
+2. `bash scripts/boot-smoke.sh` → exit 0, 27/27
+3. `git log --oneline -1` → commit present with correct message
+
+**Entropy risks:**
+- Wrong branch at push time (check `git branch` — caught by convention)
+- Sensitive file staged (`.env`, credentials — caught by pre-commit if configured)
+- Smoke skipped under time pressure (most common failure mode in practice)
+- Amend instead of new commit after smoke failure (corrupts prior commit)
+
+**Failure modes:**
+- Smoke fails → do not push → fix root cause → new commit → re-smoke
+- Push rejected → investigate remote state → never force-push to resolve
+
+**Codex suitability:** YES for mechanical execution
+**Claude ownership:** File selection judgment + commit message quality
+**Composable:** YES — terminal node. Almost every other pattern pipes into PAT-01.
+
+---
+
+### PAT-02 — Queue Item Close
+**Archetype:** M (zero judgment in execution — judgment is in the WHEN decision)
+**Frequency:** 6× this session · ~20× project lifetime
+**Variance:** Very low — same edits every time
+
+**Required inputs:**
+- `[item-id]` — e.g., `qa-07-data-roles-collision`
+- `[timestamp]` — ISO 8601, e.g., `2026-05-10T01:15:00Z`
+
+**Required outputs:**
+- `runtime/queue/<id>.md`: `status: complete`, `completed: <timestamp>` present
+- `runtime/queue/_index.md`: item moved to COMPLETE section, totals updated
+- Totals line consistent: (ready + blocked + in-flight + complete) = total items
+
+**Invariants:**
+- Status transitions are one-way: `ready` or `blocked` → `complete` only
+- `completed:` field must be added (not just status change)
+- `_index.md` totals must be updated in same edit session as item file
+- Totals must be mathematically consistent
+
+**Rollback expectation:** Edit files back directly — no git revert needed for docs
+
+**Verification steps:**
+1. Grep `_index.md` for `complete` count — matches completed items list length
+2. Totals line arithmetic check: sum of sections = stated total
+3. Item file contains both `status: complete` AND `completed:` field
+
+**Entropy risks:**
+- Totals drift — most common (forgot to decrement READY count when item closed)
+- Wrong item closed (ID typo) — caught by reading item title before editing
+- Stale timestamp (copy-paste from prior close) — minor, non-blocking
+
+**Failure modes:**
+- Totals inconsistent → manually reconcile by counting sections in _index.md
+- Wrong item closed → edit status back, close correct item
+
+**Codex suitability:** YES — fully mechanical execution
+**Claude ownership:** WHEN to close (requires session context: "is this actually done?")
+**Composable:** YES — always followed by PAT-01. Pair is effectively atomic.
+
+---
+
+### PAT-05 — Gate Status Check
+**Archetype:** O (read + format) with light synthesis
+**Frequency:** 4× this session · ~15× project lifetime
+**Variance:** Very low structure, content varies with state
+
+**Required inputs:** None — reads current state from filesystem
+
+**Required outputs:**
+- READY list with estimated session cost
+- BLOCKED list grouped by blocker type (Michael action, phase gate, dependency)
+- Michael actions needed with specific ask per item
+- Net assessment: what proceeds now, what waits
+
+**Invariants:**
+- Must read both `_index.md` AND spot-check individual queue files (index can drift)
+- Must read `DECISION_LOCK_V1.md` answer fields for Michael-blocked items
+- Output must flag any totals drift detected between index and actual files
+
+**Rollback expectation:** N/A — read-only operation
+
+**Verification steps:**
+1. Reported READY count matches `_index.md` stated READY total
+2. Each reported READY item has a queue file with `status: ready`
+3. Each reported BLOCKED item has a stated blocker that explains why
+
+**Entropy risks:**
+- `_index.md` drift — items marked READY in index but still `blocked` in queue file
+- Missing queue files referenced in index (surfaced as "unknown state")
+- Decision answers filled but not recorded in queue file `depends_on` resolution
+
+**Failure modes:**
+- Index/file mismatch → flag drift, report both states, recommend reconciliation
+- Queue file missing → report "unknown — file not found"
+
+**Codex suitability:** YES for read + format step; Claude owns synthesis/prioritization
+**Claude ownership:** "What does this mean for project velocity?" + "What should Michael do first?"
+**Composable:** YES — natural session-start step, can feed into work-selection decision
+
+---
+
+### PAT-07 — Data-Attribute Rename
+**Archetype:** M (with one deterministic transformation rule for JS accessors)
+**Frequency:** 1× observed · 1–3× expected in Phase B–E
 **Variance:** Very low — same grep/sed/verify/commit pattern
 
-**Steps (invariant):**
-1. `grep -rn 'old-attribute' ui/` — find all occurrences + line numbers
-2. `grep -rn 'old-attribute' ui/ --include="*.js"` — find JS querySelector/getAttribute uses
-3. `sed -i 's/old-attribute/new-attribute/g' <file>` — bulk rename HTML attributes
-4. Manual edit for JS: `querySelector('[old]')` → `querySelector('[new]')`, `dataset.old` → `dataset.new`
-5. `grep -rn 'old-attribute' ui/` — verify zero remaining
-6. Commit (triggers PAT-01)
+**Required inputs:**
+- `[source-attr]` — e.g., `data-roles`
+- `[target-attr]` — e.g., `data-aos-roles`
+- `[scope]` — directory path, e.g., `ui/`
 
-**Classification:** Mechanical
-**Judgment component:** Low — only the naming decision (already made before pattern triggers)
-**Leverage:** ~8 min/rename. Prevents collision defects.
+**Required outputs:**
+- `grep -rn '<source-attr>' <scope>` → zero matches
+- `grep -rn '<target-attr>' <scope>` → all expected matches present
+- JS accessors updated: `dataset.<camelCase(source)>` → `dataset.<camelCase(target)>`
+- querySelector patterns updated: `[source-attr]` → `[target-attr]`
 
-**Extraction readiness:** HIGH — fully templatable once source/target names are known
-**Blocker for extraction:** None. The `dataset.camelCase` transform from `data-kebab-case`
-  requires knowing the JS access pattern, but this is deterministic.
+**Invariants:**
+- HTML attribute rename: `data-x-y` → `data-a-b` (sed-safe)
+- JS dataset accessor rule: `data-foo-bar` → `dataset.fooBar` (camelCase, drop `data-` prefix)
+  - `data-roles` → `dataset.roles`
+  - `data-aos-roles` → `dataset.aosRoles`
+- querySelector string update: `'[data-x-y]'` → `'[data-a-b]'`
+- Scope must include ALL files that could reference the attribute (HTML, JS, CSS)
+
+**Rollback expectation:** `git checkout HEAD -- <files>` before commit (instant, no history needed)
+
+**Verification steps:**
+1. `grep -rn '<source-attr>' <scope>` → must return zero results
+2. `grep -rn '<target-attr>' <scope>` → returns N expected matches (count pre/post)
+3. JS file: grep for old `dataset.<old-camel>` → zero results
+4. Run boot smoke to catch any JS runtime errors from missed accessor
+
+**Entropy risks:**
+- HTML renamed, JS accessor not updated → runtime error on `dataset.roles` (undefined)
+- querySelector string missed — JS tries to find `[data-roles]` → no elements found
+- Scope too narrow — missed a JS module that also references the attribute
+- camelCase conversion error (e.g., `data-aos-role` → `dataset.aosRole` not `dataset.aos-role`)
+
+**Failure modes:**
+- Missed accessor → JS runtime error `Cannot read properties of undefined` → grep JS for old camelCase
+- Partial rename → grep finds residuals → sed again, re-verify
+
+**Codex suitability:**
+- HTML sed pass: YES — deterministic
+- JS accessor update: SUPERVISED — needs camelCase rule applied correctly
+- Verification grep: YES — deterministic
+**Claude ownership:** Scope identification, JS accessor pattern confirmation
+**Composable:** YES — always feeds into PAT-01. Can chain: discover collision → PAT-07 → PAT-01.
+
+---
+
+## Part 3 — Codex Pilot vs Claude-Only Assessment
+
+### Criteria for Codex delegation
+
+A pattern is Codex-suitable when ALL of the following hold:
+1. Inputs can be fully specified before execution begins (no mid-run discovery)
+2. Execution steps are deterministic given those inputs
+3. Verification is automated (not semantic)
+4. Blast radius is local and reversible within the same session
+5. Failure mode is detectable (grep returns results, smoke fails, git shows diff)
 
 ---
 
-## Ranking by Extraction Priority
+### Tier 1 — Codex pilot candidates (bounded, reversible, auto-verifiable)
 
-| Rank | Pattern | Readiness | Type | Leverage |
-|------|---------|-----------|------|---------|
-| 1 | PAT-01 Verified Commit | HIGH | Mechanical | Medium — time saved |
-| 2 | PAT-02 Queue Item Close | HIGH | Mechanical | Medium — time saved |
-| 3 | PAT-05 Gate Status Check | HIGH | Mechanical+light | Medium — decision clarity |
-| 4 | PAT-07 Data-Attribute Rename | HIGH | Mechanical | Low-medium |
-| 5 | PAT-04 Integration Risk Audit (grep sub-step) | MEDIUM | Mechanical sub-step | HIGH — defect prevention |
-| 6 | PAT-03 Authorization Diff Preview | MEDIUM | Orchestration | HIGH — authorization safety |
-| 7 | PAT-06 Stabilization Pass (grep sub-step) | LOW full / HIGH sub-step | Orchestration | HIGH |
+**PAT-02 Queue Item Close — strongest candidate**
+- All inputs known before execution: item-id, timestamp
+- Steps deterministic: two file edits, totals update
+- Verification automated: arithmetic check on totals
+- Blast radius: two doc files, trivial to revert
+- Failure mode: visible (totals wrong) and self-correcting
+- Risk of Codex error: LOW — no ambiguity in any step
+- Required Claude handoff: item-id + timestamp only. Claude decides WHEN, Codex executes HOW.
 
-**First extraction recommendation (when authorized):** PAT-01 + PAT-02 combined as
-`verified-commit-and-close` — highest frequency, zero judgment, immediate time savings,
-and forms the foundation other patterns depend on.
+**PAT-07 HTML sed pass (sub-step only)**
+- Input: source string, target string, file path
+- Execution: `sed -i 's/old/new/g' <file>`
+- Verification: `grep -rn 'old' <file>` → zero
+- Blast radius: single file, pre-commit
+- Risk of Codex error: LOW for HTML; MEDIUM for JS accessor (camelCase rule)
+- Decomposition: delegate HTML sed to Codex, Claude handles JS accessor update
 
-**Highest-leverage extraction (when authorized):** PAT-04 grep sub-step — surfaces
-defects before they reach frozen-file phases. Once templated, runs in <5 min vs ~40 min.
+**PAT-01 mechanical execution (with Claude-provided inputs)**
+- If Claude provides: [file-list] + [commit-message], Codex executes: add → commit → smoke → push
+- Codex cannot be trusted to determine file list or write commit message
+- Codex CAN be trusted to: `git add <explicit-list>`, run smoke, push if smoke passes, abort if smoke fails
+- Risk of Codex error: LOW given pre-specified inputs; MEDIUM if allowed to infer file list
+
+---
+
+### Tier 2 — Supervised Codex (Claude provides structured inputs, Codex executes, Claude reviews output)
+
+**PAT-05 Gate Status Check read phase**
+- Codex reads `_index.md` + queue files + decision doc
+- Codex formats: READY, BLOCKED by type, Michael actions
+- Claude reviews: synthesis, prioritization, velocity assessment
+- Risk of Codex error: LOW for reads; MEDIUM for drift detection (requires judgment to flag)
+
+**PAT-07 JS accessor update (sub-step)**
+- Claude specifies: source camelCase, target camelCase, files to edit
+- Codex executes: targeted string replacement
+- Claude verifies: grep confirms old accessor gone
+- Risk: MEDIUM — camelCase conversion must be exactly right or silent runtime failure
 
 ---
 
-## Patterns Explicitly NOT Cataloged
+### Tier 3 — Claude-only (judgment, authorization scope, or domain knowledge required)
 
-The following appeared during sessions but have too much variance or judgment to extract:
-
-- **Correction workflows** (DEC-01-B/C misinterpretation fix) — variance too high
-- **Architecture documentation** (MVHB_ROADMAP, EXECUTION_TOPOLOGY) — one-time, judgment-heavy
-- **Decision recording** — one-time per decision, format varies with content
-- **Risk severity classification** — pure judgment, no mechanical structure
+| Pattern | Reason |
+|---------|--------|
+| PAT-01 file selection + message | Judgment — which files, what the message communicates |
+| PAT-03 Auth Diff Preview | Orchestration touching frozen files — authorization safety requires full domain context |
+| PAT-04 Integration Risk synthesis | Judgment — severity classification determines what gets fixed vs deferred |
+| PAT-06 Stabilization Pass synthesis | Judgment — "current vs latent vs Phase B risk" cannot be automated |
+| All severity classifications | Pure judgment, no mechanical structure |
+| All phase authorization decisions | Irreversible action authorization — Claude must own this |
+| All queue item WHEN decisions | Requires session context: "is the work actually done?" |
 
 ---
-*Do not build skill framework until authorized. This document is observation-only.*
+
+### Composability Graph
+
+```
+[Session start]
+    │
+    └──▶ PAT-05 Gate Status (O)
+              │
+              └──▶ work-selection decision (J — Claude)
+                        │
+              ┌─────────┴──────────────────────┐
+              │                                │
+     PAT-04 Risk Audit (H)          PAT-07 Rename (M)
+         grep pass (V)                    │
+              │                      PAT-01 Commit (M) ◀──┐
+     synthesis (J — Claude)               │                │
+              │                      PAT-02 Close (M) ─────┘
+     PAT-02 Queue Items (M)
+              │
+         PAT-01 Commit (M)
+              │
+     PAT-03 Diff Preview (H) ──▶ authorization (J — human)
+              │
+         [phase mount]
+              │
+     PAT-06 Stabilization (H)
+              │
+     PAT-05 Gate Status ──▶ cycle repeats
+```
+
+**PAT-01 is the universal terminal node.** All mechanical patterns flow into it.
+**PAT-05 is the universal entry probe.** Session starts and phase transitions trigger it.
+**PAT-02 is the most composable sub-step.** Appears as a suffix to almost every implementation pattern.
+
+---
+
+## Part 4 — Patterns Not Cataloged (with rationale)
+
+| Pattern | Reason excluded |
+|---------|----------------|
+| Correction workflows (DEC-01-B/C misinterpretation) | Variance too high — each correction is unique to the misread |
+| Architecture documentation (MVHB_ROADMAP, EXECUTION_TOPOLOGY) | One-time, judgment-heavy — no repeated structure |
+| Decision recording | One-time per decision, format varies with content |
+| Risk severity classification | Pure Type J — extracting steps gives shell with no intelligence |
+| Session handoff writing | Domain synthesis — each handoff is unique to session state |
+
+---
+
+*Observational layer only. Do not build skill framework until authorized.*
+*Next refinement trigger: after 3 additional sessions or first Codex pilot attempt.*
