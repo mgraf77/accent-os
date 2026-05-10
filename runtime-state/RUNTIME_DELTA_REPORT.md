@@ -5,6 +5,47 @@
 
 ---
 
+## delta-002     cp-0001 → cp-0002     2026-05-09     mode: Plan-Then-Execute (bounded)
+
+State:        ~ §1 phase: "P1 (hardening)" → "P1 held (codex protocol P0 design-only added)"
+              + §2 codex-execution-lane: protocol P0 design-only; no queue, no tasks
+              + §9 next-required-read entry 4: policies/CODEX_EXECUTION_PROTOCOL.md
+                (conditional — only when a Codex task is being considered)
+
+Priorities:   (no change)
+
+Risks:        (no change — codex lane introduces no new risks at design-only)
+
+Mutations:    landed:   <this commit> codex execution protocol P0 (design-only)
+              reverted: (none)
+
+Governance:   policy: policies/CODEX_EXECUTION_PROTOCOL.md added (C5)
+              note:   defines bounded worker lane; does NOT create a new mode,
+                      register, metric, or governance file. References existing
+                      MUTATION_POLICY, SAFETY_HARD_STOPS, ESCALATION_POLICY, MODES.
+              escalation: (none)
+
+Metrics:      RCI null→null   entropy_delta null→null
+              cv null→null    rv null→null
+              gov_lag 0d→0d   runtime_health null→null
+
+Architecture: + concept: codex-execution-lane (worker; not authority)
+              + topology: operator > {claude, codex, chatgpt}; codex non-coordinator
+              ~ no boundary changes; lane fits within existing governance
+
+DER:          intaked:  (none — protocol is the deliverable; no new DER entries)
+              promoted: (none)
+              declined: (none)
+              archived: (none)
+
+Carryover:
+  - Codex protocol gate to P1 = operator review of policies/CODEX_EXECUTION_PROTOCOL.md.
+  - No queue, no task specs, no Codex execution at this commit.
+  - patch-0001 (CLAUDE.md amendment) still proposed-only, awaiting operator review.
+  - R1 (worker-redeploy) unchanged; out of scope for stabilization branch.
+
+---
+
 ## delta-001     cp-0000 → cp-0001     2026-05-09     mode: Clean Pause Stabilization
 
 State:        + canonical state seeded (cp-0001)
