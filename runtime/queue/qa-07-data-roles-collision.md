@@ -3,11 +3,12 @@ schema: v1
 type: queue_item
 id: qa-07-data-roles-collision
 title: Rename data-roles → data-aos-roles in shell HTML/JS — prevents applyRoleVisibility collision
-status: ready
+status: complete
 priority: high
 estimated_sessions: 0.25
 created: 2026-05-10T00:30:00Z
-updated: 2026-05-10T00:30:00Z
+updated: 2026-05-10T01:15:00Z
+completed: 2026-05-10T01:15:00Z
 
 owner_branch: claude/implement-claude-design-ui-eFn9b
 claimed_by: null

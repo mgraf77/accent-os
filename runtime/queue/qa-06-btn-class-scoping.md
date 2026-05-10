@@ -3,11 +3,12 @@ schema: v1
 type: queue_item
 id: qa-06-btn-class-scoping
 title: Add scoped .btn rules to accentos-shell.css — prevent legacy style bleed
-status: ready
+status: complete
 priority: medium
 estimated_sessions: 0.25
 created: 2026-05-10T00:30:00Z
-updated: 2026-05-10T00:30:00Z
+updated: 2026-05-10T01:15:00Z
+completed: 2026-05-10T01:15:00Z
 
 owner_branch: claude/implement-claude-design-ui-eFn9b
 claimed_by: null

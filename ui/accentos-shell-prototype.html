@@ -451,7 +451,7 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
     <a class="aos-nav-item active" data-module="dashboard">
       <span class="aos-nav-icon">🏠</span><span class="aos-nav-text">Dashboard</span>
     </a>
-    <a class="aos-nav-item" data-module="tasks" data-roles="owner,manager,sales,designer,warehouse">
+    <a class="aos-nav-item" data-module="tasks" data-aos-roles="owner,manager,sales,designer,warehouse">
       <span class="aos-nav-icon">✓</span><span class="aos-nav-text">Tasks</span>
       <span class="nav-badge alert" id="badge-tasks">4</span>
     </a>
@@ -459,63 +459,63 @@ html,body{margin:0;padding:0;background:var(--layer-canvas);height:100%}
   <div class="aos-sidebar-divider"></div>
   <div class="aos-sidebar-section">
     <span class="aos-sidebar-label">Business</span>
-    <a class="aos-nav-item" data-module="vendors" data-roles="owner,manager,sales">
+    <a class="aos-nav-item" data-module="vendors" data-aos-roles="owner,manager,sales">
       <span class="aos-nav-icon">🏭</span><span class="aos-nav-text">Vendor Intelligence</span>
       <span class="nav-badge warn" id="badge-vendors">6</span>
     </a>
-    <a class="aos-nav-item" data-module="quotes" data-roles="owner,manager,sales,designer">
+    <a class="aos-nav-item" data-module="quotes" data-aos-roles="owner,manager,sales,designer">
       <span class="aos-nav-icon">📋</span><span class="aos-nav-text">Quote Generator</span>
       <span class="nav-badge alert" id="badge-quotes">3</span>
     </a>
-    <a class="aos-nav-item" data-module="pipeline" data-roles="owner,manager,sales">
+    <a class="aos-nav-item" data-module="pipeline" data-aos-roles="owner,manager,sales">
       <span class="aos-nav-icon">💼</span><span class="aos-nav-text">Sales Pipeline</span>
     </a>
-    <a class="aos-nav-item" data-module="customers" data-roles="owner,manager,sales,designer">
+    <a class="aos-nav-item" data-module="customers" data-aos-roles="owner,manager,sales,designer">
       <span class="aos-nav-icon">👥</span><span class="aos-nav-text">Customers</span>
       <span class="nav-badge alert" id="badge-customers">3</span>
     </a>
-    <a class="aos-nav-item" data-module="jobs" data-roles="owner,manager,sales,designer,builder,warehouse">
+    <a class="aos-nav-item" data-module="jobs" data-aos-roles="owner,manager,sales,designer,builder,warehouse">
       <span class="aos-nav-icon">🔨</span><span class="aos-nav-text">Jobs &amp; Builds</span>
     </a>
   </div>
   <div class="aos-sidebar-divider"></div>
   <div class="aos-sidebar-section">
     <span class="aos-sidebar-label">Products</span>
-    <a class="aos-nav-item" data-module="inventory" data-roles="owner,manager,sales,designer,builder,warehouse,viewer">
+    <a class="aos-nav-item" data-module="inventory" data-aos-roles="owner,manager,sales,designer,builder,warehouse,viewer">
       <span class="aos-nav-icon">📦</span><span class="aos-nav-text">Product Lookup</span>
       <span class="nav-badge alert" id="badge-inventory">2</span>
     </a>
-    <a class="aos-nav-item" data-module="pricing" data-roles="owner,manager,sales">
+    <a class="aos-nav-item" data-module="pricing" data-aos-roles="owner,manager,sales">
       <span class="aos-nav-icon">💰</span><span class="aos-nav-text">Pricing Tools</span>
     </a>
-    <a class="aos-nav-item" data-module="pos" data-roles="owner,manager,warehouse">
+    <a class="aos-nav-item" data-module="pos" data-aos-roles="owner,manager,warehouse">
       <span class="aos-nav-icon">🛒</span><span class="aos-nav-text">Purchase Orders</span>
     </a>
-    <a class="aos-nav-item" data-module="deliveries" data-roles="owner,manager,warehouse,builder">
+    <a class="aos-nav-item" data-module="deliveries" data-aos-roles="owner,manager,warehouse,builder">
       <span class="aos-nav-icon">🚚</span><span class="aos-nav-text">Deliveries</span>
     </a>
   </div>
   <div class="aos-sidebar-divider"></div>
   <div class="aos-sidebar-section">
     <span class="aos-sidebar-label">Intelligence</span>
-    <a class="aos-nav-item" data-module="reports" data-roles="owner,manager,sales">
+    <a class="aos-nav-item" data-module="reports" data-aos-roles="owner,manager,sales">
       <span class="aos-nav-icon">📊</span><span class="aos-nav-text">Reports</span>
     </a>
-    <a class="aos-nav-item" data-module="ai" data-roles="owner,manager,sales,designer">
+    <a class="aos-nav-item" data-module="ai" data-aos-roles="owner,manager,sales,designer">
       <span class="aos-nav-icon">🤖</span><span class="aos-nav-text">AI Tools</span>
       <span class="nav-badge alert" id="badge-ai">1</span>
     </a>
-    <a class="aos-nav-item" data-module="decisions" data-roles="owner,manager">
+    <a class="aos-nav-item" data-module="decisions" data-aos-roles="owner,manager">
       <span class="aos-nav-icon">🧠</span><span class="aos-nav-text">Decision Engine</span>
     </a>
   </div>
   <div class="aos-sidebar-divider"></div>
   <div class="aos-sidebar-section">
     <span class="aos-sidebar-label">System</span>
-    <a class="aos-nav-item" data-module="admin" data-roles="owner">
+    <a class="aos-nav-item" data-module="admin" data-aos-roles="owner">
       <span class="aos-nav-icon">⚙️</span><span class="aos-nav-text">Admin</span>
     </a>
-    <a class="aos-nav-item" data-module="health" data-roles="owner,manager">
+    <a class="aos-nav-item" data-module="health" data-aos-roles="owner,manager">
       <span class="aos-nav-icon">💚</span><span class="aos-nav-text">System Health</span>
       <span class="nav-badge warn" id="badge-health">1</span>
     </a>
@@ -1692,8 +1692,8 @@ function applyRole(role) {
   const shell = document.getElementById('aosShell');
   if (shell) shell.dataset.role = role;
   const allowed = ROLE_NAV[role] || ROLE_NAV.owner;
-  document.querySelectorAll('.aos-nav-item[data-roles]').forEach(el => {
-    const roles = el.dataset.roles.split(',');
+  document.querySelectorAll('.aos-nav-item[data-aos-roles]').forEach(el => {
+    const roles = el.dataset.aosRoles.split(',');
     el.style.display = roles.some(r=>allowed.includes(r)||r===role) ? '' : 'none';
   });
   const av = document.getElementById('avatarEl');

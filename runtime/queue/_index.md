@@ -1,15 +1,12 @@
 # Queue Snapshot
 
-**Updated:** 2026-05-10T01:00:00Z
-**Totals:** 4 ready · 13 blocked · 0 in flight · 13 complete
+**Updated:** 2026-05-10T01:15:00Z
+**Totals:** 1 ready · 13 blocked · 0 in flight · 15 complete
 
 ---
 
 ## READY
 
-- [qa-07-data-roles-collision](qa-07-data-roles-collision.md) — HIGH · 0.25 sessions · blocks Phase A mount
-- [qa-06-btn-class-scoping](qa-06-btn-class-scoping.md) — MEDIUM · 0.25 sessions · blocks Phase A mount
-- r-02-decision-lock-doc — HIGH · COMPLETE (committed 1c750a4)
 - r-03-feature-flag-scaffold — LOW · 0.25 sessions
 
 ## IN FLIGHT
@@ -48,8 +45,10 @@ _(none)_
 - gl-05-phase-e-modules — gated on Phase D verified
 - gl-06-phase-f-decommission — gated on Phase E + dec-04
 
-## COMPLETE (last 6)
+## COMPLETE (last 8)
 
+- qa-07-data-roles-collision — 2026-05-10 · shell data-roles → data-aos-roles, blocks Phase A mount resolved
+- qa-06-btn-class-scoping — 2026-05-10 · scoped .btn* rules added to accentos-shell.css, blocks Phase A mount resolved
 - r-02-decision-lock-doc — 2026-05-10 · `1c750a4` · DECISION_LOCK_V1.md + DEC-01-B/C corrections
 - r-01-prototype-hardening — 2026-05-09 · `86ff903` · empty states, aria, role=dialog
 - mvhb-first-exec-layer — 2026-05-09 · `1062dc5` · MVHB_ROADMAP, SESSION_LIFECYCLE, EXECUTION_TOPOLOGY, MICHAEL_ATTENTION_BUDGET

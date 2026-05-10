@@ -1402,3 +1402,50 @@
 [data-mode="readonly"] * { cursor: default !important; }
 [data-mode="readonly"] .aos-fab { display: none; }
 [data-mode="readonly"] .aos-bottom-bar-fab { display: none; }
+
+/* ═══════════════════════════════════════════════════════
+   BUTTON SCOPING — prevents legacy .btn style bleed
+   Mirrors prototype inline styles, scoped to shell root.
+   ═══════════════════════════════════════════════════════ */
+
+.accentos-shell .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: var(--size-body);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: 1px solid var(--border-default);
+  white-space: nowrap;
+  transition: background var(--ease-fast);
+  background: transparent;
+  color: var(--text-body);
+}
+
+.accentos-shell .btn-primary {
+  background: var(--interactive-default);
+  color: var(--gray-950);
+  border-color: transparent;
+}
+
+.accentos-shell .btn-primary:hover {
+  background: var(--interactive-hover);
+}
+
+.accentos-shell .btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.accentos-shell .btn-ghost:hover {
+  background: var(--layer-elevated);
+  color: var(--text-primary);
+}
+
+.accentos-shell[data-mode="readonly"] .btn-primary {
+  opacity: 0.4;
+  pointer-events: none;
+}
