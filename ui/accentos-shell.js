@@ -383,9 +383,81 @@
     restoreMode();
   }
 
+  /* ── Feature Flag System ────────────────────────────── */
+  /*
+   * Resolution order (highest priority first):
+   *   1. URL query param: ?shell=1 / ?shell=0 (current load only)
+   *   2. localStorage: aos-shell-enabled or aos-shell-module-<key>
+   *   3. Per-role default: reads window.CU.role (all false until Phase C+)
+   *   4. Global default: false (kill-switch — shell hidden by default)
+   *
+   * Any thrown exception anywhere → returns false (safe fail to legacy).
+   * Per-module flags: isEnabled('module:vendors') checks aos-shell-module-vendors.
+   */
+
+  var _ROLE_SHELL_DEFAULTS = {
+    /* All false until Phase C rollout begins and Michael authorizes per-role flip */
+    owner: false,
+    admin: false,
+    manager: false,
+    sales: false,
+    designer: false,
+    builder: false,
+    warehouse: false,
+    viewer: false,
+  };
+
+  function _flagStorageKey(flagName) {
+    if (flagName === 'shell-phase-a' || flagName === 'shell') return 'aos-shell-enabled';
+    if (flagName.indexOf('module:') === 0) return 'aos-shell-module-' + flagName.slice(7);
+    return 'aos-flag-' + flagName;
+  }
+
+  function _isEnabled(flagName) {
+    try {
+      var q = new URLSearchParams(location.search);
+      var qParam = flagName === 'shell-phase-a' ? 'shell' : flagName;
+      if (q.get(qParam) === '1') return true;
+      if (q.get(qParam) === '0') return false;
+
+      var storageKey = _flagStorageKey(flagName);
+      var ls = null;
+      try { ls = localStorage.getItem(storageKey); } catch (e) { /* private browsing */ }
+      if (ls === '1') return true;
+      if (ls === '0') return false;
+
+      if (flagName === 'shell-phase-a' || flagName === 'shell') {
+        var cu = window.CU;
+        if (cu && cu.role) {
+          var role = cu.role.toLowerCase();
+          if (_ROLE_SHELL_DEFAULTS[role] === true) return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function _setOverride(flagName, value) {
+    try {
+      var storageKey = _flagStorageKey(flagName);
+      if (value === null || value === undefined) {
+        localStorage.removeItem(storageKey);
+      } else {
+        localStorage.setItem(storageKey, value ? '1' : '0');
+      }
+    } catch (e) { /* noop */ }
+  }
+
   /* ── Public API ─────────────────────────────────────── */
 
   window.AccentOS = window.AccentOS || {};
+  window.AccentOS.flags = {
+    isEnabled: _isEnabled,
+    override: _setOverride,
+  };
   window.AccentOS.shell = {
     openCommandLauncher: openCommandLauncher,
     closeCommandLauncher: closeCommandLauncher,

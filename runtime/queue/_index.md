@@ -1,13 +1,13 @@
 # Queue Snapshot
 
-**Updated:** 2026-05-10T01:15:00Z
-**Totals:** 1 ready · 13 blocked · 0 in flight · 15 complete
+**Updated:** 2026-05-10T01:30:00Z
+**Totals:** 0 ready · 13 blocked · 0 in flight · 16 complete
 
 ---
 
 ## READY
 
-- r-03-feature-flag-scaffold — LOW · 0.25 sessions
+_(none — all pre-mount READY items complete; Phase A mount awaits dec-02-phase-a-auth)_
 
 ## IN FLIGHT
 
@@ -45,8 +45,9 @@ _(none)_
 - gl-05-phase-e-modules — gated on Phase D verified
 - gl-06-phase-f-decommission — gated on Phase E + dec-04
 
-## COMPLETE (last 8)
+## COMPLETE (last 9)
 
+- r-03-feature-flag-scaffold — 2026-05-10 · window.AccentOS.flags.isEnabled() + override() in accentos-shell.js
 - qa-07-data-roles-collision — 2026-05-10 · shell data-roles → data-aos-roles, blocks Phase A mount resolved
 - qa-06-btn-class-scoping — 2026-05-10 · scoped .btn* rules added to accentos-shell.css, blocks Phase A mount resolved
 - r-02-decision-lock-doc — 2026-05-10 · `1c750a4` · DECISION_LOCK_V1.md + DEC-01-B/C corrections
