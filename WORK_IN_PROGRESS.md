@@ -1,8 +1,24 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-10 — overnight autonomy bookmark added (Claude on `claude/safe-overnight-autonomy-EHEbQ`).
+**Resume trigger:** "continue last session" — original CORS / worker-redeploy context below is unchanged.
+
+---
+
+## OVERNIGHT BOOKMARK (2026-05-10)
+- Mode: Safe Overnight Autonomy. **Doc-only work, zero production mutation.**
+- 4 commits on branch `claude/safe-overnight-autonomy-EHEbQ` (all `docs:`).
+- Read `OVERNIGHT_STATUS.md` first thing in the morning.
+- New artifacts: `SAFE_OVERNIGHT_QUEUE.md`, `STATUS.md`, `OVERNIGHT_STATUS.md`, `CODEX_PILOT_CANDIDATES.md`, `skills/_candidates/` (3 outlines, not yet promoted).
+- Untouched: `index.html`, worker, sql/, governance files.
+- The Parse Notes 400 bug below is still the active production blocker. Steps unchanged.
+
+---
+
+**Pre-overnight resume trigger preserved verbatim below.**
+
+**Resume trigger (original):** "continue last session"
 
 ---
 
