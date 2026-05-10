@@ -1,14 +1,16 @@
 # Queue Snapshot
 
-**Updated:** 2026-05-10T00:30:00Z
-**Totals:** 2 ready · 10 blocked · 0 in flight · 12 complete
+**Updated:** 2026-05-10T01:00:00Z
+**Totals:** 4 ready · 13 blocked · 0 in flight · 13 complete
 
 ---
 
 ## READY
 
-- r-02-decision-lock-doc — high · 0.5 sessions (queue file pending)
-- r-03-feature-flag-scaffold — low · 0.25 sessions (queue file pending)
+- [qa-07-data-roles-collision](qa-07-data-roles-collision.md) — HIGH · 0.25 sessions · blocks Phase A mount
+- [qa-06-btn-class-scoping](qa-06-btn-class-scoping.md) — MEDIUM · 0.25 sessions · blocks Phase A mount
+- r-02-decision-lock-doc — HIGH · COMPLETE (committed 1c750a4)
+- r-03-feature-flag-scaffold — LOW · 0.25 sessions
 
 ## IN FLIGHT
 
@@ -17,18 +19,25 @@ _(none)_
 ## BLOCKED — Michael Action Required
 
 - bug-01-worker-deploy — CRITICAL · `wrangler deploy` from local terminal
-- dec-01-phase-a-decisions — HIGH · answer 5 questions in `docs/design/ACCENTOS_PROGRESSIVE_SHELL_ROLLOUT.md §11`
+- dec-01-phase-a-decisions — HIGH · answer remaining items in `docs/implementation/DECISION_LOCK_V1.md`
 - sql-01-migrations — HIGH · run M01–M40 in Supabase SQL editor
 - dec-02-phase-a-auth — HIGH · authorize Phase A integration (after dec-01)
 - dec-03-phase-b-auth — MEDIUM · authorize Phase B integration (after Phase A verified)
 - dec-04-phase-f-auth — LOW · authorize Phase F decommission (far future)
 - rls-01-enforcement — MEDIUM · decide RLS enforcement timeline
+- [qa-04-font-system-decision](qa-04-font-system-decision.md) — MEDIUM · Outfit vs Inter during coexistence — needs Michael decision
 
-## BLOCKED — Phase A Auth Gate (discovered in audit 2026-05-10)
+## BLOCKED — Phase A Auth Gate
 
 - [qa-01-cmdk-deconflict](qa-01-cmdk-deconflict.md) — HIGH · `js/global_search.js` Cmd+K listener conflicts with shell launcher
 - [qa-02-viewport-fit](qa-02-viewport-fit.md) — MEDIUM · `viewport-fit=cover` missing from `index.html`
-- [qa-03-zindex-remap](qa-03-zindex-remap.md) — MEDIUM · 3 z-index collisions between legacy and shell layers
+- [qa-03-zindex-remap](qa-03-zindex-remap.md) — MEDIUM · RESOLVED in tokens.css (commit 399157f)
+
+## BLOCKED — Phase B Gate
+
+- [qa-05-body-overflow-ios](qa-05-body-overflow-ios.md) — MEDIUM · verify iOS Safari fixed-position with body overflow:hidden
+- [qa-08-auth-state-bridge](qa-08-auth-state-bridge.md) — MEDIUM · window.CU → shell identity bridge contract
+- [qa-09-navigate-goto-bridge](qa-09-navigate-goto-bridge.md) — MEDIUM · navigate() vs goTo() bridge + mode guard bypass
 
 ## GATE-LOCKED — Phase Gate
 
@@ -39,8 +48,9 @@ _(none)_
 - gl-05-phase-e-modules — gated on Phase D verified
 - gl-06-phase-f-decommission — gated on Phase E + dec-04
 
-## COMPLETE (last 5)
+## COMPLETE (last 6)
 
+- r-02-decision-lock-doc — 2026-05-10 · `1c750a4` · DECISION_LOCK_V1.md + DEC-01-B/C corrections
 - r-01-prototype-hardening — 2026-05-09 · `86ff903` · empty states, aria, role=dialog
 - mvhb-first-exec-layer — 2026-05-09 · `1062dc5` · MVHB_ROADMAP, SESSION_LIFECYCLE, EXECUTION_TOPOLOGY, MICHAEL_ATTENTION_BUDGET
 - mvhb-phase-1 — 2026-05-08 · `99f4f6e` · runtime foundation
