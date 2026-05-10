@@ -1,44 +1,44 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-10 — overnight session complete (6.5 + 6.6 shipped, model ID fixed, field name bugs fixed)
+**Resume trigger:** "continue" or "morning standup"
 
 ---
 
-## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
+## COMPLETED THIS SESSION (2026-05-10 overnight)
+- **Codex CLI installed:** `@openai/codex` v0.130.0 globally. Auth deferred — Codex pilot tomorrow.
+- **6.5 Trade & Designer Portal** shipped — `js/trade_designer_portal.js`, sidebar CORE entry (Owner/Admin/Manager/Sales). Relationship dashboard per trade partner: stats, expandable linked quotes/deals/jobs, inline actions.
+- **6.6 Vendor Rep Portal** shipped — `js/vendor_rep_portal.js`, sidebar ADMIN entry (Owner/Admin). Rep group dashboard: stats, expandable brand scores, co-op status, 30d deadline warnings, outreach shortcuts.
+- **Model ID fixed:** `claude-sonnet-4-20250514` → `claude-sonnet-4-6` in all 4 AI call sites in index.html.
+- **Field name bugs fixed (3 files):** `portal_preview.js`, `global_search.js`, `reports.js` used stale `partner_type` / `linked_customer_id` — corrected to `type` / `related_customer_id`.
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+---
 
-## NEXT STEPS PENDING
+## CURRENT BUG (still open — needs Michael's Windows terminal)
+"⚡ Parse Notes" in Quote Generator returns 400 from the worker.
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+**Root cause:** Worker code IS correct (commit `2dca2a6`). Model ID IS now fixed (`claude-sonnet-4-6`). **Worker has NOT been redeployed.** Wrangler not authenticated in this cloud environment.
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
+**Michael's action — run in Windows terminal:**
 ```
 cd C:\Users\Michael\Desktop\accent-os
 git pull origin main
 wrangler deploy
 ```
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+**Verify** (browser console on accent-os.pages.dev):
+```js
+fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST'}).then(r=>r.text()).then(console.log)
+```
+Expected after redeploy: `{"error":"Missing x-api-key header"}`
 
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+---
 
-Pick up from step 1.
+## TOMORROW MORNING — HIGHEST LEVERAGE ACTIONS
+
+1. **Deploy worker** (above — Michael's Windows terminal, 2 commands)
+2. **Codex auth** — create IP-unrestricted OpenAI key, set in `.claude/settings.local.json`, verify with test prompt
+3. **Codex pilot V1** — once auth verified, dispatch console.log audit task per `docs/codex/CODEX_PILOT_PLAN_V1.md`
+
+**All other open items blocked** on external credentials (M04 BigCommerce, M05 GMC, M06 GA4, M09 Klaviyo, M18 site approval, M03/M10 Windward).

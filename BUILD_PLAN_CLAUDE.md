@@ -136,8 +136,10 @@
   - BLOCKS ON MICHAEL: **M04**
 - [ ] **6.4** — Klaviyo integration
   - BLOCKS ON MICHAEL: **M09** (Klaviyo API key)
-- [ ] **6.5** — Trade & Designer Portal (external-facing)
-- [ ] **6.6** — Vendor Rep Portal (external-facing)
+- [x] **6.5** — Trade & Designer Portal (external-facing)
+  - Shipped v6.11.0: New "Trade Portal" page (CORE, Owner/Admin/Manager/Sales). External JS module `js/trade_designer_portal.js`. Pure-compute over TRADE_PARTNERS + QUOTES + DEALS + JOBS — no new schema. Stats: active partner count, engaged ≤30d, partners with linked business, total pipeline value attributed to partners. Expandable table rows per partner show linked quotes, deals, jobs with inline contact info, email action, and portal preview shortcut. `tpPortalExpanded` state persists across re-renders.
+- [x] **6.6** — Vendor Rep Portal (external-facing)
+  - Shipped v6.11.0: New "Rep Portal" page (ADMIN, Owner/Admin). External JS module `js/vendor_rep_portal.js`. Pure-compute over VD + REP_DIRECTORY + COOP_FUNDS + SHOWROOM_DISPLAYS — no new schema. Stats: rep group count, portfolio avg score, reps with open co-op, total open co-op $. Expandable table rows per rep group show contact info, top brands by score, co-op fund status (30d deadline warnings), showroom displays, and quick outreach/score-view/preview actions. Sort by sales/score/vendors/coop.
 - [x] **6.7** — AI Lighting Consultant (phase 1 — customer mode toggle inside AccentOS)
   - Shipped v6.10.23: Added "Customer Mode" toggle to the existing Knowledge Engine "Ask the Engine" tab. Two modes: **Internal** (existing — vendor names + margins + specs OK) vs **Customer** (warm consumer-facing tone, room-by-room recommendations, fixture sizing, layered design ideas; never reveals internal data). Mode persists via sessionStorage. Different intro text, chip suggestions (5 customer-friendly questions), and label ("ACCENT CONSULTANT" vs "ACCENT ENGINE"). Different system prompt: customer mode warns it never reveals being an AI on Claude and routes specifics to "schedule a showroom visit or request a quote." Phase 2 (deferred): extract chat to a public iframe embeddable on accentlightinginc.com once M18 site approval lands and Track 6.10 deploys the embed.
 - [x] **6.8** — Intelligent Alerts (Agentic Level 3 → 4 cross-system)

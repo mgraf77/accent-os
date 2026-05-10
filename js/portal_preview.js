@@ -41,7 +41,7 @@ function _ppTradePicker(){
       <strong>Trade Partner:</strong>
       <select onchange="portalPreview.selectedId=this.value;_ppRender()" style="padding:6px 10px;font-size:13px;min-width:220px;">
         <option value="">— pick a partner —</option>
-        ${partners.map(p => `<option value="${esc(p.id)}" ${portalPreview.selectedId===p.id?'selected':''}>${esc(p.name||p.company)}${p.partner_type?' ('+p.partner_type+')':''}</option>`).join('')}
+        ${partners.map(p => `<option value="${esc(p.id)}" ${portalPreview.selectedId===p.id?'selected':''}>${esc(p.name||p.company)}${p.type?' ('+p.type+')':''}</option>`).join('')}
       </select>
     </label>
     ${partners.length === 0 ? '<span class="muted sm">No active trade partners. Add one via Trade Partners page.</span>' : ''}
@@ -78,8 +78,8 @@ function _ppRenderTrade(body){
   if(!p){ body.innerHTML = '<div class="card" style="padding:24px;color:var(--text-3);">Partner not found.</div>'; return; }
 
   // Linked customer (if set) → all their quotes / deals / jobs / deliveries
-  const linkedCust = p.linked_customer_id
-    ? (typeof CUSTOMERS !== 'undefined' ? CUSTOMERS.find(c => c.id === p.linked_customer_id) : null)
+  const linkedCust = p.related_customer_id
+    ? (typeof CUSTOMERS !== 'undefined' ? CUSTOMERS.find(c => c.id === p.related_customer_id) : null)
     : null;
   const custName = linkedCust?.name || p.company || p.name;
 
@@ -101,7 +101,7 @@ function _ppRenderTrade(body){
         <div>
           <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;">Welcome,</div>
           <div style="font-size:24px;font-weight:700;">${esc(p.name||p.company)}</div>
-          <div style="font-size:13px;color:var(--text-3);">${esc(p.partner_type||'Trade Partner')}${p.company && p.name?' · '+esc(p.company):''}</div>
+          <div style="font-size:13px;color:var(--text-3);">${esc(p.type||'Trade Partner')}${p.company && p.name?' · '+esc(p.company):''}</div>
         </div>
         <div style="text-align:right;font-size:12px;color:var(--text-3);">
           ${p.preferred_terms?'<div><strong>Terms:</strong> '+esc(p.preferred_terms)+'</div>':''}
@@ -276,7 +276,7 @@ function _ppCopySummary(){
   let summary = '';
   if(portalPreview.mode === 'trade'){
     const p = (typeof TRADE_PARTNERS !== 'undefined' ? TRADE_PARTNERS : []).find(x => x.id === portalPreview.selectedId);
-    summary = `Portal preview: Trade Partner ${p?.name||p?.company||''} (${p?.partner_type||'—'})\nGenerated ${new Date().toLocaleString()}`;
+    summary = `Portal preview: Trade Partner ${p?.name||p?.company||''} (${p?.type||'—'})\nGenerated ${new Date().toLocaleString()}`;
   } else {
     const myVendors = (typeof VD !== 'undefined' ? VD : []).filter(v => (v.rep||v.rg) === portalPreview.selectedId);
     summary = `Portal preview: Rep ${portalPreview.selectedId} — ${myVendors.length} vendors, $${Math.round(myVendors.reduce((s,v)=>s+(v.sales?.t||0),0)/1000).toLocaleString()}K lifetime sales\nGenerated ${new Date().toLocaleString()}`;

@@ -128,8 +128,8 @@ function buildReportRows(key){
       return out;
     }
     case 'trade_partners': {
-      const out = [['name','company','partner_type','status','email','phone','address','license','rating','preferred_terms','linked_customer_id','notes']];
-      (TRADE_PARTNERS||[]).forEach(t => out.push([t.name||'', t.company||'', t.partner_type||'', t.status||'', t.email||'', t.phone||'', t.address||'', t.license||'', t.rating??'', t.preferred_terms||'', t.linked_customer_id||'', t.notes||'']));
+      const out = [['name','company','type','status','email','phone','address','trade_license','rating','preferred_terms','related_customer_id','notes']];
+      (TRADE_PARTNERS||[]).forEach(t => out.push([t.name||'', t.company||'', t.type||'', t.status||'', t.email||'', t.phone||'', t.address||'', t.trade_license||'', t.rating??'', t.preferred_terms||'', t.related_customer_id||'', t.notes||'']));
       return out;
     }
     case 'warranty': {
