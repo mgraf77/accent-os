@@ -2,6 +2,142 @@
 > Append-only. Most recent entry at top. Auto-committed each session.
 > Replaces Notion Live Log. Do not delete entries.
 
+---
+
+## N=2 EXPERIMENT — PRE-EXECUTION SCI CHECK · 2026-05-10
+
+**Status: COMPLETE — execution cleared with documented SCIs**
+
+**Branch alignment:**
+```
+Branch A  claude/setup-codex-integration-gMAyH  HEAD: 587ed2c
+Branch B  claude/cohort2-reg-batch-b-n2          HEAD: 587ed2c  (rebased — same base confirmed)
+```
+
+**Baseline verified:**
+```
+register() count: 3  (cohort-1 only — confirmed)
+All 13 target files: exist — confirmed
+Existing register() in target files: 0 — confirmed
+```
+
+---
+
+### SCI INCIDENT 1 — CORRIDOR DOC MISATTRIBUTION
+
+```
+type:         corridor_doc_error (provides[] assigned to wrong files)
+severity:     HIGH — affects register() metadata correctness if corridor doc is followed without re-reading files
+detected_at:  pre-execution (SCI check)
+
+WRONG (corridor doc):
+  vendor_scoring.js       provides: ['vendorScore','weightedScore','computeVendorTier','tier','tierBadge']
+  vendor_scoring_helpers.js provides: ['colSummary','scoreColor','dispScore','fmt$']
+
+ACTUAL (verified by grep):
+  vendor_scoring.js       provides: COOP tracker (sbLoadCoopFunds, sbSaveCoopFund, sbDeleteCoopFund,
+                                    renderCoopTracker, openCoopEdit, deleteCoopFund),
+                                    Quotes Supabase (sbLoadQuotes, sbSaveQuote, sbDeleteQuote),
+                                    Vendor overrides (sbLoadVendorOverrides, sbSaveVendorOverride),
+                                    Vendor scores Supabase (sbLoadVendorScores, sbSaveVendorScore, sbSaveScoreState),
+                                    Changelog Supabase (sbLoadChangelog, sbAppendChangelog),
+                                    Vendor parents (sbLoadParents, getVendorParent, getSisterVendors),
+                                    Category helpers (applyPrefillVendorCats, renderCatChips, openCategoryEditor),
+                                    COOP_FUNDS, PARENT_COMPANIES, PARENT_BY_ID
+
+  vendor_scoring_helpers.js provides: computeVendorTier, vendorScore, weightedScore, tier, tierBadge,
+                                      scoreColor, dispScore, fmt$, colSummary,
+                                      CHANGELOG (declared here), logChange, VENDOR_ELIGIBILITY, TIER_B_KEYS
+
+resolution:   Operator MUST read each file before writing register() — do NOT use corridor doc
+              provides[] table as-is for these two files. Corridor doc self-disclaims this:
+              "The table above is a best-guess. Verify against file content."
+```
+
+---
+
+### SCI INCIDENT 2 — HIDDEN DEPENDENCY: Batch A consumes Batch B provides
+
+```
+type:         hidden_dependency_overlap
+severity:     MEDIUM — pre-existing runtime dependency; not a register() collision;
+              must be reflected in consumes[] metadata for accuracy
+detected_at:  pre-execution (SCI check)
+
+Batch A modules (Branch A) that consume from Batch B modules (Branch B):
+
+  vendors_module.js (A)   → calls weightedScore()     → defined in vendor_scoring_helpers.js (B)
+  vendors_module.js (A)   → calls exportCSV()          → defined in vendors_overflow.js (B)
+  dashboard_module.js (A) → calls weightedScore()      → defined in vendor_scoring_helpers.js (B)
+  dashboard_module.js (A) → reads CHANGELOG global     → declared in vendor_scoring_helpers.js (B)
+  mgmt_module.js (A)      → calls weightedScore()      → defined in vendor_scoring_helpers.js (B)
+
+resolution:   consumes[] for vendors_module, dashboard_module, mgmt_module must include
+              'weightedScore' and 'exportCSV' (for vendors_module). These are runtime
+              dependencies that exist in the codebase today — adding register() does not
+              create them. File disjointness is NOT broken — neither branch touches the
+              other's files.
+```
+
+---
+
+### SCI INCIDENT 3 — HIDDEN DEPENDENCY: Batch B consumes from module outside both batches
+
+```
+type:         hidden_dependency_overlap (external module)
+severity:     LOW — pre-existing; no collision risk; informational
+detected_at:  pre-execution (SCI check)
+
+  vendors_overflow.js (B) → calls getChangeLog()  → defined in js/deal_optimizer.js
+                                                      (outside both batches — already loaded)
+
+resolution:   No action needed. deal_optimizer.js is a separately loaded module.
+              Document in vendors_overflow.js register() consumes[]: 'getChangeLog'.
+```
+
+---
+
+### SCI INCIDENT 4 — SHARED RUNTIME ASSUMPTION: CHANGELOG global
+
+```
+type:         shared_runtime_assumption
+severity:     LOW — pre-existing; no register() collision; informational
+detected_at:  pre-execution (SCI check)
+
+  vendor_scoring_helpers.js (B)  declares: let CHANGELOG = []
+  vendor_scoring.js (A)          provides: sbAppendChangelog() — mutates CHANGELOG
+  dashboard_module.js (A)        reads:    CHANGELOG directly (typeof check before use)
+
+  All three interact with the same global. Declaration is in Batch B.
+  Read and mutation are in Batch A. Load-order dependency exists but is pre-existing.
+
+resolution:   Document in register() consumes/provides accurately. Not a blocking issue.
+```
+
+---
+
+### SCI PRE-CHECK SUMMARY
+
+```
+Total SCIs found:              4
+Detected pre-execution:        4  (all caught)
+Detected post-execution:       0
+File disjointness:             CONFIRMED — no file appears in both batches
+register() collision risk:     NONE — SCIs are metadata and runtime issues, not register() conflicts
+Blocking issues:               NONE
+
+Required corrections before executing register():
+  1. Re-read vendor_scoring.js and vendor_scoring_helpers.js before writing their register() calls
+     — provides[] in corridor doc are SWAPPED for these two files
+  2. Add 'weightedScore' to consumes[] for vendors_module.js, dashboard_module.js, mgmt_module.js
+  3. Add 'exportCSV' to consumes[] for vendors_module.js
+  4. Add 'getChangeLog' to consumes[] for vendors_overflow.js
+
+Experiment cleared to proceed: YES
+```
+
+---
+
 ## CURRENT PRIORITY QUEUE
 > Updated each session. This is what we work on next, in order.
 
