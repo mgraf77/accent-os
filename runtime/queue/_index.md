@@ -1,7 +1,7 @@
 # Queue Snapshot
 
-**Updated:** 2026-05-09T21:30:00Z
-**Totals:** 2 ready · 7 blocked · 0 in flight · 12 complete
+**Updated:** 2026-05-10T00:30:00Z
+**Totals:** 2 ready · 10 blocked · 0 in flight · 12 complete
 
 ---
 
@@ -23,6 +23,12 @@ _(none)_
 - dec-03-phase-b-auth — MEDIUM · authorize Phase B integration (after Phase A verified)
 - dec-04-phase-f-auth — LOW · authorize Phase F decommission (far future)
 - rls-01-enforcement — MEDIUM · decide RLS enforcement timeline
+
+## BLOCKED — Phase A Auth Gate (discovered in audit 2026-05-10)
+
+- [qa-01-cmdk-deconflict](qa-01-cmdk-deconflict.md) — HIGH · `js/global_search.js` Cmd+K listener conflicts with shell launcher
+- [qa-02-viewport-fit](qa-02-viewport-fit.md) — MEDIUM · `viewport-fit=cover` missing from `index.html`
+- [qa-03-zindex-remap](qa-03-zindex-remap.md) — MEDIUM · 3 z-index collisions between legacy and shell layers
 
 ## GATE-LOCKED — Phase Gate
 
