@@ -52,3 +52,36 @@ function openModal(title,body,foot=''){
   $('overlay').classList.add('on');
 }
 function closeModal(e){ if(!e||e.target===$('overlay')) $('overlay').classList.remove('on'); }
+
+// ── AOS MODULE REGISTRY (observation-only substrate) ──────────
+// Stores module metadata for DevTools inspection. No enforcement, no lifecycle.
+// register({name, provides:[], consumes:[]})
+window.AOS_REGISTRY = {};
+window.register = function(def) {
+  if (!def || !def.name) { console.warn('[AOS] register() called with no name'); return; }
+  if (AOS_REGISTRY[def.name]) {
+    console.warn('[AOS] Duplicate module registration:', def.name);
+    return;
+  }
+  const entry = { name: def.name, provides: def.provides || [], consumes: def.consumes || [] };
+  AOS_REGISTRY[def.name] = entry;
+  // Warn if any consumed token is not provided by any registered module.
+  // (Only checks modules registered so far — ordering-tolerant; re-check deferred to DOMContentLoaded.)
+  const allProvided = Object.values(AOS_REGISTRY).flatMap(m => m.provides);
+  const missing = entry.consumes.filter(c => !allProvided.includes(c));
+  if (missing.length) {
+    console.warn('[AOS] ' + def.name + ': consumes not yet provided:', missing);
+  }
+};
+
+// After all modules load, do a final cross-check and log the registry.
+document.addEventListener('DOMContentLoaded', function() {
+  const allProvided = Object.values(AOS_REGISTRY).flatMap(m => m.provides);
+  Object.values(AOS_REGISTRY).forEach(m => {
+    const missing = m.consumes.filter(c => !allProvided.includes(c));
+    if (missing.length) {
+      console.warn('[AOS] ' + m.name + ': consumes not resolved:', missing);
+    }
+  });
+  console.log('[AOS] Registry:', Object.keys(AOS_REGISTRY));
+}, { once: true });
