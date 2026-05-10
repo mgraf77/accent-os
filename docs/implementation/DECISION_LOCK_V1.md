@@ -74,7 +74,7 @@ one silently wins — probably the last event listener registered.
 Default: Shell handles Cmd+K. A pre-Phase-A audit will grep `index.html` for
 existing bindings and de-conflict them before any production code is touched.
 
-Answer: Shell owns Cmd+K / Legacy keeps it / Run audit first, decide after
+Answer: ~~Shell owns Cmd+K~~ / ~~Legacy keeps it~~ / **✓ Run audit first, decide after** — 2026-05-10
 
 ---
 
@@ -89,7 +89,7 @@ Default: All four layers. Needed for safe per-module rollback during Phase E.
 Choosing "master flag only" is simpler but risks needing a full rollback instead
 of a per-module one if something breaks late in the rollout.
 
-Answer: All four layers / Master flag only / Global + per-user (skip role and module)
+Answer: ~~All four layers~~ / ~~Master flag only~~ / **✓ Global + per-user (skip role and module)** — 2026-05-10
 
 ---
 
