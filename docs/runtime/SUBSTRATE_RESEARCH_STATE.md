@@ -26,7 +26,7 @@ When prior docs are updated, this doc is updated. When new substrate research is
 done, the entry goes here first; if it grows large, it is promoted to its own doc
 and this one references it.
 
-**Last update:** 2026-05-10 (research round 4 — research station established).
+**Last update:** 2026-05-10 (research round 5 — implementation-prep docs for E0 / S0 / G0 added).
 
 ---
 
@@ -44,6 +44,9 @@ and this one references it.
 | `SUBSTRATE_MIGRATION_RISKS.md`                | 11 hazards, 5 irreversible mistakes, 10 dangerous half-built states  |
 | `HUMAN_IN_THE_LOOP_PERSISTENCE.md`            | What stays human-controlled forever; trust + governance anchors      |
 | `SUBSTRATE_RESEARCH_STATE.md` (this)          | Standing snapshot + sequencing discipline                            |
+| `E0_IMPLEMENTATION_PREP.md`                   | Identity-seed prep — exact shape, blast radius, rollback, corruption |
+| `S0_IMPLEMENTATION_PREP.md`                   | Heartbeat-seed prep — exact shape, blast radius, rollback, corruption|
+| `G0_IMPLEMENTATION_PREP.md`                   | Policy-as-data prep — exact shape, blast radius, rollback, corruption|
 
 The corpus is internally consistent and cross-referenced. Add to it; don't
 re-derive it.
