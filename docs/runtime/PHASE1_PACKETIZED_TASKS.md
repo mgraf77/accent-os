@@ -20,8 +20,8 @@ Michael's only relay action between packets: copy → paste.
 | Packet | Module | Lines | Status | Commit |
 |---|---|---|---|---|
 | P1 | vendors_module.js | ~1,844 | ✅ Complete | c345f23 |
-| P2 | vendor_scoring.js | ~847 | ⬜ Ready (P1 done) | — |
-| P3 | quotes_module.js | ~531 | ⬜ Not started | — |
+| P2 | vendor_scoring.js | ~847 | ✅ Complete | 5168e6d |
+| P3 | quotes_module.js | ~531 | ⬜ Ready | — |
 | P4 | dashboard_module.js | ~477 | ⬜ Not started | — |
 | P5 | mgmt_module.js | ~467 | ⬜ Not started | — |
 | P6 | pipeline_module.js | ~346 | ⬜ Not started | — |
