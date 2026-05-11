@@ -1,5 +1,6 @@
 // ── VENDORS OVERFLOW MODULE (extracted from index.html at v6.11.1) ──
 // renderChangelog, revertChange, openVP, liveScore, exportCSV, changelog page
+register({ name: 'vendors_overflow', provides: ['renderChangelog','openVP','liveScore','exportCSV','openAddVendor','changelog'], consumes: ['VD','CU','CHANGELOG','$','esc','toast','getChangeLog','computeVendorTier','weightedScore','scoreColor','dispScore','fmt$','colSummary'] });
 
 function renderChangelog(container) {
   const log = getChangeLog();

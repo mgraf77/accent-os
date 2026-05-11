@@ -1,4 +1,5 @@
 // ── KNOWLEDGE MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'knowledge_module', provides: ['knowledge','sendChat'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 
 // ── KNOWLEDGE ENGINE ─────────────────────────────────────
 // ══════════════════════════════════════════════════════════

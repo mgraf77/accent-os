@@ -1,4 +1,5 @@
 // ── SETTINGS MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'settings_module', provides: ['settings','changeMyPassword'], consumes: ['CU','sbFetch','sbConfigured','toast','$','esc'] });
 
 // ── SETTINGS ──────────────────────────────────────────────
 function settings(el){
