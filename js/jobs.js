@@ -287,11 +287,31 @@ function openJobEdit(jobId, preset){
 async function saveJob(jobId){
   const project_name = $('jb-p')?.value?.trim();
   if(!project_name){ toast('Project name required','err'); return; }
-  const customer_id = $('jb-c').value || null;
+  let customer_id = $('jb-c').value || null;
   let customer_name = $('jb-cn').value?.trim() || null;
   if(customer_id && !customer_name){
     const opt = $('jb-c').options[$('jb-c').selectedIndex];
     customer_name = opt?.getAttribute('data-name') || null;
+  }
+  // Auto-link by name if dropdown wasn't used but customer name was typed.
+  // Same pattern as sbSaveQuote / sbSaveDeal — exact match links, no-match auto-creates a prospect.
+  if(!customer_id && customer_name && Array.isArray(window.CUSTOMERS)){
+    const norm = customer_name.toLowerCase().trim();
+    const matches = window.CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
+    if(matches.length === 1){
+      customer_id = matches[0].id;
+    } else if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
+      try{
+        const created = await sbSaveCustomer({
+          name: customer_name,
+          type: 'other',
+          lifecycle_stage: 'prospect',
+          first_seen: new Date().toISOString().slice(0,10),
+          notes: 'Auto-created from job ' + project_name
+        });
+        if(created && created.id){ customer_id = created.id; window.CUSTOMERS.push(created); }
+      }catch(e){ console.warn('[jobs] auto-create customer failed:', e.message); }
+    }
   }
   const rec = {
     id: jobId || undefined,
