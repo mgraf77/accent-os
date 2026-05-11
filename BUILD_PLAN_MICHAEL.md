@@ -21,6 +21,13 @@
   - Then: paste to Claude → `M01 done — RLS tightened on vendor_* tables. Continue from BUILD_PLAN_CLAUDE.md`
   - Unlocks: production-grade RLS posture; ability to ship public-facing portals (Track 6.5/6.6) without leaking write access
 
+- [ ] **M01b** — RE-RUN M01 (original run no-op'd on the actual anon policies)
+  - Why: 2026-05-11 Supabase advisor scan still reports `vendor_categories`, `vendor_changelog`, `parent_companies`, `vendor_parent_assignments` as having `USING (true)` anon-write policies. The first M01 dropped placeholder names that didn't exist (`"anon read"` etc.); the actual live policy names are `anon_all_categories`, `anon_all_changelog`, `anon write parent_companies`, `anon write vpa`. M01 has been patched (commit `d84c69b`) to drop those real names.
+  - Action: same as M01 — paste `sql/M01_rls_tightening.sql` into SQL Editor → Run.
+  - Verify: re-run the advisor (`get_advisors` MCP or dashboard → Advisors) and confirm `rls_policy_always_true` count drops from 35 → 31.
+  - Then: paste to Claude → `M01b done — anon policies cleared.`
+  - Priority: HIGH — anon write access to vendor and parent-company tables is currently live.
+
 - [x] **M02** — Run §0.4 Core Database Schema (consolidated CREATE TABLE block)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
