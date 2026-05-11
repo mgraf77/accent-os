@@ -245,11 +245,11 @@ function computeGlobalSearch(q){
   if(typeof TRADE_PARTNERS !== 'undefined'){
     const matches = [];
     TRADE_PARTNERS.forEach(t => {
-      const score = _gsScoreObj(q, [t.name, t.company, t.email, t.phone, t.partner_type]);
+      const score = _gsScoreObj(q, [t.name, t.company, t.email, t.phone, t.type, (t.tags||[]).join(' ')]);
       if(score > 0){
         matches.push({
           score, icon:'◆', title: t.name || t.company,
-          subtitle: `Trade Partner · ${t.partner_type||'—'} · ${t.status||'—'}${t.company && t.name?' · '+t.company:''}`,
+          subtitle: `Trade Partner · ${t.type||'—'} · ${t.status||'—'}${t.company && t.name?' · '+t.company:''}`,
           action: () => { goTo('tradepartners'); setTimeout(()=>{ if(typeof openTradePartnerEdit==='function') openTradePartnerEdit(t.id); }, 80); }
         });
       }
@@ -399,10 +399,5 @@ function computeGlobalSearch(q){
   return groups;
 }
 
-// Wire Ctrl/Cmd+K to open search globally
-document.addEventListener('keydown', e => {
-  if((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')){
-    e.preventDefault();
-    openGlobalSearch();
-  }
-});
+// Cmd/Ctrl+K + "/" handler now lives in index.html main keydown listener
+// so it can also gate on $('app').classList.contains('on') and route Esc.
