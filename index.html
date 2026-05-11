@@ -5667,6 +5667,22 @@ function renderLI() {
   const summary  = $('q-approval-summary');
   if (summary) summary.innerHTML = `<span style="color:var(--green);">✓ ${approved} approved</span>&nbsp;&nbsp;<span style="color:#f59e0b;">⚠ ${flagged} flagged</span>&nbsp;&nbsp;<span style="color:var(--text-3);">${pending} pending</span>`;
 
+  // SKU autocomplete: build once per render from INVENTORY. list_price > 0 only,
+  // so empty/uncosted rows don't clutter the dropdown.
+  if (!$('li-sku-options')) {
+    const dl = document.createElement('datalist');
+    dl.id = 'li-sku-options';
+    document.body.appendChild(dl);
+  }
+  const dl = $('li-sku-options');
+  if (dl && typeof INVENTORY !== 'undefined' && Array.isArray(INVENTORY)) {
+    dl.innerHTML = INVENTORY
+      .filter(it => it.sku)
+      .slice(0, 5000)
+      .map(it => `<option value="${esc(it.sku)}">${esc(it.description||'')}${it.list_price?' — $'+Number(it.list_price).toFixed(2):''}${it.vendor_name?' · '+esc(it.vendor_name):''}</option>`)
+      .join('');
+  }
+
   b.innerHTML = LI.map((li, i) => {
     const rowBg = li.status==='approved' ? 'background:rgba(34,197,94,.05);' : li.status==='flagged' ? 'background:rgba(245,158,11,.07);' : '';
     const statusBadge = li.status==='approved'
@@ -5678,7 +5694,7 @@ function renderLI() {
     const reasonHint = li.reasoning ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px;font-style:italic;">${esc(li.reasoning)}</div>` : '';
     return `<tr style="${rowBg}">
       <td style="text-align:center;">${statusBadge}</td>
-      <td><input value="${esc(li.part)}" onchange="LI[${i}].part=this.value;LI[${i}].status='pending';" style="font-family:'DM Mono',monospace;font-size:11px;" placeholder="Part #"></td>
+      <td><input value="${esc(li.part)}" list="li-sku-options" autocomplete="off" oninput="liSkuPick(${i},this.value)" onchange="LI[${i}].part=this.value;LI[${i}].status='pending';" style="font-family:'DM Mono',monospace;font-size:11px;" placeholder="Part / SKU"></td>
       <td><input value="${esc(li.desc)}" onchange="LI[${i}].desc=this.value;LI[${i}].status='pending';updatePreview()" placeholder="Description">${flagHint}${reasonHint}</td>
       <td><input type="number" value="${li.qty}" onchange="LI[${i}].qty=parseFloat(this.value)||0;LI[${i}].status='pending';renderLI();updatePreview()" style="text-align:center;"></td>
       <td><input type="number" value="${li.price}" onchange="LI[${i}].price=parseFloat(this.value)||0;LI[${i}].status='pending';renderLI();updatePreview()"></td>
@@ -5691,6 +5707,24 @@ function renderLI() {
       </td>
     </tr>`;
   }).join('');
+}
+
+// liSkuPick — when the user picks (or types) a SKU from the autocomplete and that
+// SKU exists in INVENTORY, auto-fill description, list price, and category-by-vendor
+// onto that line item. Saves the typical "type SKU → re-type desc → look up price"
+// loop. If the typed value isn't a real SKU, just stores it as part-no and leaves
+// the other fields alone — preserves free-text entry.
+function liSkuPick(i, sku) {
+  if (!sku || typeof INVENTORY === 'undefined' || !Array.isArray(INVENTORY)) return;
+  const item = INVENTORY.find(it => (it.sku||'').toLowerCase() === sku.toLowerCase());
+  if (!item) { LI[i].part = sku; return; }
+  LI[i].part = item.sku;
+  if (!LI[i].desc || LI[i].desc.length < 3) LI[i].desc = item.description || LI[i].desc;
+  if (!LI[i].price || LI[i].price === 0) LI[i].price = Number(item.list_price) || LI[i].price;
+  if (item.vendor_name) { LI[i].vendorName = item.vendor_name; LI[i].vendorId = item.vendor_id; }
+  LI[i].status = 'pending';
+  renderLI();
+  updatePreview();
 }
 
 function qFlagRow(i) {
@@ -5949,8 +5983,40 @@ function deleteQ(numberId) {
   toast('Quote deleted','ok');
 }
 
+// Duplicate an existing saved quote — clones line items, blanks the project
+// + dates so the user can re-save against a new project. Fresh quote ID is
+// assigned at save time. Useful for repeat-bid workflows.
+function duplicateQuote(quoteId) {
+  const src = QUOTES.find(q => q.id === quoteId);
+  if (!src) { toast('Quote not found','err'); return; }
+  CQ = null;  // force new quote ID on next save
+  LI = (src.lineItems||[]).map(l => ({
+    id: Date.now()+Math.random(),
+    part: l.part||'', desc: l.desc||'',
+    qty: Number(l.qty)||0, price: Number(l.price)||0,
+    cat: l.cat||'LED Fixtures',
+    vendorId: l.vendorId, vendorName: l.vendorName,
+    status: 'pending', flag: '', reasoning: ''
+  }));
+  if (!LI.length) LI = [nLI()];
+  closeModal();
+  goTo('quotes');
+  // Pre-fill copyable customer / type / sqft / budget without forcing the project name —
+  // user typically wants to retype that for the new bid.
+  setTimeout(() => {
+    if ($('q-cu')) $('q-cu').value = src.customer || '';
+    if ($('q-co')) $('q-co').value = src.contact || '';
+    if ($('q-ty')) $('q-ty').value = src.type || '';
+    if ($('q-addr')) $('q-addr').value = src.address || '';
+    if ($('q-bu')) $('q-bu').value = src.budget || '';
+    renderLI(); updatePreview();
+    toast(`Cloned ${src.lineItems?.length||0} line items · set a new project name`, 'ok');
+  }, 60);
+  if (typeof sbAuditLog==='function') sbAuditLog('quote_duplicate','quotes',{source_id: quoteId});
+}
+
 function showSaved() {
-  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
+  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();duplicateQuote('${q.id}')" title="Clone line items into a new quote">⎘ Dup</button>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
   `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 
@@ -6203,6 +6269,14 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
           }).join('') || '<div class="muted sm">No deals yet — click "Add Deal" to start.</div>'}
         </div></div>
       </div>
+      <div class="card mb16"><div class="card-hd"><span class="card-title">Recent Quotes</span><button class="btn btn-outline btn-sm" style="font-size:11px;" onclick="showSaved()">View all</button></div><div class="card-body">
+        ${(QUOTES||[]).slice(0,6).map(q => `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:12.5px;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];goTo('quotes')">
+          <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(q.project||q.customer||'Untitled')}</span>
+          <span class="muted sm" style="white-space:nowrap;">${esc(q.customer||'')}</span>
+          <span class="mono sm" style="color:var(--text-3);">${esc(q.id)}</span>
+          <span class="mono" style="font-weight:600;color:var(--green);">$${Number(q.total||0).toLocaleString()}</span>
+        </div>`).join('') || '<div class="muted sm">No quotes yet — click "New Quote" above to start.</div>'}
+      </div></div>
     `;
   }
 
