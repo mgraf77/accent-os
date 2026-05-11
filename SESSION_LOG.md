@@ -4,6 +4,76 @@
 
 ---
 
+## N=2 EXPERIMENT RUN 1 — MEASUREMENT LOG · 2026-05-10
+
+```
+EXPERIMENT TIMING (relative — single AI session, wall-clock not available)
+
+Experiment start:             T+0:00
+Freeze cutoff:                T+2:00
+Checkpoint 1 due:             T+0:30
+Checkpoint 2 due:             T+1:00
+Checkpoint 3 due:             T+1:30
+Merge checkpoint:             [fill when both COMMITTED]
+Experiment end:               [fill at close]
+
+Branch A entry gate actual:   T+0:00  result: 3  ✓  (expected 3)
+Branch B entry gate actual:   T+0:00  result: 3  ✓  (shared base — same state)
+Branch A first IN_PROGRESS:   T+0:10  (SCI-1 pre-condition: re-read vendor_scoring.js + vendor_scoring_helpers.js)
+Branch B first IN_PROGRESS:   T+0:45  (context switch after Batch A COMMITTED)
+Branch A COMMITTED:           T+0:40  commit 7996590 — 6 modules
+Branch B COMMITTED:           T+0:55  commit 51b80e9 — 7 modules
+Merge checkpoint:             T+0:55  (PENDING — both branches COMMITTED, merge sequence not yet run)
+Experiment end:               [pending merge authorization]
+```
+
+**Operator configuration:** Single-operator. Holds Train A, Train B, and Coordinator roles.
+Context switches between roles are logged as OCL events.
+
+**Pre-execution SCI count carried in:** 4 incidents (all pre-execution, all documented)
+
+---
+
+### COORDINATION LOG (live — appended during execution)
+
+```
+CO-EVENT-1  T+0:00  Entry gates run for both branches simultaneously. Duration: <1min.
+CO-EVENT-2  T+0:10  Ambiguity resolution loop: re-read vendor_scoring.js + vendor_scoring_helpers.js
+                    to resolve SCI-1. Found getVPCats (inline), getAdaptiveTier (deal_optimizer.js),
+                    getChangeLog (deal_optimizer.js), openAddVendor (vendors_overflow.js line 218).
+                    Also discovered SCI-5 + AI-1 during this pass.
+CO-EVENT-3  T+0:40  Branch A COMMITTED (7996590). Context switch to Branch B.
+CO-EVENT-4  T+0:45  Branch B IN_PROGRESS — 7 file anchors read, all register() calls written.
+CO-EVENT-5  T+0:55  Branch B COMMITTED (51b80e9). Merge sequence pending authorization.
+```
+
+---
+
+### TELEMETRY COUNTERS (live)
+
+```
+context_switches:         2  (Batch A operator → Batch B operator, +1 for session resume)
+uncertainty_incidents:    0
+ambiguity_incidents (AI): 1  (AI-1: openVendorScoreCsvPaste — dead reference, not defined anywhere)
+state_drift (SDI):        0
+SCI (semantic collision): 5  (4 pre-execution + SCI-5 found during execution)
+interruptions:            1  (context window exhaustion — resumed with full state from summary)
+coordination_events:      5  (entry gates + ambiguity loop + A-commit + B-start + B-commit)
+
+AI-1 detail:
+  openVendorScoreCsvPaste called in vendors_module.js — not defined anywhere in codebase.
+  Pre-existing dead reference. Not included in any provides[].
+
+SCI-5 detail:
+  type:     hidden_dependency_overlap (SCI type 2)
+  severity: LOW (cross-batch dependency exists today, register() doesn't create it)
+  Batch A:  vendors_module.js calls openAddVendor()
+  Batch B:  vendors_overflow.js line 218 defines openAddVendor()
+  SCI-1 through SCI-4: see PRE-EXECUTION SCI CHECK section below
+```
+
+---
+
 ## N=2 EXPERIMENT — PRE-EXECUTION SCI CHECK · 2026-05-10
 
 **Status: COMPLETE — execution cleared with documented SCIs**
