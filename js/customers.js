@@ -428,7 +428,20 @@ async function openCustomerDetail(customerId){
   const phoneHtml = c.phone ? `<a href="tel:${esc(phoneRaw)}" style="color:var(--accent);text-decoration:none;">${esc(c.phone)}</a>` : '—';
   const addrHtml = addrStr ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrStr)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">${esc(addrStr)}</a>` : '—';
 
+  // Stat strip — fast operational read at the top of the modal
+  const totalSpend = linkedQuotes.reduce((s,q)=>s+(Number(q.total)||0),0)
+                   + linkedDeals.filter(d=>d._stage==='won').reduce((s,d)=>s+(Number(d.value)||0),0);
+  const openDealsCount = linkedDeals.filter(d=>!['won','lost','abandoned'].includes(d._stage)).length;
+  const wonDealsCount = linkedDeals.filter(d=>d._stage==='won').length;
+  const statStrip = `<div style="display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2);">
+    <div style="flex:1;padding:10px 14px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Quotes</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;">${linkedQuotes.length}</div></div>
+    <div style="flex:1;padding:10px 14px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Open Deals</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;">${openDealsCount}</div></div>
+    <div style="flex:1;padding:10px 14px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Won Deals</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green);">${wonDealsCount}</div></div>
+    <div style="flex:1;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Total Touched</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);">$${Math.round(totalSpend).toLocaleString()}</div></div>
+  </div>`;
+
   openModal(c.name || 'Customer', `
+    ${statStrip}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
       <div>
         <div class="muted sm">Type</div>
