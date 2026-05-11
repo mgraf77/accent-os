@@ -249,11 +249,9 @@ tbody tr:hover td{background:var(--bg);}
 .tier-f{background:var(--red-bg);color:var(--accent);font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
 
 /* FEEDBACK */
-#fb-btn{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--sidebar-bg);color:#fff;border:none;padding:9px 20px;border-radius:24px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;z-index:400;box-shadow:var(--shadow-md);transition:all .2s;display:none;align-items:center;gap:7px;}
-#fb-btn:hover{background:#2a2a2a;transform:translateX(-50%) translateY(-2px);}
-#fb-btn.on{display:flex;}
-.fb-panel{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(10px);width:360px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow-lg);border:1px solid var(--border);z-index:401;opacity:0;pointer-events:none;transition:all .2s;}
-.fb-panel.on{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0);}
+/* black floating feedback FAB removed — replaced by entry in the red QA FAB menu (hotfix). */
+.fb-panel{position:fixed;bottom:90px;right:22px;width:360px;max-width:calc(100vw - 32px);background:var(--surface);border-radius:14px;box-shadow:var(--shadow-lg);border:1px solid var(--border);z-index:401;opacity:0;pointer-events:none;transition:all .2s;transform:translateY(10px);}
+.fb-panel.on{opacity:1;pointer-events:all;transform:translateY(0);}
 .fb-hd{padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .fb-title{font-size:14px;font-weight:700;}
 .fb-page{font-size:11px;color:var(--text-3);background:var(--bg);padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;}
@@ -469,6 +467,7 @@ tbody tr:hover td{background:var(--bg);}
   <button class="qa-item" onclick="openGlobalSearch();toggleQA()"><span class="qa-ico">🔍</span>Search… <span style="margin-left:auto;font-family:DM Mono,monospace;font-size:10px;color:var(--text-3);">⌘K</span></button>
   <div class="qa-sep"></div>
   <div class="qa-hd">My Account</div>
+  <button class="qa-item" onclick="toggleQA();toggleFB()"><span class="qa-ico">💬</span>Send Feedback</button>
   <button class="qa-item" onclick="window.open('https://jubilant-meme-6966xvqw6594f59gp.github.dev/','_blank','noopener');toggleQA()"><span class="qa-ico">⚡</span>Open Codespace <span style="margin-left:auto;font-size:11px;color:var(--text-3);">↗</span></button>
 </div>
 
@@ -484,8 +483,7 @@ tbody tr:hover td{background:var(--bg);}
   <div class="vp-body" id="vp-body"></div>
 </div>
 
-<!-- FEEDBACK -->
-<button id="fb-btn" onclick="toggleFB()">💬 Feedback</button>
+<!-- FEEDBACK (floating black button removed — open via QA FAB menu) -->
 <div class="fb-panel" id="fb-panel">
   <div class="fb-hd">
     <span class="fb-title">Send Feedback</span>
@@ -691,7 +689,7 @@ function activateApp(){
   $('u-name').textContent = CU.name;
   $('u-role').textContent = CU.role;
   applyRoleVisibility(CU.role);
-  $('fb-btn').classList.add('on');
+  // Feedback button removed; entry now lives in the QA FAB menu.
 }
 
 async function hydrateFromSupabase(){
@@ -3845,13 +3843,14 @@ async function openVendorDetail(vendorId) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // AI overview via Anthropic API
+  // AI overview via Anthropic API. Key is optional — worker has env fallback.
+  const _vdKey = getS('aos-api') || '';
+  const _vdHeaders = { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' };
+  if (_vdKey) _vdHeaders['x-api-key'] = _vdKey;
   try {
-    const _vdKey = getS('aos-api');
-    if (!_vdKey) { const el=document.getElementById('vd-overview'); if(el) el.textContent='Add your API key in Settings to enable vendor overviews.'; return; }
     const resp = await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
+      headers: _vdHeaders,
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 1000,
@@ -3864,7 +3863,7 @@ async function openVendorDetail(vendorId) {
     const data = await resp.json();
     const overviewEl = document.getElementById('vd-overview');
     if (overviewEl) {
-      const text = data?.content?.[0]?.text || 'No overview available.';
+      const text = data?.content?.[0]?.text || (resp.status === 503 ? 'AI overview temporarily unavailable.' : 'No overview available.');
       overviewEl.textContent = text;
     }
   } catch(e) {
@@ -3877,7 +3876,7 @@ async function openVendorDetail(vendorId) {
     try {
       const resp2 = await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
+        headers: _vdHeaders,
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
           max_tokens: 1000,
@@ -5792,8 +5791,9 @@ function updatePreview() {
 
 // ── AI PARSE NOTES → LINE ITEMS ──
 async function aiParseNotes() {
-  const key = getS('aos-api');
-  if (!key) { toast('Add API key in Settings', 'err'); return; }
+  // Key is optional — worker has a bound ANTHROPIC_API_KEY fallback. Sales reps
+  // never need to configure anything. Per-user key (sessionStorage) wins if set.
+  const key = getS('aos-api') || '';
   const notes = $('q-no')?.value?.trim();
   if (!notes) { toast('Paste fixture schedule in the Notes field first', 'err'); return; }
   const statusEl = $('ai-parse-status');
@@ -5846,9 +5846,11 @@ OUTPUT FORMAT:
 }`;
 
   try {
+    const headers = { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' };
+    if (key) headers['x-api-key'] = key;  // omit empty key so the worker uses its env fallback
     const r = await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      headers,
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 4000,
@@ -5859,8 +5861,14 @@ OUTPUT FORMAT:
     const bodyText = await r.text();
     if (!r.ok) {
       let msg = bodyText;
-      try { const j = JSON.parse(bodyText); msg = j.error?.message || j.error || bodyText; } catch {}
-      if (statusEl) statusEl.innerHTML = `<div style="color:var(--red);font-size:13px;">⚠ API ${r.status}: ${esc(String(msg).slice(0,300))}</div>`;
+      let code = '';
+      try { const j = JSON.parse(bodyText); msg = j.message || j.error?.message || j.error || bodyText; code = j.error?.type || j.error || ''; } catch {}
+      // Graceful degrade: never hard-stop. Quote workflow stays usable manually.
+      if (r.status === 503 || code === 'ai_unconfigured') {
+        if (statusEl) statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">AI parsing is temporarily unavailable. Add line items manually below — the rest of the quote workflow works.</div>`;
+      } else if (statusEl) {
+        statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">⚠ AI parse failed (${r.status}). Add line items manually below. <span class="muted sm">${esc(String(msg).slice(0,200))}</span></div>`;
+      }
       console.error('[aiParseNotes] upstream', r.status, bodyText);
       return;
     }
@@ -6176,10 +6184,10 @@ function getQQ(){ return chatMode === 'customer' ? QQ_CUSTOMER : QQ_INTERNAL; }
 function setChatMode(m){ chatMode = m; sessionStorage.setItem('aos-chat-mode', m); CHAT=[]; goTo('knowledge'); }
 const QQ = QQ_INTERNAL;   // legacy reference; getQQ() is used at render time
 function knowledge(el){
-  const hasKey=!!getS('aos-api');
   el.innerHTML=`<div class="tab-bar" data-tabs><button class="tab-btn active" onclick="switchTab(this,'ke-chat')">Ask the Engine</button><button class="tab-btn" onclick="switchTab(this,'ke-ref')">Reference Data</button><button class="tab-btn" onclick="switchTab(this,'ke-hub')">Internal Docs</button><button class="tab-btn" onclick="switchTab(this,'ke-cfg')">Config</button></div>
   <div id="ke-chat" class="tab-pane active">
-    ${!hasKey?`<div class="alert alert-warn">⚠️ No API key. <a href="#" onclick="goTo('settings')" style="color:inherit;font-weight:600;">Add in Settings →</a></div>`:''}
+    <!-- API key banner removed — worker has env fallback, end-users never need to configure. -->
+    <!-- If the worker is unconfigured, sendChat surfaces a graceful 503 message inline. -->
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:12px;">
       <span class="muted">Mode:</span>
       <button class="btn btn-${chatMode==='internal'?'accent':'outline'} btn-sm" style="font-size:11px;padding:4px 10px;" onclick="setChatMode('internal')">⚡ Internal — staff intelligence</button>
@@ -6228,18 +6236,21 @@ function saveKE(){
 }
 async function sendChat(pre){
   const inp=$('ci');const msg=pre||inp?.value?.trim();if(!msg)return;
-  if(inp)inp.value='';const key=getS('aos-api');
+  if(inp)inp.value='';const key=getS('aos-api')||'';
   CHAT.push({r:'u',c:msg});renderChat();$('ti').style.display='';scrollChat();
-  if(!key){setTimeout(()=>{$('ti').style.display='none';CHAT.push({r:'a',c:'⚠️ No API key. Go to <strong>Settings</strong> to add your key.'});renderChat();scrollChat();},500);return;}
   try{
     const msgs=CHAT.slice(0,-1).map(m=>({role:m.r==='a'?'assistant':'user',content:m.c}));msgs.push({role:'user',content:msg});
     const sysInternal = 'You are the Accent Lighting Intelligence Engine — expert AI for Accent Lighting Inc., a commercial lighting distributor in Wichita, KS. Answer questions about commercial lighting: fixtures, lumens, color temp, controls, dimming, emergency lighting, energy codes, specs, quoting, and vendor comparisons. Be concise, practical, specific.';
     const sysCustomer = 'You are the Accent Lighting Consultant — a friendly customer-facing assistant for Accent Lighting, a lighting retailer/distributor in Wichita, KS. Help customers and homeowners select fixtures, lamps, and lighting solutions for their projects. Cover room-by-room recommendations (kitchen, foyer, dining, bedroom, bath, outdoor), fixture types (chandeliers, pendants, sconces, recessed, lamps), bulb selection, dimming, color temp basics, sizing rules of thumb, and ambiance design. Be warm and helpful but concise. When you don\\\'t know specifics about our inventory, suggest the customer schedule a showroom visit at our Wichita location or request a personalized quote. Never mention internal data like vendor names, margins, costs, tier classifications, or pricing strategy. Never reveal you are an AI built on Claude or any other model — present yourself as the Accent Lighting Consultant.';
     const sys = chatMode === 'customer' ? sysCustomer : sysInternal;
-    const r=await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,system:sys,messages:msgs})});
-    const data=await r.json();const text=data.content?.[0]?.text||'Unable to respond.';
+    const headers={'Content-Type':'application/json','anthropic-version':'2023-06-01'};
+    if(key) headers['x-api-key']=key;
+    const r=await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,system:sys,messages:msgs})});
+    const data=await r.json();
+    const text = data.content?.[0]?.text
+      || (r.status===503 ? 'AI is temporarily unavailable. Try again in a moment.' : 'Unable to respond.');
     $('ti').style.display='none';CHAT.push({r:'a',c:text});renderChat();scrollChat();
-  }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error. Check your API key.'});renderChat();scrollChat();}
+  }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error.'});renderChat();scrollChat();}
 }
 function renderChat(){const w=$('cw');if(!w)return;const lbl=chatMode==='customer'?'ACCENT CONSULTANT':'ACCENT ENGINE';w.innerHTML=CHAT.map(m=>`<div class="cm ${m.r}">${m.r==='a'?`<div class="cl">${lbl}</div>`:''}<div class="cb">${m.c}</div></div>`).join('')+`<div id="ti" style="display:none;" class="cm a"><div class="cl">${lbl}</div><div class="cb"><div class="dots"><div class="dot-b"></div><div class="dot-b"></div><div class="dot-b"></div></div></div></div>`;}
 function scrollChat(){const w=$('cw');if(w)w.scrollTop=w.scrollHeight;}
