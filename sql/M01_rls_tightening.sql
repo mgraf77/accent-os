@@ -24,6 +24,7 @@ DROP POLICY IF EXISTS "anon update"   ON vendor_categories;
 DROP POLICY IF EXISTS "anon delete"   ON vendor_categories;
 DROP POLICY IF EXISTS "authed read"   ON vendor_categories;
 DROP POLICY IF EXISTS "authed write"  ON vendor_categories;
+DROP POLICY IF EXISTS "anon_all_categories" ON vendor_categories;  -- live anon-all policy (Supabase advisor)
 
 CREATE POLICY "authed read" ON vendor_categories
   FOR SELECT TO authenticated USING (true);
@@ -68,6 +69,7 @@ DROP POLICY IF EXISTS "anon update"   ON vendor_changelog;
 DROP POLICY IF EXISTS "anon delete"   ON vendor_changelog;
 DROP POLICY IF EXISTS "authed read"   ON vendor_changelog;
 DROP POLICY IF EXISTS "authed insert" ON vendor_changelog;
+DROP POLICY IF EXISTS "anon_all_changelog" ON vendor_changelog;  -- live anon-all policy (Supabase advisor)
 
 CREATE POLICY "authed read" ON vendor_changelog
   FOR SELECT TO authenticated USING (true);
@@ -85,6 +87,7 @@ DROP POLICY IF EXISTS "anon update"    ON parent_companies;
 DROP POLICY IF EXISTS "anon delete"    ON parent_companies;
 DROP POLICY IF EXISTS "authed read"    ON parent_companies;
 DROP POLICY IF EXISTS "authed write"   ON parent_companies;
+DROP POLICY IF EXISTS "anon write parent_companies" ON parent_companies;  -- live anon-write policy (Supabase advisor)
 
 CREATE POLICY "authed read" ON parent_companies
   FOR SELECT TO authenticated USING (true);
@@ -107,6 +110,7 @@ DROP POLICY IF EXISTS "anon update"    ON vendor_parent_assignments;
 DROP POLICY IF EXISTS "anon delete"    ON vendor_parent_assignments;
 DROP POLICY IF EXISTS "authed read"    ON vendor_parent_assignments;
 DROP POLICY IF EXISTS "authed write"   ON vendor_parent_assignments;
+DROP POLICY IF EXISTS "anon write vpa" ON vendor_parent_assignments;  -- live anon-write policy (Supabase advisor)
 
 CREATE POLICY "authed read" ON vendor_parent_assignments
   FOR SELECT TO authenticated USING (true);
