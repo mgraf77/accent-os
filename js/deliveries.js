@@ -347,22 +347,9 @@ async function saveDelivery(deliveryId){
     cName = opt?.getAttribute('data-name') || null;
   }
   if(!cName){ toast('Customer name required','err'); return; }
-  // Auto-link/create by name (BI 1.4) — same pattern as quotes/deals/jobs/warranty.
-  if(!cId && Array.isArray(window.CUSTOMERS)){
-    const norm = cName.toLowerCase().trim();
-    const matches = window.CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
-    if(matches.length === 1){
-      cId = matches[0].id;
-    } else if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
-      try{
-        const created = await sbSaveCustomer({
-          name: cName, type: 'other', lifecycle_stage: 'prospect',
-          first_seen: new Date().toISOString().slice(0,10),
-          notes: 'Auto-created from delivery'
-        });
-        if(created && created.id){ cId = created.id; window.CUSTOMERS.push(created); }
-      }catch(e){ console.warn('[deliveries] auto-create customer failed:', e.message); }
-    }
+  // Resolve customer FK via shared helper (BI 1.4).
+  if(!cId && typeof resolveCustomerByName === 'function'){
+    cId = await resolveCustomerByName(cName, 'delivery');
   }
   const sd = $('dlv-sd').value;
   if(!sd){ toast('Scheduled date required','err'); return; }

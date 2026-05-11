@@ -25,6 +25,35 @@ async function sbLoadCustomerInteractions(customerId){
   }catch(e){ console.warn('[sb] Load interactions failed:', e.message); return false; }
 }
 
+// resolveCustomerByName(name, sourceLabel) — shared util for write paths that capture
+// a customer name but no UUID. Returns a customer_id if (a) exactly one CRM record
+// matches by case-insensitive name, or (b) zero matches and we successfully auto-create
+// a prospect record. Returns null when ambiguous (>1 matches) so callers can keep the
+// name-only fallback. Used by sbSaveQuote, sbSaveDeal, saveJob, saveDelivery, saveWarranty.
+async function resolveCustomerByName(name, sourceLabel){
+  if(!name || !Array.isArray(window.CUSTOMERS)) return null;
+  const norm = name.trim().toLowerCase();
+  if(!norm) return null;
+  const matches = window.CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
+  if(matches.length === 1) return matches[0].id;
+  if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
+    try{
+      const created = await sbSaveCustomer({
+        name: name.trim(),
+        type: 'other',
+        lifecycle_stage: 'prospect',
+        first_seen: new Date().toISOString().slice(0,10),
+        notes: 'Auto-created from ' + (sourceLabel || 'record')
+      });
+      if(created && created.id){
+        window.CUSTOMERS.push(created);
+        return created.id;
+      }
+    }catch(e){ console.warn('[resolveCustomerByName] auto-create failed:', e.message); }
+  }
+  return null;
+}
+
 async function sbSaveCustomer(rec){
   if(!sbConfigured()) return false;
   try{

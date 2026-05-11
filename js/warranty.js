@@ -286,22 +286,9 @@ async function saveWarranty(claimId){
   let cId = $('w-c').value || null;
   let cName = $('w-cn').value?.trim() || null;
   if(cId && !cName) cName = $('w-c').options[$('w-c').selectedIndex]?.getAttribute('data-name') || null;
-  // Auto-link by name fallback (BI 1.4) — same pattern as jobs/deals/quotes.
-  if(!cId && cName && Array.isArray(window.CUSTOMERS)){
-    const norm = cName.toLowerCase().trim();
-    const matches = window.CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
-    if(matches.length === 1){
-      cId = matches[0].id;
-    } else if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
-      try{
-        const created = await sbSaveCustomer({
-          name: cName, type: 'other', lifecycle_stage: 'prospect',
-          first_seen: new Date().toISOString().slice(0,10),
-          notes: 'Auto-created from warranty claim'
-        });
-        if(created && created.id){ cId = created.id; window.CUSTOMERS.push(created); }
-      }catch(e){ console.warn('[warranty] auto-create customer failed:', e.message); }
-    }
+  // Resolve customer FK via shared helper if dropdown wasn't used (BI 1.4).
+  if(!cId && cName && typeof resolveCustomerByName === 'function'){
+    cId = await resolveCustomerByName(cName, 'warranty claim');
   }
   const rec = {
     id: claimId || undefined,

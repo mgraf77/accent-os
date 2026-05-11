@@ -293,25 +293,9 @@ async function saveJob(jobId){
     const opt = $('jb-c').options[$('jb-c').selectedIndex];
     customer_name = opt?.getAttribute('data-name') || null;
   }
-  // Auto-link by name if dropdown wasn't used but customer name was typed.
-  // Same pattern as sbSaveQuote / sbSaveDeal — exact match links, no-match auto-creates a prospect.
-  if(!customer_id && customer_name && Array.isArray(window.CUSTOMERS)){
-    const norm = customer_name.toLowerCase().trim();
-    const matches = window.CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
-    if(matches.length === 1){
-      customer_id = matches[0].id;
-    } else if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
-      try{
-        const created = await sbSaveCustomer({
-          name: customer_name,
-          type: 'other',
-          lifecycle_stage: 'prospect',
-          first_seen: new Date().toISOString().slice(0,10),
-          notes: 'Auto-created from job ' + project_name
-        });
-        if(created && created.id){ customer_id = created.id; window.CUSTOMERS.push(created); }
-      }catch(e){ console.warn('[jobs] auto-create customer failed:', e.message); }
-    }
+  // Resolve customer FK via shared helper if dropdown wasn't used (BI 1.4).
+  if(!customer_id && customer_name && typeof resolveCustomerByName === 'function'){
+    customer_id = await resolveCustomerByName(customer_name, 'job ' + project_name);
   }
   const rec = {
     id: jobId || undefined,
