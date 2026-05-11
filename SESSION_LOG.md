@@ -4,6 +4,79 @@
 
 ---
 
+## N=2 EXPERIMENT RUN 2 — MEASUREMENT LOG · 2026-05-11
+
+```
+EXPERIMENT TIMING (relative)
+
+Experiment start:             T+0:00
+Freeze cutoff:                T+2:00
+Branch A entry gate actual:   T+0:00  result: 16  ✓  (expected 16)
+Branch B entry gate actual:   T+0:00  result: 16  ✓  (shared base — same state)
+Branch A first IN_PROGRESS:   T+0:02  (anchor reads — all 6 confirmed before writing)
+Branch B first IN_PROGRESS:   T+0:15  (context switch after Batch A COMMITTED)
+Branch A COMMITTED:           T+0:12  commit e875e04 — 6 modules
+Branch B COMMITTED:           T+0:25  commit 5a97e46 — 6 modules
+Merge complete:               T+0:28  cherry-pick 8808f65 into Branch A
+Exit gate actual:             T+0:28  result: 28  ✓
+```
+
+**Operator configuration:** Single-operator. Train A → Train B context switch logged.
+
+**Pre-execution SCI count carried in:** 0 (clean batch — verified in corridor pre-check)
+**AI incidents carried from Run 1:** 1 (AI-1: openVendorScoreCsvPaste — not in Run 2 batch, no action taken)
+
+---
+
+### COORDINATION LOG
+
+```
+CO-EVENT-1  T+0:00  Entry gates run for both branches simultaneously.
+CO-EVENT-2  T+0:02  Branch A: read 6 file anchors, all confirmed. IN_PROGRESS.
+CO-EVENT-3  T+0:12  Branch A COMMITTED (e875e04). Context switch to Branch B.
+CO-EVENT-4  T+0:15  Branch B: read 6 file anchors, all confirmed. IN_PROGRESS.
+CO-EVENT-5  T+0:25  Branch B COMMITTED (5a97e46). Merge sequence initiated.
+CO-EVENT-6  T+0:28  Cherry-pick complete (8808f65). Exit gate: 28. COMPLETE.
+```
+
+---
+
+### TELEMETRY COUNTERS — FINAL
+
+```
+context_switches:         1  (Branch A → Branch B)
+uncertainty_incidents:    0
+ambiguity_incidents (AI): 0  (AI-1 carried but not encountered — not in batch)
+state_drift (SDI):        0
+SCI (semantic collision): 0  (pre-check confirmed 0 cross-batch deps — none found during execution)
+interruptions:            0
+coordination_events:      6
+```
+
+---
+
+### RUN 2 vs RUN 1 COMPARISON
+
+| Metric | Run 1 actual | Run 2 actual | Delta | Hypothesis |
+|--------|-------------|--------------|-------|-----------|
+| context_switches | 2 | 1 | −1 | ✓ lower |
+| ambiguity (AI) | 1 | 0 | −1 | ✓ lower |
+| SCI | 5 (4 pre + 1 during) | 0 | −5 | ✓ confirmed |
+| interruptions | 1 | 0 | −1 | ✓ lower |
+| coordination_events | 6 | 6 | 0 | — same |
+| uncertainty_incidents | 0 | 0 | 0 | — same |
+
+**Hypothesis result:** Primary hypothesis SUPPORTED.
+Coordination cost (ambiguity, SCI, interruptions) dropped to near-zero when semantic coupling was eliminated.
+Coordination events held constant (6 in both runs) — structural overhead is invariant to coupling density.
+The variable component of OCL appears to be coupling-driven, not branch-count-driven.
+
+**Note:** Run 2 was materially faster subjectively (anchor reads required no ambiguity resolution loops).
+Run 1 required an extra coordination event (CO-EVENT-2 ambiguity loop, ~10 min).
+Run 2 had no equivalent event.
+
+---
+
 ## N=2 EXPERIMENT RUN 1 — MEASUREMENT LOG · 2026-05-10
 
 ```
