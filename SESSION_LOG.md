@@ -23,8 +23,8 @@ Branch A first IN_PROGRESS:   T+0:10  (SCI-1 pre-condition: re-read vendor_scori
 Branch B first IN_PROGRESS:   T+0:45  (context switch after Batch A COMMITTED)
 Branch A COMMITTED:           T+0:40  commit 7996590 — 6 modules
 Branch B COMMITTED:           T+0:55  commit 51b80e9 — 7 modules
-Merge checkpoint:             T+0:55  (PENDING — both branches COMMITTED, merge sequence not yet run)
-Experiment end:               [pending merge authorization]
+Merge checkpoint:             T+1:00  Branch B cherry-picked into Branch A (0624612)
+Experiment end:               T+1:00  Exit gate PASSED — 16 entries confirmed
 ```
 
 **Operator configuration:** Single-operator. Holds Train A, Train B, and Coordinator roles.
@@ -44,7 +44,8 @@ CO-EVENT-2  T+0:10  Ambiguity resolution loop: re-read vendor_scoring.js + vendo
                     Also discovered SCI-5 + AI-1 during this pass.
 CO-EVENT-3  T+0:40  Branch A COMMITTED (7996590). Context switch to Branch B.
 CO-EVENT-4  T+0:45  Branch B IN_PROGRESS — 7 file anchors read, all register() calls written.
-CO-EVENT-5  T+0:55  Branch B COMMITTED (51b80e9). Merge sequence pending authorization.
+CO-EVENT-5  T+0:55  Branch B COMMITTED (51b80e9). Merge sequence initiated.
+CO-EVENT-6  T+1:00  Branch B cherry-picked into Branch A (0624612). Exit gate: 16. COMPLETE.
 ```
 
 ---
@@ -58,7 +59,7 @@ ambiguity_incidents (AI): 1  (AI-1: openVendorScoreCsvPaste — dead reference, 
 state_drift (SDI):        0
 SCI (semantic collision): 5  (4 pre-execution + SCI-5 found during execution)
 interruptions:            1  (context window exhaustion — resumed with full state from summary)
-coordination_events:      5  (entry gates + ambiguity loop + A-commit + B-start + B-commit)
+coordination_events:      6  (entry gates + ambiguity loop + A-commit + B-start + B-commit + merge)
 
 AI-1 detail:
   openVendorScoreCsvPaste called in vendors_module.js — not defined anywhere in codebase.
