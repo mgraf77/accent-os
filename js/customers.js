@@ -31,10 +31,10 @@ async function sbLoadCustomerInteractions(customerId){
 // a prospect record. Returns null when ambiguous (>1 matches) so callers can keep the
 // name-only fallback. Used by sbSaveQuote, sbSaveDeal, saveJob, saveDelivery, saveWarranty.
 async function resolveCustomerByName(name, sourceLabel){
-  if(!name || !Array.isArray(window.CUSTOMERS)) return null;
+  if(!name || !Array.isArray(CUSTOMERS)) return null;
   const norm = name.trim().toLowerCase();
   if(!norm) return null;
-  const matches = window.CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
+  const matches = CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
   if(matches.length === 1) return matches[0].id;
   if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
     try{
@@ -46,7 +46,7 @@ async function resolveCustomerByName(name, sourceLabel){
         notes: 'Auto-created from ' + (sourceLabel || 'record')
       });
       if(created && created.id){
-        window.CUSTOMERS.push(created);
+        CUSTOMERS.push(created);
         return created.id;
       }
     }catch(e){ console.warn('[resolveCustomerByName] auto-create failed:', e.message); }
