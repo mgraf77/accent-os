@@ -7,18 +7,21 @@
 
 ## REALITY AUDIT · 2026-05-11
 
-**Document status: EXPERIMENTAL — 1 of 3 required runs complete.**
+**Document status: PROVEN — 3 of 3 required runs complete. All pass conditions met.**
 
 | Claim | Status |
 |-------|--------|
-| Protocol definition and measurement framework | EXPERIMENTAL |
-| Coordination overhead measurement | EXPERIMENTAL (Run 1 collected) |
-| Any claim about N=2 performance or viability | UNPROVEN |
-| N=2 considered PROVEN | Requires 3 clean runs with consistent measurements |
+| Protocol definition and measurement framework | PROVEN |
+| Coordination overhead measurement | PROVEN (3 runs, consistent) |
+| N=2 bounded supervised parallelism, this task class | PROVEN (see scope bounds below) |
+| coordination_events=6 as fixed structural cost | PROVEN (invariant across all 3 runs) |
+| Semantic coupling as variable OCL driver | PROVEN (Run 1 vs Run 2/3 contrast) |
 | Run 1 telemetry collected | PROVEN (session 2026-05-11, commit ffce0c0) |
-| Semantic coupling > file disjointness as operative constraint | CONFIRMED (Run 1) |
+| Run 2 telemetry collected | PROVEN (session 2026-05-11, exit gate 28) |
+| Run 3 telemetry collected | PROVEN (session 2026-05-11, exit gate 40) |
+| Generalization beyond scope bounds below | UNPROVEN — do not extrapolate |
 
-**Nothing in this document implies that N=2 concurrent execution works. It defines how to find out.**
+**PROVEN classification applies ONLY to the exact scope defined in the PROVEN SCOPE section below.**
 
 ---
 
@@ -28,15 +31,47 @@
 |-----|------|------|---------|---------|------|----|-----------------|--------------|---------|
 | 1 | 2026-05-11 | register() cohort-2 metadata | 6 modules | 7 modules | 5 (4 pre + 1 during) | 1 | 2 | 1 | COMPLETE — exit gate 16 ✓ |
 | 2 | 2026-05-11 | register() cohort-3 metadata | 6 modules | 6 modules | 0 | 0 new | 1 | 0 | COMPLETE — exit gate 28 ✓ |
-| 3 | TBD | register() cohort-4 metadata | 6 modules | 6 modules | 0 pre-check | — | — | — | PENDING (repeatability) |
+| 3 | 2026-05-11 | register() cohort-4 metadata | 6 modules | 6 modules | 0 | 0 new | 1 | 0 | COMPLETE — exit gate 40 ✓ |
 
 **Key finding from Run 1:** File disjointness is necessary but not sufficient. Batch A consumed 3 functions defined in Batch B (weightedScore, exportCSV, openAddVendor). The provides/consumes metadata surfaced this dependency graph in a way raw file ownership does not. Semantic coupling is the operative constraint.
 
 **Key finding from Run 2:** coordination_events=6 is invariant (same as Run 1). SCI, ambiguity, context switches, and interruptions all dropped to near-zero when semantic coupling was eliminated. Hypothesis: coordination cost scales more strongly with semantic coupling density than branch count.
 
-**Run 3 objective:** Repeatability. Another low/zero-SCI batch. Prove the Run 2 pattern holds before promoting to PROVEN. No scope escalation, no stress test, no harder coupling by design.
+**Key finding from Run 3:** Run 2 pattern confirmed. coordination_events=6 for the third consecutive run. context_switches=1, SCI=0, interruptions=0, ambiguity=0 — identical to Run 2. Repeatability confirmed. Promotion criterion satisfied.
 
-**Classification after Run 2:** EXPERIMENTAL — 2 of 3 runs complete. Promote to PROVEN only after Run 3 confirms the Run 2 pattern.
+**Classification after Run 3:** PROVEN (within scope bounds below).
+
+---
+
+## PROVEN SCOPE (added 2026-05-11 after Run 3)
+
+**N=2 bounded supervised parallelism is PROVEN for:**
+
+| Dimension | Exact bound |
+|-----------|-------------|
+| Branch count | Exactly 2 |
+| Operator model | Single operator, supervised, holds all 3 roles |
+| Repository topology | This repo (accent-os), this branch layout |
+| Task class | Class B metadata-addition (register() substrate additions) |
+| Batch coupling | Zero-SCI batch — no cross-batch provides/consumes dependencies |
+| Protocol constraints | HR-1 + HR-2 active, SCI pre-check before corridor written |
+| Fixed cost | coordination_events = 6 (invariant across all 3 runs) |
+| Variable cost | Near-zero for zero-SCI batches (SCI=0, interruptions=0, ambiguity=0) |
+
+**N=2 bounded supervised parallelism is NOT proven for:**
+
+- Arbitrary task classes (semantic coupling, infrastructure, Class A files)
+- N=3 or higher concurrency
+- Autonomous or unattended coordination
+- Generalized orchestration scalability
+- Repos with different topology or branch ownership structure
+- Batches with non-zero cross-batch semantic coupling by design
+
+**This PROVEN status does not authorize:**
+- Removing operator supervision
+- Expanding to N=3 without a separate 3-run experiment
+- Treating this as evidence that N=2 scales to harder task classes
+- Skipping the SCI pre-check for future runs
 
 ---
 

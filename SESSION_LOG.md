@@ -4,6 +4,76 @@
 
 ---
 
+## N=2 EXPERIMENT RUN 3 — MEASUREMENT LOG · 2026-05-11
+
+```
+EXPERIMENT TIMING (relative)
+
+Experiment start:             T+0:00
+Freeze cutoff:                T+2:00
+Branch A entry gate actual:   T+0:00  result: 28  ✓  (expected 28)
+Branch B entry gate actual:   T+0:00  result: 28  ✓  (shared base — same state)
+Branch A first IN_PROGRESS:   T+0:02  (anchor reads — all 6 confirmed before writing)
+Branch B first IN_PROGRESS:   T+0:15  (context switch after Batch A COMMITTED)
+Branch A COMMITTED:           T+0:12  commit 400f87c — 6 modules
+Branch B COMMITTED:           T+0:22  commit a7b71d2 — 6 modules
+Merge complete:               T+0:25  cherry-pick 1665d88 into Branch A
+Exit gate actual:             T+0:25  result: 40  ✓
+```
+
+**Operator configuration:** Single-operator. Train A → Train B context switch logged.
+
+**Pre-execution SCI count carried in:** 0 (clean batch — verified in corridor pre-check)
+**AI incidents carried from Run 1:** 1 (AI-1: openVendorScoreCsvPaste — not in Run 3 batch, no action taken)
+
+---
+
+### COORDINATION LOG
+
+```
+CO-EVENT-1  T+0:00  Entry gates run for both branches simultaneously.
+CO-EVENT-2  T+0:02  Branch A: read 6 file anchors, all confirmed. IN_PROGRESS.
+CO-EVENT-3  T+0:12  Branch A COMMITTED (400f87c). Context switch to Branch B.
+CO-EVENT-4  T+0:15  Branch B: read 6 file anchors, all confirmed. IN_PROGRESS.
+CO-EVENT-5  T+0:22  Branch B COMMITTED (a7b71d2). Merge sequence initiated.
+CO-EVENT-6  T+0:25  Cherry-pick complete (1665d88). Exit gate: 40. COMPLETE.
+```
+
+---
+
+### TELEMETRY COUNTERS — FINAL
+
+```
+context_switches:         1  (Branch A → Branch B)
+uncertainty_incidents:    0
+ambiguity_incidents (AI): 0  (AI-1 carried but not encountered — not in batch)
+state_drift (SDI):        0
+SCI (semantic collision): 0  (pre-check confirmed 0 cross-batch deps — none found during execution)
+interruptions:            0
+coordination_events:      6
+```
+
+---
+
+### RUN 3 vs RUN 2 COMPARISON (REPEATABILITY CHECK)
+
+| Metric | Run 2 actual | Run 3 actual | Delta | Pass condition | Result |
+|--------|-------------|--------------|-------|---------------|--------|
+| context_switches | 1 | 1 | 0 | ≤2 | ✓ |
+| ambiguity (AI) | 0 | 0 | 0 | =0 | ✓ |
+| SCI | 0 | 0 | 0 | =0 | ✓ |
+| interruptions | 0 | 0 | 0 | =0 | ✓ |
+| coordination_events | 6 | 6 | 0 | 5–7 | ✓ |
+| exit gate | 28 ✓ | 40 ✓ | +12 | passes | ✓ |
+
+**ALL PASS CONDITIONS MET.**
+
+**Repeatability result:** Run 3 is a near-exact repeat of Run 2. coordination_events=6 confirmed invariant across all 3 runs. Variable OCL metrics (SCI, ambiguity, interruptions, context_switches) remain near-zero for zero-SCI batches. The Run 2 pattern held.
+
+**Promotion criterion:** SATISFIED. N=2 bounded supervised parallelism promoted to PROVEN for this task class (see protocol doc for exact scope bounds).
+
+---
+
 ## N=2 EXPERIMENT RUN 2 — MEASUREMENT LOG · 2026-05-11
 
 ```

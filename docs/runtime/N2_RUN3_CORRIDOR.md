@@ -1,6 +1,6 @@
 # N=2 EXPERIMENT — RUN 3 CORRIDOR
 > AccentOS — Cohort-4 register() additions. Repeatability run.
-> Written: 2026-05-11 · Status: PENDING
+> Written: 2026-05-11 · Status: COMPLETE — exit gate 40 ✓ · Promotion: PROVEN
 > Protocol: N2_EXPERIMENT_PROTOCOL.md (v2, hardening rules HR-1 + HR-2 active)
 
 ---
@@ -11,7 +11,7 @@
 |-------|--------|
 | Run 3 corridor defined | EXPERIMENTAL |
 | Batch definitions and SCI pre-check | PROVEN (pre-checked before corridor written) |
-| Run 3 outcome | UNPROVEN — pending execution |
+| Run 3 outcome | PROVEN — exit gate 40 ✓ · all pass conditions met · N=2 promoted |
 
 ---
 
