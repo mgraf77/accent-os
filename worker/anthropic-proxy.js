@@ -1,55 +1,103 @@
+// Cloudflare Worker — Anthropic API proxy for AccentOS
+// Version markers in responses make it trivial to verify which build is live:
+//   $ curl https://accentos-anthropic-proxy.mgraf77.workers.dev/
+//   {"version":"v3-env-fallback","env_key_set":true,"build":"2026-05-11"}
+//
+// Behavior:
+//   - GET /        → version diagnostics (no Anthropic call, no auth required)
+//   - OPTIONS /*   → CORS preflight
+//   - POST /v1/*   → proxies to api.anthropic.com using env.ANTHROPIC_API_KEY,
+//                    overridable by a client-supplied x-api-key header.
+//   - Both keys missing → 503 with a structured ai_unconfigured payload.
+const WORKER_VERSION = 'v3-env-fallback';
+const WORKER_BUILD   = '2026-05-11';
+
+const CORS = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-api-key, anthropic-version',
+  'Access-Control-Max-Age':       '86400',
+};
+
+function json(body, status, extra) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS, ...(extra || {}) }
+  });
+}
+
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, x-api-key, anthropic-version',
-          'Access-Control-Max-Age': '86400',
-        },
-      });
+    const method = request.method;
+    const url    = new URL(request.url);
+
+    // CORS preflight
+    if (method === 'OPTIONS') {
+      return new Response(null, { headers: CORS });
     }
 
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
+    // Version probe — lets ops verify which worker build is live without
+    // making an upstream Anthropic call.
+    if (method === 'GET' && (url.pathname === '/' || url.pathname === '/version')) {
+      return json({
+        version:        WORKER_VERSION,
+        build:          WORKER_BUILD,
+        env_key_set:    Boolean(env && env.ANTHROPIC_API_KEY),
+        // Never echo the actual key. Only presence + length signal.
+        env_key_length: env && env.ANTHROPIC_API_KEY ? String(env.ANTHROPIC_API_KEY).length : 0,
+      }, 200);
+    }
+
+    if (method !== 'POST') {
+      return json({ error: 'method_not_allowed', message: 'Use POST or GET /', version: WORKER_VERSION }, 405);
     }
 
     // Resolve API key: client-supplied x-api-key wins (lets power users use their own
-    // account); otherwise fall back to the worker's bound secret so end-users never
-    // need to configure anything. If both are missing, return a friendly 503 so the
-    // client can degrade gracefully instead of hard-stopping the workflow.
-    const clientKey = request.headers.get('x-api-key');
-    const apiKey = clientKey || env.ANTHROPIC_API_KEY || null;
+    // account); else fall back to the worker's bound secret so end-users never need
+    // to configure anything. If both are missing, return a friendly 503 so the SPA
+    // can degrade gracefully.
+    const headerKey = request.headers.get('x-api-key');
+    const envKey    = (env && env.ANTHROPIC_API_KEY) ? String(env.ANTHROPIC_API_KEY) : '';
+    const apiKey    = (headerKey && headerKey.trim()) || envKey || '';
+
     if (!apiKey) {
-      return new Response(JSON.stringify({
-        error: 'ai_unconfigured',
-        message: 'AI service not configured. Set ANTHROPIC_API_KEY as a Workers secret.'
-      }), {
-        status: 503,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-      });
+      return json({
+        error:   'ai_unconfigured',
+        message: 'AI service not configured. Set ANTHROPIC_API_KEY as a Workers secret on accentos-anthropic-proxy.',
+        version: WORKER_VERSION,
+      }, 503);
     }
 
     const body = await request.arrayBuffer();
 
-    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body,
-    });
+    let upstream;
+    try {
+      upstream = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type':      'application/json',
+          'x-api-key':         apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body,
+      });
+    } catch (err) {
+      return json({
+        error:   'upstream_unreachable',
+        message: 'Could not reach Anthropic API: ' + (err && err.message ? err.message : 'unknown'),
+        version: WORKER_VERSION,
+      }, 502);
+    }
 
-    const responseText = await upstream.text();
-
-    return new Response(responseText, {
-      status: upstream.status,
+    const text = await upstream.text();
+    // Pass-through. x-worker-version response header lets the SPA verify build at runtime.
+    return new Response(text, {
+      status:  upstream.status,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Content-Type':                  'application/json',
+        'x-worker-version':              WORKER_VERSION,
+        'Access-Control-Allow-Origin':   '*',
+        'Access-Control-Expose-Headers': 'x-worker-version',
       },
     });
   },
