@@ -6022,9 +6022,26 @@ function duplicateQuote(quoteId) {
   if (typeof sbAuditLog==='function') sbAuditLog('quote_duplicate','quotes',{source_id: quoteId});
 }
 
+let _savedQuoteFilter = '';
 function showSaved() {
-  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();emailQuote('${q.id}')" title="Open mail draft with quote summary">✉ Email</button><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();duplicateQuote('${q.id}')" title="Clone line items into a new quote">⎘ Dup</button>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
+  const list = renderSavedQuoteRows();
+  openModal('Saved Quotes',`
+    <input id="sq-filter" placeholder="Filter by project / customer / quote # / $…" value="${esc(_savedQuoteFilter)}" oninput="_savedQuoteFilter=this.value;document.getElementById('sq-list').innerHTML=renderSavedQuoteRows()" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid var(--border);border-radius:6px;margin-bottom:10px;">
+    <div id="sq-list" style="max-height:360px;overflow-y:auto;">${list}</div>
+  `,
   `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
+  setTimeout(() => { const f = document.getElementById('sq-filter'); if (f) f.focus(); }, 50);
+}
+
+function renderSavedQuoteRows() {
+  if (!QUOTES.length) return '<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>';
+  const f = (_savedQuoteFilter||'').trim().toLowerCase();
+  const list = !f ? QUOTES : QUOTES.filter(q => {
+    const hay = `${q.project||''} ${q.customer||''} ${q.contact||''} ${q.id||''} ${q.total||''} ${q.notes||''}`.toLowerCase();
+    return hay.includes(f);
+  });
+  if (!list.length) return `<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No matches for "${esc(_savedQuoteFilter)}".</div>`;
+  return list.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();emailQuote('${q.id}')" title="Open mail draft with quote summary">✉ Email</button><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();duplicateQuote('${q.id}')" title="Clone line items into a new quote">⎘ Dup</button>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('');
 }
 
 // emailQuote — open the user's mail client with a draft addressed to the
