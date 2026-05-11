@@ -1,4 +1,5 @@
 // ── VENDOR SCORING MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'vendor_scoring', provides: ['sbLoadCoopFunds','sbSaveCoopFund','sbDeleteCoopFund','renderCoopTracker','sbLoadQuotes','sbSaveQuote','sbDeleteQuote','sbLoadVendorScores','sbSaveVendorScore','sbLoadChangelog','sbAppendChangelog','sbLoadParents','getVendorParent','getSisterVendors','COOP_FUNDS'], consumes: ['sbFetch','sbConfigured','CU','SUPABASE_URL'] });
 
 // ── CO-OP / REBATE TRACKER (Track 2.3, coop_tracker table) ──
 let COOP_FUNDS = [];

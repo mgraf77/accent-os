@@ -1,4 +1,5 @@
 // ── VENDORS MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'vendors_module', provides: ['vendors','renderVendors'], consumes: ['VD','CU','weightedScore','exportCSV','openAddVendor','getVPCats','esc','toast'] });
 
 // ── VENDORS PAGE ──────────────────────────────────────────
 function vendors(el,act){

@@ -1,4 +1,5 @@
 // ── DASHBOARD MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'dashboard_module', provides: ['dashboard','computeDailyBrief'], consumes: ['DEALS','VD','STAGES','CU','weightedScore','CHANGELOG','esc'] });
 
 // ── DASHBOARD ─────────────────────────────────────────────
 function dashboard(el){

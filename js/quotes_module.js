@@ -1,4 +1,5 @@
 // ── QUOTES MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'quotes_module', provides: ['quotes','QUOTES','QKB'], consumes: ['$','esc','goTo','toast','CU'] });
 
 // ══════════════════════════════════════════════════════════
 // ── QUOTES ───────────────────────────────────────────────

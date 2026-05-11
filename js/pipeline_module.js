@@ -1,4 +1,5 @@
 // ── PIPELINE MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'pipeline_module', provides: ['pipeline','DEALS','STAGES','computeDealProbability'], consumes: ['sbFetch','CU','$','esc','toast'] });
 
 // ══════════════════════════════════════════════════════════
 // ── PIPELINE ─────────────────────────────────────────────

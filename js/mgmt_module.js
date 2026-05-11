@@ -1,4 +1,5 @@
 // ── MGMT MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'mgmt_module', provides: ['mgmt','roadmap'], consumes: ['DEALS','STAGES','VD','CU','weightedScore','esc','$'] });
 
 // ── MGMT ──────────────────────────────────────────────────
 // ── MGMT DASHBOARD: Owner Dashboard (4.1) + KPI Registry (4.2) + OKRs (4.3) ──
