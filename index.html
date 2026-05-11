@@ -1460,7 +1460,7 @@ async function deleteCoopFund(id){
 async function sbLoadQuotes(){
   if(!sbConfigured()) return false;
   try{
-    const headers = await sbFetch('/quotes?select=id,number,customer_name,project_name,status,subtotal,total,notes,created_at&order=created_at.desc&limit=500');
+    const headers = await sbFetch('/quotes?select=id,number,customer_id,customer_name,project_name,status,subtotal,total,notes,created_at&order=created_at.desc&limit=500');
     if(!Array.isArray(headers)) return 0;
     if(!headers.length){ QUOTES=[]; return 0; }
     const ids = headers.map(h => h.id);
@@ -1483,6 +1483,7 @@ async function sbLoadQuotes(){
         _uuid: h.id,
         date: h.created_at ? new Date(h.created_at).toLocaleDateString() : '',
         customer: h.customer_name || '',
+        customer_id: h.customer_id || null,
         contact: extra.contact || '',
         project: h.project_name || '',
         type: extra.type || '',
@@ -1508,8 +1509,17 @@ async function sbSaveQuote(q){
   try{
     const subtotal = (q.lineItems||[]).reduce((s,l)=>s + (l.qty*l.price), 0);
     const extra = {contact: q.contact||'', type: q.type||'', sqft: q.sqft||'', budget: q.budget||'', note: q.notes||''};
+    // Auto-link to existing customer by exact (case-insensitive) name match — resolves the name-match tech debt from BI 1.4.
+    // Falls through to NULL if 0 or >1 matches; the user can disambiguate via the Customers module.
+    let custId = q.customer_id || null;
+    if(!custId && q.customer && Array.isArray(window.CUSTOMERS)){
+      const norm = q.customer.trim().toLowerCase();
+      const matches = window.CUSTOMERS.filter(c => (c.name||'').trim().toLowerCase() === norm);
+      if(matches.length === 1) custId = matches[0].id;
+    }
     const headerBody = {
       number: q.id,
+      customer_id: custId,
       customer_name: q.customer || null,
       project_name: q.project || null,
       status: 'draft',
