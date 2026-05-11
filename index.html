@@ -5247,6 +5247,26 @@ async function sbDeleteDeal(id){
   }catch(e){ console.warn('[sb] Delete deal failed:', e.message); return false; }
 }
 
+// ── Quote → Deal cross-module preset ──────────────────────────
+// Pattern matches createJobFromDeal (jobs.js) and createPOFromQuote (purchase_orders.js):
+// destination module owns the data shape; source just calls the helper.
+function createDealFromQuote(quoteIdOrUuid){
+  if(typeof QUOTES === 'undefined' || !QUOTES.length){ toast('No quotes loaded','err'); return; }
+  const q = QUOTES.find(x => x.id === quoteIdOrUuid || x._uuid === quoteIdOrUuid);
+  if(!q){ toast('Quote not found','err'); return; }
+  const total = Number(q.total) || (q.lineItems||[]).reduce((s,l)=> s + (Number(l.qty)||0)*(Number(l.price)||0), 0);
+  closeModal();
+  setTimeout(() => openAddDeal('quoted', {
+    name: q.project || ('Deal from ' + q.id),
+    company: q.customer || '',
+    value: total ? total.toFixed(2) : '',
+    project_type: q.type || '',
+    source: 'repeat',
+    related_customer_id: q.customer_id || null,
+    quote_id: q._uuid || null
+  }), 50);
+}
+
 function pipeline(el,act){
   act.innerHTML=`<button class="btn btn-outline btn-sm" onclick="openPipelineAnalytics()" title="Funnel · conversion · time-in-stage · loss reasons">📊 Analytics</button><button class="btn btn-accent btn-sm" onclick="openAddDeal()">+ New Deal</button>`;
   renderPipeline(el);
@@ -5324,7 +5344,8 @@ function openAddDeal(def='lead', preset){
   <div class="frow"><div class="fcol field"><label>Value ($)</label><input id="nd-v" type="number" value="${esc(String(p.value||''))}"></div><div class="fcol field"><label>Expected Close</label><input id="nd-cl" type="date" value="${esc(p.close||'')}"></div></div>
   <div class="frow"><div class="fcol field"><label>Lead Source</label><select id="nd-src">${['','referral','repeat','designer','web','walk-in','cold','other'].map(s=>`<option value="${s}" ${p.source===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Segment</label><select id="nd-seg">${['','residential','trade','designer','contractor','commercial','hospitality','other'].map(s=>`<option value="${s}" ${p.segment===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div></div>
   <div class="frow"><div class="fcol field"><label>Project Type</label><select id="nd-pt">${['','new build','remodel','replacement','repair','unknown'].map(s=>`<option value="${s}" ${p.project_type===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Stage</label><select id="nd-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===def?'selected':''}>${s.label}</option>`).join('')}</select></div></div>
-  ${p.related_customer_id?`<input type="hidden" id="nd-cust" value="${esc(p.related_customer_id)}">`:''}`,
+  ${p.related_customer_id?`<input type="hidden" id="nd-cust" value="${esc(p.related_customer_id)}">`:''}
+  ${p.quote_id?`<input type="hidden" id="nd-qid" value="${esc(p.quote_id)}">`:''}`,
   `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="saveDeal()">Add</button>`);
 }
 
@@ -5340,6 +5361,8 @@ async function saveDeal(){
     segment:$('nd-seg')?.value||'',
     project_type:$('nd-pt')?.value||'',
     stage:s,
+    customer_id: $('nd-cust')?.value || null,
+    quote_id: $('nd-qid')?.value || null,
     updated_at:new Date().toISOString()
   };
   const saved = await sbSaveDeal(d);
@@ -5903,7 +5926,7 @@ function deleteQ(numberId) {
 }
 
 function showSaved() {
-  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div>${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
+  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
   `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 
