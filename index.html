@@ -456,11 +456,11 @@ tbody tr:hover td{background:var(--bg);}
 <button class="qa-fab" id="qa-fab" onclick="toggleQA()" title="Quick actions">+</button>
 <div class="qa-menu" id="qa-menu">
   <div class="qa-hd">Create</div>
-  <button class="qa-item" onclick="qaGo('quotes')"><span class="qa-ico">📝</span>New Quote</button>
-  <button class="qa-item" onclick="qaGo('customers')"><span class="qa-ico">👤</span>New Customer</button>
-  <button class="qa-item" onclick="qaGo('pipeline')"><span class="qa-ico">💼</span>New Deal</button>
-  <button class="qa-item" onclick="qaGo('jobs')"><span class="qa-ico">🔧</span>New Job</button>
-  <button class="qa-item" onclick="qaGo('mytasks')"><span class="qa-ico">✓</span>New Task</button>
+  <button class="qa-item" onclick="qaNew('quote')"><span class="qa-ico">📝</span>New Quote</button>
+  <button class="qa-item" onclick="qaNew('customer')"><span class="qa-ico">👤</span>New Customer</button>
+  <button class="qa-item" onclick="qaNew('deal')"><span class="qa-ico">💼</span>New Deal</button>
+  <button class="qa-item" onclick="qaNew('job')"><span class="qa-ico">🔧</span>New Job</button>
+  <button class="qa-item" onclick="qaNew('task')"><span class="qa-ico">✓</span>New Task</button>
   <div class="qa-sep"></div>
   <div class="qa-hd">Jump to</div>
   <button class="qa-item" onclick="qaGo('dashboard')"><span class="qa-ico">⌂</span>Dashboard</button>
@@ -761,6 +761,35 @@ function toggleQA(){
 function qaGo(page){
   toggleQA();
   goTo(page);
+}
+// qaNew — navigate + immediately open the new-record modal for that kind.
+// Replaces the "labelled New X but only navigates" trap with actual create-on-click.
+function qaNew(kind){
+  toggleQA();
+  switch(kind){
+    case 'quote':
+      window.CQ = null;
+      if(typeof window.nLI === 'function') window.LI = [window.nLI()];
+      goTo('quotes');
+      break;
+    case 'customer':
+      goTo('customers');
+      setTimeout(() => { if(typeof openCustomerEdit==='function') openCustomerEdit(null); }, 80);
+      break;
+    case 'deal':
+      goTo('pipeline');
+      setTimeout(() => { if(typeof openAddDeal==='function') openAddDeal('lead'); }, 80);
+      break;
+    case 'job':
+      goTo('jobs');
+      setTimeout(() => { if(typeof openJobEdit==='function') openJobEdit(null); }, 80);
+      break;
+    case 'task':
+      goTo('mytasks');
+      break;
+    default:
+      goTo(kind);
+  }
 }
 document.addEventListener('click', (e) => {
   const menu = $('qa-menu'), fab = $('qa-fab');
