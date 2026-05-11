@@ -4,6 +4,7 @@
 //   - audit_log (action / module / metadata; loaded on demand)
 //   - pipeline_events (deal stage changes / notes; loaded on demand)
 // Pure-compute merge by timestamp. No new schema.
+register({ name: 'activity_feed', provides: ['activity_feed','AF_AUDITS','AF_PIPELINE','sbLoadAuditLog','sbLoadPipelineEvents','renderActivityFeed'], consumes: ['sbFetch','sbConfigured','CU','CHANGELOG','$','esc','toast'] });
 
 let AF_AUDITS = [];   // {ts, user, action, module, metadata}
 let AF_PIPELINE = []; // {ts, deal_id, event_type, from_stage, to_stage, user, payload}

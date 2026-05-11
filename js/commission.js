@@ -2,6 +2,7 @@
 // Mgmt Dashboard sub-tab. Pure-compute over DEALS[won] grouped by owner_id,
 // resolved to user_profiles for display. Configurable commission rate
 // persisted in localStorage. No new schema.
+register({ name: 'commission', provides: ['commission','_renderCommissionInner'], consumes: ['DEALS','CU','sbFetch','sbConfigured','$','esc','toast'] });
 
 const COMMISSION_DEFAULT_RATE = 0.05;   // 5%
 const COMMISSION_TIER_THRESHOLDS = [    // accelerator tiers (annual revenue → bonus rate)

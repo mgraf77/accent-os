@@ -9,6 +9,7 @@
 //
 // Output: 5 recommendation kinds — each with priority badge, vendor/deal/customer link,
 // reason, suggested move, and estimated $-impact. Click row → jump to relevant page.
+register({ name: 'decision_engine', provides: ['decisionengine','decision_engine','computeSalesDecisions'], consumes: ['DEALS','VD','QUOTES','CU','$','esc'] });
 
 let deFilter = {kind:'', minImpact:0};
 

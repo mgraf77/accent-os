@@ -2,6 +2,7 @@
 // Modal-displayed analytics over DEALS. Pure-compute, no schema. Shows
 // funnel by count + value, stage-to-stage conversion rates, time-in-stage
 // (when pipeline_events are loaded), and win/loss reason breakdown.
+register({ name: 'pipeline_analytics', provides: ['pipeline_analytics','openPipelineAnalytics'], consumes: ['DEALS','$','esc'] });
 
 let _paWindow = '90d';
 

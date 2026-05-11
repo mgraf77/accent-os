@@ -13,6 +13,7 @@
 //   showroom_expiring  — showroom displays expiring ≤14d
 //   po_overdue         — POs past expected_date, not received
 //   score_dropped      — vendor scores dropped ≥3 points in last 7d (from CHANGELOG)
+register({ name: 'alerts', provides: ['alerts','ALERTS','sbLoadAlerts','sbInsertAlert','sbUpdateAlertStatus','alertsUnreadCount'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 
 let ALERTS = [];
 let alertFilter = {q:'', severity:'', status:'unread'};

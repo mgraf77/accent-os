@@ -2,6 +2,7 @@
 // Surfaces actionable negotiation moves from existing data:
 // vendor scores, tier, spend, changelog deltas, inactive flags.
 // Pure-compute layer — no new schema.
+register({ name: 'deal_optimizer', provides: ['deal_optimizer','renderDealOptimizer','getAdaptiveTier','getChangeLog','saveChangeLog'], consumes: ['CHANGELOG','VD','DEALS','$','esc','toast'] });
 function renderDealOptimizer(c){
   const recs = computeDealRecommendations();
   const counts = {renegotiate:0, investigate:0, replace:0, upgrade:0, cut:0};
