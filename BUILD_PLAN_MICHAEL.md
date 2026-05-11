@@ -21,12 +21,28 @@
   - Then: paste to Claude → `M01 done — RLS tightened on vendor_* tables. Continue from BUILD_PLAN_CLAUDE.md`
   - Unlocks: production-grade RLS posture; ability to ship public-facing portals (Track 6.5/6.6) without leaking write access
 
-- [ ] **M01b** — RE-RUN M01 (original run no-op'd on the actual anon policies)
-  - Why: 2026-05-11 Supabase advisor scan still reports `vendor_categories`, `vendor_changelog`, `parent_companies`, `vendor_parent_assignments` as having `USING (true)` anon-write policies. The first M01 dropped placeholder names that didn't exist (`"anon read"` etc.); the actual live policy names are `anon_all_categories`, `anon_all_changelog`, `anon write parent_companies`, `anon write vpa`. M01 has been patched (commit `d84c69b`) to drop those real names.
-  - Action: same as M01 — paste `sql/M01_rls_tightening.sql` into SQL Editor → Run.
-  - Verify: re-run the advisor (`get_advisors` MCP or dashboard → Advisors) and confirm `rls_policy_always_true` count drops from 35 → 31.
-  - Then: paste to Claude → `M01b done — anon policies cleared.`
-  - Priority: HIGH — anon write access to vendor and parent-company tables is currently live.
+- [x] **M01b** — Anon-policy cleanup (applied directly via MCP, 2026-05-11)
+  - What landed: legacy anon policies `anon_all_categories`, `anon_all_changelog`,
+    `anon write parent_companies`, `anon write vpa`, `anon read parent_companies`,
+    `anon read vpa` were dropped via the Supabase MCP `apply_migration` tool
+    (migration name `m01b_drop_legacy_anon_policies`). Closes the anon-write
+    security gap on vendor_categories / vendor_changelog / parent_companies /
+    vendor_parent_assignments. SQL patched into M01 for repo discipline.
+  - Verify: advisor `rls_policy_always_true` count dropped 35 → 31.
+
+- [x] **M41/M42/M42b/M43/M44** — Performance + RLS sweep (applied directly via MCP, 2026-05-11)
+  - What landed: 19 covering indexes on foreign keys (M41); 18+3 RLS policies
+    rewrote `auth.uid()` to `(SELECT auth.uid())` for the InitPlan optimization
+    (M42/M42b); 24 `FOR ALL` write policies split into INSERT/UPDATE/DELETE
+    triplets to eliminate `multiple_permissive_policies` warnings (M43);
+    redundant `own reads alerts` policy dropped and over-broad
+    `authed read` on `telemetry_events` removed to restore owner-only
+    posture (M44).
+  - Verify: perf advisor now reports zero WARN-level findings —
+    `auth_rls_initplan` 21 → 0, `multiple_permissive_policies` 40 → 0,
+    `unindexed_foreign_keys` 19 → 0. Only INFO `unused_index` remain
+    (these are pre-existing + the new FK indexes, both of which gain
+    usage statistics naturally over time).
 
 - [x] **M02** — Run §0.4 Core Database Schema (consolidated CREATE TABLE block)
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
