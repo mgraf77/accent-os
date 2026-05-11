@@ -1,4 +1,5 @@
 // ── 5.1 KNOWLEDGE HUB (articles table — see sql/M21_phase3_schema.sql) ──
+register({ name: 'knowledge_hub', provides: ['knowledge_hub','ARTICLES','sbLoadArticles','sbSaveArticle','sbDeleteArticle'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 let ARTICLES = [];
 let khFilter = {q:'', category:''};
 let khSelected = null;
