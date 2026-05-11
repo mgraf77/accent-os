@@ -4,6 +4,7 @@
 // (TradePartner / VendorRep). Pure-compute over already-loaded data.
 // Lets Michael validate the external view before scoping the auth + branding
 // work. No new schema, no API.
+register({ name: 'portal_preview', provides: ['portal_preview','portalpreview','portalPreview'], consumes: ['TRADE_PARTNERS','VD','REP_DIRECTORY','COOP_FUNDS','SHOWROOM_DISPLAYS','DELIVERIES','QUOTES','DEALS','JOBS','CUSTOMERS','$','esc','toast','CU','goTo'] });
 
 let portalPreview = {mode:'trade', selectedId:''};
 

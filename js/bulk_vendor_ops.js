@@ -4,6 +4,7 @@
 // set parent company, clear rep. Direct help for M19 (257 vendors with no
 // rep group). Persists via the existing vendor_overrides table for tier +
 // inactive; rep + parent are written through their existing handlers.
+register({ name: 'bulk_vendor_ops', provides: ['bulk_vendor_ops','renderBulkVendorOps'], consumes: ['VD','sbFetch','sbConfigured','CU','$','esc','toast'] });
 
 let bvFilter = {q:'', tier:'', repState:'', parent:''};
 let bvSelected = new Set();   // vendor ids

@@ -4,6 +4,7 @@
 // warranty claims, calendar events, articles, co-op funds, showroom displays,
 // deliveries, alerts, marketing campaigns/assets). No new schema, no API.
 // Keyboard: Ctrl/Cmd+K opens. ↑/↓ select. Enter opens. Esc closes.
+register({ name: 'global_search', provides: ['global_search','openGlobalSearch','renderGlobalSearch','globalSearchKey'], consumes: ['VD','CUSTOMERS','DEALS','QUOTES','INVENTORY','JOBS','POS','PO_LINES','TRADE_PARTNERS','WARRANTY_CLAIMS','CAL_EVENTS','ARTICLES','COOP_FUNDS','SHOWROOM_DISPLAYS','DELIVERIES','ALERTS','MARKETING_CAMPAIGNS','$','esc','CU'] });
 
 const SEARCH_LIMIT_PER_GROUP = 6;
 let _gsResults = [];

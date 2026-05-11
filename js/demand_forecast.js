@@ -11,6 +11,7 @@
 //   no_data:      velocity == 0 (no PO history in window)
 // Sharpens as PO history accumulates. When Track 6.11 (Windward live) lands,
 // swap PO-line proxy for actual sales-line history without changing the UI.
+register({ name: 'demand_forecast', provides: ['demand_forecast','demandforecast','computeDemandForecast','exportDemandReorderCsv'], consumes: ['INVENTORY','POS','PO_LINES','VD','$','esc','toast'] });
 
 let demandFilter = {q:'', vendor:'', kind:''};
 

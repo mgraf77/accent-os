@@ -3,6 +3,7 @@
 // Complements 6.9 Demand Forecasting by focusing on retrospective metrics
 // (turn rate, dead stock detection, ABC classification, stock value mix)
 // rather than forward-looking reorder suggestions.
+register({ name: 'inventory_analytics', provides: ['inventory_analytics','renderInventoryAnalytics'], consumes: ['INVENTORY','POS','PO_LINES','$','esc','toast'] });
 
 const INV_DEAD_STOCK_DAYS = 180;
 const INV_VELOCITY_WINDOW_DAYS = 365;   // longer window than demand forecast — annualized signal

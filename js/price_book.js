@@ -1,4 +1,5 @@
 // ── 5.6 PRICE BOOK — pure-compute over inventory_items + VD ──
+register({ name: 'price_book', provides: ['price_book','renderPriceBook'], consumes: ['INVENTORY','VD','$','esc','toast'] });
 let pbFilter = {q:'', vendor:'', tier:'', inStockOnly:false};
 function renderPriceBook(c){
   if(!INVENTORY.length){

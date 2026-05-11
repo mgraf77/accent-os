@@ -6,6 +6,7 @@
 // Uses the csvImportFlow helper from v6.10.45 with a custom postProcess that
 // stamps the row with the resolved vendor_id and the per-category score map.
 // The bulkSave function then performs the wide→long expansion.
+register({ name: 'vendor_score_import', provides: ['vendor_score_import','sbBulkSaveVendorScores','openVendorScoreCsvPaste','downloadVendorScoreCsvTemplate','onVendorScoreFilePick','processVendorScoreCsvText','commitVendorScoreCsv'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast','CAT_DEFS','VD','csvImportFlow'] });
 
 async function sbBulkSaveVendorScores(rows){
   if(!sbConfigured()) return false;

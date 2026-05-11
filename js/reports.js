@@ -3,6 +3,7 @@
 // loaded module globals — no schema, no API. Useful for accounting handoffs,
 // supplier bulk-update CSVs (e.g. Eugene's meta-description sheet), BI tools,
 // and ad-hoc analysis.
+register({ name: 'reports', provides: ['reports'], consumes: ['VD','CUSTOMERS','DEALS','QUOTES','INVENTORY','JOBS','POS','PO_LINES','TRADE_PARTNERS','DELIVERIES','WARRANTY_CLAIMS','CAL_EVENTS','MARKETING_CAMPAIGNS','ALERTS','COOP_FUNDS','$','esc','toast','CU'] });
 
 function reports(c, actions){
   if(!c) return;

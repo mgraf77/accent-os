@@ -1,6 +1,8 @@
 // ── 5.3 INVENTORY MODULE — CSV phase 1 (inventory_items table — see sql/M22_inventory_schema.sql) ──
 // Live Windward integration arrives in Track 6.11 once M03 + M10 land. Until then,
 // this module accepts CSV imports (paste or file upload) and writes to inventory_items.
+register({ name: 'inventory', provides: ['inventory','INVENTORY','sbLoadInventory','sbBulkSaveInventory','sbDeleteInventoryItem','sbUpdateInventoryField','renderInventory','downloadInvCsvTemplate','openInvCsvPaste','onInvFilePick','processInvCsvText','commitInvCsv'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
+
 let INVENTORY = [];
 let invFilter = {q:'', vendor:'', lowOnly:false, location:''};
 

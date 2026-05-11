@@ -1,4 +1,5 @@
 // ── 5.4 PURCHASE ORDERS (purchase_orders + po_lines tables — see sql/M23_purchase_orders_schema.sql) ──
+register({ name: 'purchase_orders', provides: ['purchase_orders','POS','PO_LINES','sbLoadPurchaseOrders','sbSavePurchaseOrder','sbDeletePurchaseOrder','openPOEdit','createPOFromQuote'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast','VD','QUOTES'] });
 let POS = [];
 let PO_LINES = {};   // po_id → array of line rows
 let poFilter = {q:'', status:'', vendor:''};
