@@ -4,6 +4,55 @@
 
 ---
 
+## SEMANTIC TOPOLOGY HARDENING SPRINT — PHASES 1–3 · 2026-05-11
+
+**Sprint type:** Architecture documentation + substrate audit. No runtime changes.
+
+### Phase 1 deliverables
+
+| Doc | Key findings |
+|-----|-------------|
+| SEMANTIC_DEPENDENCY_FIELD_REPORT.md | 12 unregistered modules; VD has no declared provider; CAT_DEFS undeclared in 4 modules; AI-1 is a live runtime error |
+| MODULE_ISOLATION_SCORING.md | 15 Tier 1 (IQS≥80) modules identified; vendors_overflow IQS=19 (lowest); dashboard_module IQS=35 |
+| DEPENDENCY_CONTRACT_TEMPLATE.md | v1.0 template + 2 worked examples |
+| DECOUPLING_PRIORITY_LIST.md | Top 10 targets; #1 VD provider declaration; #2 CAT_DEFS consumes cleanup; #3 AI-1 resolution |
+
+### Phase 2 deliverables
+
+| Doc | Notes |
+|-----|-------|
+| DEPENDENCY_TAXONOMY.md | DEP-1 through DEP-8 classification system |
+| SCI_CLASSIFICATION_STANDARD.md | SCI-0 through SCI-4 severity scale; run history mapped to classes |
+| DEPENDENCY_VISIBILITY_EVENT_MODEL.md | SPEC ONLY — 4 event categories, 10 event types defined |
+| COUPLING_HEATMAP_SPEC.md | SPEC ONLY — scoring model, 3 visualization concepts, risk overlays |
+| LOW_SCI_MODULE_PRINCIPLES.md | 7 principles + design checklist |
+
+### Phase 3 deliverables
+
+| Doc | Notes |
+|-----|-------|
+| ABSORB_PHASE_SUMMARY.md | Full audit results, open questions, recommended next experiment timing |
+
+### Key audit findings from substrate analysis
+
+```
+Registered modules:       40 / 52
+Unregistered modules:     12 (including entire inventory domain)
+Dead references:           1 (AI-1: openVendorScoreCsvPaste in vendors_module)
+Undeclared consumptions:   5 (CAT_DEFS × 4 modules; getVPCats × 3 modules)
+Index.html-hosted globals: 4 (CAT_DEFS, REP_DIRECTORY, getVPCats, goTo)
+VD provider:               UNKNOWN — 9 consumers, no declared provider
+Tier 1 modules (IQS≥80):  15 (safe for future zero-SCI batching)
+Tier 4 modules (IQS<30):   4 (do not batch without full chain analysis)
+CHANGELOG ownership:       3-way split (vendor_scoring_helpers, vendor_scoring, deal_optimizer)
+```
+
+### Scope discipline
+
+All 9 hard constraints confirmed satisfied. No runtime engines, no orchestration expansion, no N=3 assumptions, no speculative autonomy claims, no infra mutations, no schema changes.
+
+---
+
 ## N=2 EXPERIMENT RUN 3 — MEASUREMENT LOG · 2026-05-11
 
 ```
