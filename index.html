@@ -647,6 +647,13 @@ document.addEventListener('keydown', e => {
   if((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')){
     e.preventDefault();
     if(typeof openGlobalSearch === 'function' && $('app').classList.contains('on')) openGlobalSearch();
+  } else if((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S')){
+    // Cmd/Ctrl+S — save the current quote when the Quote Generator is the active page.
+    // Salespeople hit this reflexively; default behavior (browser save-page) is wrong here.
+    if(curPage === 'quotes' && typeof saveQ === 'function' && $('app').classList.contains('on')){
+      e.preventDefault();
+      saveQ();
+    }
   } else if(e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey){
     const tag = (e.target && e.target.tagName) || '';
     if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
