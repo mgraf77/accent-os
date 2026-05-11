@@ -1,4 +1,5 @@
 // ── SUPABASE CATEGORIES MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'supabase_categories', provides: ['sbLoadCategories','sbSaveCategories','sbLoadScoreStates'], consumes: ['sbFetch','sbConfigured','CU'] });
 // ── SUPABASE REALTIME CLIENT (lazy) ─────────────────────────
 // REST goes through sbFetch; this client exists only to open WebSocket
 // channels for postgres_changes (Realtime). Initialized on first use.

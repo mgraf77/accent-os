@@ -1,5 +1,6 @@
 // ── VENDOR SCORING HELPERS (extracted from index.html at v6.11.1) ──
 // CHANGELOG, logChange, weightedScore, scoredCount, tier, scoreColor, fmt$, etc.
+register({ name: 'vendor_scoring_helpers', provides: ['CHANGELOG','logChange','computeVendorTier','vendorScore','weightedScore','tier','tierBadge','scoreColor','dispScore','fmt$','colSummary'], consumes: ['sbAppendChangelog','CU','VD','CAT_DEFS'] });
 
 
 // Change log

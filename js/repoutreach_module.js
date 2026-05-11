@@ -1,4 +1,5 @@
 // ── REPOUTREACH MODULE (extracted from index.html at v6.11.1) ──
+register({ name: 'repoutreach_module', provides: ['repoutreach','openRepOutreach'], consumes: ['VD','REP_DIRECTORY','toast','esc','$'] });
 
 // ── REP OUTREACH EMAIL GENERATOR ──
 function openRepOutreach(repName){

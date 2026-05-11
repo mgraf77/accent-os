@@ -1,5 +1,6 @@
 // ── VENDOR FILTERS MODULE (extracted from index.html at v6.11.1) ──
 // vFilters state + activeFilterCount, passesAdvancedFilters, openFilterModal
+register({ name: 'vendor_filters', provides: ['openFilterModal','passesAdvancedFilters','vFilters','activeFilterCount'], consumes: ['VD','$','esc','toast','computeVendorTier'] });
 
 // ── ADVANCED FILTERS (Filter button on Scores tab) ──
 let vFilters = {
