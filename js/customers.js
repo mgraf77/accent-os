@@ -421,17 +421,37 @@ async function openCustomerDetail(customerId){
   const addr = c.address || {};
   const addrStr = [addr.line1, addr.line2, addr.city, addr.state, addr.zip].filter(Boolean).join(', ');
 
+  // Click-to-call / click-to-email + the address opens Google Maps in a new tab.
+  // The browser/OS handles the actual app dispatch (Mail, Phone, Maps).
+  const emailHtml = c.email ? `<a href="mailto:${encodeURIComponent(c.email)}" style="color:var(--accent);text-decoration:none;">${esc(c.email)}</a>` : '—';
+  const phoneRaw = (c.phone||'').replace(/[^0-9+]/g, '');
+  const phoneHtml = c.phone ? `<a href="tel:${esc(phoneRaw)}" style="color:var(--accent);text-decoration:none;">${esc(c.phone)}</a>` : '—';
+  const addrHtml = addrStr ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrStr)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">${esc(addrStr)}</a>` : '—';
+
+  // Stat strip — fast operational read at the top of the modal
+  const totalSpend = linkedQuotes.reduce((s,q)=>s+(Number(q.total)||0),0)
+                   + linkedDeals.filter(d=>d._stage==='won').reduce((s,d)=>s+(Number(d.value)||0),0);
+  const openDealsCount = linkedDeals.filter(d=>!['won','lost','abandoned'].includes(d._stage)).length;
+  const wonDealsCount = linkedDeals.filter(d=>d._stage==='won').length;
+  const statStrip = `<div style="display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2);">
+    <div style="flex:1;padding:10px 14px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Quotes</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;">${linkedQuotes.length}</div></div>
+    <div style="flex:1;padding:10px 14px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Open Deals</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;">${openDealsCount}</div></div>
+    <div style="flex:1;padding:10px 14px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Won Deals</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green);">${wonDealsCount}</div></div>
+    <div style="flex:1;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Total Touched</div><div style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);">$${Math.round(totalSpend).toLocaleString()}</div></div>
+  </div>`;
+
   openModal(c.name || 'Customer', `
+    ${statStrip}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
       <div>
         <div class="muted sm">Type</div>
         <div style="margin-bottom:8px;"><span class="badge bg-gray" style="text-transform:capitalize;">${esc(c.type||'—')}</span></div>
         <div class="muted sm">Email</div>
-        <div style="margin-bottom:8px;">${esc(c.email||'—')}</div>
+        <div style="margin-bottom:8px;">${emailHtml}</div>
         <div class="muted sm">Phone</div>
-        <div style="margin-bottom:8px;">${esc(c.phone||'—')}</div>
+        <div style="margin-bottom:8px;">${phoneHtml}</div>
         <div class="muted sm">Address</div>
-        <div style="margin-bottom:8px;">${esc(addrStr||'—')}</div>
+        <div style="margin-bottom:8px;">${addrHtml}</div>
       </div>
       <div>
         <div class="muted sm">Segment</div>
@@ -445,9 +465,14 @@ async function openCustomerDetail(customerId){
       </div>
     </div>
     ${c.notes?`<div class="card" style="padding:10px 14px;background:var(--bg-2);margin-bottom:14px;"><div class="muted sm">Notes</div><div style="white-space:pre-wrap;font-size:13px;">${esc(c.notes)}</div></div>`:''}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
       <strong style="font-size:13px;">Activity Timeline · ${timeline.length}</strong>
-      <button class="btn btn-outline btn-sm" onclick="openCustomerInteractionEdit('${c.id}', null)">+ Add interaction</button>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="logCustomerInteraction('${c.id}','call')" title="One-click log call">☏ Log call</button>
+        <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="logCustomerInteraction('${c.id}','email')" title="One-click log email">✉ Log email</button>
+        <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="logCustomerInteraction('${c.id}','visit')" title="One-click log visit">⌂ Log visit</button>
+        <button class="btn btn-outline btn-sm" onclick="openCustomerInteractionEdit('${c.id}', null)">+ Add interaction</button>
+      </div>
     </div>
     <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;">
       ${timeline.length === 0 ? '<div style="padding:20px;text-align:center;color:var(--text-3);">No activity yet.</div>' : timeline.map(t => {
@@ -614,6 +639,33 @@ async function deleteCustomerConfirm(customerId){
   closeModal();
   renderCustomers($('pg-content'));
   toast('Customer deleted', 'ok');
+}
+
+// One-click interaction logger. Prompts for an optional one-line note, saves
+// immediately, refreshes the customer detail in place. Saves the "open modal →
+// pick type from dropdown → type subject → save" loop down to a single click + Enter.
+async function logCustomerInteraction(customerId, type) {
+  const c = CUSTOMERS.find(x => String(x.id) === String(customerId));
+  if (!c) { toast('Customer not found','err'); return; }
+  const verb = type === 'call' ? 'Call' : type === 'email' ? 'Email' : type === 'visit' ? 'Visit' : 'Note';
+  const subject = prompt(`Log ${verb.toLowerCase()} for ${c.name||'customer'} — optional note (Enter to log without):`, '');
+  if (subject === null) return;  // user cancelled
+  const rec = {
+    customer_id: customerId,
+    type,
+    subject: subject.trim() || `${verb} logged`,
+    body: null,
+    amount: null,
+    occurred_at: new Date().toISOString()
+  };
+  const saved = await sbSaveCustomerInteraction(rec);
+  if (saved === false) { toast('Save failed','err'); return; }
+  if (!CUSTOMER_INTERACTIONS[customerId]) CUSTOMER_INTERACTIONS[customerId] = [];
+  CUSTOMER_INTERACTIONS[customerId].unshift(typeof saved === 'object' ? saved : rec);
+  toast(`✓ ${verb} logged`, 'ok');
+  closeModal();
+  openCustomerDetail(customerId);
+  if (typeof sbAuditLog==='function') sbAuditLog('interaction_quick_log','customers',{customer_id:customerId, type});
 }
 
 function openCustomerInteractionEdit(customerId, intId){
