@@ -157,10 +157,10 @@ function computeGlobalSearch(q){
     const matches = [];
     Object.keys(DEALS).forEach(stageKey => {
       (DEALS[stageKey] || []).forEach(d => {
-        const score = _gsScoreObj(q, [d.title, d.company, d.contact, d.notes, d.lead_source]);
+        const score = _gsScoreObj(q, [d.name, d.company, d.notes, d.source, d.segment, d.project_type]);
         if(score > 0){
           matches.push({
-            score, icon:'◈', title: d.title || d.company || 'Deal',
+            score, icon:'◈', title: d.name || d.company || 'Deal',
             subtitle: `Deal · ${stageKey}${d.value?' · $'+Number(d.value).toLocaleString():''}${d.company?' · '+d.company:''}`,
             action: () => { goTo('pipeline'); setTimeout(()=>{ if(typeof openDeal==='function') openDeal(d.id, stageKey); }, 80); }
           });
@@ -262,10 +262,10 @@ function computeGlobalSearch(q){
   if(typeof WARRANTY_CLAIMS !== 'undefined'){
     const matches = [];
     WARRANTY_CLAIMS.forEach(w => {
-      const score = _gsScoreObj(q, [w.claim_number, w.vendor_name, w.customer_name, w.product_description, w.issue_description]);
+      const score = _gsScoreObj(q, [w.claim_number, w.vendor_name, w.customer_name, w.description, w.sku, w.notes]);
       if(score > 0){
         matches.push({
-          score, icon:'⚠', title: `${w.claim_number||''} — ${w.product_description||w.vendor_name||''}`.slice(0, 80),
+          score, icon:'⚠', title: `${w.claim_number||''} — ${w.description||w.vendor_name||''}`.slice(0, 80),
           subtitle: `Warranty · ${w.status||'—'} · ${w.severity||'—'}${w.customer_name?' · '+w.customer_name:''}`,
           action: () => { goTo('warranty'); setTimeout(()=>{ if(typeof openWarrantyEdit==='function') openWarrantyEdit(w.id); }, 80); }
         });
