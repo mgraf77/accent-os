@@ -1510,12 +1510,29 @@ async function sbSaveQuote(q){
     const subtotal = (q.lineItems||[]).reduce((s,l)=>s + (l.qty*l.price), 0);
     const extra = {contact: q.contact||'', type: q.type||'', sqft: q.sqft||'', budget: q.budget||'', note: q.notes||''};
     // Auto-link to existing customer by exact (case-insensitive) name match — resolves the name-match tech debt from BI 1.4.
-    // Falls through to NULL if 0 or >1 matches; the user can disambiguate via the Customers module.
+    // If zero matches and the user typed a name, auto-create the customer so future quotes/deals link to a real FK.
+    // Ambiguous names (>1 matches) still fall through to NULL — the user disambiguates via the Customers module.
     let custId = q.customer_id || null;
     if(!custId && q.customer && Array.isArray(window.CUSTOMERS)){
       const norm = q.customer.trim().toLowerCase();
       const matches = window.CUSTOMERS.filter(c => (c.name||'').trim().toLowerCase() === norm);
-      if(matches.length === 1) custId = matches[0].id;
+      if(matches.length === 1){
+        custId = matches[0].id;
+      } else if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
+        try{
+          const created = await sbSaveCustomer({
+            name: q.customer.trim(),
+            type: 'other',
+            lifecycle_stage: 'prospect',
+            first_seen: new Date().toISOString().slice(0,10),
+            notes: 'Auto-created from quote ' + (q.id || '')
+          });
+          if(created && created.id){
+            custId = created.id;
+            window.CUSTOMERS.push(created);
+          }
+        }catch(e){ console.warn('[quote] auto-create customer failed:', e.message); }
+      }
     }
     const headerBody = {
       number: q.id,
