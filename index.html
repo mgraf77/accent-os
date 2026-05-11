@@ -642,6 +642,18 @@ async function doLogin(){
 }
 document.addEventListener('keydown', e => {
   if(e.key==='Enter' && !$('app').classList.contains('on')) doLogin();
+  // Cmd/Ctrl+K — open global search (hint already shown next to the search button).
+  // "/" also opens search, matching common SaaS conventions, but only if no other input is focused.
+  if((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')){
+    e.preventDefault();
+    if(typeof openGlobalSearch === 'function' && $('app').classList.contains('on')) openGlobalSearch();
+  } else if(e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey){
+    const tag = (e.target && e.target.tagName) || '';
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+    if(e.target && e.target.isContentEditable) return;
+    e.preventDefault();
+    if(typeof openGlobalSearch === 'function' && $('app').classList.contains('on')) openGlobalSearch();
+  }
 });
 
 // Try to rehydrate a session from a stored JWT. Returns true on success.
