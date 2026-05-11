@@ -1,4 +1,5 @@
 // ── 5.16 COMPANY CALENDAR (calendar_events table — see sql/M21_phase3_schema.sql) ──
+register({ name: 'calendar', provides: ['calendar','CAL_EVENTS','sbLoadCalendarEvents','sbSaveCalendarEvent','sbDeleteCalendarEvent'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 let CAL_EVENTS = [];
 let calView = 'month';   // 'month' | 'list'
 let calCursor = null;    // YYYY-MM-01 anchor

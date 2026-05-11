@@ -2,6 +2,7 @@
 // localStorage-only v1 (no Supabase, no schema, no Michael handoff).
 // Keyed on the current user_id so each session stays personal.
 // Daily Brief surfaces "due today" + "overdue" counts.
+register({ name: 'my_tasks', provides: ['my_tasks','MY_TASKS','loadMyTasks','saveMyTasks'], consumes: ['CU','$','esc','toast'] });
 
 let MY_TASKS = [];
 const _MT_STATUSES = ['open','in_progress','done'];

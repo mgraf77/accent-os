@@ -2,6 +2,7 @@
 // Loads module_modes.json on hydrate. Caches in window.MODULE_MODES.
 // Per-user overrides live in localStorage (key: accentos_user_overrides).
 // Owner-only Mgmt sub-tab lets you toggle module modes + manage overrides.
+register({ name: 'module_modes', provides: ['module_modes','MODULE_MODES','USER_OVERRIDES','canSeeModule'], consumes: ['CU','$','toast'] });
 
 let MODULE_MODES = {version: 1, modules: {}, states: ['idea_only','brainstorming','planning','blocked','building','testing','live','deprecated','hidden']};
 let USER_OVERRIDES = {version: 1, overrides: {}};

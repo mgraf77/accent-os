@@ -2,6 +2,7 @@
 // Each list page has its own filter state object (invFilter, jobFilter, etc.).
 // This helper saves named snapshots of those objects to localStorage so users
 // can reapply a common filter combo in one click.
+register({ name: 'saved_filters', provides: ['getSavedFilters','saveFilterSet','deleteFilterSet'], consumes: ['$','toast','CU'] });
 //
 // Usage in a module's render function:
 //   const bar = savedFiltersBar({

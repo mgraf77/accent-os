@@ -3,6 +3,7 @@
 // Tables: meetings, meeting_prep_sections, meeting_notes, meeting_todos,
 //         meeting_followups, meeting_transcripts (sql/M30_internal_meetings.sql)
 // Function 1: Platform Review (hardcoded prep sections — Dad & Pat briefing)
+register({ name: 'internal_meetings', provides: ['internal_meetings','IM_MEETINGS'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 // Function 2: Agenda Builder (templates, export, save to Knowledge Hub)
 // Plus: Notes (with floating bubble), To-Dos, Follow-Ups, AI Notes (transcript import)
 
