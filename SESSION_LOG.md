@@ -2,6 +2,36 @@
 > Append-only. Most recent entry at top. Auto-committed each session.
 > Replaces Notion Live Log. Do not delete entries.
 
+### 2026-05-11 — Product Throughput Mode acceleration sprint — SHIPPED (22 commits, 1 session)
+**Branch:** `claude/accentos-acceleration-sprint-K9pFn`
+**Mode:** autonomous run, no check-ins, "do anything and everything"
+
+**Code wins (workflow + UX):**
+- `3db0dfc` worker proxy 400 fix — model ID swap `claude-sonnet-4-20250514` → `claude-sonnet-4-5` across 4 call sites + surface real upstream errors in Parse Notes status.
+- `aff3cbb` mobile polish — iOS notch safe-area, 16px inputs (no tap-zoom), 44px tap targets on .ni/.btn-sm, momentum scroll on tables.
+- `627b5d8` / `2decc8c` quotes auto-link/create customer FK on save.
+- `ee3b5ac` vendor list vitals subtitle (latest yr sales / days since last edit / open co-op $).
+- `9e8ea05` Quote → Deal cross-module preset (third pattern use). saveDeal now reads preset hidden inputs for customer_id/quote_id.
+- `772c523` + Quote button on customer detail; sbSaveDeal customer auto-link/create.
+- `5c346d0` + `088a53f` qaNew()/dashboard quick-actions actually create instead of merely navigating.
+- `808d5fa` + `204e74a` bind Cmd/Ctrl+K and "/" for global search (hint was advertised but never wired).
+- `21281d2` deal customer autocomplete.
+- `add2ea3` + `2fe8212` job/warranty/delivery customer auto-link/create.
+- `7904696` extract `resolveCustomerByName` helper, dedupe 5 inline copies (-52 LOC).
+- `0cb536a` + `9d6f3d1` global search field-name fixes: deals (.name not .title), warranty (.description), trade partners (.type) + dedupe Cmd+K listener.
+- `2b32830` customer-detail timeline prefers FK over name match.
+
+**Database (applied directly via Supabase MCP):**
+- M01b: 6 legacy anon policies dropped — closes anon-write security gap on vendor + parent tables.
+- M41: 19 covering indexes on foreign keys (unindexed_foreign_keys: 19 → 0).
+- M42 + M42b: 21 RLS policies rewrote auth.uid() → (SELECT auth.uid()) (auth_rls_initplan: 21 → 0).
+- M43: 24 FOR ALL write policies split into INSERT/UPDATE/DELETE triplets (multiple_permissive_policies: 40 → 2).
+- M44: dropped redundant SELECT policies; restored owner-only telemetry_events.
+
+**Net advisor state:** zero WARN-level perf findings. Only INFO `unused_index` remain (will gain stats as the app runs).
+
+**Files added:** sql/M41/M42/M42b/M43/M44.
+
 ## CURRENT PRIORITY QUEUE
 > Updated each session. This is what we work on next, in order.
 

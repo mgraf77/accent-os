@@ -1,24 +1,32 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-11 — Product Throughput Mode session start. Worker proxy WIP resolved.
+**Last updated:** 2026-05-11 — Product Throughput Mode acceleration sprint complete.
 **Resume trigger:** "continue last session"
 
 ---
 
 ## STATUS
-Worker proxy 400 from `aiParseNotes` traced to stale model ID. `claude-sonnet-4-20250514` (May 2025) is a year old and likely past retirement window. Updated all 4 call sites in `index.html` to `claude-sonnet-4-5` (current Sonnet). Also surfaced the actual upstream error in `aiParseNotes` so the next failure shows the real API message in the status panel instead of a generic JSON parse error.
 
-## CHANGES
-- `index.html:3764, 3790, 5688, 5989` — model ID swap
-- `index.html:5683-5703` — `aiParseNotes` now reads body as text, displays upstream non-2xx with status code + error message, displays non-JSON body verbatim
+22-commit autonomous run on `claude/accentos-acceleration-sprint-K9pFn`. All work pushed.
 
-## VERIFICATION NEEDED (BLOCKS ON MICHAEL)
-1. Hard-refresh `accent-os.pages.dev` (Cmd+Shift+R) to pick up the new commit.
-2. Open Quote Generator → paste a fixture schedule → click "⚡ Parse Notes".
-3. If still 400: the status panel will now display the actual upstream error verbatim. Paste that line back in chat and we have a 30-second diagnosis path.
+**Headline numbers:**
+- Worker proxy WIP resolved (model ID swap to `claude-sonnet-4-5`).
+- Six write surfaces now auto-link/create the customer FK (quote, deal, job, warranty, delivery, customer-quote helper).
+- Five cross-module preset paths in production (Deal→Job, Quote→PO, Quote→Deal, Customer→Quote, Customer→Deal).
+- Global search + Cmd/Ctrl+K + "/" bindings actually wired (the hint was advertised-but-unbound).
+- Supabase perf advisor: 80 WARN-level findings → 0. 19 FK indexes added, 21 RLS initplan rewrites, 24 FOR ALL policies split, 6 legacy anon policies dropped, 1 telemetry security regression restored.
 
-Worker proxy redeploy is NOT required for this fix — the model ID lives in the client request body, the worker just passes it through.
+**Live DB state:** in sync with `sql/M41` `sql/M42` `sql/M42b` `sql/M43` `sql/M44`. All applied via `apply_migration` MCP. Anon-write security gap closed.
 
-## NEXT
-BUILD_PLAN_CLAUDE is fully `[x]` except for items blocked on M-tasks. Per Throughput-Mode priorities, next attack surface is mobile usability + command-center stabilization + search/nav speed. Awaiting Michael's choice of sub-priority or autonomous pick of highest-leverage item.
+## NEXT (when Michael returns)
+
+BUILD_PLAN_CLAUDE is fully `[x]` except items blocked on M-tasks (M03/M04/M05/M06/M09/M10/M18). Per Throughput-Mode priorities all eight categories now have meaningful work shipped. Pickable without new permissions:
+
+- MODULE_REGISTRY refactor (declarative shell — collapse 4 module touchpoints to 1).
+- Pipeline analytics polish.
+- Auto-derived deal source from customer history.
+- KPI snapshot scheduler (cron-style).
+- Per-user dashboard pinning (uses M30 user_module_overrides).
+
+If you want me to keep building, just say "go" again.
