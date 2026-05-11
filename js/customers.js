@@ -25,6 +25,35 @@ async function sbLoadCustomerInteractions(customerId){
   }catch(e){ console.warn('[sb] Load interactions failed:', e.message); return false; }
 }
 
+// resolveCustomerByName(name, sourceLabel) — shared util for write paths that capture
+// a customer name but no UUID. Returns a customer_id if (a) exactly one CRM record
+// matches by case-insensitive name, or (b) zero matches and we successfully auto-create
+// a prospect record. Returns null when ambiguous (>1 matches) so callers can keep the
+// name-only fallback. Used by sbSaveQuote, sbSaveDeal, saveJob, saveDelivery, saveWarranty.
+async function resolveCustomerByName(name, sourceLabel){
+  if(!name || !Array.isArray(CUSTOMERS)) return null;
+  const norm = name.trim().toLowerCase();
+  if(!norm) return null;
+  const matches = CUSTOMERS.filter(c => (c.name||'').toLowerCase().trim() === norm);
+  if(matches.length === 1) return matches[0].id;
+  if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
+    try{
+      const created = await sbSaveCustomer({
+        name: name.trim(),
+        type: 'other',
+        lifecycle_stage: 'prospect',
+        first_seen: new Date().toISOString().slice(0,10),
+        notes: 'Auto-created from ' + (sourceLabel || 'record')
+      });
+      if(created && created.id){
+        CUSTOMERS.push(created);
+        return created.id;
+      }
+    }catch(e){ console.warn('[resolveCustomerByName] auto-create failed:', e.message); }
+  }
+  return null;
+}
+
 async function sbSaveCustomer(rec){
   if(!sbConfigured()) return false;
   try{
@@ -356,25 +385,29 @@ async function openCustomerDetail(customerId){
   await sbLoadCustomerInteractions(customerId);
   const ints = CUSTOMER_INTERACTIONS[customerId] || [];
   const r = computeCustomerRFM(c);
-  const linkedQuotes = (typeof QUOTES !== 'undefined' && Array.isArray(QUOTES)) ? QUOTES.filter(q => q.customer && c.name && q.customer.toLowerCase().trim() === c.name.toLowerCase().trim()) : [];
+  // Prefer real FK match; fall back to case-insensitive name match for records
+  // saved before the BI 1.4 cleanup landed.
+  const norm = (c.name||'').toLowerCase().trim();
+  const matchById = (list, idField='customer_id') => (list||[]).filter(x => {
+    if(x[idField] && c.id && String(x[idField]) === String(c.id)) return true;
+    const t = (x.customer_name || x.customer || x.company || '').toLowerCase().trim();
+    return t && norm && t === norm;
+  });
+  const linkedQuotes = matchById(typeof QUOTES !== 'undefined' ? QUOTES : []);
   const linkedDeals = [];
   if(typeof DEALS !== 'undefined' && DEALS){
     Object.keys(DEALS).forEach(stage => {
       (DEALS[stage]||[]).forEach(d => {
-        if(d.company && c.name && d.company.toLowerCase().trim() === c.name.toLowerCase().trim()){
+        if((d.customer_id && String(d.customer_id) === String(c.id))
+           || (d.company && norm && d.company.toLowerCase().trim() === norm)){
           linkedDeals.push({...d, _stage: stage});
         }
       });
     });
   }
-  // Extended cross-module links by name match (jobs, deliveries, warranty)
-  const matchByName = list => (list||[]).filter(x => {
-    const t = (x.customer_name || x.customer || '').toLowerCase().trim();
-    return t && c.name && t === c.name.toLowerCase().trim();
-  });
-  const linkedJobs = matchByName(typeof JOBS !== 'undefined' ? JOBS : []);
-  const linkedDeliveries = matchByName(typeof DELIVERIES !== 'undefined' ? DELIVERIES : []);
-  const linkedWarranty = matchByName(typeof WARRANTY_CLAIMS !== 'undefined' ? WARRANTY_CLAIMS : []);
+  const linkedJobs = matchById(typeof JOBS !== 'undefined' ? JOBS : []);
+  const linkedDeliveries = matchById(typeof DELIVERIES !== 'undefined' ? DELIVERIES : []);
+  const linkedWarranty = matchById(typeof WARRANTY_CLAIMS !== 'undefined' ? WARRANTY_CLAIMS : []);
 
   const timeline = [];
   ints.forEach(i => timeline.push({date: i.occurred_at, kind: i.type, label: i.subject || i.type, body: i.body, amount: i.amount, _id: i.id, _src:'interaction'}));
@@ -438,10 +471,41 @@ async function openCustomerDetail(customerId){
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">
       <button class="btn btn-outline" style="margin-right:auto;color:var(--accent);" onclick="deleteCustomerConfirm('${c.id}')">Delete customer</button>
       <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      ${typeof createQuoteFromCustomer==='function' && CU && ['Owner','Admin','Manager','Sales'].includes(CU.role)?`<button class="btn btn-outline" onclick="createQuoteFromCustomer('${c.id}')">+ New Quote</button>`:''}
       ${typeof createDealFromCustomer==='function' && CU && ['Owner','Admin','Manager','Sales'].includes(CU.role)?`<button class="btn btn-outline" onclick="createDealFromCustomer('${c.id}')">+ New Deal</button>`:''}
       <button class="btn btn-accent" onclick="openCustomerEdit('${c.id}')">Edit</button>
     </div>
   `);
+}
+
+// Customer → Quote — opens the Quote Generator pre-filled with the customer.
+// Fourth use of the cross-module preset pattern (after Deal→Job, Quote→PO, Quote→Deal).
+function createQuoteFromCustomer(customerId){
+  if(typeof CUSTOMERS === 'undefined') return;
+  const c = CUSTOMERS.find(x => x.id === customerId);
+  if(!c){ toast('Customer not found','err'); return; }
+  if(typeof window === 'undefined') return;
+  // Seed CQ + LI in the global namespace the Quote page reads. Use the
+  // contact and address fields when they exist on the customer record.
+  const addr = c.address || {};
+  const addrStr = [addr.line1, addr.line2, addr.city, addr.state, addr.zip].filter(Boolean).join(', ');
+  window.CQ = {
+    customer: c.name || '',
+    customer_id: c.id || null,
+    contact: c.email || c.phone || '',
+    project: '',
+    type: '',
+    address: addrStr,
+    sqft: '',
+    budget: '',
+    notes: '',
+    lineItems: [],
+    total: 0
+  };
+  window.LI = (typeof window.nLI === 'function') ? [window.nLI()] : [];
+  closeModal();
+  setTimeout(() => goTo('quotes'), 50);
+  if(typeof sbAuditLog==='function') sbAuditLog('quote_from_customer', 'customers', {customer_id: c.id, customer_name: c.name});
 }
 
 // Customer → Deal conversion helper. Called from customer detail modal.

@@ -283,9 +283,13 @@ async function saveWarranty(claimId){
   const vId = $('w-v').value;
   if(!vId){ toast('Vendor required','err'); return; }
   const vName = $('w-v').options[$('w-v').selectedIndex]?.getAttribute('data-name') || '';
-  const cId = $('w-c').value || null;
+  let cId = $('w-c').value || null;
   let cName = $('w-cn').value?.trim() || null;
   if(cId && !cName) cName = $('w-c').options[$('w-c').selectedIndex]?.getAttribute('data-name') || null;
+  // Resolve customer FK via shared helper if dropdown wasn't used (BI 1.4).
+  if(!cId && cName && typeof resolveCustomerByName === 'function'){
+    cId = await resolveCustomerByName(cName, 'warranty claim');
+  }
   const rec = {
     id: claimId || undefined,
     claim_number: $('w-num').value || null,

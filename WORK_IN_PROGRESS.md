@@ -1,44 +1,32 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-07 — session paused (Michael switching from Codespace → Claude iOS app)
+**Last updated:** 2026-05-11 — Product Throughput Mode acceleration sprint complete.
 **Resume trigger:** "continue last session"
 
 ---
 
-## CONTEXT
-- Built Quote Generator v2 (AI parse, track calc, per-row approval, CSV export) — shipped, commit `940e7f8`
-- Hit CORS blocking api.anthropic.com from browser
-- Created Cloudflare Worker proxy at `worker/anthropic-proxy.js` (deployed to https://accentos-anthropic-proxy.mgraf77.workers.dev)
-- All 4 fetch calls in `index.html` now point at the worker
-- Patched the worker to use `arrayBuffer` body passthrough + CORS `*` + explicit "Missing x-api-key" 400 — pushed as commit **`2dca2a6`, NOT YET REDEPLOYED**
+## STATUS
 
-## CURRENT BUG
-"⚡ Parse Notes" in Quote Generator returns 400 from the worker. Console shows:
-```
-POST https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages 400 (Bad Request)
-[aiParseNotes] JSON parse error
-```
-`sessionStorage['aos-api']` key IS set.
+22-commit autonomous run on `claude/accentos-acceleration-sprint-K9pFn`. All work pushed.
 
-## NEXT STEPS PENDING
+**Headline numbers:**
+- Worker proxy WIP resolved (model ID swap to `claude-sonnet-4-5`).
+- Six write surfaces now auto-link/create the customer FK (quote, deal, job, warranty, delivery, customer-quote helper).
+- Five cross-module preset paths in production (Deal→Job, Quote→PO, Quote→Deal, Customer→Quote, Customer→Deal).
+- Global search + Cmd/Ctrl+K + "/" bindings actually wired (the hint was advertised-but-unbound).
+- Supabase perf advisor: 80 WARN-level findings → 0. 19 FK indexes added, 21 RLS initplan rewrites, 24 FOR ALL policies split, 6 legacy anon policies dropped, 1 telemetry security regression restored.
 
-**1. Confirm worker was redeployed with commit `2dca2a6` code.** Test by running this in the browser console on accent-os.pages.dev:
-```js
-fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {method:'POST'}).then(r=>r.text()).then(console.log)
-```
-- Old code → returns Anthropic auth error
-- New code → returns `{"error":"Missing x-api-key header"}`
+**Live DB state:** in sync with `sql/M41` `sql/M42` `sql/M42b` `sql/M43` `sql/M44`. All applied via `apply_migration` MCP. Anon-write security gap closed.
 
-If old code is still live, redeploy needed in local terminal (NOT codespace):
-```
-cd C:\Users\Michael\Desktop\accent-os
-git pull origin main
-wrangler deploy
-```
+## NEXT (when Michael returns)
 
-**2. If new code is live but Parse still fails:** get the actual upstream response — DevTools → Network → click failed `messages` row → **Response** tab → paste the body. That tells us if it's a model-ID issue, malformed request, or something else.
+BUILD_PLAN_CLAUDE is fully `[x]` except items blocked on M-tasks (M03/M04/M05/M06/M09/M10/M18). Per Throughput-Mode priorities all eight categories now have meaningful work shipped. Pickable without new permissions:
 
-**3. Model verification:** `aiParseNotes` uses `'claude-sonnet-4-20250514'` — may need to verify this is still a valid model ID.
+- MODULE_REGISTRY refactor (declarative shell — collapse 4 module touchpoints to 1).
+- Pipeline analytics polish.
+- Auto-derived deal source from customer history.
+- KPI snapshot scheduler (cron-style).
+- Per-user dashboard pinning (uses M30 user_module_overrides).
 
-Pick up from step 1.
+If you want me to keep building, just say "go" again.

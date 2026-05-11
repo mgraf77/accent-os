@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AccentOS v6.10.2 — Accent Lighting Inc.</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AccentOS v6.10.75 — Accent Lighting Inc.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -335,13 +335,13 @@ tbody tr:hover td{background:var(--bg);}
 /* ── MOBILE RESPONSIVE ── */
 @media (max-width:900px){
   .mobile-menu-btn{display:inline-flex;align-items:center;}
-  .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .25s ease;z-index:100;width:260px;min-width:260px;box-shadow:0 0 24px rgba(0,0,0,.35);}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .25s ease;z-index:100;width:260px;min-width:260px;box-shadow:0 0 24px rgba(0,0,0,.35);padding-top:env(safe-area-inset-top);}
   .sidebar.mobile-open{transform:translateX(0);}
   .sidebar.col{width:260px;min-width:260px;} /* ignore desktop-collapse on mobile */
   .sidebar.col .sb-sect,.sidebar.col .ni-label,.sidebar.col .un,.sidebar.col .ur{opacity:1;}
   .sb-toggle{display:none;}
   .main{width:100vw;}
-  .topbar{padding:0 14px;gap:8px;}
+  .topbar{padding:env(safe-area-inset-top) 14px 0;gap:8px;height:calc(64px + env(safe-area-inset-top));}
   .topbar-title{font-size:15px;}
   .topbar-sub{display:none;}
   .topbar > div:last-child > button[onclick*="openGlobalSearch"]{min-width:0!important;padding:6px 10px!important;}
@@ -349,13 +349,17 @@ tbody tr:hover td{background:var(--bg);}
   .topbar > div:last-child > button[onclick*="openGlobalSearch"] > span:nth-child(3){display:none;}
   .content{padding:14px!important;}
   .g4,.g3,.g2{grid-template-columns:1fr!important;}
-  .tbl-wrap{overflow-x:auto;}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .modal{width:calc(100vw - 24px)!important;max-width:none!important;}
-  .qa-fab{right:16px;bottom:16px;width:52px;height:52px;}
-  .qa-menu{right:16px;bottom:80px;left:16px;min-width:0;}
+  .qa-fab{right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:52px;height:52px;}
+  .qa-menu{right:16px;bottom:calc(80px + env(safe-area-inset-bottom));left:16px;min-width:0;}
+  /* tap-target sizing + iOS input-zoom prevention */
+  .ni{padding:12px 16px;font-size:14px;}
+  .btn-sm{padding:8px 13px;font-size:13px;}
+  input,select,textarea{font-size:16px;}
 }
 @media (max-width:560px){
-  .topbar{padding:0 10px;}
+  .topbar{padding-left:10px;padding-right:10px;}
   .stat-value{font-size:20px!important;}
 }
 </style>
@@ -434,8 +438,8 @@ tbody tr:hover td{background:var(--bg);}
       <button class="mobile-menu-btn" onclick="toggleSB()" title="Menu">☰</button>
       <div><span class="topbar-title" id="pg-title">Dashboard</span><span class="topbar-sub" id="pg-sub"></span></div>
       <div style="display:flex;align-items:center;gap:14px;">
-        <button onclick="openGlobalSearch()" title="Search (Ctrl+K)" style="display:flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-3);font-size:12px;cursor:pointer;min-width:200px;">
-          <span style="font-size:13px;">🔍</span><span>Search…</span><span style="margin-left:auto;font-size:10px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;">⌘K</span>
+        <button onclick="openGlobalSearch()" title="Search (Ctrl+K or /)" style="display:flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-3);font-size:12px;cursor:pointer;min-width:200px;">
+          <span style="font-size:13px;">🔍</span><span>Search…</span><span style="margin-left:auto;font-size:10px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;">⌘K · /</span>
         </button>
         <div id="bell-host" style="position:relative;"></div>
         <div class="topbar-actions" id="pg-actions"></div>
@@ -452,11 +456,11 @@ tbody tr:hover td{background:var(--bg);}
 <button class="qa-fab" id="qa-fab" onclick="toggleQA()" title="Quick actions">+</button>
 <div class="qa-menu" id="qa-menu">
   <div class="qa-hd">Create</div>
-  <button class="qa-item" onclick="qaGo('quotes')"><span class="qa-ico">📝</span>New Quote</button>
-  <button class="qa-item" onclick="qaGo('customers')"><span class="qa-ico">👤</span>New Customer</button>
-  <button class="qa-item" onclick="qaGo('pipeline')"><span class="qa-ico">💼</span>New Deal</button>
-  <button class="qa-item" onclick="qaGo('jobs')"><span class="qa-ico">🔧</span>New Job</button>
-  <button class="qa-item" onclick="qaGo('mytasks')"><span class="qa-ico">✓</span>New Task</button>
+  <button class="qa-item" onclick="qaNew('quote')"><span class="qa-ico">📝</span>New Quote</button>
+  <button class="qa-item" onclick="qaNew('customer')"><span class="qa-ico">👤</span>New Customer</button>
+  <button class="qa-item" onclick="qaNew('deal')"><span class="qa-ico">💼</span>New Deal</button>
+  <button class="qa-item" onclick="qaNew('job')"><span class="qa-ico">🔧</span>New Job</button>
+  <button class="qa-item" onclick="qaNew('task')"><span class="qa-ico">✓</span>New Task</button>
   <div class="qa-sep"></div>
   <div class="qa-hd">Jump to</div>
   <button class="qa-item" onclick="qaGo('dashboard')"><span class="qa-ico">⌂</span>Dashboard</button>
@@ -638,6 +642,18 @@ async function doLogin(){
 }
 document.addEventListener('keydown', e => {
   if(e.key==='Enter' && !$('app').classList.contains('on')) doLogin();
+  // Cmd/Ctrl+K — open global search (hint already shown next to the search button).
+  // "/" also opens search, matching common SaaS conventions, but only if no other input is focused.
+  if((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')){
+    e.preventDefault();
+    if(typeof openGlobalSearch === 'function' && $('app').classList.contains('on')) openGlobalSearch();
+  } else if(e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey){
+    const tag = (e.target && e.target.tagName) || '';
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+    if(e.target && e.target.isContentEditable) return;
+    e.preventDefault();
+    if(typeof openGlobalSearch === 'function' && $('app').classList.contains('on')) openGlobalSearch();
+  }
 });
 
 // Try to rehydrate a session from a stored JWT. Returns true on success.
@@ -757,6 +773,35 @@ function toggleQA(){
 function qaGo(page){
   toggleQA();
   goTo(page);
+}
+// qaNew — navigate + immediately open the new-record modal for that kind.
+// Replaces the "labelled New X but only navigates" trap with actual create-on-click.
+function qaNew(kind){
+  toggleQA();
+  switch(kind){
+    case 'quote':
+      window.CQ = null;
+      if(typeof window.nLI === 'function') window.LI = [window.nLI()];
+      goTo('quotes');
+      break;
+    case 'customer':
+      goTo('customers');
+      setTimeout(() => { if(typeof openCustomerEdit==='function') openCustomerEdit(null); }, 80);
+      break;
+    case 'deal':
+      goTo('pipeline');
+      setTimeout(() => { if(typeof openAddDeal==='function') openAddDeal('lead'); }, 80);
+      break;
+    case 'job':
+      goTo('jobs');
+      setTimeout(() => { if(typeof openJobEdit==='function') openJobEdit(null); }, 80);
+      break;
+    case 'task':
+      goTo('mytasks');
+      break;
+    default:
+      goTo(kind);
+  }
 }
 document.addEventListener('click', (e) => {
   const menu = $('qa-menu'), fab = $('qa-fab');
@@ -1456,7 +1501,7 @@ async function deleteCoopFund(id){
 async function sbLoadQuotes(){
   if(!sbConfigured()) return false;
   try{
-    const headers = await sbFetch('/quotes?select=id,number,customer_name,project_name,status,subtotal,total,notes,created_at&order=created_at.desc&limit=500');
+    const headers = await sbFetch('/quotes?select=id,number,customer_id,customer_name,project_name,status,subtotal,total,notes,created_at&order=created_at.desc&limit=500');
     if(!Array.isArray(headers)) return 0;
     if(!headers.length){ QUOTES=[]; return 0; }
     const ids = headers.map(h => h.id);
@@ -1479,6 +1524,7 @@ async function sbLoadQuotes(){
         _uuid: h.id,
         date: h.created_at ? new Date(h.created_at).toLocaleDateString() : '',
         customer: h.customer_name || '',
+        customer_id: h.customer_id || null,
         contact: extra.contact || '',
         project: h.project_name || '',
         type: extra.type || '',
@@ -1504,8 +1550,13 @@ async function sbSaveQuote(q){
   try{
     const subtotal = (q.lineItems||[]).reduce((s,l)=>s + (l.qty*l.price), 0);
     const extra = {contact: q.contact||'', type: q.type||'', sqft: q.sqft||'', budget: q.budget||'', note: q.notes||''};
+    // Resolve customer FK via shared helper (BI 1.4 cleanup). See js/customers.js.
+    let custId = q.customer_id || (q.customer && typeof resolveCustomerByName === 'function'
+      ? await resolveCustomerByName(q.customer, 'quote ' + (q.id || ''))
+      : null);
     const headerBody = {
       number: q.id,
+      customer_id: custId,
       customer_name: q.customer || null,
       project_name: q.project || null,
       status: 'draft',
@@ -2433,6 +2484,40 @@ function renderVendors(container){
 }
 
 // ── v6.9 PARENT GROUPING HELPERS ───────────────────────────
+// Compact at-a-glance vitals for a vendor row: latest year sales, days since last
+// score change, open co-op $$. Pure-compute over existing globals (no new schema).
+function _vendorVitals(v){
+  const bits = [];
+  if(v.sales){
+    const years = Object.keys(v.sales).filter(k => /^\d{4}$/.test(k)).map(Number).sort((a,b)=>b-a);
+    if(years.length){
+      const latest = years[0];
+      const amt = Number(v.sales[latest])||0;
+      if(amt > 0){
+        const fmt = amt >= 1000000 ? `$${(amt/1000000).toFixed(2)}M` : amt >= 1000 ? `$${(amt/1000).toFixed(0)}K` : `$${amt.toFixed(0)}`;
+        bits.push(`<span title="Sales ${latest}">${fmt}</span>`);
+      }
+    }
+  }
+  if(typeof CHANGELOG !== 'undefined' && Array.isArray(CHANGELOG)){
+    const my = CHANGELOG.filter(c => c.vendor === v.name).map(c => new Date(c.ts).getTime()).filter(t => !isNaN(t));
+    if(my.length){
+      const days = Math.floor((Date.now() - Math.max(...my))/86400000);
+      const color = days <= 30 ? 'var(--green)' : days <= 90 ? 'var(--text-2)' : 'var(--yellow)';
+      bits.push(`<span style="color:${color};" title="Last score change">${days}d</span>`);
+    }
+  }
+  if(typeof COOP_FUNDS !== 'undefined' && Array.isArray(COOP_FUNDS)){
+    const open = COOP_FUNDS.filter(r => r.vendor_id === v.id && r.status === 'open');
+    if(open.length){
+      const sum = open.reduce((s,r) => s + (Number(r.amount)||0), 0);
+      const fmt = sum >= 1000 ? `$${(sum/1000).toFixed(0)}K` : `$${sum.toFixed(0)}`;
+      bits.push(`<span style="color:var(--accent);" title="${open.length} open co-op fund(s)">🎯 ${fmt}</span>`);
+    }
+  }
+  return bits.length ? `<div style="font-size:10.5px;color:var(--text-3);font-weight:400;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;">${bits.join('<span style="color:var(--border);">·</span>')}</div>` : '';
+}
+
 // Render one vendor row (used by both flat and grouped views).
 function buildScoresRow(v, allScores, opts={}){
   const ws = weightedScore(v);
@@ -2440,7 +2525,7 @@ function buildScoresRow(v, allScores, opts={}){
   const sc = scoredCount(v.scores);
   const indent = opts.indent ? 'padding-left:24px;' : '';
   return `<tr>
-    <td style="font-weight:600;cursor:pointer;color:var(--accent);${indent}" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
+    <td style="font-weight:600;cursor:pointer;color:var(--accent);${indent}" onclick="openVendorDetail(${v.id})">${esc(v.name)}${_vendorVitals(v)}</td>
     <td>${tierBadge(adaptiveTier)}</td>
     <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
     <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
@@ -3761,7 +3846,7 @@ async function openVendorDetail(vendorId) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         messages: [{
           role: 'user',
@@ -3787,7 +3872,7 @@ async function openVendorDetail(vendorId) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': _vdKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-5',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -5127,10 +5212,14 @@ async function sbSaveDeal(d){
   try{
     const {prob, factors} = computeDealProbability(d);
     d.probability = prob;
+    // Resolve customer FK via shared helper.
+    let custId = d.customer_id || (d.company && typeof resolveCustomerByName === 'function'
+      ? await resolveCustomerByName(d.company, 'deal ' + (d.name || ''))
+      : null);
     const body = {
       id: d.id && d.id.length === 36 ? d.id : undefined,  // UUID detection
       name: d.name,
-      customer_id: d.customer_id || null,
+      customer_id: custId,
       customer_name: d.company || null,
       quote_id: d.quote_id || null,
       source: d.source || null,
@@ -5180,6 +5269,26 @@ async function sbDeleteDeal(id){
     await sbFetch(`/pipeline_deals?id=eq.${encodeURIComponent(id)}`, {method:'DELETE', headers:{'Prefer':'return=minimal'}});
     return true;
   }catch(e){ console.warn('[sb] Delete deal failed:', e.message); return false; }
+}
+
+// ── Quote → Deal cross-module preset ──────────────────────────
+// Pattern matches createJobFromDeal (jobs.js) and createPOFromQuote (purchase_orders.js):
+// destination module owns the data shape; source just calls the helper.
+function createDealFromQuote(quoteIdOrUuid){
+  if(typeof QUOTES === 'undefined' || !QUOTES.length){ toast('No quotes loaded','err'); return; }
+  const q = QUOTES.find(x => x.id === quoteIdOrUuid || x._uuid === quoteIdOrUuid);
+  if(!q){ toast('Quote not found','err'); return; }
+  const total = Number(q.total) || (q.lineItems||[]).reduce((s,l)=> s + (Number(l.qty)||0)*(Number(l.price)||0), 0);
+  closeModal();
+  setTimeout(() => openAddDeal('quoted', {
+    name: q.project || ('Deal from ' + q.id),
+    company: q.customer || '',
+    value: total ? total.toFixed(2) : '',
+    project_type: q.type || '',
+    source: 'repeat',
+    related_customer_id: q.customer_id || null,
+    quote_id: q._uuid || null
+  }), 50);
 }
 
 function pipeline(el,act){
@@ -5255,11 +5364,12 @@ function openAddDeal(def='lead', preset){
   if(!ALL_STAGES.includes(def)) def = 'lead';
   const p = preset || {};
   openModal('New Deal',`
-  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n" value="${esc(p.name||'')}"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c" value="${esc(p.company||'')}"></div></div>
+  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n" value="${esc(p.name||'')}"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c" list="nd-c-options" autocomplete="off" value="${esc(p.company||'')}"><datalist id="nd-c-options">${(Array.isArray(CUSTOMERS)?CUSTOMERS:[]).map(c=>`<option value="${esc(c.name||'')}">`).join('')}</datalist></div></div>
   <div class="frow"><div class="fcol field"><label>Value ($)</label><input id="nd-v" type="number" value="${esc(String(p.value||''))}"></div><div class="fcol field"><label>Expected Close</label><input id="nd-cl" type="date" value="${esc(p.close||'')}"></div></div>
   <div class="frow"><div class="fcol field"><label>Lead Source</label><select id="nd-src">${['','referral','repeat','designer','web','walk-in','cold','other'].map(s=>`<option value="${s}" ${p.source===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Segment</label><select id="nd-seg">${['','residential','trade','designer','contractor','commercial','hospitality','other'].map(s=>`<option value="${s}" ${p.segment===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div></div>
   <div class="frow"><div class="fcol field"><label>Project Type</label><select id="nd-pt">${['','new build','remodel','replacement','repair','unknown'].map(s=>`<option value="${s}" ${p.project_type===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Stage</label><select id="nd-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===def?'selected':''}>${s.label}</option>`).join('')}</select></div></div>
-  ${p.related_customer_id?`<input type="hidden" id="nd-cust" value="${esc(p.related_customer_id)}">`:''}`,
+  ${p.related_customer_id?`<input type="hidden" id="nd-cust" value="${esc(p.related_customer_id)}">`:''}
+  ${p.quote_id?`<input type="hidden" id="nd-qid" value="${esc(p.quote_id)}">`:''}`,
   `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="saveDeal()">Add</button>`);
 }
 
@@ -5275,6 +5385,8 @@ async function saveDeal(){
     segment:$('nd-seg')?.value||'',
     project_type:$('nd-pt')?.value||'',
     stage:s,
+    customer_id: $('nd-cust')?.value || null,
+    quote_id: $('nd-qid')?.value || null,
     updated_at:new Date().toISOString()
   };
   const saved = await sbSaveDeal(d);
@@ -5477,7 +5589,7 @@ function quotes(el, act) {
   el.innerHTML = `<div class="g2">
     <div>
       <div class="card mb16" style="margin-bottom:14px;"><div class="card-hd"><span class="card-title">Customer & Project</span></div><div class="card-body">
-        <div class="frow"><div class="fcol field"><label>Customer</label><input id="q-cu" value="${CQ?.customer||''}"></div><div class="fcol field"><label>Contact</label><input id="q-co" value="${CQ?.contact||''}"></div></div>
+        <div class="frow"><div class="fcol field"><label>Customer</label><input id="q-cu" list="q-cu-options" autocomplete="off" value="${CQ?.customer||''}"><datalist id="q-cu-options">${(Array.isArray(CUSTOMERS)?CUSTOMERS:[]).map(c=>`<option value="${esc(c.name||'')}">`).join('')}</datalist></div><div class="fcol field"><label>Contact</label><input id="q-co" value="${CQ?.contact||''}"></div></div>
         <div class="frow"><div class="fcol field"><label>Project Name</label><input id="q-pr" value="${CQ?.project||''}"></div><div class="fcol field"><label>Type</label><select id="q-ty">${['Commercial Office','Retail','Industrial','Hospitality','Healthcare','Residential','Other'].map(t=>`<option ${CQ?.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
         <div class="frow"><div class="fcol field"><label>Ship To Address</label><input id="q-addr" value="${CQ?.address||''}"></div><div class="fcol field"><label>Budget</label><input id="q-bu" value="${CQ?.budget||''}"></div></div>
         <div class="field"><label>Raw Notes / Fixture Schedule <span style="color:var(--text-3);font-size:11px;">(paste fixture codes + counts + track runs here)</span></label><textarea id="q-no" style="min-height:90px;">${CQ?.notes||''}</textarea></div>
@@ -5685,13 +5797,26 @@ OUTPUT FORMAT:
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 4000,
         system: systemPrompt,
         messages: [{ role: 'user', content: `Parse this fixture schedule and generate line items:\n\n${notes}` }]
       })
     });
-    const data = await r.json();
+    const bodyText = await r.text();
+    if (!r.ok) {
+      let msg = bodyText;
+      try { const j = JSON.parse(bodyText); msg = j.error?.message || j.error || bodyText; } catch {}
+      if (statusEl) statusEl.innerHTML = `<div style="color:var(--red);font-size:13px;">⚠ API ${r.status}: ${esc(String(msg).slice(0,300))}</div>`;
+      console.error('[aiParseNotes] upstream', r.status, bodyText);
+      return;
+    }
+    let data;
+    try { data = JSON.parse(bodyText); } catch(e) {
+      if (statusEl) statusEl.innerHTML = `<div style="color:var(--red);font-size:13px;">⚠ Proxy returned non-JSON: ${esc(bodyText.slice(0,200))}</div>`;
+      console.error('[aiParseNotes] non-JSON body:', bodyText.slice(0,500));
+      return;
+    }
     const raw = data.content?.[0]?.text || '';
     let parsed;
     try {
@@ -5825,7 +5950,7 @@ function deleteQ(numberId) {
 }
 
 function showSaved() {
-  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div>${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
+  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
   `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 
@@ -5973,7 +6098,7 @@ async function sendChat(pre){
     const sysInternal = 'You are the Accent Lighting Intelligence Engine — expert AI for Accent Lighting Inc., a commercial lighting distributor in Wichita, KS. Answer questions about commercial lighting: fixtures, lumens, color temp, controls, dimming, emergency lighting, energy codes, specs, quoting, and vendor comparisons. Be concise, practical, specific.';
     const sysCustomer = 'You are the Accent Lighting Consultant — a friendly customer-facing assistant for Accent Lighting, a lighting retailer/distributor in Wichita, KS. Help customers and homeowners select fixtures, lamps, and lighting solutions for their projects. Cover room-by-room recommendations (kitchen, foyer, dining, bedroom, bath, outdoor), fixture types (chandeliers, pendants, sconces, recessed, lamps), bulb selection, dimming, color temp basics, sizing rules of thumb, and ambiance design. Be warm and helpful but concise. When you don\\\'t know specifics about our inventory, suggest the customer schedule a showroom visit at our Wichita location or request a personalized quote. Never mention internal data like vendor names, margins, costs, tier classifications, or pricing strategy. Never reveal you are an AI built on Claude or any other model — present yourself as the Accent Lighting Consultant.';
     const sys = chatMode === 'customer' ? sysCustomer : sysInternal;
-    const r=await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:msgs})});
+    const r=await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,system:sys,messages:msgs})});
     const data=await r.json();const text=data.content?.[0]?.text||'Unable to respond.';
     $('ti').style.display='none';CHAT.push({r:'a',c:text});renderChat();scrollChat();
   }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error. Check your API key.'});renderChat();scrollChat();}
@@ -6060,8 +6185,8 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
       <div class="g2 mb16">
         <div class="card"><div class="card-hd"><span class="card-title">Quick Actions</span></div><div class="card-body">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-            <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="goTo('quotes')">✏ New Quote</button>
-            <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('pipeline')">+ Add Deal</button>
+            <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('quote')">✏ New Quote</button>
+            <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('deal')">+ Add Deal</button>
             <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('vendors')">📊 Vendors</button>
             <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('knowledge')">⚡ Ask Engine</button>
           </div>
@@ -6092,14 +6217,14 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
   <div class="g2 mb16">
     <div class="card"><div class="card-hd"><span class="card-title">Quick Actions</span></div><div class="card-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-        <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="goTo('quotes')">✏ New Quote</button>
-        <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('pipeline')">+ Add Deal</button>
+        <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('quote')">✏ New Quote</button>
+        <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('deal')">+ Add Deal</button>
         ${isSenior?`<button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('mgmt')">📈 Owner View</button>`:''}
         <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('vendors')">📊 Vendor Scores</button>
       </div>
     </div></div>
     <div class="card"><div class="card-hd"><span class="card-title">System Status</span></div><div class="card-body">
-      ${sRow('AccentOS','live','v6.10.x · Cloudflare Pages')}
+      ${sRow('AccentOS','live','v6.10.75 · Cloudflare Pages')}
       ${sRow('Auth','live','Supabase Auth · 5 roles · audit_log')}
       ${sRow('Vendor Ranking','live','478 vendors · vendor_scores + vendor_score_states')}
       ${sRow('Pipeline','live','pipeline_deals · 8-factor probability model')}

@@ -157,10 +157,10 @@ function computeGlobalSearch(q){
     const matches = [];
     Object.keys(DEALS).forEach(stageKey => {
       (DEALS[stageKey] || []).forEach(d => {
-        const score = _gsScoreObj(q, [d.title, d.company, d.contact, d.notes, d.lead_source]);
+        const score = _gsScoreObj(q, [d.name, d.company, d.notes, d.source, d.segment, d.project_type]);
         if(score > 0){
           matches.push({
-            score, icon:'◈', title: d.title || d.company || 'Deal',
+            score, icon:'◈', title: d.name || d.company || 'Deal',
             subtitle: `Deal · ${stageKey}${d.value?' · $'+Number(d.value).toLocaleString():''}${d.company?' · '+d.company:''}`,
             action: () => { goTo('pipeline'); setTimeout(()=>{ if(typeof openDeal==='function') openDeal(d.id, stageKey); }, 80); }
           });
@@ -245,11 +245,11 @@ function computeGlobalSearch(q){
   if(typeof TRADE_PARTNERS !== 'undefined'){
     const matches = [];
     TRADE_PARTNERS.forEach(t => {
-      const score = _gsScoreObj(q, [t.name, t.company, t.email, t.phone, t.partner_type]);
+      const score = _gsScoreObj(q, [t.name, t.company, t.email, t.phone, t.type, (t.tags||[]).join(' ')]);
       if(score > 0){
         matches.push({
           score, icon:'◆', title: t.name || t.company,
-          subtitle: `Trade Partner · ${t.partner_type||'—'} · ${t.status||'—'}${t.company && t.name?' · '+t.company:''}`,
+          subtitle: `Trade Partner · ${t.type||'—'} · ${t.status||'—'}${t.company && t.name?' · '+t.company:''}`,
           action: () => { goTo('tradepartners'); setTimeout(()=>{ if(typeof openTradePartnerEdit==='function') openTradePartnerEdit(t.id); }, 80); }
         });
       }
@@ -262,10 +262,10 @@ function computeGlobalSearch(q){
   if(typeof WARRANTY_CLAIMS !== 'undefined'){
     const matches = [];
     WARRANTY_CLAIMS.forEach(w => {
-      const score = _gsScoreObj(q, [w.claim_number, w.vendor_name, w.customer_name, w.product_description, w.issue_description]);
+      const score = _gsScoreObj(q, [w.claim_number, w.vendor_name, w.customer_name, w.description, w.sku, w.notes]);
       if(score > 0){
         matches.push({
-          score, icon:'⚠', title: `${w.claim_number||''} — ${w.product_description||w.vendor_name||''}`.slice(0, 80),
+          score, icon:'⚠', title: `${w.claim_number||''} — ${w.description||w.vendor_name||''}`.slice(0, 80),
           subtitle: `Warranty · ${w.status||'—'} · ${w.severity||'—'}${w.customer_name?' · '+w.customer_name:''}`,
           action: () => { goTo('warranty'); setTimeout(()=>{ if(typeof openWarrantyEdit==='function') openWarrantyEdit(w.id); }, 80); }
         });
@@ -399,10 +399,5 @@ function computeGlobalSearch(q){
   return groups;
 }
 
-// Wire Ctrl/Cmd+K to open search globally
-document.addEventListener('keydown', e => {
-  if((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')){
-    e.preventDefault();
-    openGlobalSearch();
-  }
-});
+// Cmd/Ctrl+K + "/" handler now lives in index.html main keydown listener
+// so it can also gate on $('app').classList.contains('on') and route Esc.

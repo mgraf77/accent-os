@@ -340,13 +340,17 @@ function onDlvCustomerPick(){
 }
 
 async function saveDelivery(deliveryId){
-  const cId = $('dlv-c').value || null;
+  let cId = $('dlv-c').value || null;
   let cName = $('dlv-cn').value?.trim() || null;
   if(cId && !cName){
     const opt = $('dlv-c').options[$('dlv-c').selectedIndex];
     cName = opt?.getAttribute('data-name') || null;
   }
   if(!cName){ toast('Customer name required','err'); return; }
+  // Resolve customer FK via shared helper (BI 1.4).
+  if(!cId && typeof resolveCustomerByName === 'function'){
+    cId = await resolveCustomerByName(cName, 'delivery');
+  }
   const sd = $('dlv-sd').value;
   if(!sd){ toast('Scheduled date required','err'); return; }
   const rec = {

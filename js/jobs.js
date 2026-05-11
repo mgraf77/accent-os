@@ -287,11 +287,15 @@ function openJobEdit(jobId, preset){
 async function saveJob(jobId){
   const project_name = $('jb-p')?.value?.trim();
   if(!project_name){ toast('Project name required','err'); return; }
-  const customer_id = $('jb-c').value || null;
+  let customer_id = $('jb-c').value || null;
   let customer_name = $('jb-cn').value?.trim() || null;
   if(customer_id && !customer_name){
     const opt = $('jb-c').options[$('jb-c').selectedIndex];
     customer_name = opt?.getAttribute('data-name') || null;
+  }
+  // Resolve customer FK via shared helper if dropdown wasn't used (BI 1.4).
+  if(!customer_id && customer_name && typeof resolveCustomerByName === 'function'){
+    customer_id = await resolveCustomerByName(customer_name, 'job ' + project_name);
   }
   const rec = {
     id: jobId || undefined,
