@@ -1,4 +1,5 @@
 // ── 5.2 JOB TRACKER (jobs table — see sql/M21_phase3_schema.sql) ──
+register({ name: 'jobs', provides: ['jobs','JOBS','sbLoadJobs','sbSaveJob','sbBulkSaveJobs','sbDeleteJob'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast','bulkSelRegister','bulkSelBar','bulkSelHeaderCheckbox','bulkSelCheckbox'] });
 let JOBS = [];
 let jobFilter = {q:'', status:'', priority:''};
 let JOB_NUM = 1;

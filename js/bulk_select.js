@@ -1,5 +1,6 @@
 // ── BULK SELECT (multi-row select + action bar for list pages) ──
 // Per-module checkbox state + a sticky action bar that surfaces when ≥1 row is selected.
+register({ name: 'bulk_select', provides: ['bulkSelRegister','bulkSelGetIds','bulkSelClear','bulkSelToggle','bulkSelToggleAll','bulkSelCheckbox','bulkSelHeaderCheckbox','bulkSelBar','bulkSelInvoke'], consumes: ['$','toast'] });
 //
 // Usage in a module's render fn:
 //   bulkSelRegister('inventory', [

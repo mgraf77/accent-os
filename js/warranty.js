@@ -1,6 +1,7 @@
 // ── 5.11 WARRANTY TRACKER (warranty_claims table — see sql/M24_trade_partners_warranty_schema.sql) ──
 // Tracks defective-product claims across customers + vendors. Status workflow:
 // open → sent_to_vendor → approved/denied → replaced/refunded → closed.
+register({ name: 'warranty', provides: ['warranty','WARRANTY_CLAIMS','sbLoadWarrantyClaims','sbSaveWarrantyClaim','sbDeleteWarrantyClaim'], consumes: ['sbFetch','sbConfigured','CU','CUSTOMERS','$','esc','toast'] });
 
 let WARRANTY_CLAIMS = [];
 let warrFilter = {q:'', status:'', vendor:''};

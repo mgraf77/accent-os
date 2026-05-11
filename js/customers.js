@@ -1,6 +1,7 @@
 // ── CUSTOMERS / CRM (Track 1.4, customers + customer_interactions tables) ──
 // Extracted from index.html during file split (v6.10.12).
 // Globals here remain on window for cross-module access (Daily Brief, Pipeline match, etc.).
+register({ name: 'customers', provides: ['customers','CUSTOMERS','CUSTOMER_INTERACTIONS','sbLoadCustomers','sbSaveCustomer','sbDeleteCustomer','sbLoadCustomerInteractions'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast','bulkSelRegister','bulkSelBar','bulkSelHeaderCheckbox','bulkSelCheckbox'] });
 
 let CUSTOMERS = [];
 let CUSTOMER_INTERACTIONS = {};   // keyed by customer_id → array of interaction rows

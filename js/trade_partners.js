@@ -1,6 +1,7 @@
 // ── 5.5 TRADE PARTNER NETWORK (trade_partners table — see sql/M24_trade_partners_warranty_schema.sql) ──
 // External designers / contractors / architects / builders / installers / electricians.
 // Distinct from `customers` (who buy from us) — these are professionals we collaborate with.
+register({ name: 'trade_partners', provides: ['trade_partners','TRADE_PARTNERS','sbLoadTradePartners','sbSaveTradePartner','sbDeleteTradePartner','sbBulkSaveTradePartners'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast','bulkSelRegister','bulkSelBar','bulkSelHeaderCheckbox','bulkSelCheckbox'] });
 
 let TRADE_PARTNERS = [];
 let tpFilter = {q:'', type:'', status:''};

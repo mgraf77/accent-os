@@ -1,4 +1,5 @@
 // ── 3.1 EMPLOYEE SCORECARDS (M08 LOCKED — Owner/Admin/Manager only) ──
+register({ name: 'employees', provides: ['employees','EMPLOYEES','EMPLOYEE_SCORES','sbLoadEmployees','sbLoadEmployeeScores','sbSaveEmployee'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 let EMPLOYEES = [];
 let EMPLOYEE_SCORES = {};   // employee_id → array of score rows
 const EMP_DEFAULT_METRICS = [
