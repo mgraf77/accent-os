@@ -385,25 +385,29 @@ async function openCustomerDetail(customerId){
   await sbLoadCustomerInteractions(customerId);
   const ints = CUSTOMER_INTERACTIONS[customerId] || [];
   const r = computeCustomerRFM(c);
-  const linkedQuotes = (typeof QUOTES !== 'undefined' && Array.isArray(QUOTES)) ? QUOTES.filter(q => q.customer && c.name && q.customer.toLowerCase().trim() === c.name.toLowerCase().trim()) : [];
+  // Prefer real FK match; fall back to case-insensitive name match for records
+  // saved before the BI 1.4 cleanup landed.
+  const norm = (c.name||'').toLowerCase().trim();
+  const matchById = (list, idField='customer_id') => (list||[]).filter(x => {
+    if(x[idField] && c.id && String(x[idField]) === String(c.id)) return true;
+    const t = (x.customer_name || x.customer || x.company || '').toLowerCase().trim();
+    return t && norm && t === norm;
+  });
+  const linkedQuotes = matchById(typeof QUOTES !== 'undefined' ? QUOTES : []);
   const linkedDeals = [];
   if(typeof DEALS !== 'undefined' && DEALS){
     Object.keys(DEALS).forEach(stage => {
       (DEALS[stage]||[]).forEach(d => {
-        if(d.company && c.name && d.company.toLowerCase().trim() === c.name.toLowerCase().trim()){
+        if((d.customer_id && String(d.customer_id) === String(c.id))
+           || (d.company && norm && d.company.toLowerCase().trim() === norm)){
           linkedDeals.push({...d, _stage: stage});
         }
       });
     });
   }
-  // Extended cross-module links by name match (jobs, deliveries, warranty)
-  const matchByName = list => (list||[]).filter(x => {
-    const t = (x.customer_name || x.customer || '').toLowerCase().trim();
-    return t && c.name && t === c.name.toLowerCase().trim();
-  });
-  const linkedJobs = matchByName(typeof JOBS !== 'undefined' ? JOBS : []);
-  const linkedDeliveries = matchByName(typeof DELIVERIES !== 'undefined' ? DELIVERIES : []);
-  const linkedWarranty = matchByName(typeof WARRANTY_CLAIMS !== 'undefined' ? WARRANTY_CLAIMS : []);
+  const linkedJobs = matchById(typeof JOBS !== 'undefined' ? JOBS : []);
+  const linkedDeliveries = matchById(typeof DELIVERIES !== 'undefined' ? DELIVERIES : []);
+  const linkedWarranty = matchById(typeof WARRANTY_CLAIMS !== 'undefined' ? WARRANTY_CLAIMS : []);
 
   const timeline = [];
   ints.forEach(i => timeline.push({date: i.occurred_at, kind: i.type, label: i.subject || i.type, body: i.body, amount: i.amount, _id: i.id, _src:'interaction'}));
