@@ -820,6 +820,24 @@ document.addEventListener('click', (e) => {
 const $=id=>document.getElementById(id);
 const qsa=s=>document.querySelectorAll(s);
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ── ANTHROPIC PROXY WORKER ──
+// Single source of truth for the worker URL. Changing this is a one-line edit.
+// The worker accepts an optional x-api-key client header and falls back to its
+// own bound ANTHROPIC_API_KEY secret — so end users never need to configure auth.
+// Build verification: GET /v1/version or GET / returns the worker version JSON
+// so we can prove which build is live without making an Anthropic call.
+const AOS_WORKER_BASE = 'https://accentos-anthropic-proxy.mgraf77.workers.dev';
+const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
+// On startup, fetch the worker's version probe and log to console. Helps ops
+// pinpoint stale-deploy issues without round-tripping to Anthropic.
+(async () => {
+  try {
+    const r = await fetch(AOS_WORKER_BASE + '/', { method: 'GET' });
+    const j = await r.json();
+    console.log('[aos-worker]', j);
+    window.__AOS_WORKER_VERSION__ = j.version || 'unknown';
+  } catch (e) { console.warn('[aos-worker] probe failed:', e?.message || e); }
+})();
 function v(id,prop='value'){return $(id)?.[prop]?.trim()??'';}
 // CSV utilities — RFC 4180 quoting (only quote when value contains comma, quote, or newline; double embedded quotes).
 function csvStringify(rows){
@@ -3848,7 +3866,7 @@ async function openVendorDetail(vendorId) {
   const _vdHeaders = { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' };
   if (_vdKey) _vdHeaders['x-api-key'] = _vdKey;
   try {
-    const resp = await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {
+    const resp = await fetch(AOS_WORKER_URL, {
       method: 'POST',
       headers: _vdHeaders,
       body: JSON.stringify({
@@ -3874,7 +3892,7 @@ async function openVendorDetail(vendorId) {
   // Website link lookup via AI
   if (!websiteGuess) {
     try {
-      const resp2 = await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {
+      const resp2 = await fetch(AOS_WORKER_URL, {
         method: 'POST',
         headers: _vdHeaders,
         body: JSON.stringify({
@@ -5848,7 +5866,7 @@ OUTPUT FORMAT:
   try {
     const headers = { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' };
     if (key) headers['x-api-key'] = key;  // omit empty key so the worker uses its env fallback
-    const r = await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages', {
+    const r = await fetch(AOS_WORKER_URL, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -6245,7 +6263,7 @@ async function sendChat(pre){
     const sys = chatMode === 'customer' ? sysCustomer : sysInternal;
     const headers={'Content-Type':'application/json','anthropic-version':'2023-06-01'};
     if(key) headers['x-api-key']=key;
-    const r=await fetch('https://accentos-anthropic-proxy.mgraf77.workers.dev/v1/messages',{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,system:sys,messages:msgs})});
+    const r=await fetch(AOS_WORKER_URL,{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,system:sys,messages:msgs})});
     const data=await r.json();
     const text = data.content?.[0]?.text
       || (r.status===503 ? 'AI is temporarily unavailable. Try again in a moment.' : 'Unable to respond.');
