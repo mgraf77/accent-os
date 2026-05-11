@@ -15,10 +15,18 @@ export default {
       return new Response('Method not allowed', { status: 405 });
     }
 
-    const apiKey = request.headers.get('x-api-key');
+    // Resolve API key: client-supplied x-api-key wins (lets power users use their own
+    // account); otherwise fall back to the worker's bound secret so end-users never
+    // need to configure anything. If both are missing, return a friendly 503 so the
+    // client can degrade gracefully instead of hard-stopping the workflow.
+    const clientKey = request.headers.get('x-api-key');
+    const apiKey = clientKey || env.ANTHROPIC_API_KEY || null;
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'Missing x-api-key header' }), {
-        status: 400,
+      return new Response(JSON.stringify({
+        error: 'ai_unconfigured',
+        message: 'AI service not configured. Set ANTHROPIC_API_KEY as a Workers secret.'
+      }), {
+        status: 503,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
