@@ -438,10 +438,41 @@ async function openCustomerDetail(customerId){
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">
       <button class="btn btn-outline" style="margin-right:auto;color:var(--accent);" onclick="deleteCustomerConfirm('${c.id}')">Delete customer</button>
       <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      ${typeof createQuoteFromCustomer==='function' && CU && ['Owner','Admin','Manager','Sales'].includes(CU.role)?`<button class="btn btn-outline" onclick="createQuoteFromCustomer('${c.id}')">+ New Quote</button>`:''}
       ${typeof createDealFromCustomer==='function' && CU && ['Owner','Admin','Manager','Sales'].includes(CU.role)?`<button class="btn btn-outline" onclick="createDealFromCustomer('${c.id}')">+ New Deal</button>`:''}
       <button class="btn btn-accent" onclick="openCustomerEdit('${c.id}')">Edit</button>
     </div>
   `);
+}
+
+// Customer → Quote — opens the Quote Generator pre-filled with the customer.
+// Fourth use of the cross-module preset pattern (after Deal→Job, Quote→PO, Quote→Deal).
+function createQuoteFromCustomer(customerId){
+  if(typeof CUSTOMERS === 'undefined') return;
+  const c = CUSTOMERS.find(x => x.id === customerId);
+  if(!c){ toast('Customer not found','err'); return; }
+  if(typeof window === 'undefined') return;
+  // Seed CQ + LI in the global namespace the Quote page reads. Use the
+  // contact and address fields when they exist on the customer record.
+  const addr = c.address || {};
+  const addrStr = [addr.line1, addr.line2, addr.city, addr.state, addr.zip].filter(Boolean).join(', ');
+  window.CQ = {
+    customer: c.name || '',
+    customer_id: c.id || null,
+    contact: c.email || c.phone || '',
+    project: '',
+    type: '',
+    address: addrStr,
+    sqft: '',
+    budget: '',
+    notes: '',
+    lineItems: [],
+    total: 0
+  };
+  window.LI = (typeof window.nLI === 'function') ? [window.nLI()] : [];
+  closeModal();
+  setTimeout(() => goTo('quotes'), 50);
+  if(typeof sbAuditLog==='function') sbAuditLog('quote_from_customer', 'customers', {customer_id: c.id, customer_name: c.name});
 }
 
 // Customer → Deal conversion helper. Called from customer detail modal.

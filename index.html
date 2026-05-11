@@ -5192,10 +5192,32 @@ async function sbSaveDeal(d){
   try{
     const {prob, factors} = computeDealProbability(d);
     d.probability = prob;
+    // Auto-link to existing customer by exact name match — same pattern as sbSaveQuote.
+    // If zero matches and we have a name, auto-create a customer record. Resolves the
+    // name-match tech-debt for deals (BI 1.4).
+    let custId = d.customer_id || null;
+    if(!custId && d.company && Array.isArray(window.CUSTOMERS)){
+      const norm = d.company.trim().toLowerCase();
+      const matches = window.CUSTOMERS.filter(c => (c.name||'').trim().toLowerCase() === norm);
+      if(matches.length === 1){
+        custId = matches[0].id;
+      } else if(matches.length === 0 && typeof sbSaveCustomer === 'function'){
+        try{
+          const created = await sbSaveCustomer({
+            name: d.company.trim(),
+            type: 'other',
+            lifecycle_stage: 'prospect',
+            first_seen: new Date().toISOString().slice(0,10),
+            notes: 'Auto-created from deal'
+          });
+          if(created && created.id){ custId = created.id; window.CUSTOMERS.push(created); }
+        }catch(e){ console.warn('[deal] auto-create customer failed:', e.message); }
+      }
+    }
     const body = {
       id: d.id && d.id.length === 36 ? d.id : undefined,  // UUID detection
       name: d.name,
-      customer_id: d.customer_id || null,
+      customer_id: custId,
       customer_name: d.company || null,
       quote_id: d.quote_id || null,
       source: d.source || null,
