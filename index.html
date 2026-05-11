@@ -438,8 +438,8 @@ tbody tr:hover td{background:var(--bg);}
       <button class="mobile-menu-btn" onclick="toggleSB()" title="Menu">☰</button>
       <div><span class="topbar-title" id="pg-title">Dashboard</span><span class="topbar-sub" id="pg-sub"></span></div>
       <div style="display:flex;align-items:center;gap:14px;">
-        <button onclick="openGlobalSearch()" title="Search (Ctrl+K)" style="display:flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-3);font-size:12px;cursor:pointer;min-width:200px;">
-          <span style="font-size:13px;">🔍</span><span>Search…</span><span style="margin-left:auto;font-size:10px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;">⌘K</span>
+        <button onclick="openGlobalSearch()" title="Search (Ctrl+K or /)" style="display:flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-3);font-size:12px;cursor:pointer;min-width:200px;">
+          <span style="font-size:13px;">🔍</span><span>Search…</span><span style="margin-left:auto;font-size:10px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;">⌘K · /</span>
         </button>
         <div id="bell-host" style="position:relative;"></div>
         <div class="topbar-actions" id="pg-actions"></div>
@@ -5628,7 +5628,7 @@ function quotes(el, act) {
   el.innerHTML = `<div class="g2">
     <div>
       <div class="card mb16" style="margin-bottom:14px;"><div class="card-hd"><span class="card-title">Customer & Project</span></div><div class="card-body">
-        <div class="frow"><div class="fcol field"><label>Customer</label><input id="q-cu" value="${CQ?.customer||''}"></div><div class="fcol field"><label>Contact</label><input id="q-co" value="${CQ?.contact||''}"></div></div>
+        <div class="frow"><div class="fcol field"><label>Customer</label><input id="q-cu" list="q-cu-options" autocomplete="off" value="${CQ?.customer||''}"><datalist id="q-cu-options">${(Array.isArray(window.CUSTOMERS)?window.CUSTOMERS:[]).map(c=>`<option value="${esc(c.name||'')}">`).join('')}</datalist></div><div class="fcol field"><label>Contact</label><input id="q-co" value="${CQ?.contact||''}"></div></div>
         <div class="frow"><div class="fcol field"><label>Project Name</label><input id="q-pr" value="${CQ?.project||''}"></div><div class="fcol field"><label>Type</label><select id="q-ty">${['Commercial Office','Retail','Industrial','Hospitality','Healthcare','Residential','Other'].map(t=>`<option ${CQ?.type===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
         <div class="frow"><div class="fcol field"><label>Ship To Address</label><input id="q-addr" value="${CQ?.address||''}"></div><div class="fcol field"><label>Budget</label><input id="q-bu" value="${CQ?.budget||''}"></div></div>
         <div class="field"><label>Raw Notes / Fixture Schedule <span style="color:var(--text-3);font-size:11px;">(paste fixture codes + counts + track runs here)</span></label><textarea id="q-no" style="min-height:90px;">${CQ?.notes||''}</textarea></div>
