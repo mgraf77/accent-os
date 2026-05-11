@@ -8,6 +8,7 @@
 //   2. "manual" — one entry per line in a textarea
 // Each label = QR code + optional human-readable line above. Multiple sizes supported.
 // Print uses window.print(); a print stylesheet is injected on the labels page.
+register({ name: 'labels', provides: ['labels','LABEL_BATCHES'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 
 let LABEL_BATCHES = [];
 let lblMode = 'manual';     // 'manual' | 'inventory'

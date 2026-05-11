@@ -2,6 +2,7 @@
 // Schedule and track customer / job-site deliveries. Status workflow:
 // scheduled → out_for_delivery → delivered / failed / rescheduled / cancelled.
 // Auto-numbered as DLV-####. Optional linkage to job, quote, or PO.
+register({ name: 'deliveries', provides: ['deliveries','DELIVERIES','sbLoadDeliveries','sbSaveDelivery'], consumes: ['sbFetch','sbConfigured','CU','CUSTOMERS','JOBS','$','esc','toast'] });
 
 let DELIVERIES = [];
 let dlvFilter = {q:'', status:'', when:'upcoming'};

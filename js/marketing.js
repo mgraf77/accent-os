@@ -4,6 +4,7 @@
 //   Campaigns — full CRUD across campaign + promotion + event types
 //   Assets — content library: images, documents, videos, links
 //   Site Audit — preserved from prior placeholder (site issues + agency status)
+register({ name: 'marketing', provides: ['marketing','MARKETING_CAMPAIGNS','MARKETING_ASSETS','sbLoadMarketingCampaigns'], consumes: ['sbFetch','sbConfigured','CU','$','esc','toast'] });
 
 let MARKETING_CAMPAIGNS = [];
 let MARKETING_ASSETS = [];
