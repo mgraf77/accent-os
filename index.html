@@ -2447,6 +2447,40 @@ function renderVendors(container){
 }
 
 // ── v6.9 PARENT GROUPING HELPERS ───────────────────────────
+// Compact at-a-glance vitals for a vendor row: latest year sales, days since last
+// score change, open co-op $$. Pure-compute over existing globals (no new schema).
+function _vendorVitals(v){
+  const bits = [];
+  if(v.sales){
+    const years = Object.keys(v.sales).filter(k => /^\d{4}$/.test(k)).map(Number).sort((a,b)=>b-a);
+    if(years.length){
+      const latest = years[0];
+      const amt = Number(v.sales[latest])||0;
+      if(amt > 0){
+        const fmt = amt >= 1000000 ? `$${(amt/1000000).toFixed(2)}M` : amt >= 1000 ? `$${(amt/1000).toFixed(0)}K` : `$${amt.toFixed(0)}`;
+        bits.push(`<span title="Sales ${latest}">${fmt}</span>`);
+      }
+    }
+  }
+  if(typeof CHANGELOG !== 'undefined' && Array.isArray(CHANGELOG)){
+    const my = CHANGELOG.filter(c => c.vendor === v.name).map(c => new Date(c.ts).getTime()).filter(t => !isNaN(t));
+    if(my.length){
+      const days = Math.floor((Date.now() - Math.max(...my))/86400000);
+      const color = days <= 30 ? 'var(--green)' : days <= 90 ? 'var(--text-2)' : 'var(--yellow)';
+      bits.push(`<span style="color:${color};" title="Last score change">${days}d</span>`);
+    }
+  }
+  if(typeof COOP_FUNDS !== 'undefined' && Array.isArray(COOP_FUNDS)){
+    const open = COOP_FUNDS.filter(r => r.vendor_id === v.id && r.status === 'open');
+    if(open.length){
+      const sum = open.reduce((s,r) => s + (Number(r.amount)||0), 0);
+      const fmt = sum >= 1000 ? `$${(sum/1000).toFixed(0)}K` : `$${sum.toFixed(0)}`;
+      bits.push(`<span style="color:var(--accent);" title="${open.length} open co-op fund(s)">🎯 ${fmt}</span>`);
+    }
+  }
+  return bits.length ? `<div style="font-size:10.5px;color:var(--text-3);font-weight:400;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;">${bits.join('<span style="color:var(--border);">·</span>')}</div>` : '';
+}
+
 // Render one vendor row (used by both flat and grouped views).
 function buildScoresRow(v, allScores, opts={}){
   const ws = weightedScore(v);
@@ -2454,7 +2488,7 @@ function buildScoresRow(v, allScores, opts={}){
   const sc = scoredCount(v.scores);
   const indent = opts.indent ? 'padding-left:24px;' : '';
   return `<tr>
-    <td style="font-weight:600;cursor:pointer;color:var(--accent);${indent}" onclick="openVendorDetail(${v.id})">${esc(v.name)}</td>
+    <td style="font-weight:600;cursor:pointer;color:var(--accent);${indent}" onclick="openVendorDetail(${v.id})">${esc(v.name)}${_vendorVitals(v)}</td>
     <td>${tierBadge(adaptiveTier)}</td>
     <td>${ws!==null?`<span class="mono fw6" style="color:${scoreColor(ws)};">${ws}</span>`:`<span class="na">TBD</span>`}</td>
     <td><span class="mono sm">${sc}/${CAT_DEFS.length}</span></td>
