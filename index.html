@@ -6016,8 +6016,44 @@ function duplicateQuote(quoteId) {
 }
 
 function showSaved() {
-  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();duplicateQuote('${q.id}')" title="Clone line items into a new quote">⎘ Dup</button>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
+  openModal('Saved Quotes',`<div style="max-height:360px;overflow-y:auto;">${QUOTES.length===0?'<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No quotes saved yet.</div>':QUOTES.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();emailQuote('${q.id}')" title="Open mail draft with quote summary">✉ Email</button><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();duplicateQuote('${q.id}')" title="Clone line items into a new quote">⎘ Dup</button>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('')}</div>`,
   `<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
+}
+
+// emailQuote — open the user's mail client with a draft addressed to the
+// quote's customer (if we can find an email on the CRM record), pre-filled
+// with subject + body summarizing the quote. Common follow-up workflow.
+function emailQuote(quoteId) {
+  const q = QUOTES.find(x => x.id === quoteId);
+  if (!q) { toast('Quote not found','err'); return; }
+  // Look up customer email via FK first, name match as fallback.
+  let email = '';
+  if (typeof CUSTOMERS !== 'undefined' && Array.isArray(CUSTOMERS) && q.customer) {
+    const cust = CUSTOMERS.find(c => (q.customer_id && c.id === q.customer_id)
+      || (c.name||'').toLowerCase().trim() === q.customer.toLowerCase().trim());
+    if (cust && cust.email) email = cust.email;
+  }
+  const lines = (q.lineItems||[]).filter(l => l.qty > 0 || l.price > 0);
+  const subject = `Quote ${q.id} — ${q.project||'Lighting'}`;
+  const bodyLines = [
+    `Hi${q.contact?' '+q.contact.split(' ')[0]:''},`,
+    '',
+    `Here's the quote for ${q.project || 'your project'}:`,
+    '',
+    ...lines.slice(0, 50).map(l => `  • ${l.part||'—'} · ${l.desc||''} — ${l.qty} @ $${Number(l.price||0).toFixed(2)}  =  $${(Number(l.qty||0)*Number(l.price||0)).toFixed(2)}`),
+    ...(lines.length > 50 ? [`  …and ${lines.length-50} more line items (see attached PDF)`] : []),
+    '',
+    `Total: $${Number(q.total||0).toFixed(2)}`,
+    '',
+    'Let me know if anything needs adjusting.',
+    '',
+    'Thanks,',
+    (CU?.name || 'Accent Lighting Inc.')
+  ];
+  const body = bodyLines.join('\n');
+  const href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = href;
+  if (typeof sbAuditLog==='function') sbAuditLog('quote_email','quotes',{quote_id: quoteId, customer_email: email||null});
 }
 
 // ── CSV EXPORT (Windward-ready) ──
@@ -6277,6 +6313,31 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
           <span class="mono" style="font-weight:600;color:var(--green);">$${Number(q.total||0).toLocaleString()}</span>
         </div>`).join('') || '<div class="muted sm">No quotes yet — click "New Quote" above to start.</div>'}
       </div></div>
+      ${(() => {
+        // Today's Call List — VIP/Active customers quiet 30d+, sorted longest-quiet first.
+        // Uses pre-computed rfm_recency from the customers row (days since last touch).
+        if (typeof CUSTOMERS === 'undefined' || !Array.isArray(CUSTOMERS)) return '';
+        const callList = CUSTOMERS
+          .filter(c => ['VIP','Active'].includes(c.segment) && Number(c.rfm_recency||0) >= 30)
+          .sort((a,b) => Number(b.rfm_recency||0) - Number(a.rfm_recency||0))
+          .slice(0, 6);
+        if (!callList.length) return '';
+        return `<div class="card mb16"><div class="card-hd"><span class="card-title">📞 Today's Call List</span><span class="muted sm">VIP / Active · quiet 30d+</span></div><div class="card-body">
+          ${callList.map(c => {
+            const rec = Number(c.rfm_recency||0);
+            const phoneRaw = (c.phone||'').replace(/[^0-9+]/g,'');
+            const phoneHtml = c.phone ? `<a href="tel:${esc(phoneRaw)}" onclick="event.stopPropagation();" style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11.5px;text-decoration:none;">☏ ${esc(c.phone)}</a>` : '';
+            const emailHtml = c.email ? `<a href="mailto:${esc(c.email)}" onclick="event.stopPropagation();" style="color:var(--accent);font-size:11.5px;text-decoration:none;" title="${esc(c.email)}">✉</a>` : '';
+            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12.5px;cursor:pointer;" onclick="openCustomerDetail('${c.id}')">
+              <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name||'(no name)')}</span>
+              <span class="badge bg-gray" style="font-size:10px;">${c.segment}</span>
+              <span class="mono sm" style="color:${rec>=60?'var(--accent)':'var(--text-3)'};">${rec}d quiet</span>
+              ${phoneHtml}
+              ${emailHtml}
+            </div>`;
+          }).join('')}
+        </div></div>`;
+      })()}
     `;
   }
 
