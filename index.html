@@ -5661,6 +5661,16 @@ function quotes(el, act) {
         <button class="btn btn-ghost btn-sm" onclick="CQ=null;LI=[nLI()];goTo('quotes')">Clear</button>
       </div>
     </div></div>
+    <!-- Sticky quote action bar — stays visible while scrolling long line-item lists. -->
+    <div id="q-stickybar" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;background:var(--surface);border:1px solid var(--border);box-shadow:0 6px 22px rgba(0,0,0,.12);border-radius:30px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:13px;">
+      <span class="muted sm" style="font-size:11px;">Total</span>
+      <span class="mono fw6" id="q-sticky-total" style="font-size:17px;color:var(--green);">$0.00</span>
+      <span style="width:1px;height:18px;background:var(--border);"></span>
+      <span class="muted sm" id="q-sticky-count">0 lines</span>
+      <span style="width:1px;height:18px;background:var(--border);"></span>
+      <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 9px;" onclick="approveAllRows()">✓ Approve all</button>
+      <button class="btn btn-accent btn-sm" style="font-size:12px;padding:5px 14px;" onclick="saveQ()" title="Cmd/Ctrl+S">💾 Save</button>
+    </div>
   </div>`;
   renderLI(); updatePreview();
 }
@@ -5759,6 +5769,8 @@ function updatePreview() {
   const t=$('q-ty')?.value;
   $('pv-meta')&& ($('pv-meta').textContent = t||'');
   $('pv-total')&& ($('pv-total').textContent = '$'+sub.toFixed(2));
+  $('q-sticky-total') && ($('q-sticky-total').textContent = '$'+sub.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}));
+  $('q-sticky-count') && ($('q-sticky-count').textContent = (LI||[]).length + ' line' + ((LI||[]).length===1?'':'s'));
   const ie = $('pv-items');
   if (ie) ie.innerHTML = LI.filter(l=>l.desc||l.price>0).map(l=>{
     const flagTag = l.status==='flagged' ? `<span style="color:#f59e0b;font-size:10px;margin-left:4px;">⚠</span>` : '';
