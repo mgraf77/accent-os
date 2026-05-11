@@ -1,22 +1,38 @@
 # N=2 EXPERIMENT PROTOCOL
-> AccentOS — Bounded, supervised protocol for first dual-Train execution test.
+> AccentOS — Bounded, supervised protocol for dual-Train execution testing.
 > Measurement goal. Not velocity goal.
-> Written: 2026-05-10
+> Written: 2026-05-10 · Updated: 2026-05-11
 
 ---
 
-## REALITY AUDIT · 2026-05-10
+## REALITY AUDIT · 2026-05-11
 
-**Document status: EXPERIMENTAL — protocol defined, not yet executed.**
+**Document status: EXPERIMENTAL — 1 of 3 required runs complete.**
 
 | Claim | Status |
 |-------|--------|
 | Protocol definition and measurement framework | EXPERIMENTAL |
-| Coordination overhead measurement | EXPERIMENTAL |
+| Coordination overhead measurement | EXPERIMENTAL (Run 1 collected) |
 | Any claim about N=2 performance or viability | UNPROVEN |
 | N=2 considered PROVEN | Requires 3 clean runs with consistent measurements |
+| Run 1 telemetry collected | PROVEN (session 2026-05-11, commit ffce0c0) |
+| Semantic coupling > file disjointness as operative constraint | CONFIRMED (Run 1) |
 
 **Nothing in this document implies that N=2 concurrent execution works. It defines how to find out.**
+
+---
+
+## RUN HISTORY
+
+| Run | Date | Task | Batch A | Batch B | SCIs | AI | Context Switches | Interruptions | Outcome |
+|-----|------|------|---------|---------|------|----|-----------------|--------------|---------|
+| 1 | 2026-05-11 | register() cohort-2 metadata | 6 modules | 7 modules | 5 (4 pre + 1 during) | 1 | 2 | 1 | COMPLETE — exit gate 16 ✓ |
+| 2 | TBD | register() cohort-3 metadata | 6 modules | 6 modules | 0 pre-execution | — | — | — | PENDING |
+| 3 | TBD | TBD | TBD | TBD | — | — | — | — | NOT STARTED |
+
+**Key finding from Run 1:** File disjointness is necessary but not sufficient. Batch A consumed 3 functions defined in Batch B (weightedScore, exportCSV, openAddVendor). The provides/consumes metadata surfaced this dependency graph in a way raw file ownership does not. Semantic coupling is the operative constraint.
+
+**Classification after Run 1:** N=2 bounded supervised parallelism remains EXPERIMENTAL. Promote to PROVEN only after Run 3 completes with consistent telemetry.
 
 ---
 
@@ -71,6 +87,27 @@ Every constraint below is a hard stop if violated. No override. No "just this on
 
 ---
 
+## HARDENING RULES (added 2026-05-11 after Run 1)
+
+These rules were added based on Run 1 findings. They are binding from Run 2 onward.
+
+**HR-1: Cross-batch provides/consumes must be pre-declared before execution begins.**
+
+> Any function that Batch A consumes from Batch B (or vice versa) must be listed in both modules' provides[] and consumes[] entries in the SCI PRE-CHECK section of the Run corridor before the first register() call is written.
+>
+> Discovered during: Run 1 execution (SCI-2, SCI-4, SCI-5 were found mid-execution, not pre-declared).
+> Consequence of violation: Stop both branches. Document as SCI incident. Pre-declare before resuming.
+
+**HR-2: Dead references in provides[] are forbidden.**
+
+> If a function appears in a module's provides[] but cannot be found via grep in that file, it must not be listed. If a function in consumes[] cannot be found anywhere in the codebase, log as AI incident and do not include.
+>
+> Discovered during: Run 1 execution (AI-1: openVendorScoreCsvPaste not defined anywhere).
+
+These rules do not change the experiment scope. They tighten pre-execution verification.
+
+---
+
 ## PRE-CONDITIONS
 
 All must be true before the experiment begins. Check each one.
@@ -87,6 +124,8 @@ PRE-CONDITIONS CHECKLIST
      git log --oneline --all -- [branch-A affected files] | grep [branch-B] → 0 results
      git log --oneline --all -- [branch-B affected files] | grep [branch-A] → 0 results
 □ No Class A conflict: at most one branch affects index.html
+□ SCI pre-check complete — all cross-batch provides/consumes enumerated (HR-1)
+□ No dead references in any provides[] or consumes[] entry (HR-2)
 □ Rollback commands written for both branches' first packets (before execution begins)
 □ WIP.md updated with both branch ACTIVE states
 □ Measurement log initialized (see MEASUREMENT LOG section)
