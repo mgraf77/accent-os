@@ -27,12 +27,16 @@
 | Run | Date | Task | Batch A | Batch B | SCIs | AI | Context Switches | Interruptions | Outcome |
 |-----|------|------|---------|---------|------|----|-----------------|--------------|---------|
 | 1 | 2026-05-11 | register() cohort-2 metadata | 6 modules | 7 modules | 5 (4 pre + 1 during) | 1 | 2 | 1 | COMPLETE — exit gate 16 ✓ |
-| 2 | TBD | register() cohort-3 metadata | 6 modules | 6 modules | 0 pre-execution | — | — | — | PENDING |
-| 3 | TBD | TBD | TBD | TBD | — | — | — | — | NOT STARTED |
+| 2 | 2026-05-11 | register() cohort-3 metadata | 6 modules | 6 modules | 0 | 0 new | 1 | 0 | COMPLETE — exit gate 28 ✓ |
+| 3 | TBD | register() cohort-4 metadata | 6 modules | 6 modules | 0 pre-check | — | — | — | PENDING (repeatability) |
 
 **Key finding from Run 1:** File disjointness is necessary but not sufficient. Batch A consumed 3 functions defined in Batch B (weightedScore, exportCSV, openAddVendor). The provides/consumes metadata surfaced this dependency graph in a way raw file ownership does not. Semantic coupling is the operative constraint.
 
-**Classification after Run 1:** N=2 bounded supervised parallelism remains EXPERIMENTAL. Promote to PROVEN only after Run 3 completes with consistent telemetry.
+**Key finding from Run 2:** coordination_events=6 is invariant (same as Run 1). SCI, ambiguity, context switches, and interruptions all dropped to near-zero when semantic coupling was eliminated. Hypothesis: coordination cost scales more strongly with semantic coupling density than branch count.
+
+**Run 3 objective:** Repeatability. Another low/zero-SCI batch. Prove the Run 2 pattern holds before promoting to PROVEN. No scope escalation, no stress test, no harder coupling by design.
+
+**Classification after Run 2:** EXPERIMENTAL — 2 of 3 runs complete. Promote to PROVEN only after Run 3 confirms the Run 2 pattern.
 
 ---
 
