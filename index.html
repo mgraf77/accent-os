@@ -6224,8 +6224,8 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
       <div class="g2 mb16">
         <div class="card"><div class="card-hd"><span class="card-title">Quick Actions</span></div><div class="card-body">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-            <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="goTo('quotes')">✏ New Quote</button>
-            <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('pipeline')">+ Add Deal</button>
+            <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('quote')">✏ New Quote</button>
+            <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('deal')">+ Add Deal</button>
             <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('vendors')">📊 Vendors</button>
             <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('knowledge')">⚡ Ask Engine</button>
           </div>
@@ -6256,8 +6256,8 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
   <div class="g2 mb16">
     <div class="card"><div class="card-hd"><span class="card-title">Quick Actions</span></div><div class="card-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-        <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="goTo('quotes')">✏ New Quote</button>
-        <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('pipeline')">+ Add Deal</button>
+        <button class="btn btn-accent btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('quote')">✏ New Quote</button>
+        <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="qaNew('deal')">+ Add Deal</button>
         ${isSenior?`<button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('mgmt')">📈 Owner View</button>`:''}
         <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('vendors')">📊 Vendor Scores</button>
       </div>
