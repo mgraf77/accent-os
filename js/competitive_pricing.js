@@ -2,6 +2,7 @@
 // Tracks competitor prices for our SKUs over time. Each row = one observation
 // (one competitor's price for one SKU on one date). Compares against our
 // current INVENTORY.list_price to surface undercut/parity/premium positioning.
+register({ name: 'competitive_pricing', provides: ['competitive','COMPETITOR_PRICES','sbLoadCompetitorPrices','sbSaveCompetitorPrice','sbDeleteCompetitorPrice'], consumes: ['sbFetch','sbConfigured','CU','VD','$','esc','toast'] });
 
 let COMPETITOR_PRICES = [];
 let cpFilter = {q:'', competitor:'', position:''};

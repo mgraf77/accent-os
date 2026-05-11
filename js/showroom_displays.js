@@ -2,6 +2,7 @@
 // Tracks vendor display programs: what's on display, when it was installed,
 // when the program agreement ends, participation cost vs co-op funded, retail
 // value of the SKUs on display, and contract obligations.
+register({ name: 'showroom_displays', provides: ['showroomdisplays','SHOWROOM_DISPLAYS','sbLoadShowroomDisplays','sbSaveShowroomDisplay'], consumes: ['sbFetch','sbConfigured','CU','VD','$','esc','toast','bulkSelRegister','bulkSelBar','bulkSelHeaderCheckbox','bulkSelCheckbox'] });
 
 let SHOWROOM_DISPLAYS = [];
 let sdFilter = {q:'', status:'', vendor:''};

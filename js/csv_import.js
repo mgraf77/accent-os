@@ -35,6 +35,7 @@
 //   download<Cap>CsvTemplate(), open<Cap>CsvPaste(), on<Cap>FilePick(input),
 //   process<Cap>CsvText(text), commit<Cap>Csv()
 //   where <Cap> = capitalized config.key (e.g. key='displays' → openDisplaysCsvPaste)
+register({ name: 'csv_import', provides: ['csvImportFlow','csvEnumNormalizer','csvNumberNormalizer'], consumes: ['$','toast','CU'] });
 
 function csvImportFlow(config){
   if(!config || !config.key) throw new Error('csvImportFlow requires a config.key');
