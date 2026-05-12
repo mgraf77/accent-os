@@ -4,6 +4,26 @@
 
 <!-- ci-pipeline-validation: 2026-05-11 -->
 
+### 2026-05-12 — KPI auto-snapshot + dashboard pinning + csvDownload cleanup
+**Branch:** `accent-work`
+**Commits:** 5a48639 (KPI scheduler), 3a29a97 (dashboard pinning), 1daada6 (csvDownload cleanup)
+**Built/Changed:**
+- **KPI auto-snapshot scheduler (5a48639):** `maybeAutoSnapshotKPIs()` runs silently at end of `hydrateFromSupabase()` for Owner role. Double-dedup: localStorage `aos_kpi_snapped_<date>` key prevents same-browser re-run; in-memory KPI_SNAPSHOTS check handles cross-device (if another device already snapped today, skip). No UI button needed.
+- **Dashboard pinning (3a29a97):** Per-user card pinning via `aos_dash_pins_<uid>` localStorage. `renderPinnedCard()` reads MODULE_REGISTRY to build the picker and render pinned module cards inline on the dashboard. "📌 Pins" button in dashboard header. localStorage v1; M30 (server-side `user_module_overrides`) would add cross-device sync.
+- **csvDownload dead-fallback cleanup (1daada6):** `csvStringify`+`csvDownload` are canonical globals in index.html (lines 828–841). Removed the `if(typeof csvDownload==='function'){...}else{inline RFC4180 logic}` dead branches from 4 module files: `customers.js`, `jobs.js`, `trade_partners.js`, `csv_import.js`. Each simplified to a single `csvDownload(rows, filename)` call.
+**Open loops:** Stale Cloudflare Worker (needs `wrangler deploy` + secret binding — not repo-fixable). M03/M04/M05/M06/M09/M10/M18 blocked on Michael.
+**Next:** `typeof` guard cleanup on savedFiltersBar/bulkSelBar (8 modules), Saved Filter Sets, Bulk action bars.
+
+### 2026-05-12 — MODULE_REGISTRY refactor + pipeline analytics + auto-derived deal source
+**Branch:** `accent-work`
+**Commits:** 1cb015a (MODULE_REGISTRY), b9a65d9 (pipeline analytics), 832d7e6 (auto-derive source)
+**Built/Changed:**
+- **MODULE_REGISTRY refactor (1cb015a):** Collapsed 4 shell touchpoints (static sidebar HTML, PAGE_META object, goTo dispatcher, hydrate) to 1 declarative registry. `MODULE_REGISTRY` array drives all three (hydrate left as-is — ordered, no bugs). `buildSidebar()` generates nav HTML dynamically at login/session-resume via `activateApp()`. `PAGE_META` derived via `Object.fromEntries`. `goTo` dispatcher simplified to `window[page]?.()`. Adding a new module now requires zero shell edits beyond one registry entry.
+- **Pipeline analytics (b9a65d9):** Implemented the previously-stubbed `openPipelineAnalytics()` (📊 button was wired but function was missing). Modal shows: stage funnel (horizontal bars, count + $), win/loss stats (close rate, avg won/lost, total won $), loss reasons bar chart, win rate by source table, pipeline health (closing ≤7d/≤30d, stale 14d+). Also mapped `created_at` into deal objects from `sbLoadPipeline` (was fetched but dropped).
+- **Auto-derived deal source (832d7e6):** When typing a company name in New Deal modal, `autoFillDealFromCustomer()` matches against CUSTOMERS and infers source (repeat/designer/referral based on segment + type + rfm_frequency) and segment (direct type→segment mapping). Only fills blank fields, never overrides. Green hint confirms the fill.
+**Open loops:** Stale Cloudflare Worker (needs `wrangler deploy` + secret binding — not repo-fixable). M03/M04/M05/M06/M09/M10/M18 blocked on Michael.
+**Next:** KPI snapshot scheduler, per-user dashboard pinning (M30), or continue with other BUILD_PLAN unblocked items.
+
 ### 2026-05-12 — Runtime audit: stale worker detection hardening
 **Branch:** `work`
 **Built/Changed:**

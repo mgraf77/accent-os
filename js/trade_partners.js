@@ -379,17 +379,7 @@ function downloadTpCsvTemplate(){
     ['Jane Designer','designer','Jane Designs LLC','jane@example.com','512-555-0142','https://janedesigns.com','Austin, TX','9','Trade discount 15% · prefers email','active','high-volume,residential'],
     ['Bob Builder','builder','Bob Builds Inc','bob@example.com','512-555-0188','','','7','New construction focus','prospect','']
   ];
-  if(typeof csvDownload === 'function'){
-    csvDownload(rows, `trade_partners_template_${new Date().toISOString().slice(0,10)}.csv`);
-  } else {
-    const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `trade_partners_template_${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
-  }
+  csvDownload(rows, `trade_partners_template_${new Date().toISOString().slice(0,10)}.csv`);
 }
 
 function openTpCsvPaste(){

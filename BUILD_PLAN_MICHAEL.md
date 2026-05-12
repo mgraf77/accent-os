@@ -421,6 +421,11 @@ After each landed M-task: re-invoke `"audit the KPI data"` to track coverage ris
   - Unlocks: V2 (concentration risk), V5 (revenue contribution), V10 (supplier diversity); enriches vendor-cascade and vendor-risk-register
 
 - [ ] **M40** — Run `user_module_overrides` schema (cross-device per-user gating)
+
+- [ ] **M45** — Vendor Tier Thresholds
+  - Decision: Make tier thresholds dynamic per vendor type / product offering category. Current values are static ($10K lifetime, 24mo recency). Need Michael to define thresholds per category if different from standard.
+  - Then: paste to Claude → `M45 decision: use thresholds <list of thresholds per category>. Implement dynamic tiering.`
+  - Unlocks: more accurate vendor categorization based on specific category norms.
   - Where: `https://supabase.com/dashboard/project/hsyjcrrazrzqngwkqsqa/sql/new`
   - Action:
     1. Open `sql/M40_user_module_overrides.sql` from the repo (already written by Claude).

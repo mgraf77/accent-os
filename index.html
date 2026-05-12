@@ -389,39 +389,7 @@ tbody tr:hover td{background:var(--bg);}
       <button class="sb-toggle" onclick="toggleSB()">☰</button>
     </div>
     <div class="sb-nav">
-      <div class="sb-sect">CORE</div>
-      <div class="ni active" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('dashboard')"><span class="ni-icon">⊞</span><span class="ni-label">Dashboard</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('pipeline')"><span class="ni-icon">◈</span><span class="ni-label">Sales Pipeline</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('customers')"><span class="ni-icon">☻</span><span class="ni-label">Customers</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('quotes')"><span class="ni-icon">◻</span><span class="ni-label">Quote Generator</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('jobs')"><span class="ni-icon">▤</span><span class="ni-label">Job Tracker</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('purchaseorders')"><span class="ni-icon">⌧</span><span class="ni-label">Purchase Orders</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('tradepartners')"><span class="ni-icon">◆</span><span class="ni-label">Trade Partners</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('warranty')"><span class="ni-icon">⚠</span><span class="ni-label">Warranty</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('showrooms')"><span class="ni-icon">▣</span><span class="ni-label">Showroom Displays</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('labels')"><span class="ni-icon">▥</span><span class="ni-label">Labels</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('deliveries')"><span class="ni-icon">▶</span><span class="ni-label">Deliveries</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('decisionengine')"><span class="ni-icon">★</span><span class="ni-label">Decision Engine</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('competitive')"><span class="ni-icon">⚖</span><span class="ni-label">Competitive Pricing</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('demandforecast')"><span class="ni-icon">∿</span><span class="ni-label">Demand Forecast</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('alerts')"><span class="ni-icon">!</span><span class="ni-label">Alerts</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('mytasks')"><span class="ni-icon">✓</span><span class="ni-label">My Tasks</span></div>
-      <div class="sb-sect">INTELLIGENCE</div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('changelog')"><span class="ni-icon">◑</span><span class="ni-label">Change Log</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('calendar')"><span class="ni-icon">▦</span><span class="ni-label">Calendar</span></div>
-      <div class="sb-sect" data-roles="Owner,Admin,Manager">ADMIN</div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('activity')"><span class="ni-icon">◷</span><span class="ni-label">Activity Feed</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('reports')"><span class="ni-icon">⤓</span><span class="ni-label">Reports</span></div>
-      <div class="ni" data-roles="Owner,Admin" onclick="goTo('portalpreview')"><span class="ni-icon">⊡</span><span class="ni-label">Portal Preview</span></div>
-      <div class="ni" data-roles="Owner,Admin" onclick="goTo('health')"><span class="ni-icon">⚙</span><span class="ni-label">Health Check</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('repoutreach')"><span class="ni-icon">✉</span><span class="ni-label">Rep Outreach</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('internalmeetings')"><span class="ni-icon">⚎</span><span class="ni-label">Internal Meetings</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('settings')"><span class="ni-icon">◫</span><span class="ni-label">Settings</span></div>
+      <div id="sb-nav"></div>
     </div>
     <div class="sb-foot">
       <div class="user-chip" onclick="doLogout()">
@@ -688,6 +656,7 @@ function activateApp(){
   $('u-av').textContent = CU.initials;
   $('u-name').textContent = CU.name;
   $('u-role').textContent = CU.role;
+  buildSidebar();
   applyRoleVisibility(CU.role);
   // Feedback button removed; entry now lives in the QA FAB menu.
 }
@@ -724,6 +693,7 @@ async function hydrateFromSupabase(){
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
     // Run alert generator AFTER all data loaded — heuristics read from every module's state.
     try { if(typeof generateAlertsFromData==='function') await generateAlertsFromData(); } catch(e){ console.warn(e); }
+    try { await maybeAutoSnapshotKPIs(); } catch(e){ console.warn('[kpi] auto-snapshot:', e.message); }
   }
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
@@ -841,17 +811,23 @@ const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
       if (r.ok && j && typeof j === 'object') {
         console.log('[aos-worker]', { path, ...j });
         window.__AOS_WORKER_VERSION__ = j.version || 'unknown';
+        // env_key_set is emitted by v3+. false=deployed but secret not bound.
+        // Absent field means old worker (v1/v2) that requires x-api-key from client.
+        window.__AOS_WORKER_ENV_KEY_READY__ = j.env_key_set === true;
+        if (!j.env_key_set) console.warn('[aos-worker] ANTHROPIC_API_KEY not bound — AI features require user-supplied key. Fix: cd worker && wrangler secret put ANTHROPIC_API_KEY');
         return;
       }
       console.warn('[aos-worker] non-json probe', { path, status: r.status, body: raw.slice(0,120) });
-      if (/missing x-api-key/i.test(raw)) {
-        console.warn('[aos-worker] stale worker detected: live worker still requires x-api-key. Redeploy latest worker/anthropic-proxy.js and confirm ANTHROPIC_API_KEY binding.');
-      }
     } catch (e) {
       console.warn('[aos-worker] probe failed', { path, err: e?.message || e });
     }
   }
-  window.__AOS_WORKER_VERSION__ = 'unverified';
+  // All probes returned non-JSON — stale worker (v1/v2) or unreachable.
+  // v1/v2 returns "Method not allowed" for GET; POST requires x-api-key from client.
+  // Fix: cd worker && wrangler deploy, then wrangler secret put ANTHROPIC_API_KEY.
+  window.__AOS_WORKER_VERSION__ = 'stale';
+  window.__AOS_WORKER_ENV_KEY_READY__ = null;
+  console.warn('[aos-worker] stale or unreachable — deploy worker/anthropic-proxy.js and bind ANTHROPIC_API_KEY. POST /v1/messages will require a user-supplied key until redeployed.');
 })();
 function v(id,prop='value'){return $(id)?.[prop]?.trim()??'';}
 // CSV utilities — RFC 4180 quoting (only quote when value contains comma, quote, or newline; double embedded quotes).
@@ -911,38 +887,66 @@ function switchTab(btn,id){
 }
 
 // ── NAVIGATION ────────────────────────────────────────────
-const PAGE_META={
-  dashboard: {t:'Dashboard',s:''},
-  pipeline:  {t:'Sales Pipeline',s:''},
-  customers: {t:'Customers',s:'CRM · RFM · Lifecycle'},
-  quotes:    {t:'Quote Generator',s:''},
-  jobs:      {t:'Job Tracker',s:'Project work tracking'},
-  purchaseorders: {t:'Purchase Orders',s:'Vendor POs · Receipt tracking'},
-  tradepartners: {t:'Trade Partners',s:'Designers · Contractors · Architects'},
-  warranty:  {t:'Warranty Tracker',s:'Defective product claims · Vendor RMAs'},
-  showrooms: {t:'Showroom Displays',s:'Display program tracking'},
-  labels:    {t:'Labels',s:'QR + Barcode label printing'},
-  deliveries: {t:'Deliveries',s:'Schedule + driver routing'},
-  decisionengine: {t:'Decision Engine',s:'Sales · Pure-compute recommendations'},
-  competitive: {t:'Competitive Pricing',s:'Track competitor prices vs ours'},
-  demandforecast: {t:'Demand Forecast',s:'Velocity · Stockouts · Reorder suggestions'},
-  alerts:    {t:'Alerts',s:'Auto-generated from your data'},
-  mytasks:   {t:'My Tasks',s:'Personal to-do list · stays in your browser'},
-  knowledge: {t:'Knowledge Engine',s:'AI-Powered Lighting Intelligence'},
-  vendors:   {t:'Vendor Ranking',s:'Vendor Ranking 2026'},
-  changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
-  calendar:  {t:'Company Calendar',s:'Trade shows · Training · Deadlines'},
-  marketing: {t:'Marketing Hub',s:''},
-  activity:  {t:'Activity Feed',s:'Vendor changes · audit log · pipeline events'},
-  reports:   {t:'Reports',s:'CSV exports for every dataset'},
-  portalpreview: {t:'Portal Preview',s:'Preview the future Trade + Rep portals'},
-  health:    {t:'Health Check',s:'Schema · hydration · diagnostics'},
-  roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
-  mgmt:      {t:'Management Dashboard',s:'Owner View'},
-  settings:  {t:'Settings',s:''},
-  modulemodes: {t:'Module Modes',s:'Rollout state · per-user overrides'},
-  internalmeetings: {t:'Internal Meetings',s:'Briefings · Agenda · Platform Review'},
-};
+// ── MODULE REGISTRY ──────────────────────────────────────────────────────────
+// Single source of truth for all navigable pages.
+// Drives: sidebar HTML (buildSidebar), PAGE_META, goTo dispatcher.
+// To add a module: one entry here — no other shell edits needed.
+// Fields: key, icon, label, roles, t (title), s (subtitle)
+// Special: section (emits a section header row), noNav (PAGE_META only, no sidebar entry)
+const MODULE_REGISTRY = [
+  {section:'CORE'},
+  {key:'dashboard',      icon:'⊞', label:'Dashboard',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Dashboard',            s:''},
+  {key:'pipeline',       icon:'◈', label:'Sales Pipeline',      roles:'Owner,Admin,Manager,Sales',           t:'Sales Pipeline',        s:''},
+  {key:'customers',      icon:'☻', label:'Customers',           roles:'Owner,Admin,Manager,Sales',           t:'Customers',             s:'CRM · RFM · Lifecycle'},
+  {key:'quotes',         icon:'◻', label:'Quote Generator',     roles:'Owner,Admin,Manager,Sales',           t:'Quote Generator',       s:''},
+  {key:'jobs',           icon:'▤', label:'Job Tracker',         roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Job Tracker',           s:'Project work tracking'},
+  {key:'purchaseorders', icon:'⌧', label:'Purchase Orders',     roles:'Owner,Admin,Manager',                 t:'Purchase Orders',       s:'Vendor POs · Receipt tracking'},
+  {key:'tradepartners',  icon:'◆', label:'Trade Partners',      roles:'Owner,Admin,Manager,Sales',           t:'Trade Partners',        s:'Designers · Contractors · Architects'},
+  {key:'warranty',       icon:'⚠', label:'Warranty Tracker',   roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Warranty Tracker',      s:'Defective product claims · Vendor RMAs'},
+  {key:'showrooms',      icon:'▣', label:'Showroom Displays',   roles:'Owner,Admin,Manager,Sales',           t:'Showroom Displays',     s:'Display program tracking'},
+  {key:'labels',         icon:'▥', label:'Labels',              roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Labels',                s:'QR + Barcode label printing'},
+  {key:'deliveries',     icon:'▶', label:'Deliveries',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Deliveries',            s:'Schedule + driver routing'},
+  {key:'decisionengine', icon:'★', label:'Decision Engine',     roles:'Owner,Admin,Manager,Sales',           t:'Decision Engine',       s:'Sales · Pure-compute recommendations'},
+  {key:'competitive',    icon:'⚖', label:'Competitive Pricing', roles:'Owner,Admin,Manager,Sales',           t:'Competitive Pricing',   s:'Track competitor prices vs ours'},
+  {key:'demandforecast', icon:'∿', label:'Demand Forecast',     roles:'Owner,Admin,Manager',                 t:'Demand Forecast',       s:'Velocity · Stockouts · Reorder suggestions'},
+  {key:'alerts',         icon:'!', label:'Alerts',              roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Alerts',                s:'Auto-generated from your data'},
+  {key:'mytasks',        icon:'✓', label:'My Tasks',            roles:'Owner,Admin,Manager,Sales,Warehouse', t:'My Tasks',              s:'Personal to-do list · stays in your browser'},
+  {section:'INTELLIGENCE'},
+  {key:'knowledge',      icon:'⚡', label:'Knowledge Engine',   roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Knowledge Engine',      s:'AI-Powered Lighting Intelligence'},
+  {key:'vendors',        icon:'◇', label:'Vendor Ranking',      roles:'Owner,Admin,Manager,Sales',           t:'Vendor Ranking',        s:'Vendor Ranking 2026'},
+  {key:'changelog',      icon:'◑', label:'Change Log',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Change Log',            s:'Vendor Ranking 2026'},
+  {key:'calendar',       icon:'▦', label:'Company Calendar',    roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Company Calendar',      s:'Trade shows · Training · Deadlines'},
+  {section:'ADMIN', roles:'Owner,Admin,Manager'},
+  {key:'marketing',      icon:'◉', label:'Marketing Hub',       roles:'Owner,Admin,Manager',                 t:'Marketing Hub',         s:''},
+  {key:'activity',       icon:'◷', label:'Activity Feed',       roles:'Owner,Admin,Manager',                 t:'Activity Feed',         s:'Vendor changes · audit log · pipeline events'},
+  {key:'reports',        icon:'⤓', label:'Reports',             roles:'Owner,Admin,Manager',                 t:'Reports',               s:'CSV exports for every dataset'},
+  {key:'portalpreview',  icon:'⊡', label:'Portal Preview',      roles:'Owner,Admin',                         t:'Portal Preview',        s:'Preview the future Trade + Rep portals'},
+  {key:'health',         icon:'⚙', label:'Health Check',        roles:'Owner,Admin',                         t:'Health Check',          s:'Schema · hydration · diagnostics'},
+  {key:'roadmap',        icon:'◐', label:'Build Roadmap',        roles:'Owner,Admin,Manager',                 t:'Build Roadmap',         s:'AccentOS v6.9'},
+  {key:'mgmt',           icon:'◎', label:'Mgmt Dashboard',       roles:'Owner,Admin,Manager',                 t:'Management Dashboard',  s:'Owner View'},
+  {key:'repoutreach',    icon:'✉', label:'Rep Outreach',         roles:'Owner,Admin,Manager,Sales',           t:'Rep Outreach',          s:''},
+  {key:'internalmeetings',icon:'⚎',label:'Internal Meetings',   roles:'Owner,Admin,Manager',                 t:'Internal Meetings',     s:'Briefings · Agenda · Platform Review'},
+  {key:'settings',       icon:'◫', label:'Settings',            roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Settings',              s:''},
+  // nav-hidden pages: in PAGE_META + goTo but not in sidebar
+  {key:'modulemodes', noNav:true, t:'Module Modes', s:'Rollout state · per-user overrides'},
+];
+
+// Derive PAGE_META from registry — no manual sync needed.
+const PAGE_META = Object.fromEntries(
+  MODULE_REGISTRY.filter(m => m.key).map(m => [m.key, {t:m.t, s:m.s}])
+);
+
+// Build sidebar HTML from registry and inject into #sb-nav.
+// Called once at login (activateApp) before applyRoleVisibility so data-roles are present.
+function buildSidebar(){
+  const nav = $('sb-nav');
+  if(!nav) return;
+  nav.innerHTML = MODULE_REGISTRY.map(m => {
+    if(m.section) return `<div class="sb-sect"${m.roles?` data-roles="${m.roles}"`:''}>${m.section}</div>`;
+    if(m.noNav)   return '';
+    return `<div class="ni" data-roles="${m.roles}" onclick="goTo('${m.key}')"><span class="ni-icon">${m.icon}</span><span class="ni-label">${m.label}</span></div>`;
+  }).join('');
+}
 let curPage='';
 function goTo(page){
   curPage=page;
@@ -954,8 +958,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,internalmeetings};
-  pages[page]?.($('pg-content'),$('pg-actions'));
+  window[page]?.($('pg-content'),$('pg-actions'));
 }
 
 // ── FEEDBACK ──────────────────────────────────────────────
@@ -2128,7 +2131,6 @@ let VENDOR_ELIGIBILITY = {};
 // 'leadTime' is not yet in CAT_DEFS — listed here for forward-compat when it's added.
 const TIER_B_KEYS = ['discounts','freight','returns','leadTime'];
 
-// TODO: Make tier thresholds dynamic per vendor type / product offering category.
 // Current values are static ($10K lifetime, 24mo recency). Deferred per Michael 2026-05-04.
 function computeVendorTier(v){
   if(!v) return 'C';
@@ -2188,7 +2190,6 @@ function vendorScore(v){
   };
 }
 
-function unverifiedCountFor(v){ return vendorScore(v).unverifiedCount; }
 
 // weightedScore: now tier-aware when called with a vendor object (preferred).
 // Legacy callers passing v.scores get the classic weighted average (no tier/data_state logic).
@@ -3876,36 +3877,44 @@ async function openVendorDetail(vendorId) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // AI overview via Anthropic API. Key is optional — worker has env fallback.
+  // AI overview via Anthropic API. Key is optional when worker env binding is live (v3+).
   const _vdKey = getS('aos-api') || '';
   const _vdHeaders = { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' };
   if (_vdKey) _vdHeaders['x-api-key'] = _vdKey;
-  try {
-    const resp = await fetch(AOS_WORKER_URL, {
-      method: 'POST',
-      headers: _vdHeaders,
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `Write a single concise paragraph (3–5 sentences) about the lighting vendor "${v.name}" for an internal sales team reference. Cover: what types of products they make, their market positioning (residential, commercial, luxury, value, etc.), and any notable brand characteristics. Be factual and professional. If you don't have reliable information about this specific vendor, say so briefly.`
-        }]
-      })
-    });
-    const data = await resp.json();
-    const overviewEl = document.getElementById('vd-overview');
-    if (overviewEl) {
-      const text = data?.content?.[0]?.text || (resp.status === 503 ? 'AI overview temporarily unavailable.' : 'No overview available.');
-      overviewEl.textContent = text;
+  if (_aiWorkerReady()) {
+    try {
+      const resp = await fetch(AOS_WORKER_URL, {
+        method: 'POST',
+        headers: _vdHeaders,
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Write a single concise paragraph (3–5 sentences) about the lighting vendor "${v.name}" for an internal sales team reference. Cover: what types of products they make, their market positioning (residential, commercial, luxury, value, etc.), and any notable brand characteristics. Be factual and professional. If you don't have reliable information about this specific vendor, say so briefly.`
+          }]
+        })
+      });
+      const data = await resp.json();
+      const overviewEl = document.getElementById('vd-overview');
+      if (overviewEl) {
+        let text;
+        if (resp.ok && data?.content?.[0]?.text) { text = data.content[0].text; }
+        else if (/missing x-api-key/i.test(data?.error || '')) { window.__AOS_WORKER_ENV_KEY_READY__ = null; text = _aiNotReadyHint(); }
+        else { text = resp.status === 503 ? 'AI overview temporarily unavailable.' : 'No overview available.'; }
+        overviewEl.textContent = text;
+      }
+    } catch(e) {
+      const overviewEl = document.getElementById('vd-overview');
+      if (overviewEl) overviewEl.textContent = 'Overview unavailable.';
     }
-  } catch(e) {
+  } else {
     const overviewEl = document.getElementById('vd-overview');
-    if (overviewEl) overviewEl.textContent = 'Overview unavailable.';
+    if (overviewEl) overviewEl.textContent = _aiNotReadyHint();
   }
 
   // Website link lookup via AI
-  if (!websiteGuess) {
+  if (!websiteGuess && _aiWorkerReady()) {
     try {
       const resp2 = await fetch(AOS_WORKER_URL, {
         method: 'POST',
@@ -4275,206 +4284,8 @@ function renderRepView(container) {
   `;
 }
 
-function downloadScoringRubric(){
-  const rows = [
-    [10,'≥6% rebates, quarterly bonuses, transparent reporting','≥20% volume discounts','Net 120+, early pay','Free freight <$500','Free returns, no fees, <7 days','≥3% MDF, easy to claim','100% display coverage','Prominent, easy-to-find listing'],
-    [9,'5–5.9%','15–19%','Net 90','$500–749','No restock fee, <14 days','2.5–2.9%','75–99%','Listed prominently'],
-    [8,'4–4.9%','12–14%','Net 75','$750–999','≤10% fee, quick approval','2–2.4%','50–74%','Listed but secondary'],
-    [7,'3–3.9%','10–11%','Net 60','$1000–1499','≤15% fee, 2–3 weeks','1.5–1.9%','40–49%','Listed under general dealers'],
-    [6,'2.5–2.9%','8–9%','Net 45','$1500–1999','≤20% fee, slow','1.0–1.4%','30–39%','Hidden list'],
-    [5,'2–2.4%','6–7%','Net 30','$2000–2499','≤25% fee','0.8–0.9%','20–29%','Rarely updated'],
-    [4,'1.5–1.9%','4–5%','Net 15','$2500–2999','25–30% fee','0.5–0.7%','15–19%','Outdated'],
-    [3,'1–1.4%','2–3%','COD, occasional flex','$3000–3499','>30% fee','0.3–0.4%','10–14%','Requires digging'],
-    [2,'<1%','<2%','COD only','$3500–3999','Case-by-case','0.1–0.2%','5–9%','Very poor visibility'],
-    [1,'Exists, useless','Rarely honored','Strict prepayment','$4000+','Rare approvals','Exists but unusable','<5% coverage','Name only, no link'],
-    [0,'None','None','No credit','No free freight','No returns','None','No display','Not listed'],
-  ];
-  const colors = {10:'#D5E8D4',9:'#DAF0D5',8:'#E6F3E0',7:'#F0F9E8',6:'#FFF9C4',5:'#FFF3A3',4:'#FFE599',3:'#FCDBB0',2:'#F4CDCD',1:'#EDB0B0',0:'#D9534F'};
-  const textColors = {0:'#FFFFFF'};
-  const headers = ['Score','Rebates & Back-End Incentives','Inside & Volume Discounts','Credit Terms','Freight Policy','Return & RGA Policy','Marketing Funds','Display Allowance','Website Dealer Listing'];
-  const descriptions = ['What we measure','Measures the availability, reliability, and transparency of rebates, growth incentives, annual back-end programs, or performance-based payouts that directly improve effective margin beyond standard discounts.','Evaluates standard, non-project discounts and volume-based pricing structures, with preference given to consistent everyday discounts over hard-to-achieve volume tiers.','Assesses payment terms (Net 30, Net 45, dating, seasonal terms) and flexibility, including extended dating programs that improve cash flow.','Evaluates freight terms including prepaid thresholds, freight allowances, drop-ship policies, surcharge practices, and overall freight cost impact.','Assesses the fairness, flexibility, and ease of returns, including restocking fees, RGA turnaround time, damaged goods handling, and dead-stock support.','Evaluates availability, structure, and usability of MDF, co-op, or marketing reimbursement programs, including ease of approval and payout.','Evaluates financial support for showroom displays, sample programs, floor models, refresh allowances, and long-term display partnership commitment.','Evaluates whether the vendor lists and promotes authorized dealers accurately on their website and actively drives consumer traffic to local partners.'];
-  const thS = 'background:#1F3864;color:#fff;padding:8px 10px;font-size:11px;text-align:center;border:1px solid #ccc;font-weight:700;white-space:nowrap;';
-  const descS = 'background:#EAF0F8;color:#4A6080;padding:6px 10px;font-size:10px;font-style:italic;border:1px solid #ccc;vertical-align:top;';
-  const headerRow = '<tr>' + headers.map(h => `<th style="${thS}">${h}</th>`).join('') + '</tr>';
-  const descRow = '<tr>' + descriptions.map(d => `<td style="${descS}">${d}</td>`).join('') + '</tr>';
-  const dataRows = rows.map(row => {
-    const sc = row[0];
-    const bg = colors[sc] || '#fff';
-    const col = textColors[sc] || '#2D2D2D';
-    const scS = `background:${bg};color:${col};padding:8px 6px;font-size:15px;font-weight:700;text-align:center;border:1px solid #ccc;`;
-    const tdS = `background:${bg};color:${col};padding:7px 10px;font-size:11px;text-align:center;border:1px solid #ccc;`;
-    return '<tr>' + row.map((v,i) => `<td style="${i===0?scS:tdS}">${v}</td>`).join('') + '</tr>';
-  }).join('');
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Accent Lighting — Vendor Scoring Rubric</title><style>body{font-family:Arial,sans-serif;margin:20px;}h2{color:#1F3864;font-size:16px;margin-bottom:4px;}p{color:#666;font-size:12px;margin-bottom:14px;}table{border-collapse:collapse;width:100%;table-layout:fixed;}@media print{@page{size:landscape;margin:1cm;}}</style></head><body><h2>Accent Lighting — Vendor Scoring Rubric (0–10)</h2><p>Financial Terms + Sales, Marketing &amp; Market Position &nbsp;|&nbsp; To save as PDF: File → Print → Change destination to "Save as PDF" → set Layout to Landscape → Save.</p><table><thead>${headerRow}${descRow}</thead><tbody>${dataRows}</tbody></table></body></html>`;
-  const blob = new Blob([html],{type:'text/html'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download='Accent_Vendor_Scoring_Rubric.html'; a.click();
-  URL.revokeObjectURL(url);
-  toast('Rubric downloaded — open in browser, then Ctrl+P → Save as PDF (Landscape)','ok');
-}
 
 // ── REP OUTREACH EMAIL GENERATOR ──
-function openRepOutreach(repName){
-  const repInfo = REP_DIRECTORY.find(r => r['Rep Company'] === repName) || {};
-  const vendors = VD.filter(v => v.rep === repName).sort((a,b)=>(b.sales?.t||0)-(a.sales?.t||0));
-  if(vendors.length===0){ toast('No vendors assigned to this rep','err'); return; }
-
-  const TERM_CATS = [
-    {key:'rebates',   label:'Rebate program'},
-    {key:'discounts', label:'Inside/volume discount'},
-    {key:'credit',    label:'Credit terms'},
-    {key:'freight',   label:'Free freight threshold'},
-    {key:'returns',   label:'Returns/RGA'},
-    {key:'mktgFunds', label:'Marketing/co-op funds'},
-    {key:'display',   label:'Display program'},
-  ];
-
-  const buildVendorBlock = v => {
-    const lines = TERM_CATS.map(({key, label}) => {
-      const sc = v.scores?.[key];
-      const j = (sc?.j || '').replace(/\. Details: nan/g,'').replace(/Scored based on manufacturer direct sales[^.]*\./g,'').replace(/Vendor is on Lights America website\./g,'').replace(/Accent Lighting is listed under general dealers[^.]*\./g,'').trim();
-      let val;
-      if(!sc && !j){ val = '(nothing on file — please provide)'; }
-      else if(j.length > 2){
-        val = ['returns','display','mktgFunds','discounts'].includes(key) ? `${j} — please provide details` : `${j} — correct?`;
-      } else { val = '(nothing on file — please provide)'; }
-      return `  ${label}:`.padEnd(32) + val;
-    });
-    const div = '══════════════════════════════════════════';
-    return `${div}\n${v.name.toUpperCase()}\n${div}\n${lines.join('\n')}`;
-  };
-
-  // Build contacts list from all emails on file for this rep
-  const contacts = [];
-  if(repInfo['Primary Contact'] && (repInfo['Email'] || repInfo['Office Email'])){
-    contacts.push({name: repInfo['Primary Contact'], email: repInfo['Email'] || repInfo['Office Email'], phone: repInfo['Phone'] || repInfo['Office Phone'] || ''});
-  }
-  if(repInfo['Secondary Contact'] && repInfo['Sec Email']){
-    contacts.push({name: repInfo['Secondary Contact'], email: repInfo['Sec Email'], phone: ''});
-  }
-  if(repInfo['Quote Email'] && !contacts.find(c => c.email === repInfo['Quote Email'])){
-    contacts.push({name: 'Quotes', email: repInfo['Quote Email'], phone: ''});
-  }
-
-  const defaultTo = contacts.map(c => c.email).filter(Boolean).join(', ');
-  const greeting = contacts.length >= 2
-    ? contacts.slice(0,2).map(c => c.name.split(' ')[0]).join(' and ')
-    : (contacts[0]?.name.split(' ')[0] || repName);
-  const secLine = repInfo['Sec Email'] ? `\n  Secondary:        ${repInfo['Secondary Contact'] || 'Secondary'} — ${repInfo['Sec Email']}` : '';
-  const subject = `${repName} — Vendor Terms & Linecard Verification (2026 Review)`;
-  const linecard = vendors.map(v => `  [ ] ${v.name}`).join('\n');
-  const vendorBlocks = vendors.map(buildVendorBlock).join('\n\n');
-
-  const body =
-`${greeting},
-
-I'm reaching out as part of a formal vendor ranking and terms review we're doing at Accent Lighting for 2026. We're evaluating every line we carry — looking at rebates, freight, terms, display programs, and channel policies — so we can prioritize growth and display investment with the vendors where the partnership structure works best for both sides. Lines with strong, well-documented terms get more floor space, more active selling, and more of our team's attention.
-
-You represent some significant lines for us, and I want to make sure we're working off accurate information before we finalize rankings and purchasing plans for the year.
-
-
-SECTION 1 — CONTACT DIRECTORY
-
-Please confirm or correct the following:
-
-  Rep Company:      ${repName}
-  Primary Contact:  ${repInfo['Primary Contact'] || '(none on file)'}
-  Phone:            ${repInfo['Phone'] || repInfo['Office Phone'] || '(none on file)'}
-  Email:            ${repInfo['Email'] || repInfo['Office Email'] || '(none on file)'}
-  Website:          ${repInfo['Website'] || '(none on file)'}${secLine}
-
-Who should we contact for each of the following? (name + email + phone)
-
-  Quote requests:       ___________________________
-  RGA / returns:        ___________________________
-  Parts requests:       ___________________________
-  Co-op / MDF claims:   ___________________________
-  General questions:    ___________________________
-
-—
-
-SECTION 2 — LINECARD VERIFICATION
-
-Below is every line we have assigned to ${repName} in our system. Please:
-  • Check off each line you still actively represent for us
-  • Note any lines you no longer carry
-  • Add any lines you represent that aren't listed
-
-${linecard}
-
-Lines you represent that are NOT listed above:
-  ___________________________
-  ___________________________
-  ___________________________
-
-—
-
-SECTION 3 — VENDOR TERMS
-
-For each vendor, I've listed exactly what we have on file. Fields marked "(nothing on file)" are gaps we need filled. Fields with data just need a confirmation or correction.
-
-If it's easier, attach any dealer program sheets, price book terms, or vendor agreements and I'll pull the data from those directly — no need to fill this out manually if you have the docs.
-
-${vendorBlocks}
-
-—
-
-SECTION 4 — ANYTHING ELSE
-
-Anything else you'd like us to have on file? New programs, line changes, preferred ordering windows, or anything that would help us work better together?
-
-I appreciate you taking the time on this. If it's easier, just attach any dealer program sheets, price book terms, or vendor agreements and I'll pull everything from those directly — no need to fill this all out manually if you have the docs.
-
-Please give me a call if you have any questions or would like to discuss anything prior to responding to this email.
-
-The information you provide goes directly into how we prioritize display space, purchasing decisions, and vendor relationships for 2026.
-
-
-Michael Graf
-Accent Lighting, Inc.
-10322 E. Stonegate Lane, Suite 100
-Wichita, KS 67206
-316-636-1278
-michaelg@accentlightinginc.com
-accentlightinginc.com
-
-P.S. — I've attached our Vendor Scoring Rubric so you can see exactly how we evaluate each category. Happy to walk through it on a call if helpful.`;
-
-  // Build recipient checkboxes
-  const recipientRows = contacts.length > 0
-    ? contacts.map((c,i) => `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:12px;"><input type="checkbox" class="ro-rcb" data-email="${esc(c.email)}" ${i===0?'checked':''} onchange="(()=>{const v=[...document.querySelectorAll('.ro-rcb:checked')].map(el=>el.dataset.email);document.getElementById('ro-to').value=v.join(', ');})()" ><span><strong>${esc(c.name)}</strong>${c.email?' — '+esc(c.email):''}${c.phone?' — '+esc(c.phone):''}</span></label>`).join('')
-    : `<div style="font-size:12px;color:var(--accent);">⚠ No contacts on file for this rep.</div>`;
-
-  openModal(`Outreach Email — ${repName}`, `
-    <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;">
-      Draft generated from vendor terms on file. Edit freely before copying to Outlook.
-      ${vendors.length} vendor${vendors.length===1?'':'s'} included.
-      ${defaultTo ? '' : '<br><strong style="color:var(--accent);">⚠ No email on file for this rep.</strong>'}
-    </div>
-    <div style="display:grid;gap:10px;margin-bottom:12px;">
-      <div>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-3);display:block;margin-bottom:6px;">Recipients — select who to send to</label>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;">${recipientRows}</div>
-        <input id="ro-to" value="${esc(defaultTo)}" placeholder="Or type emails manually" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-family:monospace;font-size:12px;">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-3);">Subject</label>
-        <input id="ro-subj" value="${esc(subject)}" style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:13px;">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-3);">Body — edit before sending</label>
-        <textarea id="ro-body" rows="24" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:5px;font-family:'DM Mono',monospace;font-size:11.5px;line-height:1.5;resize:vertical;">${esc(body)}</textarea>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:10px;border-top:1px solid var(--border);">
-      <button class="btn btn-outline" onclick="downloadScoringRubric()">📎 Download Rubric</button>
-      <button class="btn btn-outline" onclick="(()=>{const s=document.getElementById('ro-subj').value;navigator.clipboard.writeText(s).then(()=>toast('Subject copied','ok'));})()">📋 Copy Subject</button>
-      <button class="btn btn-accent" onclick="(()=>{const b=document.getElementById('ro-body').value;navigator.clipboard.writeText(b).then(()=>toast('Email body copied — paste into Outlook','ok'));})()">📋 Copy Body → Outlook</button>
-      <button class="btn btn-outline" onclick="closeModal()">Close</button>
-    </div>
-  `);
-}
 
 
 function renderHistory(container) {
@@ -5053,49 +4864,6 @@ function exportCSV(){
 }
 
 // ── CSV IMPORT ────────────────────────────────────────────
-function openCSVImport(){
-  openModal('Import Vendor Scores CSV',`
-    <div id="dz" style="border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;"
-     ondragover="event.preventDefault();this.classList.add('drag');" ondragleave="this.classList.remove('drag');"
-     ondrop="handleDrop(event)" onclick="$('csv-file').click()">
-      <div style="font-size:32px;margin-bottom:8px;">📂</div>
-      <p style="font-size:14px;font-weight:600;">Drop CSV here or click to browse</p>
-      <p class="sm muted">Must include Vendor column + score category columns</p>
-      <input type="file" id="csv-file" accept=".csv" style="display:none;" onchange="handleFileSelect(this)">
-    </div>
-    <div id="csv-preview" style="margin-top:16px;"></div>`);
-}
-function handleDrop(e){e.preventDefault();$('dz')?.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)parseCSVFile(f);}
-function handleFileSelect(inp){const f=inp.files[0];if(f)parseCSVFile(f);}
-function parseCSVFile(file){
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const lines=e.target.result.split('\n').map(l=>l.split(',').map(c=>c.replace(/^"|"$/g,'').trim()));
-    if(lines.length<2){toast('CSV too short','err');return;}
-    const hdrs=lines[0];
-    let matched=0,skipped=0;
-    for(let i=1;i<lines.length;i++){
-      const row=lines[i];if(!row[0])continue;
-      const vn=row[0].toUpperCase().trim();
-      const v=VD.find(x=>x.name.toUpperCase()===vn);
-      if(!v){skipped++;continue;}
-      matched++;
-      hdrs.forEach((h,j)=>{
-        if(j===0)return;
-        const cat=CAT_DEFS.find(c=>c.label.toLowerCase()===h.toLowerCase()||c.key.toLowerCase()===h.toLowerCase());
-        if(!cat)return;
-        const val=row[j]?.trim();
-        if(!val||val===''||val==='—')return;
-        if(val.toUpperCase()==='N/A'||val.toUpperCase()==='NA'){v.scores[cat.key]='na';return;}
-        const n=parseFloat(val);
-        if(!isNaN(n)&&n>=0&&n<=10)v.scores[cat.key]=n;
-      });
-    }
-    toast(`Imported: ${matched} matched, ${skipped} skipped`,'ok');
-    closeModal();renderVendors($('pg-content'));
-  };
-  reader.readAsText(file);
-}
 
 function openAddVendor(){
   openModal('Add New Vendor',`
@@ -5237,7 +5005,8 @@ async function sbLoadPipeline(){
         stage: r.stage,
         loss_reason: r.loss_reason || '',
         probability: r.probability,
-        updated_at: r.updated_at
+        updated_at: r.updated_at,
+        created_at: r.created_at
       };
       (DEALS[r.stage] = DEALS[r.stage] || []).push(d);
     });
@@ -5384,6 +5153,108 @@ function openArchive(){
     `).join('')}
   </div>`, '<button class="btn btn-outline" onclick="closeModal()">Close</button>');
 }
+function openPipelineAnalytics(){
+  const allDeals = ALL_STAGES.flatMap(s => (DEALS[s]||[]).map(d=>({...d,_stage:s})));
+  if(!allDeals.length){
+    openModal('Pipeline Analytics','<div style="padding:40px;text-align:center;color:var(--text-3);">No deal data yet.</div>','<button class="btn btn-outline" onclick="closeModal()">Close</button>');
+    return;
+  }
+  const won = DEALS.won||[], lost = DEALS.lost||[], abandoned = DEALS.abandoned||[];
+  const wonV = won.reduce((t,d)=>t+(d.value||0),0);
+  const lostV = lost.reduce((t,d)=>t+(d.value||0),0);
+  const closeRate = (won.length+lost.length)>0 ? Math.round(100*won.length/(won.length+lost.length)) : null;
+  const avgWon = won.length ? Math.round(wonV/won.length) : 0;
+  const avgLost = lost.length ? Math.round(lostV/lost.length) : 0;
+
+  // Stage funnel (active stages only)
+  const funnel = STAGES.map(s => {
+    const ds = DEALS[s.key]||[];
+    return {label:s.label, count:ds.length, value:ds.reduce((t,d)=>t+(d.value||0),0)};
+  });
+  const maxFC = Math.max(...funnel.map(f=>f.count), 1);
+
+  // Win rate by source
+  const bySrc = {};
+  allDeals.forEach(d => {
+    const k = d.source||'unknown';
+    if(!bySrc[k]) bySrc[k]={won:0,total:0,value:0};
+    bySrc[k].total++;
+    if(d._stage==='won'){bySrc[k].won++;bySrc[k].value+=(d.value||0);}
+  });
+  const srcRows = Object.entries(bySrc).sort((a,b)=>b[1].total-a[1].total);
+
+  // Loss reasons
+  const lossMap = {};
+  lost.forEach(d => { const r=d.loss_reason||'Not specified'; lossMap[r]=(lossMap[r]||0)+1; });
+  const lossRows = Object.entries(lossMap).sort((a,b)=>b[1]-a[1]);
+
+  // Pipeline health
+  const now = new Date();
+  const active = STAGES.flatMap(s=>DEALS[s.key]||[]);
+  const in7  = active.filter(d=>{if(!d.close)return false;const diff=(new Date(d.close)-now)/864e5;return diff>=0&&diff<=7;}).length;
+  const in30 = active.filter(d=>{if(!d.close)return false;const diff=(new Date(d.close)-now)/864e5;return diff>=0&&diff<=30;}).length;
+  const stale= active.filter(d=>d.updated_at&&(now-new Date(d.updated_at))/864e5>14).length;
+  const crColor = closeRate===null?'var(--text-3)':closeRate>=50?'var(--green)':closeRate>=30?'var(--yellow)':'var(--accent)';
+
+  openModal('Pipeline Analytics', `
+  <div style="max-height:560px;overflow-y:auto;padding:2px 4px;">
+
+  <div class="stat-label" style="margin-bottom:10px;">STAGE FUNNEL</div>
+  <div style="margin-bottom:20px;">
+    ${funnel.map(f=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">
+      <div style="width:90px;font-size:12px;color:var(--text-2);text-align:right;">${f.label}</div>
+      <div style="flex:1;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${f.count?Math.max(3,Math.round(100*f.count/maxFC)):0}%;background:var(--blue);border-radius:4px;"></div>
+      </div>
+      <div style="width:110px;font-size:12px;text-align:right;"><b>${f.count}</b> <span style="color:var(--text-3);">· $${f.value.toLocaleString()}</span></div>
+    </div>`).join('')}
+    <div style="display:flex;gap:20px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+      <span style="font-size:12px;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green);margin-right:5px;"></span>Won <b>${won.length}</b></span>
+      <span style="font-size:12px;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:5px;"></span>Lost <b>${lost.length}</b></span>
+      <span style="font-size:12px;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--border);margin-right:5px;"></span>Abandoned <b>${abandoned.length}</b></span>
+    </div>
+  </div>
+
+  <div class="stat-label" style="margin-bottom:10px;">WIN / LOSS</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px;">
+    <div class="card" style="padding:12px;text-align:center;"><div style="font-size:24px;font-weight:700;color:${crColor};">${closeRate!==null?closeRate+'%':'—'}</div><div class="stat-label">Close Rate</div></div>
+    <div class="card" style="padding:12px;text-align:center;"><div style="font-size:24px;font-weight:700;color:var(--green);">$${avgWon.toLocaleString()}</div><div class="stat-label">Avg Won</div></div>
+    <div class="card" style="padding:12px;text-align:center;"><div style="font-size:24px;font-weight:700;color:var(--accent);">$${avgLost.toLocaleString()}</div><div class="stat-label">Avg Lost</div></div>
+    <div class="card" style="padding:12px;text-align:center;"><div style="font-size:24px;font-weight:700;">$${wonV.toLocaleString()}</div><div class="stat-label">Total Won $</div></div>
+  </div>
+
+  ${lossRows.length?`
+  <div class="stat-label" style="margin-bottom:10px;">LOSS REASONS</div>
+  <div style="margin-bottom:20px;">${lossRows.map(([r,c])=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">
+      <div style="flex:1;font-size:12px;">${esc(r)}</div>
+      <div style="width:80px;height:12px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${Math.round(100*c/lost.length)}%;background:var(--accent);border-radius:3px;"></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;width:18px;text-align:right;">${c}</div>
+    </div>`).join('')}
+  </div>`:''}
+
+  <div class="stat-label" style="margin-bottom:10px;">WIN RATE BY SOURCE</div>
+  <div style="margin-bottom:20px;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr><th style="text-align:left;padding:5px 8px;font-weight:600;color:var(--text-3);">Source</th><th style="padding:5px 8px;font-weight:600;color:var(--text-3);">Deals</th><th style="padding:5px 8px;font-weight:600;color:var(--text-3);">Won</th><th style="padding:5px 8px;font-weight:600;color:var(--text-3);">Win%</th><th style="text-align:right;padding:5px 8px;font-weight:600;color:var(--text-3);">Won $</th></tr></thead>
+      <tbody>${srcRows.map(([src,v])=>`<tr style="border-top:1px solid var(--border-light);"><td style="padding:5px 8px;">${esc(src)||'—'}</td><td style="padding:5px 8px;text-align:center;">${v.total}</td><td style="padding:5px 8px;text-align:center;">${v.won}</td><td style="padding:5px 8px;text-align:center;font-weight:700;color:${v.won>0?'var(--green)':'var(--text-3)'};">${v.total?Math.round(100*v.won/v.total)+'%':'—'}</td><td style="padding:5px 8px;text-align:right;">${v.won?'$'+v.value.toLocaleString():'—'}</td></tr>`).join('')}</tbody>
+    </table>
+  </div>
+
+  <div class="stat-label" style="margin-bottom:10px;">PIPELINE HEALTH</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+    <div class="card" style="padding:12px;text-align:center;"><div style="font-size:24px;font-weight:700;color:${in7>0?'var(--accent)':'var(--text-3)'};">${in7}</div><div class="stat-label">Closing ≤7d</div></div>
+    <div class="card" style="padding:12px;text-align:center;"><div style="font-size:24px;font-weight:700;color:${in30>0?'var(--yellow)':'var(--text-3)'};">${in30}</div><div class="stat-label">Closing ≤30d</div></div>
+    <div class="card" style="padding:12px;text-align:center;"><div style="font-size:24px;font-weight:700;color:${stale>0?'var(--yellow)':'var(--text-3)'};">${stale}</div><div class="stat-label">Stale (14d+)</div></div>
+  </div>
+
+  </div>`,
+  '<button class="btn btn-outline" onclick="closeModal()">Close</button>');
+}
+
 function probColor(p){ if(p>=70) return 'var(--green)'; if(p>=40) return 'var(--blue)'; if(p>=20) return 'var(--yellow)'; return 'var(--accent)'; }
 function dealHTML(d,k){
   const probDisplay = (d.probability != null) ? d.probability : computeDealProbability(d).prob;
@@ -5399,13 +5270,46 @@ function dealHTML(d,k){
   </div>`;
 }
 
+// Derive probable lead source + segment from an existing CUSTOMERS record.
+// Source inference: VIP/Active/repeat-buyer → 'repeat'; designer type → 'designer';
+// contractor/trade → 'referral'; lapsed/lost → 'repeat'; else blank.
+// Segment: direct 1-to-1 from customer.type where enum values align.
+function deriveDealSource(c){
+  if(!c) return {source:'', segment:''};
+  const seg  = (c.segment||'').toLowerCase();
+  const type = (c.type||'').toLowerCase();
+  const freq = c.rfm_frequency || 0;
+  let source = '';
+  if(seg==='vip'||seg==='active'||freq>0)       source='repeat';
+  else if(type==='designer')                     source='designer';
+  else if(type==='contractor'||type==='trade')   source='referral';
+  else if(seg==='lapsed'||seg==='lost')          source='repeat';
+  const segMap={residential:'residential',trade:'trade',designer:'designer',contractor:'contractor',commercial:'commercial',hospitality:'hospitality'};
+  return {source, segment: segMap[type]||''};
+}
+
+// When company field matches a known CRM customer, auto-fill Source + Segment
+// only if those fields are still at default empty — never overrides user input.
+function autoFillDealFromCustomer(name){
+  if(!name||!Array.isArray(CUSTOMERS)) return;
+  const c = CUSTOMERS.find(x=>(x.name||'').toLowerCase().trim()===name.trim().toLowerCase());
+  if(!c) return;
+  const {source, segment} = deriveDealSource(c);
+  const srcEl=$('nd-src'), segEl=$('nd-seg'), hint=$('nd-autofill-hint');
+  let filled=false;
+  if(srcEl&&!srcEl.value&&source){srcEl.value=source;filled=true;}
+  if(segEl&&!segEl.value&&segment){segEl.value=segment;filled=true;}
+  if(hint) hint.style.display=filled?'':'none';
+}
+
 function openAddDeal(def='lead', preset){
   if(!ALL_STAGES.includes(def)) def = 'lead';
   const p = preset || {};
   openModal('New Deal',`
-  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n" value="${esc(p.name||'')}"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c" list="nd-c-options" autocomplete="off" value="${esc(p.company||'')}"><datalist id="nd-c-options">${(Array.isArray(CUSTOMERS)?CUSTOMERS:[]).map(c=>`<option value="${esc(c.name||'')}">`).join('')}</datalist></div></div>
+  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n" value="${esc(p.name||'')}"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c" list="nd-c-options" autocomplete="off" oninput="autoFillDealFromCustomer(this.value)" value="${esc(p.company||'')}"><datalist id="nd-c-options">${(Array.isArray(CUSTOMERS)?CUSTOMERS:[]).map(c=>`<option value="${esc(c.name||'')}">`).join('')}</datalist></div></div>
   <div class="frow"><div class="fcol field"><label>Value ($)</label><input id="nd-v" type="number" value="${esc(String(p.value||''))}"></div><div class="fcol field"><label>Expected Close</label><input id="nd-cl" type="date" value="${esc(p.close||'')}"></div></div>
   <div class="frow"><div class="fcol field"><label>Lead Source</label><select id="nd-src">${['','referral','repeat','designer','web','walk-in','cold','other'].map(s=>`<option value="${s}" ${p.source===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Segment</label><select id="nd-seg">${['','residential','trade','designer','contractor','commercial','hospitality','other'].map(s=>`<option value="${s}" ${p.segment===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div></div>
+  <div id="nd-autofill-hint" style="font-size:11px;color:var(--green);margin:-4px 0 8px;display:none;">✓ Source &amp; segment auto-filled from CRM history</div>
   <div class="frow"><div class="fcol field"><label>Project Type</label><select id="nd-pt">${['','new build','remodel','replacement','repair','unknown'].map(s=>`<option value="${s}" ${p.project_type===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Stage</label><select id="nd-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===def?'selected':''}>${s.label}</option>`).join('')}</select></div></div>
   ${p.related_customer_id?`<input type="hidden" id="nd-cust" value="${esc(p.related_customer_id)}">`:''}
   ${p.quote_id?`<input type="hidden" id="nd-qid" value="${esc(p.quote_id)}">`:''}`,
@@ -5824,12 +5728,15 @@ function updatePreview() {
 
 // ── AI PARSE NOTES → LINE ITEMS ──
 async function aiParseNotes() {
-  // Key is optional — worker has a bound ANTHROPIC_API_KEY fallback. Sales reps
-  // never need to configure anything. Per-user key (sessionStorage) wins if set.
+  // Key is optional when worker env binding is live (v3+). Per-user key wins if set.
   const key = getS('aos-api') || '';
   const notes = $('q-no')?.value?.trim();
   if (!notes) { toast('Paste fixture schedule in the Notes field first', 'err'); return; }
   const statusEl = $('ai-parse-status');
+  if (!_aiWorkerReady()) {
+    if (statusEl) statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">${_aiNotReadyHint()} Add line items manually below.</div>`;
+    return;
+  }
   if (statusEl) statusEl.innerHTML = `<div style="display:flex;gap:8px;align-items:center;"><div class="dots"><div class="dot-b"></div><div class="dot-b"></div><div class="dot-b"></div></div>Parsing fixture schedule…</div>`;
 
   const systemPrompt = `You are a commercial lighting quote builder for Accent Lighting Inc., a lighting distributor in Wichita, KS. You process raw field notes from restaurant and hospitality lighting projects and return structured line items.
@@ -5899,6 +5806,9 @@ OUTPUT FORMAT:
       // Graceful degrade: never hard-stop. Quote workflow stays usable manually.
       if (r.status === 503 || code === 'ai_unconfigured') {
         if (statusEl) statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">AI parsing is temporarily unavailable. Add line items manually below — the rest of the quote workflow works.</div>`;
+      } else if (/missing x-api-key/i.test(String(msg))) {
+        window.__AOS_WORKER_ENV_KEY_READY__ = null;
+        if (statusEl) statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">${_aiNotReadyHint()} Add line items manually below.</div>`;
       } else if (statusEl) {
         statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">⚠ AI parse failed (${r.status}). Add line items manually below. <span class="muted sm">${esc(String(msg).slice(0,200))}</span></div>`;
       }
@@ -6271,6 +6181,9 @@ async function sendChat(pre){
   const inp=$('ci');const msg=pre||inp?.value?.trim();if(!msg)return;
   if(inp)inp.value='';const key=getS('aos-api')||'';
   CHAT.push({r:'u',c:msg});renderChat();$('ti').style.display='';scrollChat();
+  if(!_aiWorkerReady()){
+    $('ti').style.display='none';CHAT.push({r:'a',c:_aiNotReadyHint()});renderChat();scrollChat();return;
+  }
   try{
     const msgs=CHAT.slice(0,-1).map(m=>({role:m.r==='a'?'assistant':'user',content:m.c}));msgs.push({role:'user',content:msg});
     const sysInternal = 'You are the Accent Lighting Intelligence Engine — expert AI for Accent Lighting Inc., a commercial lighting distributor in Wichita, KS. Answer questions about commercial lighting: fixtures, lumens, color temp, controls, dimming, emergency lighting, energy codes, specs, quoting, and vendor comparisons. Be concise, practical, specific.';
@@ -6280,8 +6193,10 @@ async function sendChat(pre){
     if(key) headers['x-api-key']=key;
     const r=await fetch(AOS_WORKER_URL,{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,system:sys,messages:msgs})});
     const data=await r.json();
-    const text = data.content?.[0]?.text
-      || (r.status===503 ? 'AI is temporarily unavailable. Try again in a moment.' : 'Unable to respond.');
+    let text;
+    if(data.content?.[0]?.text){ text=data.content[0].text; }
+    else if(/missing x-api-key/i.test(data?.error||'')){ window.__AOS_WORKER_ENV_KEY_READY__=null; text=_aiNotReadyHint(); }
+    else{ text=r.status===503?'AI is temporarily unavailable. Try again in a moment.':'Unable to respond.'; }
     $('ti').style.display='none';CHAT.push({r:'a',c:text});renderChat();scrollChat();
   }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error.'});renderChat();scrollChat();}
 }
@@ -6289,6 +6204,53 @@ function renderChat(){const w=$('cw');if(!w)return;const lbl=chatMode==='custome
 function scrollChat(){const w=$('cw');if(w)w.scrollTop=w.scrollHeight;}
 
 // ── DASHBOARD ─────────────────────────────────────────────
+// ── DASHBOARD PINS (localStorage v1, per-user, no schema needed) ──────────────
+function loadDashPins(){
+  const uid = CU?.user_id||'anon';
+  try{ return JSON.parse(localStorage.getItem(`aos_dash_pins_${uid}`)||'[]'); }catch(e){ return []; }
+}
+function saveDashPins(keys){
+  localStorage.setItem(`aos_dash_pins_${CU?.user_id||'anon'}`, JSON.stringify(keys));
+}
+function openPinModal(){
+  const pins = loadDashPins();
+  const role = CU?.role||'';
+  const mods = MODULE_REGISTRY.filter(m =>
+    m.key && !m.noNav &&
+    (!m.roles || m.roles.split(',').map(r=>r.trim()).includes(role))
+  );
+  openModal('Customize Dashboard Pins', `
+  <div style="max-height:400px;overflow-y:auto;">
+    <div style="font-size:12.5px;color:var(--text-2);margin-bottom:14px;">Select pages to pin as quick-access tiles on your dashboard.</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;" id="pin-grid">
+      ${mods.map(m=>`<label style="display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;user-select:none;">
+        <input type="checkbox" value="${m.key}" ${pins.includes(m.key)?'checked':''} style="margin:0;flex-shrink:0;">
+        <span style="font-size:14px;">${m.icon}</span><span>${m.label}</span>
+      </label>`).join('')}
+    </div>
+  </div>`,
+  `<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+   <button class="btn btn-accent" onclick="applyDashPins()">Save Pins</button>`);
+}
+function applyDashPins(){
+  const keys = Array.from(document.querySelectorAll('#pin-grid input[type=checkbox]:checked')).map(i=>i.value);
+  saveDashPins(keys);
+  closeModal();
+  dashboard($('pg-content'));
+}
+function renderPinnedCard(){
+  const pins = loadDashPins();
+  if(!pins.length) return '';
+  const mods = pins.map(k=>MODULE_REGISTRY.find(m=>m.key===k)).filter(Boolean);
+  if(!mods.length) return '';
+  return `<div class="card mb16">
+    <div class="card-hd"><span class="card-title">📌 Pinned</span><button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="openPinModal()">Edit</button></div>
+    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;">
+      ${mods.map(m=>`<button class="btn btn-outline" onclick="goTo('${m.key}')" style="font-size:13px;gap:6px;"><span>${m.icon}</span>${esc(m.label)}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
 function dashboard(el){
   const allDeals=Object.values(DEALS).flat();
   const tv=allDeals.reduce((s,d)=>s+(d.value||0),0);
@@ -6304,6 +6266,7 @@ function dashboard(el){
     <div class="card-hd">
       <span class="card-title">📌 Today · ${esc(role||'Welcome')}, ${esc(CU?.name?.split(' ')[0]||'')}</span>
       <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="openPinModal()" title="Pin pages to dashboard">📌 Pins</button>
         <button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="showDailyDigest()" title="Generate plaintext email digest">✉️ Email digest</button>
         <span class="sm muted">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</span>
       </div>
@@ -6323,6 +6286,7 @@ function dashboard(el){
     </div>
   </div>
 
+  ${renderPinnedCard()}
   ${renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore)}
   `;
 }
@@ -7027,6 +6991,37 @@ async function snapshotAllKPIs(){
   }catch(e){ toast('Snapshot failed: '+e.message, 'err'); }
 }
 
+async function maybeAutoSnapshotKPIs(){
+  // Owner-only. Runs silently at end of hydration; no toast, no re-render.
+  // localStorage key prevents duplicate runs within the same browser-day.
+  if(!CU||CU.role!=='Owner'||!sbConfigured()) return;
+  const today = new Date().toISOString().slice(0,10);
+  const lsKey = `aos_kpi_snapped_${today}`;
+  if(localStorage.getItem(lsKey)) return;
+  if((KPI_SNAPSHOTS||[]).some(s=>s.snapshot_date===today)){
+    localStorage.setItem(lsKey,'1'); return;
+  }
+  if(!Array.isArray(KPI_DEFINITIONS)||!KPI_DEFINITIONS.length) return;
+  const rows = KPI_DEFINITIONS.map(d=>({
+    kpi_key: d.key,
+    snapshot_date: today,
+    value: computeCurrentKPIValue(d.key),
+    metadata: {auto:true}
+  })).filter(r=>r.value!==null);
+  if(!rows.length) return;
+  await sbFetch('/kpi_snapshots?on_conflict=kpi_key,snapshot_date',{
+    method:'POST',
+    headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+    body: JSON.stringify(rows)
+  });
+  // Refresh in-memory snapshots so KPI tab + daily brief reflect new data.
+  const snaps = await sbFetch('/kpi_snapshots?select=kpi_key,snapshot_date,value,metadata&order=snapshot_date.desc&limit=200');
+  if(Array.isArray(snaps)) KPI_SNAPSHOTS=snaps;
+  localStorage.setItem(lsKey,'1');
+  if(typeof sbAuditLog==='function') sbAuditLog('kpi_snapshot','mgmt',{count:rows.length,auto:true});
+  console.log(`[kpi] auto-snapshot: ${rows.length} KPIs for ${today}`);
+}
+
 function renderKPIRegistry(c){
   const role = CU?.role || '';
   const visible = KPI_DEFINITIONS.filter(d => !d.visible_to_roles || d.visible_to_roles.includes(role));
@@ -7444,6 +7439,19 @@ async function changeMyPassword(){
 
 // ── HELPERS ───────────────────────────────────────────────
 function getS(k){return sessionStorage.getItem(k)||'';}
+// Returns true when an AI POST call is expected to succeed without a user-supplied key.
+// false only when the probe has confirmed stale worker (null) or missing env binding (false).
+// undefined (probe still in flight) is treated optimistically — the response handler catches
+// any resulting stale-worker error and updates the flag at that point.
+function _aiWorkerReady(){
+  if(getS('aos-api')) return true;
+  const e=window.__AOS_WORKER_ENV_KEY_READY__;
+  return e===true||e===undefined;
+}
+// Human-readable hint to show when _aiWorkerReady() returns false.
+function _aiNotReadyHint(){
+  return 'AI requires your Anthropic API key — add it in Settings → API Keys.';
+}
 
 // ── BOOT (v6.9.6) ──
 // 1. Try to restore an authenticated session from the stored JWT.

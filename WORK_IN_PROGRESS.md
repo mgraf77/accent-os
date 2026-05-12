@@ -1,34 +1,44 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-12 — Runtime audit + worker stale-deploy diagnostics hardened.
+**Last updated:** 2026-05-12 — accent-work session 2: KPI scheduler + dashboard pinning + csvDownload cleanup.
+**Branch:** `accent-work`
 **Resume trigger:** "continue last session"
 
 ---
 
 ## STATUS
 
-22-commit autonomous run on `claude/accentos-acceleration-sprint-K9pFn`. All work pushed.
+6 items shipped across 2 sessions on `accent-work`. Tree is clean, docs committed.
 
-**Headline numbers:**
+**Session 1 (MODULE_REGISTRY + analytics + auto-derive):**
+- ✅ MODULE_REGISTRY refactor — sidebar/PAGE_META/dispatcher driven by single registry array (1cb015a)
+- ✅ Pipeline analytics — `openPipelineAnalytics()` implemented (funnel, win/loss, loss reasons, by-source, health) (b9a65d9)
+- ✅ Auto-derived deal source — company field auto-fills Source + Segment from CRM on match (832d7e6)
 
-- Runtime audit (2026-05-12): live worker at `accentos-anthropic-proxy.mgraf77.workers.dev` still returns `{"error":"Missing x-api-key header"}` on `/v1/messages` without a key and `Method not allowed` on GET probes, indicating stale deploy or wrong route despite repo worker fallback logic. SPA probe now checks `/v1/version` then `/`, logs non-JSON probe bodies, and emits a clear stale-worker warning in console to speed incident triage.
-- Worker proxy WIP resolved (model ID swap to `claude-sonnet-4-5`).
-- Six write surfaces now auto-link/create the customer FK (quote, deal, job, warranty, delivery, customer-quote helper).
-- Five cross-module preset paths in production (Deal→Job, Quote→PO, Quote→Deal, Customer→Quote, Customer→Deal).
-- Global search + Cmd/Ctrl+K + "/" bindings actually wired (the hint was advertised-but-unbound).
-- Supabase perf advisor: 80 WARN-level findings → 0. 19 FK indexes added, 21 RLS initplan rewrites, 24 FOR ALL policies split, 6 legacy anon policies dropped, 1 telemetry security regression restored.
+**Session 2 (KPI + pinning + cleanup):**
+- ✅ KPI auto-snapshot scheduler — daily Owner capture at hydration end, no manual click needed (5a48639)
+- ✅ Per-user dashboard pinning — 📌 Pins button, localStorage v1, MODULE_REGISTRY-driven picker (3a29a97)
+- ✅ csvDownload dead-fallback cleanup — removed 4 unreachable else branches in module files (1daada6)
 
-**Live DB state:** in sync with `sql/M41` `sql/M42` `sql/M42b` `sql/M43` `sql/M44`. All applied via `apply_migration` MCP. Anon-write security gap closed.
+**Live DB state:** in sync with M41–M44. All clean.
 
-## NEXT (when Michael returns)
+## NEXT
 
-BUILD_PLAN_CLAUDE is fully `[x]` except items blocked on M-tasks (M03/M04/M05/M06/M09/M10/M18). Per Throughput-Mode priorities all eight categories now have meaningful work shipped. Pickable without new permissions:
+Remaining unblocked items (no M-task dependency):
+- `typeof` guard cleanup — `savedFiltersBar`/`bulkSelBar`/`bulkSelRegister` calls in ~8 modules are wrapped in dead `typeof` guards (both scripts confirmed always loaded). Low priority cosmetic refactor.
+- Saved Filter Sets — cross-cutting persisted filter combos on every list page (js/saved_filters.js already ships `savedFiltersBar()` — wire remaining modules that don't use it yet).
+- Bulk action bars — multi-select + bulk delete/status (js/bulk_select.js ships `bulkSelBar()` — wire remaining modules).
+- My Tasks widget — personal task queue on dashboard (BUILD_PLAN item, no schema needed).
+- OKR progress auto-compute — derive OKR % from live data globals instead of manual entry.
 
-- MODULE_REGISTRY refactor (declarative shell — collapse 4 module touchpoints to 1).
-- Pipeline analytics polish.
-- Auto-derived deal source from customer history.
-- KPI snapshot scheduler (cron-style).
-- Per-user dashboard pinning (uses M30 user_module_overrides).
+Blocked until Michael acts: M03/M04/M05/M06/M09/M10/M18.
+Stale Cloudflare Worker: GitHub Actions workflow created (.github/workflows/deploy-worker.yml). Needs CF_API_TOKEN + CF_ACCOUNT_ID secrets added to GitHub repo before first auto-deploy can fire. Michael to add secrets — see docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md.
 
-If you want me to keep building, just say "go" again.
+## MERGE READINESS
+
+`accent-work` is ahead of `main` by 6 feature commits. When ready to merge:
+- All changes are additive (new functions, new registry entries, dead-code removal)
+- No schema changes required
+- Rollback: revert the 6 commits individually or `git revert` range
+- Affected systems: sidebar rendering (MODULE_REGISTRY), pipeline modal, new deal form, dashboard card, all CSV import flows
