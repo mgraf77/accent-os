@@ -4,6 +4,15 @@
 
 <!-- ci-pipeline-validation: 2026-05-11 -->
 
+### 2026-05-12 — Runtime audit: stale worker detection hardening
+**Branch:** `work`
+**Built/Changed:**
+- Verified live worker behavior with direct curl checks: GET `/` and `/v1/version` return `Method not allowed`; POST `/v1/messages` without `x-api-key` returns `{"error":"Missing x-api-key header"}`. This does **not** match current repo worker code (which supports version probes + env fallback), indicating stale deployment or wrong route target.
+- Hardened SPA startup probe in `index.html`: tries `/v1/version` then `/`, safely handles non-JSON responses, logs probe path/status/body fragment, and prints an explicit stale-worker diagnostic when `Missing x-api-key` appears.
+- Updated WIP status to document runtime finding and current mitigation path.
+**Open loops:** Needs Cloudflare-side action (redeploy worker and verify secret binding/route). Not solvable from this repo alone without deploy credentials.
+
+
 ### 2026-05-11 — Product Throughput Mode acceleration sprint — SHIPPED (22 commits, 1 session)
 **Branch:** `claude/accentos-acceleration-sprint-K9pFn`
 **Mode:** autonomous run, no check-ins, "do anything and everything"

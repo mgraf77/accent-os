@@ -1,7 +1,7 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-11 — Product Throughput Mode acceleration sprint complete.
+**Last updated:** 2026-05-12 — Runtime audit + worker stale-deploy diagnostics hardened.
 **Resume trigger:** "continue last session"
 
 ---
@@ -11,6 +11,8 @@
 22-commit autonomous run on `claude/accentos-acceleration-sprint-K9pFn`. All work pushed.
 
 **Headline numbers:**
+
+- Runtime audit (2026-05-12): live worker at `accentos-anthropic-proxy.mgraf77.workers.dev` still returns `{"error":"Missing x-api-key header"}` on `/v1/messages` without a key and `Method not allowed` on GET probes, indicating stale deploy or wrong route despite repo worker fallback logic. SPA probe now checks `/v1/version` then `/`, logs non-JSON probe bodies, and emits a clear stale-worker warning in console to speed incident triage.
 - Worker proxy WIP resolved (model ID swap to `claude-sonnet-4-5`).
 - Six write surfaces now auto-link/create the customer FK (quote, deal, job, warranty, delivery, customer-quote helper).
 - Five cross-module preset paths in production (Deal→Job, Quote→PO, Quote→Deal, Customer→Quote, Customer→Deal).
