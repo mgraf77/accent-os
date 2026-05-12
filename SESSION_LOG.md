@@ -4,6 +4,20 @@
 
 <!-- ci-pipeline-validation: 2026-05-11 -->
 
+### 2026-05-12 — Operational hardening: runtime telemetry, worker auth pipeline, deployment infra
+
+**Branch:** `accent-work` (remote: `origin/claude/audit-repository-Fg9xI`)
+**Commits:** b858821 (worker auth), 03a4828 (GitHub Actions), 0c35008 (runtime docs), 34c6545 (reconciliation plan), b6fc858 (runtime telemetry), 95f806e (status.sh)
+**Built/Changed:**
+- **Worker auth pipeline fix (b858821):** Traced `POST /v1/messages → {"error":"Missing x-api-key header"}` to stale deployed worker (v1/v2). Frontend hardened: `_aiWorkerReady()` + `_aiNotReadyHint()` preflight guards on all 3 AI call sites (vendor detail, `aiParseNotes`, `sendChat`). `window.__AOS_WORKER_ENV_KEY_READY__` flag auto-clears to null on 401 response.
+- **GitHub Actions worker deploy (03a4828):** `.github/workflows/deploy-worker.yml` — triggers on push to main touching `worker/**` or `wrangler.toml`, uses `cloudflare/wrangler-action@v3`. Needs `CF_API_TOKEN` + `CF_ACCOUNT_ID` secrets (Michael action required before first fire).
+- **Runtime docs (0c35008):** `docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md`, `DEPLOYMENT_STATE_MODEL_V1.md`, `WORKER_RUNTIME_RECOVERY.md`, `LUNCH_EXECUTION_REPORT.md` — deployment architecture, 5 incident playbooks, drift detection spec.
+- **Parallel branch reconciliation (34c6545):** `docs/runtime/PARALLEL_BRANCH_RECONCILIATION_PLAN.md` — full overlap matrix for Jules branch vs Claude branch, cherry-pick integration executed, `integration/reconcile` pushed to origin (Claude's 11 commits + Jules' `441e5ed`).
+- **Runtime telemetry (b6fc858):** `window.__AOS_WORKER_PROBE_MS__` (probe latency), `window.__AOS_HYDRATE_MS__` (hydration timing), `_runtimeHealth()` structured health object, `console.info('[aos-health]')` 2s after boot. System Status card (Mgmt Dashboard) upgraded to live runtime state — shows worker state/latency, AI auth mode, hydration timing.
+- **status.sh rewrite (95f806e):** Color output helpers (ok/warn/info), deployment section (checks for workflow + wrangler.toml), live worker probe (curls worker URL, shows state/latency/env_key, remediation hints per failure mode), runtime docs verification section, threshold warnings at 75%/90% of 900KB.
+**Open loops:** `CF_API_TOKEN` + `CF_ACCOUNT_ID` needed in GitHub repo secrets before workflow can fire. `integration/reconcile` ready for PR to main — no action until Michael approves.
+**Next:** typeof-guard cleanup (~8 modules), Saved Filter Sets, Bulk action bars, OKR auto-compute, My Tasks widget.
+
 ### 2026-05-12 — KPI auto-snapshot + dashboard pinning + csvDownload cleanup
 **Branch:** `accent-work`
 **Commits:** 5a48639 (KPI scheduler), 3a29a97 (dashboard pinning), 1daada6 (csvDownload cleanup)
