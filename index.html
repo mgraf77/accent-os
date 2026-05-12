@@ -828,15 +828,30 @@ const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 // so we can prove which build is live without making an Anthropic call.
 const AOS_WORKER_BASE = 'https://accentos-anthropic-proxy.mgraf77.workers.dev';
 const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
-// On startup, fetch the worker's version probe and log to console. Helps ops
-// pinpoint stale-deploy issues without round-tripping to Anthropic.
+// On startup, fetch a worker version probe and log diagnostics. Helps ops
+// pinpoint stale-deploy / wrong-route issues without Anthropic round-trips.
 (async () => {
-  try {
-    const r = await fetch(AOS_WORKER_BASE + '/', { method: 'GET' });
-    const j = await r.json();
-    console.log('[aos-worker]', j);
-    window.__AOS_WORKER_VERSION__ = j.version || 'unknown';
-  } catch (e) { console.warn('[aos-worker] probe failed:', e?.message || e); }
+  const probes = ['/v1/version', '/'];
+  for (const path of probes) {
+    try {
+      const r = await fetch(AOS_WORKER_BASE + path, { method: 'GET' });
+      const raw = await r.text();
+      let j = null;
+      try { j = JSON.parse(raw); } catch {}
+      if (r.ok && j && typeof j === 'object') {
+        console.log('[aos-worker]', { path, ...j });
+        window.__AOS_WORKER_VERSION__ = j.version || 'unknown';
+        return;
+      }
+      console.warn('[aos-worker] non-json probe', { path, status: r.status, body: raw.slice(0,120) });
+      if (/missing x-api-key/i.test(raw)) {
+        console.warn('[aos-worker] stale worker detected: live worker still requires x-api-key. Redeploy latest worker/anthropic-proxy.js and confirm ANTHROPIC_API_KEY binding.');
+      }
+    } catch (e) {
+      console.warn('[aos-worker] probe failed', { path, err: e?.message || e });
+    }
+  }
+  window.__AOS_WORKER_VERSION__ = 'unverified';
 })();
 function v(id,prop='value'){return $(id)?.[prop]?.trim()??'';}
 // CSV utilities — RFC 4180 quoting (only quote when value contains comma, quote, or newline; double embedded quotes).
