@@ -693,6 +693,7 @@ async function hydrateFromSupabase(){
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
     // Run alert generator AFTER all data loaded — heuristics read from every module's state.
     try { if(typeof generateAlertsFromData==='function') await generateAlertsFromData(); } catch(e){ console.warn(e); }
+    try { await maybeAutoSnapshotKPIs(); } catch(e){ console.warn('[kpi] auto-snapshot:', e.message); }
   }
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
@@ -7157,6 +7158,37 @@ async function snapshotAllKPIs(){
     toast(`Snapshot saved — ${rows.length} KPIs`, 'ok');
     mgmt($('pg-content'));
   }catch(e){ toast('Snapshot failed: '+e.message, 'err'); }
+}
+
+async function maybeAutoSnapshotKPIs(){
+  // Owner-only. Runs silently at end of hydration; no toast, no re-render.
+  // localStorage key prevents duplicate runs within the same browser-day.
+  if(!CU||CU.role!=='Owner'||!sbConfigured()) return;
+  const today = new Date().toISOString().slice(0,10);
+  const lsKey = `aos_kpi_snapped_${today}`;
+  if(localStorage.getItem(lsKey)) return;
+  if((KPI_SNAPSHOTS||[]).some(s=>s.snapshot_date===today)){
+    localStorage.setItem(lsKey,'1'); return;
+  }
+  if(!Array.isArray(KPI_DEFINITIONS)||!KPI_DEFINITIONS.length) return;
+  const rows = KPI_DEFINITIONS.map(d=>({
+    kpi_key: d.key,
+    snapshot_date: today,
+    value: computeCurrentKPIValue(d.key),
+    metadata: {auto:true}
+  })).filter(r=>r.value!==null);
+  if(!rows.length) return;
+  await sbFetch('/kpi_snapshots?on_conflict=kpi_key,snapshot_date',{
+    method:'POST',
+    headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+    body: JSON.stringify(rows)
+  });
+  // Refresh in-memory snapshots so KPI tab + daily brief reflect new data.
+  const snaps = await sbFetch('/kpi_snapshots?select=kpi_key,snapshot_date,value,metadata&order=snapshot_date.desc&limit=200');
+  if(Array.isArray(snaps)) KPI_SNAPSHOTS=snaps;
+  localStorage.setItem(lsKey,'1');
+  if(typeof sbAuditLog==='function') sbAuditLog('kpi_snapshot','mgmt',{count:rows.length,auto:true});
+  console.log(`[kpi] auto-snapshot: ${rows.length} KPIs for ${today}`);
 }
 
 function renderKPIRegistry(c){
