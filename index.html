@@ -658,10 +658,13 @@ function activateApp(){
   $('u-role').textContent = CU.role;
   buildSidebar();
   applyRoleVisibility(CU.role);
+  // Log runtime health summary to console once per session for operator visibility.
+  setTimeout(()=>{ try{ console.info('[aos-health]', _runtimeHealth()); }catch{} }, 2000);
   // Feedback button removed; entry now lives in the QA FAB menu.
 }
 
 async function hydrateFromSupabase(){
+  const _hydrateT0 = performance.now();
   let sbCatRows = 0;
   if(typeof sbConfigured==='function' && sbConfigured()){
     try { sbCatRows = await sbLoadCategories(); } catch(e){ console.warn(e); }
@@ -695,6 +698,8 @@ async function hydrateFromSupabase(){
     try { if(typeof generateAlertsFromData==='function') await generateAlertsFromData(); } catch(e){ console.warn(e); }
     try { await maybeAutoSnapshotKPIs(); } catch(e){ console.warn('[kpi] auto-snapshot:', e.message); }
   }
+  window.__AOS_HYDRATE_MS__ = Math.round(performance.now() - _hydrateT0);
+  console.info('[aos-boot] hydration complete', { ms: window.__AOS_HYDRATE_MS__, ts: new Date().toISOString() });
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
   }
@@ -801,6 +806,7 @@ const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
 // On startup, fetch a worker version probe and log diagnostics. Helps ops
 // pinpoint stale-deploy / wrong-route issues without Anthropic round-trips.
 (async () => {
+  const _probeT0 = performance.now();
   const probes = ['/v1/version', '/'];
   for (const path of probes) {
     try {
@@ -809,7 +815,8 @@ const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
       let j = null;
       try { j = JSON.parse(raw); } catch {}
       if (r.ok && j && typeof j === 'object') {
-        console.log('[aos-worker]', { path, ...j });
+        window.__AOS_WORKER_PROBE_MS__ = Math.round(performance.now() - _probeT0);
+        console.log('[aos-worker]', { path, ...j, probe_ms: window.__AOS_WORKER_PROBE_MS__ });
         window.__AOS_WORKER_VERSION__ = j.version || 'unknown';
         // env_key_set is emitted by v3+. false=deployed but secret not bound.
         // Absent field means old worker (v1/v2) that requires x-api-key from client.
@@ -825,6 +832,7 @@ const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
   // All probes returned non-JSON — stale worker (v1/v2) or unreachable.
   // v1/v2 returns "Method not allowed" for GET; POST requires x-api-key from client.
   // Fix: cd worker && wrangler deploy, then wrangler secret put ANTHROPIC_API_KEY.
+  window.__AOS_WORKER_PROBE_MS__ = Math.round(performance.now() - _probeT0);
   window.__AOS_WORKER_VERSION__ = 'stale';
   window.__AOS_WORKER_ENV_KEY_READY__ = null;
   console.warn('[aos-worker] stale or unreachable — deploy worker/anthropic-proxy.js and bind ANTHROPIC_API_KEY. POST /v1/messages will require a user-supplied key until redeployed.');
@@ -6645,14 +6653,26 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
         <button class="btn btn-outline btn-lg" style="width:100%;justify-content:center;" onclick="goTo('vendors')">📊 Vendor Scores</button>
       </div>
     </div></div>
-    <div class="card"><div class="card-hd"><span class="card-title">System Status</span></div><div class="card-body">
+    <div class="card"><div class="card-hd"><span class="card-title">System Status</span><button class="btn btn-sm btn-outline" style="margin-left:auto;font-size:11px;" onclick="goTo('health')">Details</button></div><div class="card-body">
       ${sRow('AccentOS','live','v6.10.75 · Cloudflare Pages')}
       ${sRow('Auth','live','Supabase Auth · 5 roles · audit_log')}
-      ${sRow('Vendor Ranking','live','478 vendors · vendor_scores + vendor_score_states')}
-      ${sRow('Pipeline','live','pipeline_deals · 8-factor probability model')}
-      ${sRow('Quotes','live','quotes + quote_lines persistence')}
-      ${sRow('Co-op Tracker','live','coop_tracker · deadline alerts')}
-      ${sRow('Anthropic API',getS('aos-api')?'live':'pending',getS('aos-api')?'Key configured':'Add in Settings')}
+      ${sRow('Data','live',`${VD.length} vendors · ${CUSTOMERS.length||0} customers · ${QUOTES.length||0} quotes`)}
+      ${(()=>{
+        const ver=window.__AOS_WORKER_VERSION__,env=window.__AOS_WORKER_ENV_KEY_READY__,ms=window.__AOS_WORKER_PROBE_MS__;
+        const msNote=ms?` · ${ms}ms`:'';
+        if(ver==='stale'||env===null) return sRow('AI Worker','pending',`Stale — redeploy needed${msNote}`);
+        if(env===false)               return sRow('AI Worker','pending',`v3 deployed · secret missing${msNote}`);
+        if(env===true)                return sRow('AI Worker','live',`${ver}${msNote} · env key bound`);
+        return sRow('AI Worker','pending',`Probing…`);
+      })()}
+      ${(()=>{
+        const userKey=getS('aos-api'),env=window.__AOS_WORKER_ENV_KEY_READY__;
+        if(userKey)      return sRow('AI Auth','live','User key configured');
+        if(env===true)   return sRow('AI Auth','live','Env key bound (no config needed)');
+        if(env===false||env===null) return sRow('AI Auth','pending','Add key in Settings → API Keys');
+        return sRow('AI Auth','pending','Checking…');
+      })()}
+      ${window.__AOS_HYDRATE_MS__?sRow('Hydration','live',`${window.__AOS_HYDRATE_MS__}ms · all modules loaded`):''}
     </div></div>
   </div>
   <div class="g2">
@@ -7682,6 +7702,26 @@ async function changeMyPassword(){
 
 // ── HELPERS ───────────────────────────────────────────────
 function getS(k){return sessionStorage.getItem(k)||'';}
+// Structured runtime health snapshot — used by System Status card and operator console.
+// Returns a plain object safe to JSON.stringify for logging.
+function _runtimeHealth(){
+  const ver=window.__AOS_WORKER_VERSION__, env=window.__AOS_WORKER_ENV_KEY_READY__;
+  const workerState = ver==='stale'||env===null ? 'stale'
+    : env===false ? 'deployed-no-secret'
+    : env===true  ? 'healthy'
+    : 'probing';
+  const aiState = getS('aos-api') ? 'user-key'
+    : env===true  ? 'env-key'
+    : 'unavailable';
+  const degraded = workerState !== 'healthy' && aiState === 'unavailable';
+  return {
+    worker:  { state: workerState, version: ver||null, probe_ms: window.__AOS_WORKER_PROBE_MS__||null },
+    ai:      { state: aiState },
+    hydrate: { ms: window.__AOS_HYDRATE_MS__||null },
+    degraded,
+    ts:      new Date().toISOString(),
+  };
+}
 // Returns true when an AI POST call is expected to succeed without a user-supplied key.
 // false only when the probe has confirmed stale worker (null) or missing env binding (false).
 // undefined (probe still in flight) is treated optimistically — the response handler catches
