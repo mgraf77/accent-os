@@ -13,51 +13,240 @@
     "hidden"
   ],
   "modules": {
-    "dashboard":       {"title": "Dashboard",            "mode": "live",     "notes": ""},
-    "pipeline":        {"title": "Sales Pipeline",       "mode": "live",     "notes": ""},
-    "customers":       {"title": "Customers (CRM)",      "mode": "live",     "notes": ""},
-    "quotes":          {"title": "Quote Generator",      "mode": "live",     "notes": ""},
-    "jobs":            {"title": "Job Tracker",          "mode": "live",     "notes": ""},
-    "purchaseorders":  {"title": "Purchase Orders",      "mode": "live",     "notes": ""},
-    "tradepartners":   {"title": "Trade Partners",       "mode": "live",     "notes": ""},
-    "warranty":        {"title": "Warranty Tracker",     "mode": "live",     "notes": ""},
-    "showrooms":       {"title": "Showroom Displays",    "mode": "live",     "notes": ""},
-    "labels":          {"title": "Labels (QR/Barcode)",  "mode": "live",     "notes": ""},
-    "deliveries":      {"title": "Deliveries",           "mode": "live",     "notes": ""},
-    "decisionengine":  {"title": "Decision Engine",      "mode": "live",     "notes": ""},
-    "competitive":     {"title": "Competitive Pricing",  "mode": "live",     "notes": ""},
-    "demandforecast":  {"title": "Demand Forecast",      "mode": "live",     "notes": ""},
-    "alerts":          {"title": "Alerts",               "mode": "live",     "notes": ""},
-    "mytasks":         {"title": "My Tasks",             "mode": "live",     "notes": "Personal · localStorage"},
-    "knowledge":       {"title": "Knowledge Engine",     "mode": "live",     "notes": ""},
-    "vendors":         {"title": "Vendor Ranking",       "mode": "live",     "notes": ""},
-    "changelog":       {"title": "Change Log",           "mode": "live",     "notes": ""},
-    "calendar":        {"title": "Company Calendar",     "mode": "live",     "notes": ""},
-    "marketing":       {"title": "Marketing Hub",        "mode": "live",     "notes": ""},
-    "activity":        {"title": "Activity Feed",        "mode": "live",     "notes": ""},
-    "reports":         {"title": "Reports Center",       "mode": "live",     "notes": ""},
-    "portalpreview":   {"title": "Portal Preview",       "mode": "testing",  "notes": "Preview-only — full Trade/Rep portals are 6.5/6.6"},
-    "health":          {"title": "Health Check",         "mode": "live",     "notes": ""},
-    "roadmap":         {"title": "Build Roadmap",        "mode": "live",     "notes": ""},
-    "mgmt":            {"title": "Management Dashboard", "mode": "live",     "notes": ""},
-    "repoutreach":     {"title": "Rep Outreach",         "mode": "live",     "notes": ""},
-    "settings":        {"title": "Settings",             "mode": "live",     "notes": ""},
-    "modulemodes":     {"title": "Module Modes",         "mode": "live",     "notes": "v1 shipped 2026-05-05 · Mgmt → Modes sub-tab"},
-    "ecommerce":       {"title": "E-Commerce Cmd Center","mode": "blocked",  "notes": "5.13 · M04+M05"},
-    "ga4":             {"title": "GA4 Integration",      "mode": "blocked",  "notes": "6.1 · M06"},
-    "gsc":             {"title": "Search Console",       "mode": "blocked",  "notes": "6.2 · M06"},
-    "bigcommerce":     {"title": "BigCommerce Sync",     "mode": "blocked",  "notes": "6.3 · M04"},
-    "klaviyo":         {"title": "Klaviyo",              "mode": "blocked",  "notes": "6.4 · M09"},
-    "portal_trade":    {"title": "Trade Portal",         "mode": "planning", "notes": "6.5 · external auth scoping"},
-    "portal_rep":      {"title": "Vendor Rep Portal",    "mode": "planning", "notes": "6.6 · external auth scoping"},
-    "ailighting":      {"title": "AI Lighting Phase 2",  "mode": "idea_only","notes": "6.7 phase 2 · public iframe embed"},
-    "windward":        {"title": "Windward Live Sync",   "mode": "blocked",  "notes": "6.11 · M03+M10"},
-    "ads":             {"title": "Google/Meta Ads",      "mode": "blocked",  "notes": "6.12 · no API access"},
-    "embed":           {"title": "AccentOS Embed",       "mode": "idea_only","notes": "6.10 · employee tools on public site"},
-    "saved_filters":   {"title": "Saved Filter Sets",    "mode": "idea_only","notes": "Cross-cutting · per-user filter combos"},
-    "module_registry_refactor": {"title": "MODULE_REGISTRY refactor", "mode": "idea_only", "notes": "Internal · collapse 4 shell touchpoints to 1"},
-    "bulk_action_bars":{"title": "Bulk Action Bars",     "mode": "idea_only","notes": "Multi-select + bulk update on list pages"},
-    "compact_view":    {"title": "Compact-view Toggle",  "mode": "idea_only","notes": "Polish"},
-    "column_visibility":{"title": "Column Visibility",   "mode": "idea_only","notes": "Polish · per-page column toggles"}
+    "dashboard": {
+      "title": "Dashboard",
+      "mode": "live",
+      "notes": ""
+    },
+    "pipeline": {
+      "title": "Sales Pipeline",
+      "mode": "live",
+      "notes": ""
+    },
+    "customers": {
+      "title": "Customers (CRM)",
+      "mode": "live",
+      "notes": ""
+    },
+    "quotes": {
+      "title": "Quote Generator",
+      "mode": "live",
+      "notes": ""
+    },
+    "jobs": {
+      "title": "Job Tracker",
+      "mode": "live",
+      "notes": ""
+    },
+    "purchaseorders": {
+      "title": "Purchase Orders",
+      "mode": "live",
+      "notes": ""
+    },
+    "tradepartners": {
+      "title": "Trade Partners",
+      "mode": "live",
+      "notes": ""
+    },
+    "warranty": {
+      "title": "Warranty Tracker",
+      "mode": "live",
+      "notes": ""
+    },
+    "showrooms": {
+      "title": "Showroom Displays",
+      "mode": "live",
+      "notes": ""
+    },
+    "labels": {
+      "title": "Labels (QR/Barcode)",
+      "mode": "live",
+      "notes": ""
+    },
+    "deliveries": {
+      "title": "Deliveries",
+      "mode": "live",
+      "notes": ""
+    },
+    "decisionengine": {
+      "title": "Decision Engine",
+      "mode": "live",
+      "notes": ""
+    },
+    "competitive": {
+      "title": "Competitive Pricing",
+      "mode": "live",
+      "notes": ""
+    },
+    "demandforecast": {
+      "title": "Demand Forecast",
+      "mode": "live",
+      "notes": ""
+    },
+    "alerts": {
+      "title": "Alerts",
+      "mode": "live",
+      "notes": ""
+    },
+    "mytasks": {
+      "title": "My Tasks",
+      "mode": "live",
+      "notes": "Personal \u00b7 localStorage"
+    },
+    "knowledge": {
+      "title": "Knowledge Engine",
+      "mode": "live",
+      "notes": ""
+    },
+    "vendors": {
+      "title": "Vendor Ranking",
+      "mode": "live",
+      "notes": ""
+    },
+    "changelog": {
+      "title": "Change Log",
+      "mode": "live",
+      "notes": ""
+    },
+    "calendar": {
+      "title": "Company Calendar",
+      "mode": "live",
+      "notes": ""
+    },
+    "marketing": {
+      "title": "Marketing Hub",
+      "mode": "live",
+      "notes": ""
+    },
+    "activity": {
+      "title": "Activity Feed",
+      "mode": "live",
+      "notes": ""
+    },
+    "reports": {
+      "title": "Reports Center",
+      "mode": "live",
+      "notes": ""
+    },
+    "portalpreview": {
+      "title": "Portal Preview",
+      "mode": "testing",
+      "notes": "Preview-only \u2014 full Trade/Rep portals are 6.5/6.6"
+    },
+    "health": {
+      "title": "Health Check",
+      "mode": "live",
+      "notes": ""
+    },
+    "roadmap": {
+      "title": "Build Roadmap",
+      "mode": "live",
+      "notes": ""
+    },
+    "mgmt": {
+      "title": "Management Dashboard",
+      "mode": "live",
+      "notes": ""
+    },
+    "repoutreach": {
+      "title": "Rep Outreach",
+      "mode": "live",
+      "notes": ""
+    },
+    "settings": {
+      "title": "Settings",
+      "mode": "live",
+      "notes": ""
+    },
+    "modulemodes": {
+      "title": "Module Modes",
+      "mode": "live",
+      "notes": "v1 shipped 2026-05-05 \u00b7 Mgmt \u2192 Modes sub-tab"
+    },
+    "ecommerce": {
+      "title": "E-Commerce Cmd Center",
+      "mode": "blocked",
+      "notes": "5.13 \u00b7 M04+M05"
+    },
+    "ga4": {
+      "title": "GA4 Integration",
+      "mode": "blocked",
+      "notes": "6.1 \u00b7 M06"
+    },
+    "gsc": {
+      "title": "Search Console",
+      "mode": "blocked",
+      "notes": "6.2 \u00b7 M06"
+    },
+    "bigcommerce": {
+      "title": "BigCommerce Sync",
+      "mode": "blocked",
+      "notes": "6.3 \u00b7 M04"
+    },
+    "klaviyo": {
+      "title": "Klaviyo",
+      "mode": "blocked",
+      "notes": "6.4 \u00b7 M09"
+    },
+    "portal_trade": {
+      "title": "Trade Portal",
+      "mode": "planning",
+      "notes": "6.5 \u00b7 external auth scoping"
+    },
+    "portal_rep": {
+      "title": "Vendor Rep Portal",
+      "mode": "planning",
+      "notes": "6.6 \u00b7 external auth scoping"
+    },
+    "ailighting": {
+      "title": "AI Lighting Phase 2",
+      "mode": "idea_only",
+      "notes": "6.7 phase 2 \u00b7 public iframe embed"
+    },
+    "windward": {
+      "title": "Windward Live Sync",
+      "mode": "blocked",
+      "notes": "6.11 \u00b7 M03+M10"
+    },
+    "ads": {
+      "title": "Google/Meta Ads",
+      "mode": "blocked",
+      "notes": "6.12 \u00b7 no API access"
+    },
+    "embed": {
+      "title": "AccentOS Embed",
+      "mode": "idea_only",
+      "notes": "6.10 \u00b7 employee tools on public site"
+    },
+    "saved_filters": {
+      "title": "Saved Filter Sets",
+      "mode": "idea_only",
+      "notes": "Cross-cutting \u00b7 per-user filter combos"
+    },
+    "module_registry_refactor": {
+      "title": "MODULE_REGISTRY refactor",
+      "mode": "idea_only",
+      "notes": "Internal \u00b7 collapse 4 shell touchpoints to 1"
+    },
+    "bulk_action_bars": {
+      "title": "Bulk Action Bars",
+      "mode": "idea_only",
+      "notes": "Multi-select + bulk update on list pages"
+    },
+    "compact_view": {
+      "title": "Compact-view Toggle",
+      "mode": "idea_only",
+      "notes": "Polish"
+    },
+    "column_visibility": {
+      "title": "Column Visibility",
+      "mode": "idea_only",
+      "notes": "Polish \u00b7 per-page column toggles"
+    },
+    "internalmeetings": {
+      "title": "Internal Meetings",
+      "mode": "live",
+      "notes": ""
+    }
   }
 }
