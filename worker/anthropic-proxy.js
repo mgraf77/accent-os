@@ -1,4 +1,32 @@
 // Cloudflare Worker — Anthropic API proxy for AccentOS
+//
+// ── DEPLOYMENT ─────────────────────────────────────────────────────────────
+// This file is NOT auto-deployed by the Cloudflare Pages webhook (Pages only
+// deploys the SPA). It must be deployed manually with wrangler:
+//
+//   cd worker
+//   wrangler deploy                          # push this file to Cloudflare
+//   wrangler secret put ANTHROPIC_API_KEY    # paste sk-ant-... key when prompted
+//
+// Verify live state:
+//   curl https://accentos-anthropic-proxy.mgraf77.workers.dev/
+//   Expected: {"version":"v3-env-fallback","env_key_set":true,...}
+//   If env_key_set=false → secret not bound. If version≠v3-env-fallback → stale code.
+//
+// ── AUTH FLOW ──────────────────────────────────────────────────────────────
+// POST /v1/messages resolves the API key in priority order:
+//   1. x-api-key header from client  (user-supplied key from Settings → API Keys)
+//   2. env.ANTHROPIC_API_KEY secret  (Cloudflare Workers secret binding)
+//   3. Neither present → 503 ai_unconfigured
+//
+// With the secret bound, end-users never need to configure auth (option 2 fires).
+// User-supplied keys override the env key — useful for power users / dev testing.
+//
+// ── VERSION HISTORY ────────────────────────────────────────────────────────
+// v1/v2 (stale): required x-api-key from client; no env fallback.
+//                GET returned "Method not allowed"; POST returned "Missing x-api-key header".
+// v3 (this):     env fallback added; GET probe returns JSON with env_key_set field.
+//
 // Version markers in responses make it trivial to verify which build is live:
 //   $ curl https://accentos-anthropic-proxy.mgraf77.workers.dev/
 //   {"version":"v3-env-fallback","env_key_set":true,"build":"2026-05-11"}

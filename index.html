@@ -811,17 +811,23 @@ const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
       if (r.ok && j && typeof j === 'object') {
         console.log('[aos-worker]', { path, ...j });
         window.__AOS_WORKER_VERSION__ = j.version || 'unknown';
+        // env_key_set is emitted by v3+. false=deployed but secret not bound.
+        // Absent field means old worker (v1/v2) that requires x-api-key from client.
+        window.__AOS_WORKER_ENV_KEY_READY__ = j.env_key_set === true;
+        if (!j.env_key_set) console.warn('[aos-worker] ANTHROPIC_API_KEY not bound — AI features require user-supplied key. Fix: cd worker && wrangler secret put ANTHROPIC_API_KEY');
         return;
       }
       console.warn('[aos-worker] non-json probe', { path, status: r.status, body: raw.slice(0,120) });
-      if (/missing x-api-key/i.test(raw)) {
-        console.warn('[aos-worker] stale worker detected: live worker still requires x-api-key. Redeploy latest worker/anthropic-proxy.js and confirm ANTHROPIC_API_KEY binding.');
-      }
     } catch (e) {
       console.warn('[aos-worker] probe failed', { path, err: e?.message || e });
     }
   }
-  window.__AOS_WORKER_VERSION__ = 'unverified';
+  // All probes returned non-JSON — stale worker (v1/v2) or unreachable.
+  // v1/v2 returns "Method not allowed" for GET; POST requires x-api-key from client.
+  // Fix: cd worker && wrangler deploy, then wrangler secret put ANTHROPIC_API_KEY.
+  window.__AOS_WORKER_VERSION__ = 'stale';
+  window.__AOS_WORKER_ENV_KEY_READY__ = null;
+  console.warn('[aos-worker] stale or unreachable — deploy worker/anthropic-proxy.js and bind ANTHROPIC_API_KEY. POST /v1/messages will require a user-supplied key until redeployed.');
 })();
 function v(id,prop='value'){return $(id)?.[prop]?.trim()??'';}
 // CSV utilities — RFC 4180 quoting (only quote when value contains comma, quote, or newline; double embedded quotes).
@@ -3873,36 +3879,44 @@ async function openVendorDetail(vendorId) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // AI overview via Anthropic API. Key is optional — worker has env fallback.
+  // AI overview via Anthropic API. Key is optional when worker env binding is live (v3+).
   const _vdKey = getS('aos-api') || '';
   const _vdHeaders = { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' };
   if (_vdKey) _vdHeaders['x-api-key'] = _vdKey;
-  try {
-    const resp = await fetch(AOS_WORKER_URL, {
-      method: 'POST',
-      headers: _vdHeaders,
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `Write a single concise paragraph (3–5 sentences) about the lighting vendor "${v.name}" for an internal sales team reference. Cover: what types of products they make, their market positioning (residential, commercial, luxury, value, etc.), and any notable brand characteristics. Be factual and professional. If you don't have reliable information about this specific vendor, say so briefly.`
-        }]
-      })
-    });
-    const data = await resp.json();
-    const overviewEl = document.getElementById('vd-overview');
-    if (overviewEl) {
-      const text = data?.content?.[0]?.text || (resp.status === 503 ? 'AI overview temporarily unavailable.' : 'No overview available.');
-      overviewEl.textContent = text;
+  if (_aiWorkerReady()) {
+    try {
+      const resp = await fetch(AOS_WORKER_URL, {
+        method: 'POST',
+        headers: _vdHeaders,
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Write a single concise paragraph (3–5 sentences) about the lighting vendor "${v.name}" for an internal sales team reference. Cover: what types of products they make, their market positioning (residential, commercial, luxury, value, etc.), and any notable brand characteristics. Be factual and professional. If you don't have reliable information about this specific vendor, say so briefly.`
+          }]
+        })
+      });
+      const data = await resp.json();
+      const overviewEl = document.getElementById('vd-overview');
+      if (overviewEl) {
+        let text;
+        if (resp.ok && data?.content?.[0]?.text) { text = data.content[0].text; }
+        else if (/missing x-api-key/i.test(data?.error || '')) { window.__AOS_WORKER_ENV_KEY_READY__ = null; text = _aiNotReadyHint(); }
+        else { text = resp.status === 503 ? 'AI overview temporarily unavailable.' : 'No overview available.'; }
+        overviewEl.textContent = text;
+      }
+    } catch(e) {
+      const overviewEl = document.getElementById('vd-overview');
+      if (overviewEl) overviewEl.textContent = 'Overview unavailable.';
     }
-  } catch(e) {
+  } else {
     const overviewEl = document.getElementById('vd-overview');
-    if (overviewEl) overviewEl.textContent = 'Overview unavailable.';
+    if (overviewEl) overviewEl.textContent = _aiNotReadyHint();
   }
 
   // Website link lookup via AI
-  if (!websiteGuess) {
+  if (!websiteGuess && _aiWorkerReady()) {
     try {
       const resp2 = await fetch(AOS_WORKER_URL, {
         method: 'POST',
@@ -5957,12 +5971,15 @@ function updatePreview() {
 
 // ── AI PARSE NOTES → LINE ITEMS ──
 async function aiParseNotes() {
-  // Key is optional — worker has a bound ANTHROPIC_API_KEY fallback. Sales reps
-  // never need to configure anything. Per-user key (sessionStorage) wins if set.
+  // Key is optional when worker env binding is live (v3+). Per-user key wins if set.
   const key = getS('aos-api') || '';
   const notes = $('q-no')?.value?.trim();
   if (!notes) { toast('Paste fixture schedule in the Notes field first', 'err'); return; }
   const statusEl = $('ai-parse-status');
+  if (!_aiWorkerReady()) {
+    if (statusEl) statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">${_aiNotReadyHint()} Add line items manually below.</div>`;
+    return;
+  }
   if (statusEl) statusEl.innerHTML = `<div style="display:flex;gap:8px;align-items:center;"><div class="dots"><div class="dot-b"></div><div class="dot-b"></div><div class="dot-b"></div></div>Parsing fixture schedule…</div>`;
 
   const systemPrompt = `You are a commercial lighting quote builder for Accent Lighting Inc., a lighting distributor in Wichita, KS. You process raw field notes from restaurant and hospitality lighting projects and return structured line items.
@@ -6032,6 +6049,9 @@ OUTPUT FORMAT:
       // Graceful degrade: never hard-stop. Quote workflow stays usable manually.
       if (r.status === 503 || code === 'ai_unconfigured') {
         if (statusEl) statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">AI parsing is temporarily unavailable. Add line items manually below — the rest of the quote workflow works.</div>`;
+      } else if (/missing x-api-key/i.test(String(msg))) {
+        window.__AOS_WORKER_ENV_KEY_READY__ = null;
+        if (statusEl) statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">${_aiNotReadyHint()} Add line items manually below.</div>`;
       } else if (statusEl) {
         statusEl.innerHTML = `<div style="color:var(--text-2);font-size:13px;padding:8px;background:var(--surface2);border-radius:6px;">⚠ AI parse failed (${r.status}). Add line items manually below. <span class="muted sm">${esc(String(msg).slice(0,200))}</span></div>`;
       }
@@ -6404,6 +6424,9 @@ async function sendChat(pre){
   const inp=$('ci');const msg=pre||inp?.value?.trim();if(!msg)return;
   if(inp)inp.value='';const key=getS('aos-api')||'';
   CHAT.push({r:'u',c:msg});renderChat();$('ti').style.display='';scrollChat();
+  if(!_aiWorkerReady()){
+    $('ti').style.display='none';CHAT.push({r:'a',c:_aiNotReadyHint()});renderChat();scrollChat();return;
+  }
   try{
     const msgs=CHAT.slice(0,-1).map(m=>({role:m.r==='a'?'assistant':'user',content:m.c}));msgs.push({role:'user',content:msg});
     const sysInternal = 'You are the Accent Lighting Intelligence Engine — expert AI for Accent Lighting Inc., a commercial lighting distributor in Wichita, KS. Answer questions about commercial lighting: fixtures, lumens, color temp, controls, dimming, emergency lighting, energy codes, specs, quoting, and vendor comparisons. Be concise, practical, specific.';
@@ -6413,8 +6436,10 @@ async function sendChat(pre){
     if(key) headers['x-api-key']=key;
     const r=await fetch(AOS_WORKER_URL,{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:600,system:sys,messages:msgs})});
     const data=await r.json();
-    const text = data.content?.[0]?.text
-      || (r.status===503 ? 'AI is temporarily unavailable. Try again in a moment.' : 'Unable to respond.');
+    let text;
+    if(data.content?.[0]?.text){ text=data.content[0].text; }
+    else if(/missing x-api-key/i.test(data?.error||'')){ window.__AOS_WORKER_ENV_KEY_READY__=null; text=_aiNotReadyHint(); }
+    else{ text=r.status===503?'AI is temporarily unavailable. Try again in a moment.':'Unable to respond.'; }
     $('ti').style.display='none';CHAT.push({r:'a',c:text});renderChat();scrollChat();
   }catch{$('ti').style.display='none';CHAT.push({r:'a',c:'Connection error.'});renderChat();scrollChat();}
 }
@@ -7657,6 +7682,19 @@ async function changeMyPassword(){
 
 // ── HELPERS ───────────────────────────────────────────────
 function getS(k){return sessionStorage.getItem(k)||'';}
+// Returns true when an AI POST call is expected to succeed without a user-supplied key.
+// false only when the probe has confirmed stale worker (null) or missing env binding (false).
+// undefined (probe still in flight) is treated optimistically — the response handler catches
+// any resulting stale-worker error and updates the flag at that point.
+function _aiWorkerReady(){
+  if(getS('aos-api')) return true;
+  const e=window.__AOS_WORKER_ENV_KEY_READY__;
+  return e===true||e===undefined;
+}
+// Human-readable hint to show when _aiWorkerReady() returns false.
+function _aiNotReadyHint(){
+  return 'AI requires your Anthropic API key — add it in Settings → API Keys.';
+}
 
 // ── BOOT (v6.9.6) ──
 // 1. Try to restore an authenticated session from the stored JWT.
