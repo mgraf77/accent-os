@@ -5498,13 +5498,46 @@ function dealHTML(d,k){
   </div>`;
 }
 
+// Derive probable lead source + segment from an existing CUSTOMERS record.
+// Source inference: VIP/Active/repeat-buyer → 'repeat'; designer type → 'designer';
+// contractor/trade → 'referral'; lapsed/lost → 'repeat'; else blank.
+// Segment: direct 1-to-1 from customer.type where enum values align.
+function deriveDealSource(c){
+  if(!c) return {source:'', segment:''};
+  const seg  = (c.segment||'').toLowerCase();
+  const type = (c.type||'').toLowerCase();
+  const freq = c.rfm_frequency || 0;
+  let source = '';
+  if(seg==='vip'||seg==='active'||freq>0)       source='repeat';
+  else if(type==='designer')                     source='designer';
+  else if(type==='contractor'||type==='trade')   source='referral';
+  else if(seg==='lapsed'||seg==='lost')          source='repeat';
+  const segMap={residential:'residential',trade:'trade',designer:'designer',contractor:'contractor',commercial:'commercial',hospitality:'hospitality'};
+  return {source, segment: segMap[type]||''};
+}
+
+// When company field matches a known CRM customer, auto-fill Source + Segment
+// only if those fields are still at default empty — never overrides user input.
+function autoFillDealFromCustomer(name){
+  if(!name||!Array.isArray(CUSTOMERS)) return;
+  const c = CUSTOMERS.find(x=>(x.name||'').toLowerCase().trim()===name.trim().toLowerCase());
+  if(!c) return;
+  const {source, segment} = deriveDealSource(c);
+  const srcEl=$('nd-src'), segEl=$('nd-seg'), hint=$('nd-autofill-hint');
+  let filled=false;
+  if(srcEl&&!srcEl.value&&source){srcEl.value=source;filled=true;}
+  if(segEl&&!segEl.value&&segment){segEl.value=segment;filled=true;}
+  if(hint) hint.style.display=filled?'':'none';
+}
+
 function openAddDeal(def='lead', preset){
   if(!ALL_STAGES.includes(def)) def = 'lead';
   const p = preset || {};
   openModal('New Deal',`
-  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n" value="${esc(p.name||'')}"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c" list="nd-c-options" autocomplete="off" value="${esc(p.company||'')}"><datalist id="nd-c-options">${(Array.isArray(CUSTOMERS)?CUSTOMERS:[]).map(c=>`<option value="${esc(c.name||'')}">`).join('')}</datalist></div></div>
+  <div class="frow"><div class="fcol field"><label>Project Name *</label><input id="nd-n" value="${esc(p.name||'')}"></div><div class="fcol field"><label>Company / Customer</label><input id="nd-c" list="nd-c-options" autocomplete="off" oninput="autoFillDealFromCustomer(this.value)" value="${esc(p.company||'')}"><datalist id="nd-c-options">${(Array.isArray(CUSTOMERS)?CUSTOMERS:[]).map(c=>`<option value="${esc(c.name||'')}">`).join('')}</datalist></div></div>
   <div class="frow"><div class="fcol field"><label>Value ($)</label><input id="nd-v" type="number" value="${esc(String(p.value||''))}"></div><div class="fcol field"><label>Expected Close</label><input id="nd-cl" type="date" value="${esc(p.close||'')}"></div></div>
   <div class="frow"><div class="fcol field"><label>Lead Source</label><select id="nd-src">${['','referral','repeat','designer','web','walk-in','cold','other'].map(s=>`<option value="${s}" ${p.source===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Segment</label><select id="nd-seg">${['','residential','trade','designer','contractor','commercial','hospitality','other'].map(s=>`<option value="${s}" ${p.segment===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div></div>
+  <div id="nd-autofill-hint" style="font-size:11px;color:var(--green);margin:-4px 0 8px;display:none;">✓ Source &amp; segment auto-filled from CRM history</div>
   <div class="frow"><div class="fcol field"><label>Project Type</label><select id="nd-pt">${['','new build','remodel','replacement','repair','unknown'].map(s=>`<option value="${s}" ${p.project_type===s?'selected':''}>${s||'—'}</option>`).join('')}</select></div><div class="fcol field"><label>Stage</label><select id="nd-s">${STAGES.map(s=>`<option value="${s.key}" ${s.key===def?'selected':''}>${s.label}</option>`).join('')}</select></div></div>
   ${p.related_customer_id?`<input type="hidden" id="nd-cust" value="${esc(p.related_customer_id)}">`:''}
   ${p.quote_id?`<input type="hidden" id="nd-qid" value="${esc(p.quote_id)}">`:''}`,
