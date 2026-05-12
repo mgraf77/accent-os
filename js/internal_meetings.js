@@ -1187,6 +1187,15 @@ function imRtSubscribeList(){
   }catch(e){ console.warn('[meetings] realtime list subscribe failed:', e.message); IM_RT_LIST = null; imRtSetLive('list', false); }
 }
 
+function imRtUnsubscribeList(){
+  if(!IM_RT_LIST){ imRtSetLive('list', false); return; }
+  try{
+    const rt = (typeof sbRealtime === 'function') ? sbRealtime() : null;
+    if(rt && rt.removeChannel) rt.removeChannel(IM_RT_LIST);
+  }catch(e){}
+  IM_RT_LIST = null;
+  imRtSetLive('list', false);
+}
 
 function imRtApplyList(payload){
   const evt = payload.eventType;
