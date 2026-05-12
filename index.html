@@ -693,6 +693,8 @@ function activateApp(){
 }
 
 async function hydrateFromSupabase(){
+  console.log('[boot] hydration started');
+  const start = Date.now();
   let sbCatRows = 0;
   if(typeof sbConfigured==='function' && sbConfigured()){
     try { sbCatRows = await sbLoadCategories(); } catch(e){ console.warn(e); }
@@ -724,6 +726,8 @@ async function hydrateFromSupabase(){
     try { await sbLoadGoals(); } catch(e){ console.warn(e); }
     // Run alert generator AFTER all data loaded — heuristics read from every module's state.
     try { if(typeof generateAlertsFromData==='function') await generateAlertsFromData(); } catch(e){ console.warn(e); }
+    console.log(`[boot] hydration complete in ${Date.now() - start}ms`);
+    window.__AOS_HYDRATED__ = true;
   }
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
