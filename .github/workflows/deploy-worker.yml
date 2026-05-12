@@ -1,0 +1,70 @@
+name: Deploy Cloudflare Worker
+
+# Triggers:
+#   1. Push to main when worker files change (auto-deploy on merge)
+#   2. workflow_dispatch (manual deploy from GitHub Actions tab)
+#
+# Does NOT trigger on SPA changes (index.html, js/, css/, etc.)
+# Cloudflare Pages handles SPA auto-deploy separately via its own webhook.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/anthropic-proxy.js'
+      - 'wrangler.toml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deploy (optional)'
+        required: false
+        default: 'Manual deploy via GitHub Actions'
+
+# Never cancel a running deploy mid-flight — a partial deploy is worse than a queue.
+concurrency:
+  group: deploy-cloudflare-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Worker to Cloudflare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Fast syntax check before any Cloudflare API calls.
+      # Catches broken JS before it can reach production.
+      - name: Syntax check worker script
+        run: node --check worker/anthropic-proxy.js
+
+      # cloudflare/wrangler-action reads wrangler.toml from repo root automatically.
+      # It installs wrangler, runs `wrangler deploy`, and exits.
+      # Required secrets: CF_API_TOKEN, CF_ACCOUNT_ID (set in repo Settings → Secrets)
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+
+      # Probe the live worker to confirm the new code is serving.
+      # A 5s delay gives Cloudflare time to propagate the deploy globally.
+      # This step is informational — a probe warning does NOT fail the workflow.
+      - name: Verify live deployment
+        run: |
+          sleep 5
+          RESPONSE=$(curl -sf --max-time 10 \
+            https://accentos-anthropic-proxy.mgraf77.workers.dev/ \
+            || echo '{"error":"probe_failed"}')
+          echo "Worker probe response: $RESPONSE"
+          if echo "$RESPONSE" | grep -q '"version"'; then
+            echo "✓ Worker probe returned valid JSON"
+            echo "$RESPONSE" | grep -o '"version":"[^"]*"' || true
+            echo "$RESPONSE" | grep -o '"env_key_set":[^,}]*' || true
+          else
+            echo "⚠ Probe did not return expected JSON."
+            echo "  The deploy likely succeeded but propagation may be delayed."
+            echo "  Manual verify: curl https://accentos-anthropic-proxy.mgraf77.workers.dev/"
+          fi
