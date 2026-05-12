@@ -33,7 +33,7 @@ Remaining unblocked items (no M-task dependency):
 - OKR progress auto-compute — derive OKR % from live data globals instead of manual entry.
 
 Blocked until Michael acts: M03/M04/M05/M06/M09/M10/M18.
-Stale Cloudflare Worker: needs `wrangler deploy` + secret binding — not fixable from repo.
+Stale Cloudflare Worker: GitHub Actions workflow created (.github/workflows/deploy-worker.yml). Needs CF_API_TOKEN + CF_ACCOUNT_ID secrets added to GitHub repo before first auto-deploy can fire. Michael to add secrets — see docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md.
 
 ## MERGE READINESS
 
