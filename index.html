@@ -389,39 +389,7 @@ tbody tr:hover td{background:var(--bg);}
       <button class="sb-toggle" onclick="toggleSB()">☰</button>
     </div>
     <div class="sb-nav">
-      <div class="sb-sect">CORE</div>
-      <div class="ni active" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('dashboard')"><span class="ni-icon">⊞</span><span class="ni-label">Dashboard</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('pipeline')"><span class="ni-icon">◈</span><span class="ni-label">Sales Pipeline</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('customers')"><span class="ni-icon">☻</span><span class="ni-label">Customers</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('quotes')"><span class="ni-icon">◻</span><span class="ni-label">Quote Generator</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('jobs')"><span class="ni-icon">▤</span><span class="ni-label">Job Tracker</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('purchaseorders')"><span class="ni-icon">⌧</span><span class="ni-label">Purchase Orders</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('tradepartners')"><span class="ni-icon">◆</span><span class="ni-label">Trade Partners</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('warranty')"><span class="ni-icon">⚠</span><span class="ni-label">Warranty</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('showrooms')"><span class="ni-icon">▣</span><span class="ni-label">Showroom Displays</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('labels')"><span class="ni-icon">▥</span><span class="ni-label">Labels</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('deliveries')"><span class="ni-icon">▶</span><span class="ni-label">Deliveries</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('decisionengine')"><span class="ni-icon">★</span><span class="ni-label">Decision Engine</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('competitive')"><span class="ni-icon">⚖</span><span class="ni-label">Competitive Pricing</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('demandforecast')"><span class="ni-icon">∿</span><span class="ni-label">Demand Forecast</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('alerts')"><span class="ni-icon">!</span><span class="ni-label">Alerts</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('mytasks')"><span class="ni-icon">✓</span><span class="ni-label">My Tasks</span></div>
-      <div class="sb-sect">INTELLIGENCE</div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('knowledge')"><span class="ni-icon">⚡</span><span class="ni-label">Knowledge Engine</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('vendors')"><span class="ni-icon">◇</span><span class="ni-label">Vendor Ranking</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('changelog')"><span class="ni-icon">◑</span><span class="ni-label">Change Log</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('calendar')"><span class="ni-icon">▦</span><span class="ni-label">Calendar</span></div>
-      <div class="sb-sect" data-roles="Owner,Admin,Manager">ADMIN</div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('marketing')"><span class="ni-icon">◉</span><span class="ni-label">Marketing Hub</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('activity')"><span class="ni-icon">◷</span><span class="ni-label">Activity Feed</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('reports')"><span class="ni-icon">⤓</span><span class="ni-label">Reports</span></div>
-      <div class="ni" data-roles="Owner,Admin" onclick="goTo('portalpreview')"><span class="ni-icon">⊡</span><span class="ni-label">Portal Preview</span></div>
-      <div class="ni" data-roles="Owner,Admin" onclick="goTo('health')"><span class="ni-icon">⚙</span><span class="ni-label">Health Check</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('roadmap')"><span class="ni-icon">◐</span><span class="ni-label">Build Roadmap</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('mgmt')"><span class="ni-icon">◎</span><span class="ni-label">Mgmt Dashboard</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales" onclick="goTo('repoutreach')"><span class="ni-icon">✉</span><span class="ni-label">Rep Outreach</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager" onclick="goTo('internalmeetings')"><span class="ni-icon">⚎</span><span class="ni-label">Internal Meetings</span></div>
-      <div class="ni" data-roles="Owner,Admin,Manager,Sales,Warehouse" onclick="goTo('settings')"><span class="ni-icon">◫</span><span class="ni-label">Settings</span></div>
+      <div id="sb-nav"></div>
     </div>
     <div class="sb-foot">
       <div class="user-chip" onclick="doLogout()">
@@ -688,6 +656,7 @@ function activateApp(){
   $('u-av').textContent = CU.initials;
   $('u-name').textContent = CU.name;
   $('u-role').textContent = CU.role;
+  buildSidebar();
   applyRoleVisibility(CU.role);
   // Feedback button removed; entry now lives in the QA FAB menu.
 }
@@ -911,38 +880,66 @@ function switchTab(btn,id){
 }
 
 // ── NAVIGATION ────────────────────────────────────────────
-const PAGE_META={
-  dashboard: {t:'Dashboard',s:''},
-  pipeline:  {t:'Sales Pipeline',s:''},
-  customers: {t:'Customers',s:'CRM · RFM · Lifecycle'},
-  quotes:    {t:'Quote Generator',s:''},
-  jobs:      {t:'Job Tracker',s:'Project work tracking'},
-  purchaseorders: {t:'Purchase Orders',s:'Vendor POs · Receipt tracking'},
-  tradepartners: {t:'Trade Partners',s:'Designers · Contractors · Architects'},
-  warranty:  {t:'Warranty Tracker',s:'Defective product claims · Vendor RMAs'},
-  showrooms: {t:'Showroom Displays',s:'Display program tracking'},
-  labels:    {t:'Labels',s:'QR + Barcode label printing'},
-  deliveries: {t:'Deliveries',s:'Schedule + driver routing'},
-  decisionengine: {t:'Decision Engine',s:'Sales · Pure-compute recommendations'},
-  competitive: {t:'Competitive Pricing',s:'Track competitor prices vs ours'},
-  demandforecast: {t:'Demand Forecast',s:'Velocity · Stockouts · Reorder suggestions'},
-  alerts:    {t:'Alerts',s:'Auto-generated from your data'},
-  mytasks:   {t:'My Tasks',s:'Personal to-do list · stays in your browser'},
-  knowledge: {t:'Knowledge Engine',s:'AI-Powered Lighting Intelligence'},
-  vendors:   {t:'Vendor Ranking',s:'Vendor Ranking 2026'},
-  changelog: {t:'Change Log',s:'Vendor Ranking 2026'},
-  calendar:  {t:'Company Calendar',s:'Trade shows · Training · Deadlines'},
-  marketing: {t:'Marketing Hub',s:''},
-  activity:  {t:'Activity Feed',s:'Vendor changes · audit log · pipeline events'},
-  reports:   {t:'Reports',s:'CSV exports for every dataset'},
-  portalpreview: {t:'Portal Preview',s:'Preview the future Trade + Rep portals'},
-  health:    {t:'Health Check',s:'Schema · hydration · diagnostics'},
-  roadmap:   {t:'Build Roadmap',s:'AccentOS v6.9'},
-  mgmt:      {t:'Management Dashboard',s:'Owner View'},
-  settings:  {t:'Settings',s:''},
-  modulemodes: {t:'Module Modes',s:'Rollout state · per-user overrides'},
-  internalmeetings: {t:'Internal Meetings',s:'Briefings · Agenda · Platform Review'},
-};
+// ── MODULE REGISTRY ──────────────────────────────────────────────────────────
+// Single source of truth for all navigable pages.
+// Drives: sidebar HTML (buildSidebar), PAGE_META, goTo dispatcher.
+// To add a module: one entry here — no other shell edits needed.
+// Fields: key, icon, label, roles, t (title), s (subtitle)
+// Special: section (emits a section header row), noNav (PAGE_META only, no sidebar entry)
+const MODULE_REGISTRY = [
+  {section:'CORE'},
+  {key:'dashboard',      icon:'⊞', label:'Dashboard',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Dashboard',            s:''},
+  {key:'pipeline',       icon:'◈', label:'Sales Pipeline',      roles:'Owner,Admin,Manager,Sales',           t:'Sales Pipeline',        s:''},
+  {key:'customers',      icon:'☻', label:'Customers',           roles:'Owner,Admin,Manager,Sales',           t:'Customers',             s:'CRM · RFM · Lifecycle'},
+  {key:'quotes',         icon:'◻', label:'Quote Generator',     roles:'Owner,Admin,Manager,Sales',           t:'Quote Generator',       s:''},
+  {key:'jobs',           icon:'▤', label:'Job Tracker',         roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Job Tracker',           s:'Project work tracking'},
+  {key:'purchaseorders', icon:'⌧', label:'Purchase Orders',     roles:'Owner,Admin,Manager',                 t:'Purchase Orders',       s:'Vendor POs · Receipt tracking'},
+  {key:'tradepartners',  icon:'◆', label:'Trade Partners',      roles:'Owner,Admin,Manager,Sales',           t:'Trade Partners',        s:'Designers · Contractors · Architects'},
+  {key:'warranty',       icon:'⚠', label:'Warranty Tracker',   roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Warranty Tracker',      s:'Defective product claims · Vendor RMAs'},
+  {key:'showrooms',      icon:'▣', label:'Showroom Displays',   roles:'Owner,Admin,Manager,Sales',           t:'Showroom Displays',     s:'Display program tracking'},
+  {key:'labels',         icon:'▥', label:'Labels',              roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Labels',                s:'QR + Barcode label printing'},
+  {key:'deliveries',     icon:'▶', label:'Deliveries',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Deliveries',            s:'Schedule + driver routing'},
+  {key:'decisionengine', icon:'★', label:'Decision Engine',     roles:'Owner,Admin,Manager,Sales',           t:'Decision Engine',       s:'Sales · Pure-compute recommendations'},
+  {key:'competitive',    icon:'⚖', label:'Competitive Pricing', roles:'Owner,Admin,Manager,Sales',           t:'Competitive Pricing',   s:'Track competitor prices vs ours'},
+  {key:'demandforecast', icon:'∿', label:'Demand Forecast',     roles:'Owner,Admin,Manager',                 t:'Demand Forecast',       s:'Velocity · Stockouts · Reorder suggestions'},
+  {key:'alerts',         icon:'!', label:'Alerts',              roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Alerts',                s:'Auto-generated from your data'},
+  {key:'mytasks',        icon:'✓', label:'My Tasks',            roles:'Owner,Admin,Manager,Sales,Warehouse', t:'My Tasks',              s:'Personal to-do list · stays in your browser'},
+  {section:'INTELLIGENCE'},
+  {key:'knowledge',      icon:'⚡', label:'Knowledge Engine',   roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Knowledge Engine',      s:'AI-Powered Lighting Intelligence'},
+  {key:'vendors',        icon:'◇', label:'Vendor Ranking',      roles:'Owner,Admin,Manager,Sales',           t:'Vendor Ranking',        s:'Vendor Ranking 2026'},
+  {key:'changelog',      icon:'◑', label:'Change Log',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Change Log',            s:'Vendor Ranking 2026'},
+  {key:'calendar',       icon:'▦', label:'Company Calendar',    roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Company Calendar',      s:'Trade shows · Training · Deadlines'},
+  {section:'ADMIN', roles:'Owner,Admin,Manager'},
+  {key:'marketing',      icon:'◉', label:'Marketing Hub',       roles:'Owner,Admin,Manager',                 t:'Marketing Hub',         s:''},
+  {key:'activity',       icon:'◷', label:'Activity Feed',       roles:'Owner,Admin,Manager',                 t:'Activity Feed',         s:'Vendor changes · audit log · pipeline events'},
+  {key:'reports',        icon:'⤓', label:'Reports',             roles:'Owner,Admin,Manager',                 t:'Reports',               s:'CSV exports for every dataset'},
+  {key:'portalpreview',  icon:'⊡', label:'Portal Preview',      roles:'Owner,Admin',                         t:'Portal Preview',        s:'Preview the future Trade + Rep portals'},
+  {key:'health',         icon:'⚙', label:'Health Check',        roles:'Owner,Admin',                         t:'Health Check',          s:'Schema · hydration · diagnostics'},
+  {key:'roadmap',        icon:'◐', label:'Build Roadmap',        roles:'Owner,Admin,Manager',                 t:'Build Roadmap',         s:'AccentOS v6.9'},
+  {key:'mgmt',           icon:'◎', label:'Mgmt Dashboard',       roles:'Owner,Admin,Manager',                 t:'Management Dashboard',  s:'Owner View'},
+  {key:'repoutreach',    icon:'✉', label:'Rep Outreach',         roles:'Owner,Admin,Manager,Sales',           t:'Rep Outreach',          s:''},
+  {key:'internalmeetings',icon:'⚎',label:'Internal Meetings',   roles:'Owner,Admin,Manager',                 t:'Internal Meetings',     s:'Briefings · Agenda · Platform Review'},
+  {key:'settings',       icon:'◫', label:'Settings',            roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Settings',              s:''},
+  // nav-hidden pages: in PAGE_META + goTo but not in sidebar
+  {key:'modulemodes', noNav:true, t:'Module Modes', s:'Rollout state · per-user overrides'},
+];
+
+// Derive PAGE_META from registry — no manual sync needed.
+const PAGE_META = Object.fromEntries(
+  MODULE_REGISTRY.filter(m => m.key).map(m => [m.key, {t:m.t, s:m.s}])
+);
+
+// Build sidebar HTML from registry and inject into #sb-nav.
+// Called once at login (activateApp) before applyRoleVisibility so data-roles are present.
+function buildSidebar(){
+  const nav = $('sb-nav');
+  if(!nav) return;
+  nav.innerHTML = MODULE_REGISTRY.map(m => {
+    if(m.section) return `<div class="sb-sect"${m.roles?` data-roles="${m.roles}"`:''}>${m.section}</div>`;
+    if(m.noNav)   return '';
+    return `<div class="ni" data-roles="${m.roles}" onclick="goTo('${m.key}')"><span class="ni-icon">${m.icon}</span><span class="ni-label">${m.label}</span></div>`;
+  }).join('');
+}
 let curPage='';
 function goTo(page){
   curPage=page;
@@ -954,8 +951,7 @@ function goTo(page){
   $('fb-page').textContent=page;
   $('pg-actions').innerHTML='';
   $('pg-content').innerHTML='';
-  const pages={dashboard,pipeline,customers,quotes,jobs,purchaseorders,tradepartners,warranty,showrooms,labels,deliveries,decisionengine,competitive,demandforecast,alerts,mytasks,knowledge,vendors,changelog,calendar,marketing,activity,reports,portalpreview,health,roadmap,mgmt,settings,repoutreach,internalmeetings};
-  pages[page]?.($('pg-content'),$('pg-actions'));
+  window[page]?.($('pg-content'),$('pg-actions'));
 }
 
 // ── FEEDBACK ──────────────────────────────────────────────
