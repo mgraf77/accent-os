@@ -348,17 +348,7 @@ function downloadJobCsvTemplate(){
     ['Smith Residence — Master Bedroom Reno','John Smith','in_progress','high','Alice','2026-06-15','24','Lighting + ceiling fan install'],
     ['Acme Lobby Refresh','Acme Lighting Co.','open','normal','','2026-07-01','40','Pendant + recessed downlight package']
   ];
-  if(typeof csvDownload === 'function'){
-    csvDownload(rows, `jobs_template_${new Date().toISOString().slice(0,10)}.csv`);
-  } else {
-    const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `jobs_template_${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
-  }
+  csvDownload(rows, `jobs_template_${new Date().toISOString().slice(0,10)}.csv`);
 }
 
 function openJobCsvPaste(){

@@ -49,17 +49,7 @@ function csvImportFlow(config){
     const rows = config.templateRows || [[]];
     const stamp = new Date().toISOString().slice(0,10);
     const filename = `${config.templateName || k}_${stamp}.csv`;
-    if(typeof csvDownload === 'function'){
-      csvDownload(rows, filename);
-    } else {
-      const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(',')).join('\n');
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click();
-      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
-    }
+    csvDownload(rows, filename);
   }
 
   function openPaste(){

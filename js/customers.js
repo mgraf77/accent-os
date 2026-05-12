@@ -748,18 +748,7 @@ function downloadCustCsvTemplate(){
     ['Acme Lighting Co.','procurement@acme.com','512-555-0100','commercial','123 Main St, Austin TX','Net-30 terms, prefers AM delivery','ACME-001'],
     ['Jane Designer','jane@example.com','512-555-0142','designer','','Trade discount 15%','']
   ];
-  if(typeof csvDownload === 'function'){
-    csvDownload(rows, `customers_template_${new Date().toISOString().slice(0,10)}.csv`);
-  } else {
-    // Fallback if shared util not loaded
-    const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `customers_template_${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
-  }
+  csvDownload(rows, `customers_template_${new Date().toISOString().slice(0,10)}.csv`);
 }
 
 function openCustCsvPaste(){
