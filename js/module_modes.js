@@ -123,12 +123,6 @@ function canSeeModule(key, role, userId){
   return role === 'Owner';
 }
 
-function moduleModeBadge(key){
-  const meta = MODULE_MODES.modules[key];
-  if(!meta) return '';
-  const b = _MODE_BADGES[meta.mode];
-  return b ? `<span title="${esc(meta.mode)}" style="margin-left:6px;font-size:11px;">${b}</span>` : '';
-}
 
 // ── Sidebar gating ───────────────────────────────────────
 // Walks every .ni element in the sidebar, extracts the module key from
