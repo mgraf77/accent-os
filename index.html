@@ -6639,7 +6639,7 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
         </div></div>
       </div>
       <div class="card mb16"><div class="card-hd"><span class="card-title">Recent Quotes</span><button class="btn btn-outline btn-sm" style="font-size:11px;" onclick="showSaved()">View all</button></div><div class="card-body">
-        ${(QUOTES||[]).slice(0,6).map(q => `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:12.5px;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];goTo('quotes')">
+        ${(QUOTES||[]).slice(0,6).map(q => `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:12.5px;cursor:pointer;" onclick="loadSavedQ('${q.id}')">
           <span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(q.project||q.customer||'Untitled')}</span>
           <span class="muted sm" style="white-space:nowrap;">${esc(q.customer||'')}</span>
           <span class="mono sm" style="color:var(--text-3);">${esc(q.id)}</span>
@@ -6694,7 +6694,7 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
     <div class="card"><div class="card-hd"><span class="card-title">System Status</span><button class="btn btn-sm btn-outline" style="margin-left:auto;font-size:11px;" onclick="goTo('health')">Details</button></div><div class="card-body">
       ${sRow('AccentOS','live','v6.10.75 · Cloudflare Pages')}
       ${sRow('Auth','live','Supabase Auth · 5 roles · audit_log')}
-      ${sRow('Data','live',`${VD.length} vendors · ${CUSTOMERS.length||0} customers · ${QUOTES.length||0} quotes`)}
+      ${sRow('Data','live',`${VD.length} vendors · ${(CUSTOMERS||[]).length} customers · ${(QUOTES||[]).length} quotes`)}
       ${(()=>{
         const ver=window.__AOS_WORKER_VERSION__,env=window.__AOS_WORKER_ENV_KEY_READY__,ms=window.__AOS_WORKER_PROBE_MS__;
         const msNote=ms?` · ${ms}ms`:'';
@@ -6717,7 +6717,7 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
     <div class="card"><div class="card-hd"><span class="card-title">Score Coverage by Category</span></div><div class="card-body">
       ${CAT_DEFS.map(c=>{
         const scored=VD.filter(v=>typeof v.scores[c.key]==='number').length;
-        const pct=Math.round((scored/VD.length)*100);
+        const pct=VD.length?Math.round((scored/VD.length)*100):0;
         const w=c.weight;
         return`<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12.5px;font-weight:600;">${c.label} <span class="muted" style="font-weight:400;">(wt:${w})</span></span><span class="mono sm muted">${scored}/${VD.length}</span></div><div class="pbar"><div class="pfill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--blue)'}"></div></div></div>`;
       }).join('')}
