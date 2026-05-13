@@ -5775,6 +5775,17 @@ function calcTrackHardware(runs, color) {
 function nLI(){ return { id: Date.now()+Math.random(), part:'', desc:'', qty:1, price:0, cat:'LED Fixtures', status:'pending', flag:'', reasoning:'' }; }
 function addLI(){ LI.push(nLI()); renderLI(); updatePreview(); }
 
+let _LI_UNDO = null; // stash for undo-last-parse
+function undoAIParse(){
+  if(!_LI_UNDO) return;
+  LI = _LI_UNDO;
+  _LI_UNDO = null;
+  renderLI(); updatePreview();
+  const statusEl = $('ai-parse-status');
+  if(statusEl) statusEl.innerHTML = '';
+  toast('Parse undone — previous line items restored', 'ok');
+}
+
 // ── MAIN QUOTE RENDERER ──
 function quotes(el, act) {
   act.innerHTML = `<button class="btn btn-outline btn-sm" onclick="goTo('quotes')">+ New</button>${QUOTES.length?`<button class="btn btn-outline btn-sm" onclick="showSaved()">Saved (${QUOTES.length})</button>`:''}<button class="btn btn-outline btn-sm" onclick="exportQuoteCSV()">⬇ CSV</button>`;
@@ -6085,7 +6096,8 @@ OUTPUT FORMAT:
       if (statusEl) statusEl.innerHTML = `<div style="color:#f59e0b;font-size:13px;">⚠ No lines returned. Check notes format.</div>`;
       return;
     }
-    // Inject parsed lines
+    // Stash current LI for undo, then inject parsed lines
+    _LI_UNDO = LI.length ? [...LI] : null;
     const newLines = parsed.lines.map(l => ({
       id: Date.now()+Math.random(),
       part: l.part || '',
@@ -6103,7 +6115,10 @@ OUTPUT FORMAT:
     const flagCount = newLines.filter(l=>l.status==='flagged').length;
     if (statusEl) statusEl.innerHTML = `
       <div style="margin-top:4px;">
-        <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:var(--green);">✓ ${newLines.length} lines generated · ${flagCount} flagged for review</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span style="font-weight:600;font-size:13px;color:var(--green);">✓ ${newLines.length} lines generated · ${flagCount} flagged for review</span>
+          ${_LI_UNDO ? `<button onclick="undoAIParse()" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);background:var(--bg-2);border-radius:4px;cursor:pointer;color:var(--text-2);">↩ Undo parse</button>` : ''}
+        </div>
         <details style="font-size:12px;cursor:pointer;">
           <summary style="color:var(--text-3);cursor:pointer;user-select:none;">View AI reasoning (click to expand)</summary>
           <div style="margin-top:8px;padding:10px;background:var(--bg);border-radius:6px;line-height:1.6;white-space:pre-wrap;color:var(--text-2);">${esc(parsed.reasoning||'No reasoning provided.')}</div>
