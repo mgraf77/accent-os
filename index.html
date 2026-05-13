@@ -1597,7 +1597,7 @@ async function sbLoadQuotes(){
 async function sbSaveQuote(q){
   if(!sbConfigured()) return false;
   try{
-    const subtotal = (q.lineItems||[]).reduce((s,l)=>s + (l.qty*l.price), 0);
+    const subtotal = (q.lineItems||[]).reduce((s,l)=>s + (Number(l.qty)||0)*(Number(l.price)||0), 0);
     const extra = {contact: q.contact||'', type: q.type||'', sqft: q.sqft||'', budget: q.budget||'', note: q.notes||''};
     // Resolve customer FK via shared helper (BI 1.4 cleanup). See js/customers.js.
     let custId = q.customer_id || (q.customer && typeof resolveCustomerByName === 'function'
@@ -5970,12 +5970,12 @@ function updatePreview() {
   $('q-sticky-total') && ($('q-sticky-total').textContent = '$'+sub.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}));
   $('q-sticky-count') && ($('q-sticky-count').textContent = (LI||[]).length + ' line' + ((LI||[]).length===1?'':'s'));
   const ie = $('pv-items');
-  if (ie) ie.innerHTML = LI.filter(l=>l.desc||l.price>0).map(l=>{
+  if (ie) ie.innerHTML = LI.filter(l=>l.desc||(Number(l.price)||0)>0).map(l=>{
     const flagTag = l.status==='flagged' ? `<span style="color:#f59e0b;font-size:10px;margin-left:4px;">⚠</span>` : '';
     const approvedTag = l.status==='approved' ? `<span style="color:var(--green);font-size:10px;margin-left:4px;">✓</span>` : '';
     return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-light);">
       <span>${esc(l.desc||'—')}${flagTag}${approvedTag} <span class="muted">×${l.qty}</span></span>
-      <span class="mono" style="font-weight:500;">$${(l.qty*l.price).toFixed(2)}</span>
+      <span class="mono" style="font-weight:500;">$${((Number(l.qty)||0)*(Number(l.price)||0)).toFixed(2)}</span>
     </div>`;
   }).join('');
   // Flag summary in preview
@@ -6166,13 +6166,13 @@ function previewTrackCalc() {
     const { lines, reasoning } = calcTrackHardware(blRuns, 'black');
     html += `<div style="font-weight:600;margin-bottom:4px;">Black Track (${blRuns.length} runs):</div>`;
     html += reasoning.map(r=>`<div style="color:var(--text-3);margin-bottom:2px;">· ${esc(r)}</div>`).join('');
-    html += `<table style="width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:12px;">${lines.map(l=>`<tr><td style="padding:3px 0;">${esc(l.part)}</td><td>${esc(l.desc)}</td><td style="text-align:center;">${l.qty}</td><td style="text-align:right;font-family:'DM Mono',monospace;">$${(l.qty*l.price).toFixed(2)}</td></tr>`).join('')}</table>`;
+    html += `<table style="width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:12px;">${lines.map(l=>`<tr><td style="padding:3px 0;">${esc(l.part)}</td><td>${esc(l.desc)}</td><td style="text-align:center;">${Number(l.qty)||0}</td><td style="text-align:right;font-family:'DM Mono',monospace;">$${((Number(l.qty)||0)*(Number(l.price)||0)).toFixed(2)}</td></tr>`).join('')}</table>`;
   }
   if (whRuns.length) {
     const { lines, reasoning } = calcTrackHardware(whRuns, 'white');
     html += `<div style="font-weight:600;margin-bottom:4px;">White Track (${whRuns.length} runs):</div>`;
     html += reasoning.map(r=>`<div style="color:var(--text-3);margin-bottom:2px;">· ${esc(r)}</div>`).join('');
-    html += `<table style="width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:12px;">${lines.map(l=>`<tr><td style="padding:3px 0;">${esc(l.part)}</td><td>${esc(l.desc)}</td><td style="text-align:center;">${l.qty}</td><td style="text-align:right;font-family:'DM Mono',monospace;">$${(l.qty*l.price).toFixed(2)}</td></tr>`).join('')}</table>`;
+    html += `<table style="width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:12px;">${lines.map(l=>`<tr><td style="padding:3px 0;">${esc(l.part)}</td><td>${esc(l.desc)}</td><td style="text-align:center;">${Number(l.qty)||0}</td><td style="text-align:right;font-family:'DM Mono',monospace;">$${((Number(l.qty)||0)*(Number(l.price)||0)).toFixed(2)}</td></tr>`).join('')}</table>`;
   }
   if (!html) html = `<div style="color:var(--text-3);">Enter at least one run length to preview.</div>`;
   prev.innerHTML = html;
@@ -6204,7 +6204,8 @@ function saveQ() {
   if(typeof sbSaveQuote==='function'){
     sbSaveQuote(q).then(ok=>{
       if(ok && typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
-    });
+      if(!ok) toast('Cloud sync failed — quote saved locally only','err');
+    }).catch(e=>{ console.warn('[quote] sbSaveQuote error:', e?.message); toast('Cloud sync error — quote saved locally only','err'); });
   }
   toast('Saved ('+qid+')','ok');
 }
@@ -6252,6 +6253,14 @@ function duplicateQuote(quoteId) {
 }
 
 let _savedQuoteFilter = '';
+function loadSavedQ(id) {
+  const q = QUOTES.find(x => x.id === id);
+  if (!q) { toast('Quote not found','err'); return; }
+  CQ = q;
+  LI = (q.lineItems && q.lineItems.length) ? q.lineItems.map(l=>({...l})) : [nLI()];
+  closeModal();
+  goTo('quotes');
+}
 function showSaved() {
   const list = renderSavedQuoteRows();
   openModal('Saved Quotes',`
@@ -6270,7 +6279,7 @@ function renderSavedQuoteRows() {
     return hay.includes(f);
   });
   if (!list.length) return `<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">No matches for "${esc(_savedQuoteFilter)}".</div>`;
-  return list.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="CQ=QUOTES.find(x=>x.id==='${q.id}');LI=CQ.lineItems.length?CQ.lineItems.map(l=>({...l})):[nLI()];closeModal();goTo('quotes')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${q.total.toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();emailQuote('${q.id}')" title="Open mail draft with quote summary">✉ Email</button><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();duplicateQuote('${q.id}')" title="Clone line items into a new quote">⎘ Dup</button>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('');
+  return list.map(q=>`<div style="padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:9px;display:flex;align-items:center;gap:10px;"><div style="flex:1;cursor:pointer;" onclick="loadSavedQ('${q.id}')"><div style="font-weight:600;font-size:14px;">${esc(q.project)}</div><div class="muted sm">${esc(q.customer)} · ${q.date} · ${q.id}</div></div><div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">$${Number(q.total||0).toFixed(2)}</div><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();emailQuote('${q.id}')" title="Open mail draft with quote summary">✉ Email</button><button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();duplicateQuote('${q.id}')" title="Clone line items into a new quote">⎘ Dup</button>${typeof createDealFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createDealFromQuote('${q._uuid||q.id}')">+ Deal</button>`:''}${(q.lineItems&&q.lineItems.length&&typeof createPOFromQuote==='function')?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createPOFromQuote('${q._uuid||q.id}')">+ PO</button>`:''}${typeof createJobFromQuote==='function'?`<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();createJobFromQuote('${q._uuid||q.id}')">+ Job</button>`:''}<button class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 8px;" onclick="event.stopPropagation();deleteQ('${q.id}')">Delete</button></div>`).join('');
 }
 
 // emailQuote — open the user's mail client with a draft addressed to the
@@ -6311,6 +6320,9 @@ function emailQuote(quoteId) {
 
 // ── CSV EXPORT (Windward-ready) ──
 function exportQuoteCSV() {
+  if (!LI.length || (LI.length === 1 && !LI[0].part && !LI[0].desc && !LI[0].price)) {
+    toast('No line items to export','err'); return;
+  }
   const flagged = LI.filter(l=>l.status==='flagged');
   if (flagged.length) {
     if (!confirm(`${flagged.length} row${flagged.length>1?'s are':' is'} still flagged. Export anyway? (flagged rows will be included with a flag note)`)) return;
@@ -6330,18 +6342,20 @@ function exportQuoteCSV() {
     ['Part Number','Description','Qty','Unit Price','Ext Price','Category','Approval Status','Flag Note']
   ];
   LI.forEach(l => {
+    const qty = Number(l.qty)||0;
+    const price = Number(l.price)||0;
     rows.push([
       l.part||'',
       l.desc||'',
-      l.qty,
-      l.price.toFixed(2),
-      (l.qty*l.price).toFixed(2),
+      qty,
+      price.toFixed(2),
+      (qty*price).toFixed(2),
       l.cat||'',
       l.status||'pending',
       l.flag||''
     ]);
   });
-  const sub = LI.reduce((s,l)=>s+l.qty*l.price,0);
+  const sub = LI.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0);
   rows.push(['','','','SUBTOTAL',sub.toFixed(2),'','','']);
   rows.push(['','','','FREIGHT','TBD — verify with carrier','','','🚩 Flag: confirm freight before finalizing']);
   rows.push(['','','','TAX','TBD — verify exempt status','','','🚩 Flag: confirm tax exempt cert on file']);
@@ -6353,14 +6367,15 @@ function exportQuoteCSV() {
 // ── PDF PRINT ──
 function printQ() {
   const proj=$('q-pr')?.value||'Quote',cust=$('q-cu')?.value||'',addr=$('q-addr')?.value||'';
-  const total=LI.reduce((s,l)=>s+l.qty*l.price,0);
+  const total=LI.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0),0);
   const qid=CQ?CQ.id:'QT-'+String(QUOTE_ID).padStart(4,'0');
   const date=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   const flagged=LI.filter(l=>l.status==='flagged');
   const rows=LI.filter(l=>l.desc||l.price>0).map(l=>{
     const flagNote=l.flag?`<div style="font-size:10px;color:#d97706;">⚠ ${esc(l.flag)}</div>`:'';
     const approvedBadge=l.status==='approved'?`<span style="color:#16a34a;font-size:10px;"> ✓</span>`:'';
-    return `<tr><td style="padding:9px 11px;border-bottom:1px solid #eee;font-family:'DM Mono',monospace;font-size:11px;">${esc(l.part||'—')}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;">${esc(l.desc||'—')}${approvedBadge}${flagNote}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:center;">${l.qty}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:right;">$${l.price.toFixed(2)}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:right;font-weight:600;">$${(l.qty*l.price).toFixed(2)}</td></tr>`;
+    const qty=Number(l.qty)||0, price=Number(l.price)||0;
+    return `<tr><td style="padding:9px 11px;border-bottom:1px solid #eee;font-family:'DM Mono',monospace;font-size:11px;">${esc(l.part||'—')}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;">${esc(l.desc||'—')}${approvedBadge}${flagNote}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:center;">${qty}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:right;">$${price.toFixed(2)}</td><td style="padding:9px 11px;border-bottom:1px solid #eee;text-align:right;font-weight:600;">$${(qty*price).toFixed(2)}</td></tr>`;
   }).join('');
   const flagBlock=flagged.length?`<div style="margin-top:22px;padding:14px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;"><div style="font-weight:700;color:#d97706;margin-bottom:6px;">⚠ ${flagged.length} Flagged Item${flagged.length>1?'s':''} — Requires Review Before Order</div>${flagged.map(l=>`<div style="font-size:12px;color:#92400e;padding:2px 0;">• ${esc(l.desc||l.part||'Unknown')}: ${esc(l.flag||'Flagged')}</div>`).join('')}</div>`:' ';
   const w=window.open('','_blank');
