@@ -662,6 +662,8 @@ function activateApp(){
 }
 
 async function hydrateFromSupabase(){
+  console.log('[boot] hydration started');
+  const _hydrateStart = Date.now();
   let sbCatRows = 0;
   if(typeof sbConfigured==='function' && sbConfigured()){
     try { sbCatRows = await sbLoadCategories(); } catch(e){ console.warn(e); }
@@ -670,7 +672,7 @@ async function hydrateFromSupabase(){
     try { await sbLoadScoreStates(); } catch(e){ console.warn(e); }
     try { await sbLoadVendorScores(); } catch(e){ console.warn(e); }
     try { await sbLoadVendorOverrides(); } catch(e){ console.warn(e); }
-    try { await sbLoadQuotes(); } catch(e){ console.warn(e); }
+    try { await sbLoadQuotes(); } catch(e){ console.warn('[sb] sbLoadQuotes:', e.message); if(typeof toast==='function') toast('Quotes failed to load — refresh to retry','err'); }
     try { await sbLoadCoopFunds(); } catch(e){ console.warn(e); }
     try { await sbLoadCustomers(); } catch(e){ console.warn(e); }
     try { await sbLoadEmployees(); } catch(e){ console.warn(e); }
@@ -694,6 +696,8 @@ async function hydrateFromSupabase(){
     // Run alert generator AFTER all data loaded — heuristics read from every module's state.
     try { if(typeof generateAlertsFromData==='function') await generateAlertsFromData(); } catch(e){ console.warn(e); }
     try { await maybeAutoSnapshotKPIs(); } catch(e){ console.warn('[kpi] auto-snapshot:', e.message); }
+    console.log(`[boot] hydration complete in ${Date.now() - _hydrateStart}ms`);
+    window.__AOS_HYDRATED__ = true;
   }
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
@@ -912,6 +916,7 @@ const MODULE_REGISTRY = [
   {key:'alerts',         icon:'!', label:'Alerts',              roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Alerts',                s:'Auto-generated from your data'},
   {key:'mytasks',        icon:'✓', label:'My Tasks',            roles:'Owner,Admin,Manager,Sales,Warehouse', t:'My Tasks',              s:'Personal to-do list · stays in your browser'},
   {section:'INTELLIGENCE'},
+  {key:'ecommerce',      icon:'◈', label:'Ecommerce Intel',     roles:'Owner,Admin,Manager',                 t:'Ecommerce Intelligence', s:'BigCommerce · Catalog analysis · Opportunities'},
   {key:'knowledge',      icon:'⚡', label:'Knowledge Engine',   roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Knowledge Engine',      s:'AI-Powered Lighting Intelligence'},
   {key:'vendors',        icon:'◇', label:'Vendor Ranking',      roles:'Owner,Admin,Manager,Sales',           t:'Vendor Ranking',        s:'Vendor Ranking 2026'},
   {key:'changelog',      icon:'◑', label:'Change Log',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Change Log',            s:'Vendor Ranking 2026'},
@@ -1161,8 +1166,6 @@ async function sbFetch(path, opts={}){
   const key = sbKey();
   if(!key) throw new Error('Supabase anon key not set — open Settings');
   const url = SUPABASE_URL + '/rest/v1' + path;
-  // When a user is signed in, send their JWT as Authorization so RLS sees auth.uid().
-  // apikey header always carries the anon key.
   const jwt = (typeof jwtKey==='function' ? jwtKey() : '') || key;
   const headers = Object.assign({
     'apikey': key,
@@ -1170,8 +1173,23 @@ async function sbFetch(path, opts={}){
     'Content-Type': 'application/json',
     'Prefer': 'return=representation'
   }, opts.headers || {});
-  const r = await fetch(url, Object.assign({}, opts, {headers}));
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 15000);
+  let r;
+  try {
+    r = await fetch(url, Object.assign({}, opts, {headers, signal: ctrl.signal}));
+  } catch(fetchErr) {
+    clearTimeout(tid);
+    if(fetchErr.name === 'AbortError') throw new Error('Request timed out — check connection');
+    throw fetchErr;
+  }
+  clearTimeout(tid);
   if(!r.ok){
+    if(r.status === 401){
+      setJwt('');
+      if(typeof toast === 'function') toast('Session expired — please sign in again', 'err');
+      setTimeout(() => location.reload(), 1800);
+    }
     const t = await r.text();
     throw new Error(`Supabase ${r.status}: ${t}`);
   }
@@ -1542,7 +1560,7 @@ async function deleteCoopFund(id){
 async function sbLoadQuotes(){
   if(!sbConfigured()) return false;
   try{
-    const headers = await sbFetch('/quotes?select=id,number,customer_id,customer_name,project_name,status,subtotal,total,notes,created_at&order=created_at.desc&limit=500');
+    const headers = await sbFetch('/quotes?select=id,number,customer_id,customer_name,project_name,status,subtotal,total,notes,created_at,updated_at&order=created_at.desc&limit=500');
     if(!Array.isArray(headers)) return 0;
     if(!headers.length){ QUOTES=[]; return 0; }
     const ids = headers.map(h => h.id);
@@ -1563,6 +1581,7 @@ async function sbLoadQuotes(){
       return {
         id: h.number || ('QT-' + String(QUOTE_ID++).padStart(4,'0')),
         _uuid: h.id,
+        _updatedAt: h.updated_at || null,
         date: h.created_at ? new Date(h.created_at).toLocaleDateString() : '',
         customer: h.customer_name || '',
         customer_id: h.customer_id || null,
@@ -1597,47 +1616,45 @@ async function sbSaveQuote(q){
       : null);
     const headerBody = {
       number: q.id,
-      customer_id: custId,
-      customer_name: q.customer || null,
-      project_name: q.project || null,
+      customer_id: custId || '',
+      customer_name: q.customer || '',
+      project_name: q.project || '',
       status: 'draft',
-      subtotal, tax: 0, total: q.total || subtotal,
+      subtotal: subtotal,
+      tax: 0,
+      total: q.total || subtotal,
       notes: JSON.stringify(extra)
     };
-    // Upsert header by number; need the UUID back to write lines.
-    const headerRes = await sbFetch('/quotes?on_conflict=number', {
-      method: 'POST',
-      headers: {'Prefer':'resolution=merge-duplicates,return=representation'},
-      body: JSON.stringify(headerBody)
-    });
-    const uuid = Array.isArray(headerRes) && headerRes[0] ? headerRes[0].id : q._uuid;
-    if(!uuid) throw new Error('No UUID returned from quotes upsert');
-    q._uuid = uuid;
-    // Replace all line items: delete then insert.
-    await sbFetch(`/quote_lines?quote_id=eq.${uuid}`, {
-      method: 'DELETE',
-      headers: {'Prefer':'return=minimal'}
-    });
     const lineRows = (q.lineItems||[]).map((l,i) => ({
-      quote_id: uuid,
       line_no: i + 1,
-      vendor_id: l.vendorId || null,
-      vendor_name: l.vendorName || null,
-      description: l.desc || null,
+      vendor_id: l.vendorId || '',
+      vendor_name: l.vendorName || '',
+      description: l.desc || '',
       qty: Number(l.qty)||0,
       unit_price: Number(l.price)||0,
       ext_price: (Number(l.qty)||0) * (Number(l.price)||0),
-      notes: l.cat || null
+      notes: l.cat || ''
     }));
-    if(lineRows.length){
-      await sbFetch('/quote_lines', {
-        method: 'POST',
-        headers: {'Prefer':'return=minimal'},
-        body: JSON.stringify(lineRows)
-      });
-    }
-    return true;
-  }catch(e){ console.warn('[sb] Save quote failed:', e.message); return false; }
+    // Single atomic RPC: header upsert + delete existing lines + insert new lines,
+    // all inside one Postgres transaction (M45/M46). Any failure rolls back all three.
+    // p_expected_updated_at enables stale-edit detection: if the DB row is newer
+    // than this timestamp, the RPC raises CONFLICT: and the caller handles it.
+    const rpcRes = await sbFetch('/rpc/upsert_quote_with_lines', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_header: headerBody,
+        p_lines: lineRows,
+        p_expected_updated_at: q._updatedAt || null
+      })
+    });
+    const uuid = rpcRes?.quote_id || q._uuid;
+    if(!uuid) throw new Error('No UUID returned from upsert_quote_with_lines');
+    q._uuid = uuid;
+    if(rpcRes?.updated_at) q._updatedAt = rpcRes.updated_at;
+  }catch(e){
+    console.warn('[sb] Save quote failed:', e.message);
+    throw e; // re-throw so saveQ can surface the message to the operator
+  }
 }
 
 async function sbDeleteQuote(numberId){
@@ -5522,7 +5539,7 @@ function calcTrackHardware(runs, color) {
 
 // ── LINE ITEM FACTORY ──
 function nLI(){ return { id: Date.now()+Math.random(), part:'', desc:'', qty:1, price:0, cat:'LED Fixtures', status:'pending', flag:'', reasoning:'' }; }
-function addLI(){ LI.push(nLI()); renderLI(); updatePreview(); }
+function addLI(){ LI.push(nLI()); _qDirty=true; renderLI(); updatePreview(); }
 
 // ── MAIN QUOTE RENDERER ──
 function quotes(el, act) {
@@ -5594,7 +5611,7 @@ function quotes(el, act) {
         <button class="btn btn-accent btn-sm" onclick="saveQ()">💾 Save</button>
         <button class="btn btn-outline btn-sm" onclick="printQ()">🖨 PDF</button>
         <button class="btn btn-outline btn-sm" onclick="exportQuoteCSV()">⬇ CSV</button>
-        <button class="btn btn-ghost btn-sm" onclick="CQ=null;LI=[nLI()];goTo('quotes')">Clear</button>
+        <button class="btn btn-ghost btn-sm" onclick="CQ=null;LI=[nLI()];_qDirty=false;goTo('quotes')">Clear</button>
       </div>
     </div></div>
     <!-- Sticky quote action bar — stays visible while scrolling long line-item lists. -->
@@ -5609,6 +5626,7 @@ function quotes(el, act) {
     </div>
   </div>`;
   renderLI(); updatePreview();
+  checkQuoteDraftRecovery(el);
 }
 
 // ── RENDER LINE ITEMS ──
@@ -5656,7 +5674,7 @@ function renderLI() {
       <td style="white-space:nowrap;">
         <button onclick="LI[${i}].status='approved';renderLI();updatePreview()" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;cursor:pointer;font-size:11px;padding:2px 7px;margin-right:3px;" title="Approve row">✓</button>
         <button onclick="qFlagRow(${i})" style="background:none;border:1px solid #f59e0b;color:#f59e0b;border-radius:4px;cursor:pointer;font-size:11px;padding:2px 7px;margin-right:3px;" title="Flag row">⚑</button>
-        <button onclick="LI.splice(${i},1);if(!LI.length)LI.push(nLI());renderLI();updatePreview()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:15px;" title="Remove">✕</button>
+        <button onclick="LI.splice(${i},1);_qDirty=true;if(!LI.length)LI.push(nLI());renderLI();updatePreview()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:15px;" title="Remove">✕</button>
       </td>
     </tr>`;
   }).join('');
@@ -5926,31 +5944,247 @@ function addTrackLinesToQuote() {
   toast(`${_pendingTrackLines.length} track hardware lines added`, 'ok');
 }
 
+// ── QUOTE OBSERVABILITY ──────────────────────────────────────────
+// Lightweight in-session counters. Routed into sbAuditLog on each
+// successful save so save latency and retry patterns are queryable.
+const _quoteObs = {
+  attempts: 0, successes: 0, failures: 0, conflicts: 0, retries: 0,
+  lastMs: 0, totalMs: 0, lastError: ''
+};
+
+// ── QUOTE DRAFT (localStorage crash / tab-close recovery) ────────
+// Single draft slot — only one quote edited at a time. Bounded to
+// 24 h. Written on failed save and on page unload. NOT written on
+// every keystroke to avoid localStorage churn.
+const _QDRAFT_KEY  = 'accent_quote_draft';
+const _QDRAFT_MAX_MS = 86400000; // 24 h
+let _qdraftPendingRestore = null;
+
+function _saveQuoteDraft() {
+  const proj = $('q-pr')?.value?.trim();
+  if(!proj && !LI.some(l => l.desc || l.price)) return;
+  try {
+    localStorage.setItem(_QDRAFT_KEY, JSON.stringify({
+      qid:       CQ?.id || null,
+      project:   $('q-pr')?.value  || '',
+      customer:  $('q-cu')?.value  || '',
+      contact:   $('q-co')?.value  || '',
+      type:      $('q-ty')?.value  || '',
+      budget:    $('q-bu')?.value  || '',
+      notes:     $('q-no')?.value  || '',
+      lineItems: LI.map(l => ({...l})),
+      savedAt:   Date.now()
+    }));
+  } catch(e) {}
+}
+
+function _clearQuoteDraft() {
+  try { localStorage.removeItem(_QDRAFT_KEY); } catch(e) {}
+}
+
+function _loadQuoteDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(_QDRAFT_KEY) || 'null');
+    if(!d) return null;
+    if(Date.now() - d.savedAt > _QDRAFT_MAX_MS) { _clearQuoteDraft(); return null; }
+    if(!d.project && !(d.lineItems?.length)) { _clearQuoteDraft(); return null; }
+    return d;
+  } catch(e) { return null; }
+}
+
+// Called at the start of quotes() render. Inserts a recovery banner
+// into el if a fresh draft exists and we are not already editing it.
+function checkQuoteDraftRecovery(el) {
+  const d = _loadQuoteDraft();
+  if(!d) return;
+  if(d.qid && CQ?.id === d.qid) return; // already editing this quote — no prompt needed
+  _qdraftPendingRestore = d;
+  const age    = Math.round((Date.now() - d.savedAt) / 60000);
+  const ageStr = age < 60 ? `${age}m ago` : `${Math.round(age/60)}h ago`;
+  const lc     = d.lineItems?.length || 0;
+  const banner = document.createElement('div');
+  banner.id = 'q-draft-banner';
+  banner.style.cssText = 'background:#fffbea;border:1px solid #e6c84a;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;';
+  banner.innerHTML = `<span style="flex:1;">&#9888; Unsaved draft: <strong>${esc(d.project||'Untitled')}</strong> &middot; ${lc} line${lc!==1?'s':''} &middot; ${ageStr} &mdash; restore it?</span><button class="btn btn-accent btn-sm" onclick="restoreQuoteDraft()">Restore draft</button><button class="btn btn-outline btn-sm" onclick="dismissQuoteDraft()">Discard</button>`;
+  el.insertBefore(banner, el.firstChild);
+}
+
+function restoreQuoteDraft() {
+  const d = _qdraftPendingRestore; if(!d) return;
+  CQ  = d.qid ? (QUOTES.find(q => q.id === d.qid) || null) : null;
+  LI  = (d.lineItems || []).map(l => ({...l}));
+  if(!LI.length) LI = [nLI()];
+  goTo('quotes');
+  setTimeout(() => {
+    if($('q-pr')) $('q-pr').value = d.project  || '';
+    if($('q-cu')) $('q-cu').value = d.customer || '';
+    if($('q-co')) $('q-co').value = d.contact  || '';
+    if($('q-ty')) $('q-ty').value = d.type     || '';
+    if($('q-bu')) $('q-bu').value = d.budget   || '';
+    if($('q-no')) $('q-no').value = d.notes    || '';
+    renderLI(); updatePreview();
+    toast(`Draft restored (${d.lineItems?.length||0} lines) — press Save to commit`, 'ok');
+  }, 60);
+  _qdraftPendingRestore = null;
+  $('q-draft-banner')?.remove();
+}
+
+function dismissQuoteDraft() {
+  _clearQuoteDraft();
+  _qdraftPendingRestore = null;
+  $('q-draft-banner')?.remove();
+}
+
+// Reload one quote from DB by number — updates QUOTES[] and returns the
+// fresh object. Used after a conflict when the operator chooses not to overwrite.
+async function reloadQuoteFromDB(numberId) {
+  if(!sbConfigured()) { toast('Not connected to DB', 'err'); return null; }
+  try {
+    const rows = await sbFetch(
+      `/quotes?number=eq.${encodeURIComponent(numberId)}&select=id,number,customer_id,customer_name,project_name,status,subtotal,total,notes,created_at,updated_at&limit=1`
+    );
+    if(!Array.isArray(rows) || !rows.length) { toast('Quote not found in DB', 'err'); return null; }
+    const h = rows[0];
+    let extra = {};
+    try { extra = h.notes ? JSON.parse(h.notes) : {}; } catch { extra = {}; }
+    const linesRes = await sbFetch(
+      `/quote_lines?quote_id=eq.${h.id}&select=line_no,vendor_id,vendor_name,description,qty,unit_price,ext_price,notes&order=line_no.asc`
+    );
+    const li = (linesRes||[]).map(l => ({
+      id: l.line_no, desc: l.description||'', qty: Number(l.qty)||0,
+      price: Number(l.unit_price)||0, cat: l.notes||'LED Fixtures',
+      vendorId: l.vendor_id, vendorName: l.vendor_name
+    }));
+    const fresh = {
+      id: h.number, _uuid: h.id, _updatedAt: h.updated_at||null,
+      date:       h.created_at ? new Date(h.created_at).toLocaleDateString() : '',
+      customer:   h.customer_name||'',  customer_id: h.customer_id||null,
+      contact:    extra.contact||'',    project:  h.project_name||'',
+      type:       extra.type||'',       sqft:     extra.sqft||'',
+      budget:     extra.budget||'',     notes:    extra.note||'',
+      lineItems:  li,                   total:    Number(h.total)||0
+    };
+    const idx = QUOTES.findIndex(q => q.id === numberId);
+    if(idx >= 0) QUOTES[idx] = fresh; else QUOTES.push(fresh);
+    toast(`Reloaded ${numberId} from DB (${li.length} line${li.length!==1?'s':''})`, 'ok');
+    return fresh;
+  } catch(e) {
+    toast('Reload failed: ' + (e?.message||'network error'), 'err');
+    return null;
+  }
+}
+
+// Write draft on tab close / page unload — fires once, no aggressive polling.
+window.addEventListener('beforeunload', () => { if(curPage === 'quotes') _saveQuoteDraft(); });
+
 // ── SAVE QUOTE ──
-function saveQ() {
+let _qSaving = false;
+let _qDirty = false;
+// Warn before tab close / reload when there are unsaved quote changes.
+window.addEventListener('beforeunload', e => {
+  if(_qDirty && curPage === 'quotes'){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+async function saveQ() {
+  if(_qSaving){ toast('Save already in progress…','warn'); return; }
   const proj = $('q-pr')?.value?.trim(); if(!proj){toast('Add project name first','err');return;}
+  _qSaving = true;
+  const saveBtns = document.querySelectorAll('[onclick="saveQ()"]');
+  saveBtns.forEach(b=>{ b.disabled=true; b._orig=b.textContent; b.textContent='Saving…'; });
   const sub = LI.reduce((s,l)=>s+l.qty*l.price, 0);
+  const isNew = !CQ;
   const qid = CQ?CQ.id:'QT-'+String(QUOTE_ID++).padStart(4,'0');
-  const q = { id:qid, _uuid:CQ?._uuid, date:new Date().toLocaleDateString(), customer:$('q-cu')?.value||'', contact:$('q-co')?.value||'', project:proj, type:$('q-ty')?.value||'', address:$('q-addr')?.value||'', sqft:'', budget:$('q-bu')?.value||'', notes:$('q-no')?.value||'', lineItems:[...LI], total:sub };
+  const q = {
+    id:qid, _uuid:CQ?._uuid, _updatedAt:CQ?._updatedAt||null,
+    date:new Date().toLocaleDateString(), customer:$('q-cu')?.value||'',
+    contact:$('q-co')?.value||'', project:proj, type:$('q-ty')?.value||'',
+    address:$('q-addr')?.value||'', sqft:'', budget:$('q-bu')?.value||'',
+    notes:$('q-no')?.value||'', lineItems:[...LI], total:sub
+  };
   const ex = QUOTES.findIndex(x=>x.id===qid);
   if(ex>=0)QUOTES[ex]=q;else QUOTES.push(q);
   CQ=null; log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');
-  if(typeof sbSaveQuote==='function'){
-    sbSaveQuote(q).then(ok=>{
-      if(ok && typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
+  if(typeof sbSaveQuote!=='function'){ _qDirty=false; toast('Saved locally ('+qid+')','ok'); _qSaving=false; saveBtns.forEach(b=>{b.disabled=false;b.textContent=b._orig||'💾 Save';}); return; }
+  await _doSaveQuote(q);
+}
+
+// Inner save — separated so the conflict-retry path can mutate q._updatedAt
+// (force overwrite) without rebuilding the quote object from DOM.
+async function _doSaveQuote(q) {
+  if(_qSaving && !q.__retrying){ toast('Save already in progress…','warn'); return; }
+  _qSaving = true;
+  _quoteObs.attempts++;
+  const t0 = performance.now();
+  toast('Saving…','');
+  try {
+    await sbSaveQuote(q);
+    const ms = Math.round(performance.now() - t0);
+    _quoteObs.successes++;
+    _quoteObs.lastMs = ms;
+    _quoteObs.totalMs += ms;
+    _qDirty = false;
+    _clearQuoteDraft();
+    if(typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{
+      quote_id:q.id, total:q.total, timing_ms:ms,
+      line_count:q.lineItems.length, retries:_quoteObs.retries
     });
+    toast(`Saved (${q.id}) · ${ms}ms`,'ok');
+  }catch(e){
+    const ms = Math.round(performance.now() - t0);
+    _quoteObs.failures++;
+    _quoteObs.lastError = e?.message||'';
+    const msg = e?.message||'network error';
+    _saveQuoteDraft(); // preserve work regardless of failure type
+    if(msg.startsWith('CONFLICT:')){
+      _quoteObs.conflicts++;
+      const overwrite = confirm(
+        `⚠ Save conflict — ${q.id}\n\n` +
+        `This quote was saved from another tab or session more recently than your version.\n\n` +
+        `Overwrite with your current changes?\n\n` +
+        `Press Cancel to discard your changes and reload the authoritative version from DB.`
+      );
+      if(overwrite){
+        _quoteObs.retries++;
+        q._updatedAt = null; // bypass stale guard — operator confirmed overwrite
+        q.__retrying = true;
+        _qSaving = false;
+        await _doSaveQuote(q);
+        return;
+      } else {
+        const fresh = await reloadQuoteFromDB(q.id);
+        if(fresh){ CQ = fresh; goTo('quotes'); }
+      }
+    } else {
+      const shortMsg = msg.length > 80 ? msg.slice(0,77)+'…' : msg;
+      toast(`Save failed — ${shortMsg} — press Save to retry.`,'err');
+      console.error('[saveQ] DB write failed after', ms, 'ms:', msg);
+    }
+  }finally{
+    _qSaving = false;
   }
-  toast('Saved ('+qid+')','ok');
 }
 
 // ── DELETE / SAVED ──
-function deleteQ(numberId) {
+async function deleteQ(numberId) {
   if(!confirm('Delete quote '+numberId+'?')) return;
+  const removed = QUOTES.find(q=>q.id===numberId);
   QUOTES = QUOTES.filter(q=>q.id!==numberId);
-  if(typeof sbDeleteQuote==='function') sbDeleteQuote(numberId);
-  if(typeof sbAuditLog==='function') sbAuditLog('quote_delete','quotes',{quote_id:numberId});
-  closeModal(); showSaved();
-  toast('Quote deleted','ok');
+  try {
+    if(typeof sbDeleteQuote==='function'){
+      const ok = await sbDeleteQuote(numberId);
+      if(!ok) throw new Error('DB delete returned false');
+    }
+    if(typeof sbAuditLog==='function') sbAuditLog('quote_delete','quotes',{quote_id:numberId});
+    closeModal(); showSaved();
+    toast('Quote deleted','ok');
+  } catch(e) {
+    if(removed) QUOTES.push(removed);
+    closeModal(); showSaved();
+    toast('Delete failed — quote restored','err');
+    console.warn('[deleteQ] failed:', e.message);
+  }
 }
 
 // Duplicate an existing saved quote — clones line items, blanks the project
@@ -7453,18 +7687,34 @@ function _aiNotReadyHint(){
   return 'AI requires your Anthropic API key — add it in Settings → API Keys.';
 }
 
-// ── BOOT (v6.9.6) ──
-// 1. Try to restore an authenticated session from the stored JWT.
-// 2. If restored: hydrate Supabase data and show the app.
+// ── BOOT (v6.10.76) ──
+// 1. Try to restore an authenticated session from the stored JWT (12s timeout).
+// 2. If restored: hydrate Supabase data and show the app (30s timeout).
 // 3. Otherwise: leave the login screen visible and wait for doLogin().
 window.addEventListener('DOMContentLoaded', async () => {
-  const restored = await tryRestoreSession();
+  let restored = false;
+  try {
+    restored = await Promise.race([
+      tryRestoreSession(),
+      new Promise((_,rej) => setTimeout(() => rej(new Error('Session restore timed out')), 12000))
+    ]);
+  } catch(e) {
+    console.warn('[boot] session restore:', e.message);
+  }
   if(!restored){
     // Login screen is shown by default (no #app.on). Nothing else to do.
     return;
   }
   activateApp();
-  await hydrateFromSupabase();
+  try {
+    await Promise.race([
+      hydrateFromSupabase(),
+      new Promise((_,rej) => setTimeout(() => rej(new Error('Hydration timed out')), 30000))
+    ]);
+  } catch(e) {
+    console.warn('[boot] hydration:', e.message);
+    if(typeof toast === 'function') toast('Some data failed to load — refresh if anything looks missing', '');
+  }
   if(typeof applyModuleModesAfterHydrate === 'function'){
     try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[boot] module modes init failed:', e.message); }
   }
@@ -7513,5 +7763,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/bulk_select.js?v=6.10.62"></script>
 <script src="js/module_modes.js?v=6.10.65"></script>
 <script src="js/internal_meetings.js?v=6.10.74"></script>
+<script src="js/bigcommerce_adapter.js?v=6.11.1"></script>
+<script src="js/ga4_adapter.js?v=6.11.1"></script>
+<script src="js/gsc_adapter.js?v=6.11.1"></script>
+<script src="js/klaviyo_adapter.js?v=6.11.1"></script>
+<script src="js/gmc_adapter.js?v=6.11.1"></script>
+<script src="js/ecommerce_intelligence.js?v=6.11.1"></script>
 </body>
 </html>

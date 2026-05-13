@@ -1,44 +1,41 @@
-// Cloudflare Worker — Anthropic API proxy for AccentOS
+// Cloudflare Worker — Anthropic API proxy + BigCommerce API proxy for AccentOS
 //
 // ── DEPLOYMENT ─────────────────────────────────────────────────────────────
-// This file is NOT auto-deployed by the Cloudflare Pages webhook (Pages only
-// deploys the SPA). It must be deployed manually with wrangler:
+// Deployed automatically via GitHub Actions (deploy-worker.yml) when this file
+// or wrangler.toml changes on main.
 //
-//   cd worker
-//   wrangler deploy                          # push this file to Cloudflare
-//   wrangler secret put ANTHROPIC_API_KEY    # paste sk-ant-... key when prompted
+// Manual deploy:
+//   wrangler deploy
+//
+// Required secrets (set once, survive all redeployments):
+//   wrangler secret put ANTHROPIC_API_KEY   ← sk-ant-...
+//   wrangler secret put BC_STORE_HASH       ← store-xxxx (your BC store hash)
+//   wrangler secret put BC_ACCESS_TOKEN     ← BC API access token (V2/V3)
 //
 // Verify live state:
 //   curl https://accentos-anthropic-proxy.mgraf77.workers.dev/
-//   Expected: {"version":"v3-env-fallback","env_key_set":true,...}
-//   If env_key_set=false → secret not bound. If version≠v3-env-fallback → stale code.
+//   Expected: {"version":"v4-bc-proxy","env_key_set":true,"bc_configured":true,...}
 //
-// ── AUTH FLOW ──────────────────────────────────────────────────────────────
-// POST /v1/messages resolves the API key in priority order:
+// ── ANTHROPIC AUTH FLOW ─────────────────────────────────────────────────────
+// POST /v1/messages key resolution priority:
 //   1. x-api-key header from client  (user-supplied key from Settings → API Keys)
-//   2. env.ANTHROPIC_API_KEY secret  (Cloudflare Workers secret binding)
-//   3. Neither present → 503 ai_unconfigured
+//   2. env.ANTHROPIC_API_KEY secret  (no client config needed)
+//   3. Neither → 503 ai_unconfigured
 //
-// With the secret bound, end-users never need to configure auth (option 2 fires).
-// User-supplied keys override the env key — useful for power users / dev testing.
+// ── BIGCOMMERCE PROXY ───────────────────────────────────────────────────────
+// Browser calls /bc/v2/* or /bc/v3/* — Worker injects X-Auth-Token from secret.
+// BC token NEVER reaches the browser. CORS handled here.
 //
-// ── VERSION HISTORY ────────────────────────────────────────────────────────
-// v1/v2 (stale): required x-api-key from client; no env fallback.
-//                GET returned "Method not allowed"; POST returned "Missing x-api-key header".
-// v3 (this):     env fallback added; GET probe returns JSON with env_key_set field.
+// Routes:
+//   GET  /bc/v2/*  → api.bigcommerce.com/stores/{BC_STORE_HASH}/v2/*
+//   GET  /bc/v3/*  → api.bigcommerce.com/stores/{BC_STORE_HASH}/v3/*
 //
-// Version markers in responses make it trivial to verify which build is live:
-//   $ curl https://accentos-anthropic-proxy.mgraf77.workers.dev/
-//   {"version":"v3-env-fallback","env_key_set":true,"build":"2026-05-11"}
+// ── VERSION HISTORY ─────────────────────────────────────────────────────────
+// v3: env fallback for Anthropic key + version probe.
+// v4 (this): adds BigCommerce proxy routes. BC token held as Worker secret.
 //
-// Behavior:
-//   - GET /        → version diagnostics (no Anthropic call, no auth required)
-//   - OPTIONS /*   → CORS preflight
-//   - POST /v1/*   → proxies to api.anthropic.com using env.ANTHROPIC_API_KEY,
-//                    overridable by a client-supplied x-api-key header.
-//   - Both keys missing → 503 with a structured ai_unconfigured payload.
-const WORKER_VERSION = 'v3-env-fallback';
-const WORKER_BUILD   = '2026-05-11';
+const WORKER_VERSION = 'v4-bc-proxy';
+const WORKER_BUILD   = '2026-05-13';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -54,6 +51,15 @@ function json(body, status, extra) {
   });
 }
 
+// Pass-through BC rate limit headers so the SPA adapter can honour backoff
+// without ever needing to know the token.
+const BC_RATE_HEADERS = [
+  'X-Rate-Limit-Requests-Left',
+  'X-Rate-Limit-Time-Reset-Ms',
+  'X-Rate-Limit-Requests-Quota',
+  'X-Rate-Limit-Time-Window-Ms',
+];
+
 export default {
   async fetch(request, env) {
     const method = request.method;
@@ -64,26 +70,27 @@ export default {
       return new Response(null, { headers: CORS });
     }
 
-    // Version probe — lets ops verify which worker build is live without
-    // making an upstream Anthropic call.
+    // ── BIGCOMMERCE PROXY ─────────────────────────────────────────────────
+    if (url.pathname.startsWith('/bc/')) {
+      return handleBCProxy(request, url, env);
+    }
+
+    // ── VERSION PROBE ────────────────────────────────────────────────────
     if (method === 'GET' && (url.pathname === '/' || url.pathname === '/version')) {
       return json({
         version:        WORKER_VERSION,
         build:          WORKER_BUILD,
         env_key_set:    Boolean(env && env.ANTHROPIC_API_KEY),
-        // Never echo the actual key. Only presence + length signal.
         env_key_length: env && env.ANTHROPIC_API_KEY ? String(env.ANTHROPIC_API_KEY).length : 0,
+        bc_configured:  Boolean(env && env.BC_STORE_HASH && env.BC_ACCESS_TOKEN),
       }, 200);
     }
 
+    // ── ANTHROPIC PROXY ───────────────────────────────────────────────────
     if (method !== 'POST') {
       return json({ error: 'method_not_allowed', message: 'Use POST or GET /', version: WORKER_VERSION }, 405);
     }
 
-    // Resolve API key: client-supplied x-api-key wins (lets power users use their own
-    // account); else fall back to the worker's bound secret so end-users never need
-    // to configure anything. If both are missing, return a friendly 503 so the SPA
-    // can degrade gracefully.
     const headerKey = request.headers.get('x-api-key');
     const envKey    = (env && env.ANTHROPIC_API_KEY) ? String(env.ANTHROPIC_API_KEY) : '';
     const apiKey    = (headerKey && headerKey.trim()) || envKey || '';
@@ -91,7 +98,7 @@ export default {
     if (!apiKey) {
       return json({
         error:   'ai_unconfigured',
-        message: 'AI service not configured. Set ANTHROPIC_API_KEY as a Workers secret on accentos-anthropic-proxy.',
+        message: 'AI service not configured. Set ANTHROPIC_API_KEY as a Workers secret.',
         version: WORKER_VERSION,
       }, 503);
     }
@@ -118,7 +125,6 @@ export default {
     }
 
     const text = await upstream.text();
-    // Pass-through. x-worker-version response header lets the SPA verify build at runtime.
     return new Response(text, {
       status:  upstream.status,
       headers: {
@@ -130,3 +136,53 @@ export default {
     });
   },
 };
+
+async function handleBCProxy(request, url, env) {
+  const storeHash = env && env.BC_STORE_HASH   ? String(env.BC_STORE_HASH)   : '';
+  const token     = env && env.BC_ACCESS_TOKEN  ? String(env.BC_ACCESS_TOKEN) : '';
+
+  if (!storeHash || !token) {
+    return json({
+      error:   'bc_unconfigured',
+      message: 'BigCommerce not configured. Set BC_STORE_HASH and BC_ACCESS_TOKEN as Worker secrets.',
+      version: WORKER_VERSION,
+    }, 503);
+  }
+
+  // /bc/v3/catalog/products → /stores/{hash}/v3/catalog/products
+  const bcPath    = url.pathname.replace(/^\/bc/, '');
+  const bcUrl     = `https://api.bigcommerce.com/stores/${storeHash}${bcPath}${url.search}`;
+
+  let upstream;
+  try {
+    upstream = await fetch(bcUrl, {
+      method:  request.method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept':       'application/json',
+        'X-Auth-Token': token,
+      },
+      // Only pass body on mutations — GETs have no body
+      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer(),
+    });
+  } catch (err) {
+    return json({
+      error:   'bc_upstream_unreachable',
+      message: 'Could not reach BigCommerce API: ' + (err && err.message ? err.message : 'unknown'),
+    }, 502);
+  }
+
+  // Forward rate-limit headers without the auth token
+  const fwdHeaders = {
+    'Content-Type':                  upstream.headers.get('Content-Type') || 'application/json',
+    'Access-Control-Allow-Origin':   '*',
+    'Access-Control-Expose-Headers': BC_RATE_HEADERS.join(', '),
+  };
+  for (const h of BC_RATE_HEADERS) {
+    const v = upstream.headers.get(h);
+    if (v) fwdHeaders[h] = v;
+  }
+
+  const text = await upstream.text();
+  return new Response(text, { status: upstream.status, headers: fwdHeaders });
+}
