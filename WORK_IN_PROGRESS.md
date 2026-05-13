@@ -49,3 +49,20 @@
 
 All changes are additive. No existing functionality modified.
 Rollback: remove 2 script tags from index.html, remove MODULE_REGISTRY entry.
+
+---
+
+## V2 UPDATE — 2026-05-13 (same session)
+
+**BIGCOMMERCE_INTELLIGENCE_V2 shipped:**
+- ✅ BC adapter expanded — `scanGMC()` (10 types), `scanSEO()` (9 types), `scanMerchandising()` (9 types), `scanAll()` with execMetrics
+- ✅ Ecommerce Intelligence rebuilt — 6 tabs: Exec Dashboard / GMC+Images / SEO / Merchandising / Products / Integration
+- ✅ Exec Dashboard — catalog quality %, GMC eligibility %, SEO health %, revenue opportunity estimates, domain flag breakdown
+- ✅ GA4 adapter runway (`js/ga4_adapter.js`) — topPages, topProducts, channelRevenue, conversionFunnel — awaits M06
+- ✅ GSC adapter runway (`js/gsc_adapter.js`) — topQueries, topPages, productQueries — awaits M06
+- ✅ Klaviyo adapter runway (`js/klaviyo_adapter.js`) — campaigns, flows, metrics revenue — awaits M09
+- ✅ GMC adapter runway (`js/gmc_adapter.js`) — productStatuses, disapproved, issues, merchant 687520574 — awaits M05
+- ✅ M46 SQL — page_title/meta_description/condition columns on bc_products_cache; platform_sync_status table + 3 views
+- ✅ Committed `6290c2a` + pushed
+
+**CLEAN PAUSE — branch: claude/bigcommerce-integration-setup-fio8z**
