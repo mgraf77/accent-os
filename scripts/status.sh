@@ -116,6 +116,39 @@ else
 fi
 echo
 
+# ── Module JS integrity ───────────────────────────────────────────────────────
+bold "Module JS integrity"
+missing_js=0
+while IFS= read -r jsfile; do
+  if [[ ! -f "$jsfile" ]]; then
+    warn "Missing: $jsfile"
+    missing_js=$(( missing_js + 1 ))
+  fi
+done < <(grep -o "js/[a-zA-Z_]*.js" index.html 2>/dev/null | sort -u)
+if [[ "$missing_js" -eq 0 ]]; then
+  total_js=$(grep -o "js/[a-zA-Z_]*.js" index.html 2>/dev/null | sort -u | wc -l | tr -d ' ')
+  ok "All $total_js js/ modules present"
+fi
+echo
+
+# ── Quote workflow sanity ─────────────────────────────────────────────────────
+bold "Quote workflow sanity"
+if [[ -f index.html ]]; then
+  checks_ok=0; checks_fail=0
+  for sym in loadSavedQ aiParseNotes undoAIParse exportQuoteCSV sbSaveQuote printQ; do
+    if grep -q "function $sym" index.html 2>/dev/null; then
+      checks_ok=$(( checks_ok + 1 ))
+    else
+      warn "Missing function: $sym"
+      checks_fail=$(( checks_fail + 1 ))
+    fi
+  done
+  if [[ "$checks_fail" -eq 0 ]]; then
+    ok "All $checks_ok quote workflow functions present"
+  fi
+fi
+echo
+
 # ── Live worker probe (optional, non-blocking) ───────────────────────────────
 bold "Live Worker Probe"
 WORKER_URL="https://accentos-anthropic-proxy.mgraf77.workers.dev/"

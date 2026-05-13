@@ -6698,7 +6698,7 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
       ${(()=>{
         const ver=window.__AOS_WORKER_VERSION__,env=window.__AOS_WORKER_ENV_KEY_READY__,ms=window.__AOS_WORKER_PROBE_MS__;
         const msNote=ms?` · ${ms}ms`:'';
-        if(ver==='stale'||env===null) return sRow('AI Worker','pending',`Stale — redeploy needed${msNote}`);
+        if(ver==='stale'||ver==='error'||env===null) return sRow('AI Worker','pending',`Stale — redeploy needed${msNote}`);
         if(env===false)               return sRow('AI Worker','pending',`v3 deployed · secret missing${msNote}`);
         if(env===true)                return sRow('AI Worker','live',`${ver}${msNote} · env key bound`);
         return sRow('AI Worker','pending',`Probing…`);
