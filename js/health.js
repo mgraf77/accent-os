@@ -85,34 +85,41 @@ function _renderRuntimeSection(c){
   if(ver === 'stale' || envKey === null){
     workerSev = 'FAIL'; workerLabel = 'Stale worker';
     workerDetail = 'v1/v2 live — deploy v3 via GitHub Actions';
+  } else if(ver === 'error'){
+    workerSev = 'FAIL'; workerLabel = 'Probe failed';
+    workerDetail = 'Fetch threw — worker unreachable or network blocked';
   } else if(ver === undefined){
     workerSev = 'WARN'; workerLabel = 'Probing…';
-    workerDetail = 'Probe still in flight or failed';
+    workerDetail = 'Probe still in flight';
   } else if(envKey === false){
     workerSev = 'WARN'; workerLabel = ver;
     workerDetail = 'env_key_set=false — bind ANTHROPIC_API_KEY in Cloudflare';
   } else if(envKey === true){
-    workerSev = 'HEALTHY'; workerLabel = ver;
-    workerDetail = `env_key_set=true${probeMs ? ' · ' + probeMs + 'ms' : ''}`;
+    const slowProbe = probeMs && probeMs > 2000;
+    workerSev = slowProbe ? 'WARN' : 'HEALTHY';
+    workerLabel = ver;
+    workerDetail = `env_key_set=true${probeMs ? ' · ' + probeMs + 'ms' + (slowProbe ? ' ⚠ slow' : '') : ''}`;
   } else {
     workerSev = 'INFO'; workerLabel = ver || 'unknown';
     workerDetail = 'env_key status unknown';
   }
 
   const aiKey = (typeof getS === 'function') ? getS('aos-api') : '';
+  const aiReady = (typeof _aiWorkerReady === 'function') ? _aiWorkerReady() : null;
   let aiSev, aiLabel, aiDetail;
-  if(aiKey){ aiSev = 'HEALTHY'; aiLabel = 'User key set'; aiDetail = 'Personal key in Settings overrides env'; }
-  else if(envKey === true){ aiSev = 'HEALTHY'; aiLabel = 'Worker env key'; aiDetail = 'ANTHROPIC_API_KEY bound in worker'; }
-  else if(envKey === false){ aiSev = 'WARN'; aiLabel = 'No AI auth'; aiDetail = 'Set key in Settings or bind in Cloudflare'; }
-  else if(envKey === null){ aiSev = 'FAIL'; aiLabel = 'No AI auth'; aiDetail = 'Stale worker — redeploy needed'; }
+  if(aiKey){ aiSev = 'HEALTHY'; aiLabel = 'User key set'; aiDetail = 'Personal key in Settings · overrides env'; }
+  else if(envKey === true && aiReady){ aiSev = 'HEALTHY'; aiLabel = 'Worker env key'; aiDetail = 'ANTHROPIC_API_KEY bound · AI features ready'; }
+  else if(envKey === true && !aiReady){ aiSev = 'WARN'; aiLabel = 'Env key bound'; aiDetail = 'Key bound but _aiWorkerReady()=false — check worker state'; }
+  else if(envKey === false){ aiSev = 'WARN'; aiLabel = 'No AI auth'; aiDetail = 'Set key in Settings → API Keys or bind secret in Cloudflare'; }
+  else if(envKey === null || ver === 'error'){ aiSev = 'FAIL'; aiLabel = 'No AI auth'; aiDetail = 'Worker unreachable or stale — redeploy needed'; }
   else { aiSev = 'INFO'; aiLabel = 'Checking…'; aiDetail = 'Worker probe in flight'; }
 
   let hydrateSev, hydrateLabel, hydrateDetail;
   if(!hydrateMs){ hydrateSev = 'INFO'; hydrateLabel = '—'; hydrateDetail = 'Not measured this session'; }
   else if(hydrateMs < 2000){ hydrateSev = 'HEALTHY'; hydrateLabel = hydrateMs + 'ms'; hydrateDetail = 'Fast'; }
   else if(hydrateMs < 5000){ hydrateSev = 'INFO'; hydrateLabel = hydrateMs + 'ms'; hydrateDetail = 'Normal'; }
-  else if(hydrateMs < 10000){ hydrateSev = 'WARN'; hydrateLabel = hydrateMs + 'ms'; hydrateDetail = 'Slow — check Supabase performance advisor'; }
-  else { hydrateSev = 'FAIL'; hydrateLabel = hydrateMs + 'ms'; hydrateDetail = 'Very slow — likely network or query issue'; }
+  else if(hydrateMs < 10000){ hydrateSev = 'WARN'; hydrateLabel = hydrateMs + 'ms'; hydrateDetail = 'Slow — possible Supabase cold-start. Normal on first login of day.'; }
+  else { hydrateSev = 'FAIL'; hydrateLabel = hydrateMs + 'ms'; hydrateDetail = 'Very slow — likely cold-start or network issue. Run DevTools → Network → XHR to find bottleneck.'; }
 
   const sevColor = {HEALTHY:'var(--green)',INFO:'var(--text-3)',WARN:'var(--yellow)',FAIL:'var(--accent)',CRITICAL:'var(--accent)'};
   const sevIcon  = {HEALTHY:'✓',INFO:'·',WARN:'⚠',FAIL:'✗',CRITICAL:'✗✗'};
@@ -251,9 +258,13 @@ function _renderSchemaSection(c){
         <div><strong>Browser:</strong> ${esc(navigator.userAgent.slice(0, 80))}</div>
         <div><strong>Window:</strong> ${window.innerWidth}×${window.innerHeight}</div>
         <div><strong>Active page:</strong> ${esc(typeof curPage!=='undefined'?curPage:'—')}</div>
+        <div><strong>User role:</strong> ${esc((typeof CU!=='undefined'&&CU)?CU.role+'  ·  '+CU.email:'not authenticated')}</div>
         <div><strong>Worker probe:</strong> ${window.__AOS_WORKER_PROBE_MS__ ? window.__AOS_WORKER_PROBE_MS__ + 'ms' : '—'}</div>
+        <div><strong>Worker version:</strong> ${esc(window.__AOS_WORKER_VERSION__ || '—')} · env_key=${String(window.__AOS_WORKER_ENV_KEY_READY__)}</div>
         <div><strong>Hydration:</strong> ${window.__AOS_HYDRATE_MS__ ? window.__AOS_HYDRATE_MS__ + 'ms' : '—'}</div>
-        <div><strong>Worker version:</strong> ${esc(window.__AOS_WORKER_VERSION__ || '—')}</div>
+        <div><strong>AI ready:</strong> ${(typeof _aiWorkerReady==='function') ? String(_aiWorkerReady()) : '—'}</div>
+        <div><strong>Supabase:</strong> ${(typeof sbConfigured==='function'&&sbConfigured()) ? 'configured' : 'not configured'}</div>
+        <div><strong>Console:</strong> <code>_runtimeHealth()</code> for full object</div>
       </div>
     </div>
   `;
