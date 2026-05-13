@@ -1,7 +1,7 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-12 — operational hardening session complete (telemetry + worker auth + deployment infra + status.sh).
+**Last updated:** 2026-05-13 — extended autonomous infrastructure evolution complete (10-track, 14 commits).
 **Branch:** `accent-work` (remote: `origin/claude/audit-repository-Fg9xI`)
 **Resume trigger:** "continue last session"
 
@@ -9,45 +9,36 @@
 
 ## STATUS
 
-Operational hardening session complete. 6 commits shipped across two session windows.
+Extended autonomous infrastructure evolution session complete. 14 commits shipped.
 
-**Worker auth + preflight hardening (b858821):**
-- ✅ `_aiWorkerReady()` + `_aiNotReadyHint()` helpers in index.html
-- ✅ Preflight guard on vendor detail AI, `aiParseNotes()`, `sendChat()`
-- ✅ `window.__AOS_WORKER_ENV_KEY_READY__` auto-clears to null on 401 response
+**Code changes:**
+- ✅ Health.js two-phase render (runtime section sync + schema section async) — `b9d9268`
+- ✅ Quote NaN safety fixes (3 arithmetic sites) — `f12590d`
+- ✅ Quote undo-parse (`_LI_UNDO` stash + ↩ button in success panel) — `beba1b2`
+- ✅ health-check.sh (parallel worker/pages/supabase/git checks, color + JSON output) — `13e6655`
 
-**GitHub Actions deploy workflow (03a4828):**
-- ✅ `.github/workflows/deploy-worker.yml` — triggers on push to main / workflow_dispatch
-- ⏳ BLOCKED: needs `CF_API_TOKEN` + `CF_ACCOUNT_ID` GitHub secrets (Michael action)
+**Doc additions (14 new docs):**
+- `docs/ops/`: RUNTIME_SURVIVABILITY_MODEL, FAILURE_RECOVERY_PATHS, DEGRADED_RUNTIME_SPEC, RUNTIME_BOTTLENECK_MATRIX, EVENT_STORM_RISK_ANALYSIS, RUNTIME_OBSERVABILITY_V3, RUNTIME_HEALTH_SCORECARD, STARTUP_PERFORMANCE_PROFILE, DEPLOYMENT_FORENSICS_GUIDE
+- `docs/governance/`: MODULE_DEPENDENCY_TIERS, RUNTIME_CRITICAL_PATHS, EXECUTION_LANE_OWNERSHIP, FEATURE_STABILITY_MATRIX
+- `docs/quote/`: QUOTE_EDGE_CASE_MATRIX
+- `docs/runtime/`: WORKER_RUNTIME_FORENSICS, DEPLOYMENT_ROLLBACK_MODEL
+- `CURRENT_PRIORITIES.md` (root): tier 1–3 priorities, session-end checklist
 
-**Runtime docs (0c35008):**
-- ✅ `docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md`
-- ✅ `docs/runtime/DEPLOYMENT_STATE_MODEL_V1.md`
-- ✅ `docs/runtime/WORKER_RUNTIME_RECOVERY.md`
-- ✅ `docs/runtime/LUNCH_EXECUTION_REPORT.md`
+**typeof guard decision:**
+- ✅ KEPT — savedFiltersBar/bulkSelBar guards in 8 modules are LIVE defensive guards. Scripts at pos 34–35, callers at 1–16. Protection against script load failures.
 
-**Parallel branch reconciliation (34c6545):**
-- ✅ `docs/runtime/PARALLEL_BRANCH_RECONCILIATION_PLAN.md`
-- ✅ `integration/reconcile` branch pushed (Jules commit cherry-picked onto Claude's 11 commits)
-- ⏳ READY FOR PR: `integration/reconcile` → main (no action until Michael approves)
-
-**Runtime telemetry (b6fc858):**
-- ✅ `window.__AOS_WORKER_PROBE_MS__` probe latency tracking
-- ✅ `window.__AOS_HYDRATE_MS__` hydration timing
-- ✅ `_runtimeHealth()` structured health object
-- ✅ System Status card upgraded to live runtime state (worker/AI/hydration rows)
-
-**status.sh rewrite (95f806e):**
-- ✅ Color output helpers, deployment section, live worker probe, runtime docs check
+**Open loops:**
+- ⏳ Worker v3 deploy (Michael/ops must redeploy + bind ANTHROPIC_API_KEY secret)
+- ⏳ integration/reconcile → main PR (ready, awaiting Michael approval)
+- ⏳ M03/M04/M05/M06/M09/M10/M18/M29/M30 — blocked on Michael
 
 ## NEXT
 
-Unblocked feature items:
-- `typeof` guard cleanup — `savedFiltersBar`/`bulkSelBar`/`bulkSelRegister` calls in ~8 modules wrapped in dead guards (both scripts always loaded). Low priority cosmetic refactor.
-- Saved Filter Sets — wire remaining modules that don't use `savedFiltersBar()` yet.
-- Bulk action bars — wire remaining modules that don't use `bulkSelBar()` yet.
-- My Tasks widget — personal task queue on dashboard.
-- OKR progress auto-compute — derive OKR % from live data globals.
+Priority order (see CURRENT_PRIORITIES.md):
+1. MODULE_REGISTRY refactor — collapse 4 shell touchpoints to 1 declarative entry (highest-leverage unblocked item)
+2. Quote Save atomicity — Supabase RPC transaction (when quote volume warrants)
+3. Dashboard Pinning S1 — Supabase `user_module_overrides` table (after M30 SQL)
+4. index.html size — 755 KB, extract 2–3 more large sections
 
 Blocked until Michael acts: M03/M04/M05/M06/M09/M10/M18.
 Worker redeployment: Add `CF_API_TOKEN` + `CF_ACCOUNT_ID` to GitHub secrets → trigger workflow_dispatch or push to main → worker auto-deploys. See docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md.

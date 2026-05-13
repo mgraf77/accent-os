@@ -78,7 +78,7 @@ Tracks the production maturity of every module/feature in AccentOS. Used to deci
 
 | Feature | Stability | Notes |
 |---|---|---|
-| Quote AI Parse (aiParseNotes) | S2 | All error paths handled; NaN guards added; preflight |
+| Quote AI Parse (aiParseNotes) | S2 | All error paths handled; NaN guards added; preflight; undo-parse button |
 | AI Chat (sendChat) | S2 | Preflight guard; graceful 503/401/network paths |
 | Vendor AI Detail | S1 | Preflight guard; error shown inline |
 | AI Chat — Customer Mode | S1 | Mode toggle; different system prompt |

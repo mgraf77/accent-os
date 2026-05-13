@@ -135,7 +135,7 @@ Exhaustive matrix of known and potential edge cases in the quote workflow. Each 
 | sbSaveQuote DELETE+INSERT atomicity | MEDIUM | Wrap in Supabase RPC with transaction |
 | No client-side validation of line count | LOW | Add warning if >200 lines |
 | AI parse replaces user's manual edits without warning | LOW | Add "are you sure?" if LI already has user-edited rows |
-| No undo after AI parse | LOW | Stash previous LI before replacement; offer "Undo parse" button |
+| No undo after AI parse | ✅ FIXED | `_LI_UNDO` stashes LI before replacement; ↩ Undo parse button shown in success panel |
 | No partial-parse recovery | LOW | If AI returns 5 valid + 3 malformed lines, only 5 are injected |
 
 ---
