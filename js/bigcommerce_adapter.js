@@ -327,98 +327,382 @@ const BC = {
     }
   },
 
-  // ── OPPORTUNITY SCANNER ──────────────────────────────────────────────────────
-  // Runs over a product array (pass already-fetched data to avoid double-fetch).
-  // Returns structured opportunity flags — no ML, no scoring system.
-  // Pure field-existence / threshold checks.
+  // ── OPPORTUNITY SCANNERS ─────────────────────────────────────────────────────
+  // Each scanner takes a product array and returns { flags[], summary{} }.
+  // scanAll() merges all four domains. No ML — pure field checks + thresholds.
   opportunity: {
-    scan(products = []) {
-      if (!products.length) return { flags: [], summary: {} };
 
+    // Helper: strip HTML tags and return plain text
+    _text(html) { return (html || '').replace(/<[^>]+>/g, '').trim(); },
+
+    // Helper: extract custom field value by name (case-insensitive)
+    _cf(p, ...names) {
+      const cfs = p.custom_fields || [];
+      for (const n of names) {
+        const f = cfs.find(c => c.name && c.name.toLowerCase() === n.toLowerCase());
+        if (f && f.value) return f.value;
+      }
+      return null;
+    },
+
+    // ── GMC / IMAGE SCANNER ──────────────────────────────────────────────────
+    scanGMC(products = []) {
+      if (!products.length) return { flags: [], summary: {} };
       const flags = [];
 
       for (const p of products) {
-        const id   = p.id;
+        const id = p.id || p.bc_product_id;
         const name = p.name || '';
         const sku  = p.sku  || '';
+        const imgs = p.images || [];
+        const imgCount = p.image_count ?? imgs.length;
+        const gtin = this._cf(p, 'GTIN', 'gtin', 'UPC', 'EAN') || p.gtin || null;
+        const mpn  = this._cf(p, 'MPN', 'mpn', 'Part Number') || p.mpn || null;
+        const textLen = this._text(p.description_html || p.description).length;
 
-        // Missing description
-        if (!p.description || p.description.replace(/<[^>]+>/g, '').trim().length < 50) {
-          flags.push({ product_id: id, name, sku, type: 'missing_description',
-            severity: 'high', detail: 'Description absent or under 50 chars' });
+        // Missing images entirely
+        if (imgCount === 0) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_missing_image',
+            severity: 'high', detail: 'No product image — Google will suppress from Shopping' });
+        } else if (imgCount < 3) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_low_image_count',
+            severity: 'medium', detail: `Only ${imgCount} image${imgCount===1?'':'s'} — 3+ increases CTR` });
         }
 
-        // Missing images
-        if (!p.images || p.images.length === 0) {
-          flags.push({ product_id: id, name, sku, type: 'missing_image',
-            severity: 'high', detail: 'No product images attached' });
+        // Description missing or too thin for GMC
+        if (textLen < 50) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_missing_description',
+            severity: 'high', detail: `Description ${textLen} chars — GMC requires meaningful product copy` });
+        }
+
+        // No brand assigned
+        if (!p.brand_id) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_missing_brand',
+            severity: 'high', detail: 'No brand — required for GMC product listing eligibility' });
+        }
+
+        // No GTIN or MPN (identifier exists risk)
+        if (!gtin && !mpn) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_no_identifier',
+            severity: 'medium', detail: 'No GTIN or MPN in custom fields — affects GMC feed quality score' });
+        }
+
+        // Price is zero or missing
+        if (!p.price || p.price <= 0) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_no_price',
+            severity: 'high', detail: 'Price is 0 or unset — ineligible for Shopping ads' });
+        }
+
+        // No category
+        const cats = p.categories || [];
+        if (!cats.length) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_uncategorized',
+            severity: 'medium', detail: 'No category assigned — GMC Google Product Category inference fails' });
+        }
+
+        // Condition not set
+        if (!p.condition || p.condition === '') {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_condition_unset',
+            severity: 'low', detail: 'Product condition not set — GMC defaults to "New" but explicit is safer' });
+        }
+
+        // Title too long (GMC truncates at 150 chars)
+        if (name.length > 150) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_title_too_long',
+            severity: 'low', detail: `Title ${name.length} chars — GMC truncates after 150` });
+        }
+
+        // Title too short (weak signal quality)
+        if (name.length > 0 && name.length < 20) {
+          flags.push({ product_id: id, name, sku, domain: 'gmc', type: 'gmc_title_too_short',
+            severity: 'medium', detail: `Title "${name}" is only ${name.length} chars — low descriptiveness` });
+        }
+      }
+
+      return this._summarize(products.length, flags, 'gmc');
+    },
+
+    // ── SEO SCANNER ──────────────────────────────────────────────────────────
+    scanSEO(products = []) {
+      if (!products.length) return { flags: [], summary: {} };
+      const flags = [];
+
+      // Build description fingerprint map for duplicate detection
+      const descMap = {};
+      for (const p of products) {
+        const text = this._text(p.description_html || p.description);
+        if (text.length > 80) {
+          const fp = text.slice(0, 120).toLowerCase().replace(/\s+/g, ' ');
+          descMap[fp] = (descMap[fp] || []);
+          descMap[fp].push(p.id || p.bc_product_id);
+        }
+      }
+      const duplicateIds = new Set();
+      for (const [, ids] of Object.entries(descMap)) {
+        if (ids.length > 1) ids.forEach(id => duplicateIds.add(id));
+      }
+
+      for (const p of products) {
+        const id   = p.id || p.bc_product_id;
+        const name = p.name || '';
+        const sku  = p.sku  || '';
+        const metaDesc    = (p.meta_description || '').trim();
+        const pageTitle   = (p.page_title || '').trim();
+        const textContent = this._text(p.description_html || p.description);
+
+        // Missing meta description — biggest SEO gap
+        if (!metaDesc) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_missing_meta_description',
+            severity: 'high', detail: 'No meta description — snippet defaults to page content in SERPs' });
+        } else if (metaDesc.length < 70) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_meta_description_too_short',
+            severity: 'medium', detail: `Meta description ${metaDesc.length} chars — optimal 120–155` });
+        } else if (metaDesc.length > 160) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_meta_description_too_long',
+            severity: 'low', detail: `Meta description ${metaDesc.length} chars — Google truncates at ~155` });
+        }
+
+        // Missing page title (separate from product name)
+        if (!pageTitle) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_missing_page_title',
+            severity: 'medium', detail: 'No page_title set — defaults to product name without brand/modifier' });
+        } else if (pageTitle.length > 65) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_title_too_long',
+            severity: 'low', detail: `Page title ${pageTitle.length} chars — Google truncates ~60` });
+        }
+
+        // Thin description content (affects Panda-style quality signals)
+        if (textContent.length < 100) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_thin_description',
+            severity: 'high', detail: `Description is ${textContent.length} chars of plain text — thin content risk` });
+        }
+
+        // Duplicate description
+        if (duplicateIds.has(id)) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_duplicate_description',
+            severity: 'high', detail: 'Description matches another product — duplicate content penalty risk' });
         }
 
         // Missing search keywords
-        if (!p.search_keywords || p.search_keywords.trim().length === 0) {
-          flags.push({ product_id: id, name, sku, type: 'missing_keywords',
-            severity: 'medium', detail: 'search_keywords field empty' });
+        if (!p.search_keywords || !p.search_keywords.trim()) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_missing_search_keywords',
+            severity: 'medium', detail: 'search_keywords empty — BC uses this for on-site search + SEO signals' });
         }
 
-        // No category assignment
-        if (!p.categories || p.categories.length === 0) {
-          flags.push({ product_id: id, name, sku, type: 'no_category',
-            severity: 'medium', detail: 'Product not assigned to any category' });
+        // Title formatting issues
+        if (name === name.toUpperCase() && name.length > 8) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_title_all_caps',
+            severity: 'low', detail: 'Product name is all-caps — poor SERP presentation, reduces CTR' });
         }
 
-        // Low margin (cost_price > 0 and margin < 10%)
-        if (p.cost_price > 0 && p.price > 0) {
-          const margin = (p.price - p.cost_price) / p.price;
-          if (margin < 0.10) {
-            flags.push({ product_id: id, name, sku, type: 'low_margin',
-              severity: 'medium',
-              detail: `Margin ${(margin * 100).toFixed(1)}% (cost $${p.cost_price.toFixed(2)}, price $${p.price.toFixed(2)})` });
-          }
-        }
-
-        // High traffic, low conversion
-        if (p.view_count > 100 && p.total_sold > 0) {
-          const convRate = p.total_sold / p.view_count;
-          if (convRate < 0.005) {
-            flags.push({ product_id: id, name, sku, type: 'high_traffic_low_conversion',
-              severity: 'medium',
-              detail: `${p.view_count} views, ${p.total_sold} sold (${(convRate * 100).toFixed(2)}% conv)` });
-          }
-        }
-
-        // Hidden / invisible products with inventory
-        if (p.is_visible === false && (p.inventory_level || 0) > 0) {
-          flags.push({ product_id: id, name, sku, type: 'hidden_with_stock',
-            severity: 'low', detail: `Not visible on storefront but ${p.inventory_level} units in stock` });
-        }
-
-        // Low stock warning
-        if (p.inventory_tracking !== 'none' &&
-            p.inventory_level > 0 &&
-            p.inventory_warning_level > 0 &&
-            p.inventory_level <= p.inventory_warning_level) {
-          flags.push({ product_id: id, name, sku, type: 'low_stock',
-            severity: 'high',
-            detail: `${p.inventory_level} units (warning level: ${p.inventory_warning_level})` });
+        // SKU-noise in title (starts with numbers or code-like prefix)
+        if (/^[A-Z0-9]{4,10}[-\s]/.test(name)) {
+          flags.push({ product_id: id, name, sku, domain: 'seo', type: 'seo_title_sku_noise',
+            severity: 'low', detail: 'Title appears to start with a SKU/code — low keyword relevance for organic' });
         }
       }
 
+      return this._summarize(products.length, flags, 'seo');
+    },
+
+    // ── MERCHANDISING SCANNER ────────────────────────────────────────────────
+    scanMerchandising(products = []) {
+      if (!products.length) return { flags: [], summary: {} };
+      const flags = [];
+      const now = Date.now();
+      const day = 86400000;
+
+      for (const p of products) {
+        const id   = p.id || p.bc_product_id;
+        const name = p.name || '';
+        const sku  = p.sku  || '';
+        const views = p.view_count || 0;
+        const sold  = p.total_sold || 0;
+        const price = p.price || 0;
+        const cost  = p.cost_price || 0;
+        const margin = cost > 0 && price > 0 ? (price - cost) / price : null;
+        const convRate = views > 0 ? sold / views : null;
+        const hasRelated = Array.isArray(p.related_products) ? p.related_products.length > 0
+          : (p.has_related_products === true);
+
+        // High-traffic, zero sales — demand with no close
+        if (views > 50 && sold === 0) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_high_traffic_no_sales',
+            severity: 'high', detail: `${views} views, 0 sales — price/content/availability may be blocking purchase` });
+        }
+
+        // High-traffic, low conversion (views > 200, conv < 0.5%)
+        if (views > 200 && convRate !== null && convRate < 0.005 && sold > 0) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_high_traffic_low_conv',
+            severity: 'medium', detail: `${views} views, ${sold} sold (${(convRate*100).toFixed(2)}% conv) — revisit price/images/description` });
+        }
+
+        // Low-margin + high-traffic: spending marketing $ on thin products
+        if (margin !== null && margin < 0.15 && views > 100) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_low_margin_high_traffic',
+            severity: 'high', detail: `${(margin*100).toFixed(1)}% margin with ${views} views — high-cost traffic on low-profit SKU` });
+        }
+
+        // Sale price set but conversion is still weak
+        if (p.sale_price && p.sale_price < price && convRate !== null && convRate < 0.003) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_sale_not_converting',
+            severity: 'medium', detail: `On sale ($${p.sale_price}) but still ${(convRate*100).toFixed(2)}% conv — sale price may not be compelling` });
+        }
+
+        // Featured but poor conversion
+        if (p.is_featured && views > 50 && convRate !== null && convRate < 0.01) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_featured_low_conv',
+            severity: 'medium', detail: `Featured product with ${(convRate*100).toFixed(2)}% conv — reconsider featured slot` });
+        }
+
+        // No related products (weak cross-sell / accessory attachment)
+        if (!hasRelated && sold > 5) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_no_related_products',
+            severity: 'medium', detail: `${sold} units sold with no related products set — missed upsell opportunity` });
+        }
+
+        // Invisible but historically high seller
+        if (p.is_visible === false && sold > 10) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_invisible_high_seller',
+            severity: 'high', detail: `Hidden on storefront but has ${sold} historical sales — likely should be reinstated` });
+        }
+
+        // Dead listing — available but zero views and zero sales
+        if (p.availability === 'available' && p.is_visible && views === 0 && sold === 0) {
+          flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_dead_listing',
+            severity: 'low', detail: 'Available + visible but 0 views, 0 sales — may need promotion or catalog cleanup' });
+        }
+
+        // Stale listing — not modified in 180+ days
+        if (p.bc_date_modified) {
+          const ageMs = now - new Date(p.bc_date_modified).getTime();
+          if (ageMs > 180 * day && sold === 0) {
+            flags.push({ product_id: id, name, sku, domain: 'merch', type: 'merch_stale_no_sales',
+              severity: 'low', detail: `Not updated in ${Math.round(ageMs/day/30)}mo and never sold — archive candidate` });
+          }
+        }
+      }
+
+      return this._summarize(products.length, flags, 'merch');
+    },
+
+    // ── BASE SCANNER (v1 flags — inventory / margin / conversion basics) ──────
+    scan(products = []) {
+      if (!products.length) return { flags: [], summary: {} };
+      const flags = [];
+
+      for (const p of products) {
+        const id   = p.id || p.bc_product_id;
+        const name = p.name || '';
+        const sku  = p.sku  || '';
+        const imgs = p.images || [];
+        const imgCount = p.image_count ?? imgs.length;
+
+        if (this._text(p.description_html || p.description).length < 50)
+          flags.push({ product_id: id, name, sku, domain: 'base', type: 'missing_description',
+            severity: 'high', detail: 'Description absent or under 50 chars' });
+
+        if (imgCount === 0)
+          flags.push({ product_id: id, name, sku, domain: 'base', type: 'missing_image',
+            severity: 'high', detail: 'No product images attached' });
+
+        if (!p.search_keywords || !p.search_keywords.trim())
+          flags.push({ product_id: id, name, sku, domain: 'base', type: 'missing_keywords',
+            severity: 'medium', detail: 'search_keywords field empty' });
+
+        if (!(p.categories || []).length)
+          flags.push({ product_id: id, name, sku, domain: 'base', type: 'no_category',
+            severity: 'medium', detail: 'Product not assigned to any category' });
+
+        if (p.cost_price > 0 && p.price > 0) {
+          const m = (p.price - p.cost_price) / p.price;
+          if (m < 0.10) flags.push({ product_id: id, name, sku, domain: 'base', type: 'low_margin',
+            severity: 'medium', detail: `Margin ${(m*100).toFixed(1)}% (cost $${p.cost_price.toFixed(2)}, price $${p.price.toFixed(2)})` });
+        }
+
+        if ((p.view_count||0) > 100 && (p.total_sold||0) > 0 && p.total_sold/p.view_count < 0.005)
+          flags.push({ product_id: id, name, sku, domain: 'base', type: 'high_traffic_low_conversion',
+            severity: 'medium', detail: `${p.view_count} views, ${p.total_sold} sold (${(p.total_sold/p.view_count*100).toFixed(2)}% conv)` });
+
+        if (p.is_visible === false && (p.inventory_level||0) > 0)
+          flags.push({ product_id: id, name, sku, domain: 'base', type: 'hidden_with_stock',
+            severity: 'low', detail: `Not visible but ${p.inventory_level} units in stock` });
+
+        if (p.inventory_tracking !== 'none' && p.inventory_level > 0 &&
+            p.inventory_warning_level > 0 && p.inventory_level <= p.inventory_warning_level)
+          flags.push({ product_id: id, name, sku, domain: 'base', type: 'low_stock',
+            severity: 'high', detail: `${p.inventory_level} units (warning level: ${p.inventory_warning_level})` });
+      }
+
+      return this._summarize(products.length, flags, 'base');
+    },
+
+    // ── SCAN ALL — runs all 4 scanners and merges ────────────────────────────
+    scanAll(products = []) {
+      const base  = this.scan(products);
+      const gmc   = this.scanGMC(products);
+      const seo   = this.scanSEO(products);
+      const merch = this.scanMerchandising(products);
+
+      const allFlags = [...base.flags, ...gmc.flags, ...seo.flags, ...merch.flags];
+      const byDomain = { base: base.summary, gmc: gmc.summary, seo: seo.summary, merch: merch.summary };
+      const byType = {};
+      const bySeverity = { high: 0, medium: 0, low: 0 };
+
+      for (const f of allFlags) {
+        byType[f.type]         = (byType[f.type] || 0) + 1;
+        bySeverity[f.severity] = (bySeverity[f.severity] || 0) + 1;
+      }
+
+      // Executive metrics — catalog quality and opportunity estimates
+      const n = products.length || 1;
+      const withImages   = products.filter(p => (p.image_count ?? (p.images||[]).length) > 0).length;
+      const withDesc     = products.filter(p => this._text(p.description_html||p.description).length >= 100).length;
+      const withMeta     = products.filter(p => (p.meta_description||'').length >= 70).length;
+      const withCategory = products.filter(p => (p.categories||[]).length > 0).length;
+      const withBrand    = products.filter(p => !!p.brand_id).length;
+      const gmcEligible  = products.filter(p =>
+        (p.image_count ?? (p.images||[]).length) > 0 &&
+        this._text(p.description_html||p.description).length >= 50 &&
+        !!p.brand_id && (p.price||0) > 0 && (p.categories||[]).length > 0
+      ).length;
+      const avgPrice = products.reduce((s,p) => s + (p.price||0), 0) / n;
+
+      const execMetrics = {
+        catalog_quality_score: Math.round((withImages + withDesc + withCategory + withBrand) / (4*n) * 100),
+        gmc_eligibility_rate:  Math.round(gmcEligible / n * 100),
+        seo_health_score:      Math.round(withMeta / n * 100),
+        image_coverage:        Math.round(withImages / n * 100),
+        description_coverage:  Math.round(withDesc / n * 100),
+        high_priority_fixes:   bySeverity.high,
+        total_flags:           allFlags.length,
+        // rough GMC opportunity: ineligible products × avg_price × ~0.002 GMC conv factor
+        gmc_revenue_opportunity: Math.round((n - gmcEligible) * avgPrice * 0.002 * 12),
+        // total views on high-traffic/no-sales products
+        dead_traffic_views: products
+          .filter(p => (p.view_count||0) > 50 && (p.total_sold||0) === 0)
+          .reduce((s,p) => s + (p.view_count||0), 0)
+      };
+
+      return {
+        flags: allFlags,
+        byDomain,
+        byType,
+        bySeverity,
+        execMetrics,
+        totalProducts: products.length
+      };
+    },
+
+    // Internal summarizer
+    _summarize(total, flags, domain) {
       const byType = {};
       const bySeverity = { high: 0, medium: 0, low: 0 };
       for (const f of flags) {
-        byType[f.type]      = (byType[f.type] || 0) + 1;
-        bySeverity[f.severity]++;
+        byType[f.type]         = (byType[f.type] || 0) + 1;
+        bySeverity[f.severity] = (bySeverity[f.severity] || 0) + 1;
       }
-
-      return {
-        flags,
-        summary: {
-          total_products: products.length,
-          total_flags: flags.length,
-          by_type: byType,
-          by_severity: bySeverity
-        }
-      };
+      return { flags, summary: { domain, total_products: total, total_flags: flags.length, by_type: byType, by_severity: bySeverity } };
     }
   }
 };
@@ -476,6 +760,12 @@ async function bcSyncCatalogToSupabase(products, categories, brands) {
     thumbnail_url: p.images?.[0]?.url_thumbnail || null,
     custom_fields: p.custom_fields || [],
     bc_date_modified: p.date_modified || null,
+    // V2 SEO + GMC fields (M46)
+    page_title: p.page_title || null,
+    meta_description: p.meta_description || null,
+    meta_keywords: p.meta_keywords || null,
+    condition: p.condition || null,
+    has_related_products: Array.isArray(p.related_products) && p.related_products.length > 0,
     synced_at: now
   }));
 
@@ -515,7 +805,7 @@ async function bcLoadCachedProducts(limit = 500) {
   if (!sbConfigured()) return [];
   try {
     const rows = await sbFetch(
-      `/bc_products_cache?order=name.asc&limit=${limit}&select=bc_product_id,sku,name,price,cost_price,inventory_level,inventory_warning_level,inventory_tracking,categories,brand_id,is_visible,total_sold,view_count,search_keywords,image_count,thumbnail_url,description_html,synced_at`
+      `/bc_products_cache?order=name.asc&limit=${limit}&select=bc_product_id,sku,name,price,cost_price,retail_price,sale_price,inventory_level,inventory_warning_level,inventory_tracking,categories,brand_id,is_visible,is_featured,availability,total_sold,view_count,search_keywords,image_count,thumbnail_url,description_html,page_title,meta_description,meta_keywords,condition,has_related_products,custom_fields,bc_date_modified,synced_at`
     );
     return Array.isArray(rows) ? rows : [];
   } catch(e) {
