@@ -106,8 +106,9 @@ async function bcFetch(path, opts = {}) {
   await _bcRateCheck();
 
   // Route through Worker proxy — Worker injects X-Auth-Token server-side
-  const url = _bcProxyBase() + path;
-
+  // Prepend /v3 to non-versioned BC paths.
+  const versionedPath = path.startsWith('/v2/') ? path : '/v3' + path;
+  const url = _bcProxyBase() + versionedPath;
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
