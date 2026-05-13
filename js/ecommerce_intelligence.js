@@ -27,6 +27,8 @@ let EI = {
 // ── RENDER ENTRY POINT ────────────────────────────────────────────────────────
 
 async function renderEcommerce(el) {
+  // Probe Worker for BC configured state before rendering header buttons
+  if (typeof bcRefreshConfigured === 'function') await bcRefreshConfigured();
   el.innerHTML = `
     <div class="page-header">
       <div>
@@ -703,7 +705,7 @@ function eiPlatformCard(p) {
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <span style="color:${color};font-weight:700;font-size:12px;">${icon} ${label}</span>
     </div>
-    ${ok && p.key === 'bc' ? `<button class="btn btn-outline btn-sm" onclick="eiConfigModal()">Update Token</button>` : ''}
+    ${p.key === 'bc' && !ok ? `<button class="btn btn-outline btn-sm" onclick="eiConfigModal()">Setup Instructions</button>` : ''}
     ${!ok ? `<div class="muted sm" style="font-size:11px;">${esc(p.docs)}</div>` : ''}
   </div>`;
 }
@@ -718,37 +720,40 @@ function eiCacheStatPill(label, val) {
 // ── CONFIG MODAL ──────────────────────────────────────────────────────────────
 
 function eiConfigModal() {
-  const cfg = bcGetConfig();
   openModal(`
     <div style="padding:4px;">
-      <div style="font-size:16px;font-weight:700;margin-bottom:16px;">BigCommerce API Token (M04)</div>
-      <div style="margin-bottom:12px;">
-        <label class="form-label">Store Hash</label>
-        <input id="ei-store-hash" class="form-input" value="${esc(cfg?.storeHash||'store-cwqiwcjxes')}" placeholder="store-cwqiwcjxes">
-      </div>
-      <div style="margin-bottom:16px;">
-        <label class="form-label">API Token (X-Auth-Token)</label>
-        <input id="ei-token" class="form-input" type="password" value="${cfg?.token?'••••••••':''}" placeholder="Paste token here…">
-        <div class="muted sm" style="margin-top:4px;">Stored in localStorage. Sent only to BigCommerce API — never to AccentOS servers.</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:16px;">BigCommerce API — Setup (M04)</div>
+      <div style="background:var(--surface-2);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.6;">
+        <div style="font-weight:600;margin-bottom:8px;">BC credentials are stored as Cloudflare Worker secrets — never in the browser.</div>
+        <div style="margin-bottom:6px;">To activate BigCommerce, run these commands from your terminal:</div>
+        <pre style="background:var(--bg);border-radius:5px;padding:10px;font-size:11px;overflow-x:auto;">wrangler secret put BC_STORE_HASH
+# Enter: store-cwqiwcjxes (or your store hash)
+
+wrangler secret put BC_ACCESS_TOKEN
+# Paste your BC V2/V3 API access token</pre>
+        <div style="margin-top:8px;color:var(--text-3);font-size:12px;">
+          Get the token at: BigCommerce Admin → Settings → API Accounts → Create V2/V3 Token<br>
+          Required scopes: Products (read), Categories (read), Orders (read), Information (read)
+        </div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-accent" onclick="eiSaveToken()">Save &amp; Test</button>
-        ${cfg?`<button class="btn btn-outline" onclick="bcClearConfig();closeModal();toast('BC token cleared','info');">Clear Token</button>`:''}
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-accent" onclick="eiCheckConnection()">Check Connection</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
       </div>
     </div>
   `);
 }
 
-async function eiSaveToken() {
-  const hash  = document.getElementById('ei-store-hash')?.value.trim();
-  const token = document.getElementById('ei-token')?.value.trim();
-  if (!token || token === '••••••••') { toast('Enter a token first', 'warn'); return; }
-  bcSaveConfig(hash||'store-cwqiwcjxes', token);
+async function eiCheckConnection() {
   closeModal();
-  toast('Token saved — testing connection…', 'info');
+  toast('Checking BC connection via Worker…', 'info');
   const status = await BC.health.status();
-  toast(status.ok||status.configured ? `BC connected · ${status.label}` : `BC error: ${status.label}`, status.ok?'ok':'warn');
+  toast(
+    status.configured
+      ? (status.label.includes('Connected') ? `BC ${status.label}` : `BC status: ${status.label}`)
+      : status.label,
+    status.configured && status.label.includes('Connected') ? 'ok' : 'warn'
+  );
   await eiRefreshStatus();
   eiRenderTab();
 }

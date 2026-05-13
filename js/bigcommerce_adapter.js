@@ -6,10 +6,11 @@
 // Michael completes M04. All public surfaces check bcConfigured() first.
 //
 // This module provides:
-//   bcConfigured()           → bool — token + store hash present
-//   bcGetConfig()            → {storeHash, token} or null
-//   bcSaveConfig(h, t)       → persist to localStorage (dev) / Supabase (prod)
-//   bcFetch(path, opts)      → authenticated GET to BC V3 (rate-limit aware)
+//   bcConfigured()           → bool — Worker reports BC secrets are set
+//   bcRefreshConfigured()    → async probe Worker for bc_configured flag
+//   bcGetConfig()            → {storeHash:'(Worker)'} or null
+//   bcClearConfig()          → clear session cache (no localStorage token)
+//   bcFetch(path, opts)      → GET via Worker proxy /bc/* (rate-limit aware)
 //   bcFetchAll(path, params) → paginated fetch, returns full array
 //   BC.products.list(opts)   → product catalog
 //   BC.products.get(id)      → single product with images+variants
@@ -23,42 +24,55 @@
 //   BC.syncLog.recent(n)     → last N sync events from Supabase bc_sync_log
 //   BC.opportunity.scan()    → compute opportunity flags over cached catalog
 
-// ── CONFIG STORAGE ────────────────────────────────────────────────────────────
+// ── PROXY CONFIG ──────────────────────────────────────────────────────────────
+// BC API calls route through the AccentOS Cloudflare Worker proxy.
+// The Worker injects X-Auth-Token from its secret binding — the browser
+// never sees the BC access token. Token is set via:
+//   wrangler secret put BC_STORE_HASH
+//   wrangler secret put BC_ACCESS_TOKEN
+//
+// Worker probe (/version) reports bc_configured:true when both secrets are set.
 
-const BC_STORE_HASH = 'store-cwqiwcjxes';
-const BC_CONFIG_KEY = 'accentos_bc_config';
-const BC_CACHE_KEY  = 'accentos_bc_cache';
-const BC_API_BASE   = `https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3`;
-const BC_API_V2     = `https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v2`;
+const BC_CACHE_KEY = 'accentos_bc_cache';
 
-// In-memory cache for the session
-let _bcConfig = null;
+// Proxy base — resolves via the global set in index.html (AOS_WORKER_BASE)
+function _bcProxyBase() {
+  return (typeof AOS_WORKER_BASE !== 'undefined' ? AOS_WORKER_BASE : '') + '/bc';
+}
+
+// In-memory: worker probe result (refreshed once per session)
+let _bcWorkerConfigured = null;
 let _bcCache  = { products: null, categories: null, brands: null, summary: null, fetchedAt: null };
 
+// bcConfigured() — true when Worker reports BC secrets are set.
+// Cached per session after first probe; re-checked on explicit refresh.
 function bcConfigured() {
-  const cfg = bcGetConfig();
-  return !!(cfg && cfg.token && cfg.storeHash);
+  return _bcWorkerConfigured === true;
 }
 
-function bcGetConfig() {
-  if (_bcConfig) return _bcConfig;
+async function bcRefreshConfigured() {
   try {
-    const raw = localStorage.getItem(BC_CONFIG_KEY);
-    if (raw) { _bcConfig = JSON.parse(raw); return _bcConfig; }
-  } catch(e) { /* ignore */ }
-  return null;
+    const base = typeof AOS_WORKER_BASE !== 'undefined' ? AOS_WORKER_BASE : '';
+    const r = await fetch(base + '/version', { method: 'GET' });
+    if (!r.ok) { _bcWorkerConfigured = false; return false; }
+    const data = await r.json();
+    _bcWorkerConfigured = Boolean(data && data.bc_configured);
+  } catch(e) {
+    _bcWorkerConfigured = false;
+  }
+  return _bcWorkerConfigured;
 }
 
-function bcSaveConfig(storeHash, token) {
-  _bcConfig = { storeHash: storeHash || BC_STORE_HASH, token };
-  try { localStorage.setItem(BC_CONFIG_KEY, JSON.stringify(_bcConfig)); } catch(e) { /* ignore */ }
-  console.log('[bc] Config saved. Store:', _bcConfig.storeHash);
+// bcGetConfig() — returns proxy info (no token — never client-side)
+function bcGetConfig() {
+  return _bcWorkerConfigured ? { storeHash: '(set in Worker)', token: '(set in Worker)' } : null;
 }
 
+// bcClearConfig() — clears cache so next bcConfigured() call re-probes
 function bcClearConfig() {
-  _bcConfig = null;
+  _bcWorkerConfigured = null;
   _bcCache  = { products: null, categories: null, brands: null, summary: null, fetchedAt: null };
-  try { localStorage.removeItem(BC_CONFIG_KEY); localStorage.removeItem(BC_CACHE_KEY); } catch(e) { /* ignore */ }
+  try { localStorage.removeItem(BC_CACHE_KEY); } catch(e) { /* ignore */ }
 }
 
 // ── RATE LIMITING ─────────────────────────────────────────────────────────────
@@ -89,15 +103,12 @@ async function _bcRateCheck() {
 
 async function bcFetch(path, opts = {}) {
   if (!bcConfigured()) throw new Error('BC_NOT_CONFIGURED');
-  const cfg = bcGetConfig();
   await _bcRateCheck();
 
-  const base = path.startsWith('/v2/') ? BC_API_V2 : BC_API_BASE;
-  const cleanPath = path.startsWith('/v2/') ? path.slice(3) : path;
-  const url = base + cleanPath;
+  // Route through Worker proxy — Worker injects X-Auth-Token server-side
+  const url = _bcProxyBase() + path;
 
   const headers = {
-    'X-Auth-Token': cfg.token,
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     ...( opts.headers || {} )
@@ -202,10 +213,12 @@ const BC = {
 
     // Returns a human-readable status object for the UI
     async status() {
+      // Re-probe Worker to get fresh bc_configured signal
+      await bcRefreshConfigured();
       if (!bcConfigured()) {
         return {
           configured: false,
-          label: 'Awaiting API token (M04)',
+          label: 'Worker secrets not set (run: wrangler secret put BC_ACCESS_TOKEN)',
           color: 'var(--yellow)',
           icon: '○'
         };
