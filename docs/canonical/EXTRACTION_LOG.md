@@ -32,6 +32,20 @@ Use before any new extraction to understand the pattern and avoid known hot zone
 
 **Total extracted:** ~145 lines, ~6 KB. index.html: 743 KB → 719 KB.
 
+### Batch 3 — v6.10.77b (2026-05-13)
+
+| Module | File | Lines | Size |
+|---|---|---|---|
+| Mgmt Dashboard + KPI/Goals/Team/System | `js/mgmt_kpis.js` | ~505 | ~29 KB |
+
+**Total extracted:** ~505 lines, ~29 KB. index.html: 719 KB → 690 KB.
+
+#### Why mgmt_kpis.js was safe
+- `KPI_DEFINITIONS`, `KPI_SNAPSHOTS`, `SEED_KPIS`, `GOALS`, `GOAL_LEVELS`, `GOAL_LEVEL_LABELS` globals owned entirely by this module — zero external reads
+- `sbLoadKPIs()`, `sbLoadGoals()`, `maybeAutoSnapshotKPIs()` called from `hydrateFromSupabase()` — which only runs after DOMContentLoaded, well after external scripts load. Pattern identical to `sbLoadCoopFunds()` in `coop_tracker.js`
+- `mgmt()` called only via `goTo('mgmt')` MODULE_REGISTRY — resolved at runtime
+- All deps (`sbFetch`, `sbConfigured`, `sbAuditLog`, `CU`, `VD`, `DEALS`, `STAGES`, `QUOTES`, `COOP_FUNDS`, `vendorScore`, `weightedScore`, `computeDealProbability`) are window-scope globals
+
 #### Why dashboard_pins.js was safe
 - Fully isolated feature: reads/writes only `localStorage` (`aos_dash_pins_${uid}`) and `MODULE_REGISTRY` (read-only)
 - Zero callers from outside the dashboard section (only `renderPinnedCard()` called inline from `dashboard()`, `openPinModal()` called from a button)
@@ -114,7 +128,7 @@ js/track_calculator.js  ← reads QKB (inline const), LI, renderLI, updatePrevie
 | `js/mgmt_kpis.js` — KPI + Goals/OKR functions | ~280 | Medium; `KPI_DEFS` constant must move with it |
 | `js/pipeline_core.js` — deal scoring + pipeline helpers | ~180 | `computeDealProbability`, `STAGES` constant must stay accessible |
 
-**Recommendation:** Do not extract until index.html approaches 850 KB. Current size is 719 KB — 131 KB of headroom.
+**Recommendation:** Do not extract until index.html approaches 850 KB. Current size is 690 KB — 160 KB of headroom. At current pace, no urgency for further extraction.
 
 ---
 
