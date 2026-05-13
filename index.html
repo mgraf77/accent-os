@@ -670,7 +670,7 @@ async function hydrateFromSupabase(){
     try { await sbLoadScoreStates(); } catch(e){ console.warn(e); }
     try { await sbLoadVendorScores(); } catch(e){ console.warn(e); }
     try { await sbLoadVendorOverrides(); } catch(e){ console.warn(e); }
-    try { await sbLoadQuotes(); } catch(e){ console.warn(e); }
+    try { await sbLoadQuotes(); } catch(e){ console.warn('[sb] sbLoadQuotes:', e.message); if(typeof toast==='function') toast('Quotes failed to load — refresh to retry','err'); }
     try { await sbLoadCoopFunds(); } catch(e){ console.warn(e); }
     try { await sbLoadCustomers(); } catch(e){ console.warn(e); }
     try { await sbLoadEmployees(); } catch(e){ console.warn(e); }
@@ -1161,8 +1161,6 @@ async function sbFetch(path, opts={}){
   const key = sbKey();
   if(!key) throw new Error('Supabase anon key not set — open Settings');
   const url = SUPABASE_URL + '/rest/v1' + path;
-  // When a user is signed in, send their JWT as Authorization so RLS sees auth.uid().
-  // apikey header always carries the anon key.
   const jwt = (typeof jwtKey==='function' ? jwtKey() : '') || key;
   const headers = Object.assign({
     'apikey': key,
@@ -1170,8 +1168,23 @@ async function sbFetch(path, opts={}){
     'Content-Type': 'application/json',
     'Prefer': 'return=representation'
   }, opts.headers || {});
-  const r = await fetch(url, Object.assign({}, opts, {headers}));
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 15000);
+  let r;
+  try {
+    r = await fetch(url, Object.assign({}, opts, {headers, signal: ctrl.signal}));
+  } catch(fetchErr) {
+    clearTimeout(tid);
+    if(fetchErr.name === 'AbortError') throw new Error('Request timed out — check connection');
+    throw fetchErr;
+  }
+  clearTimeout(tid);
   if(!r.ok){
+    if(r.status === 401){
+      setJwt('');
+      if(typeof toast === 'function') toast('Session expired — please sign in again', 'err');
+      setTimeout(() => location.reload(), 1800);
+    }
     const t = await r.text();
     throw new Error(`Supabase ${r.status}: ${t}`);
   }
@@ -5522,7 +5535,7 @@ function calcTrackHardware(runs, color) {
 
 // ── LINE ITEM FACTORY ──
 function nLI(){ return { id: Date.now()+Math.random(), part:'', desc:'', qty:1, price:0, cat:'LED Fixtures', status:'pending', flag:'', reasoning:'' }; }
-function addLI(){ LI.push(nLI()); renderLI(); updatePreview(); }
+function addLI(){ LI.push(nLI()); _qDirty=true; renderLI(); updatePreview(); }
 
 // ── MAIN QUOTE RENDERER ──
 function quotes(el, act) {
@@ -5594,7 +5607,7 @@ function quotes(el, act) {
         <button class="btn btn-accent btn-sm" onclick="saveQ()">💾 Save</button>
         <button class="btn btn-outline btn-sm" onclick="printQ()">🖨 PDF</button>
         <button class="btn btn-outline btn-sm" onclick="exportQuoteCSV()">⬇ CSV</button>
-        <button class="btn btn-ghost btn-sm" onclick="CQ=null;LI=[nLI()];goTo('quotes')">Clear</button>
+        <button class="btn btn-ghost btn-sm" onclick="CQ=null;LI=[nLI()];_qDirty=false;goTo('quotes')">Clear</button>
       </div>
     </div></div>
     <!-- Sticky quote action bar — stays visible while scrolling long line-item lists. -->
@@ -5656,7 +5669,7 @@ function renderLI() {
       <td style="white-space:nowrap;">
         <button onclick="LI[${i}].status='approved';renderLI();updatePreview()" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;cursor:pointer;font-size:11px;padding:2px 7px;margin-right:3px;" title="Approve row">✓</button>
         <button onclick="qFlagRow(${i})" style="background:none;border:1px solid #f59e0b;color:#f59e0b;border-radius:4px;cursor:pointer;font-size:11px;padding:2px 7px;margin-right:3px;" title="Flag row">⚑</button>
-        <button onclick="LI.splice(${i},1);if(!LI.length)LI.push(nLI());renderLI();updatePreview()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:15px;" title="Remove">✕</button>
+        <button onclick="LI.splice(${i},1);_qDirty=true;if(!LI.length)LI.push(nLI());renderLI();updatePreview()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:15px;" title="Remove">✕</button>
       </td>
     </tr>`;
   }).join('');
@@ -5927,30 +5940,71 @@ function addTrackLinesToQuote() {
 }
 
 // ── SAVE QUOTE ──
-function saveQ() {
+let _qSaving = false;
+let _qDirty = false;
+// Warn before tab close / reload when there are unsaved quote changes.
+window.addEventListener('beforeunload', e => {
+  if(_qDirty && curPage === 'quotes'){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+async function saveQ() {
+  if(_qSaving) return;
   const proj = $('q-pr')?.value?.trim(); if(!proj){toast('Add project name first','err');return;}
+  _qSaving = true;
+  const saveBtns = document.querySelectorAll('[onclick="saveQ()"]');
+  saveBtns.forEach(b=>{ b.disabled=true; b._orig=b.textContent; b.textContent='Saving…'; });
   const sub = LI.reduce((s,l)=>s+l.qty*l.price, 0);
+  const isNew = !CQ;
   const qid = CQ?CQ.id:'QT-'+String(QUOTE_ID++).padStart(4,'0');
   const q = { id:qid, _uuid:CQ?._uuid, date:new Date().toLocaleDateString(), customer:$('q-cu')?.value||'', contact:$('q-co')?.value||'', project:proj, type:$('q-ty')?.value||'', address:$('q-addr')?.value||'', sqft:'', budget:$('q-bu')?.value||'', notes:$('q-no')?.value||'', lineItems:[...LI], total:sub };
-  const ex = QUOTES.findIndex(x=>x.id===qid);
-  if(ex>=0)QUOTES[ex]=q;else QUOTES.push(q);
-  CQ=null; log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');
-  if(typeof sbSaveQuote==='function'){
-    sbSaveQuote(q).then(ok=>{
-      if(ok && typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
-    });
+  const prevIdx = QUOTES.findIndex(x=>x.id===qid);
+  const prevQ = prevIdx>=0 ? {...QUOTES[prevIdx]} : null;
+  if(prevIdx>=0) QUOTES[prevIdx]=q; else QUOTES.push(q);
+  CQ = q;
+  try {
+    if(typeof sbSaveQuote==='function'){
+      const ok = await sbSaveQuote(q);
+      if(!ok) throw new Error('DB write returned false');
+      if(typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
+    }
+    _qDirty = false;
+    log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');
+    toast('Saved ('+qid+')','ok');
+  } catch(e) {
+    // Rollback local state so QUOTES stays in sync with DB
+    if(prevQ){ const i=QUOTES.findIndex(x=>x.id===qid); if(i>=0) QUOTES[i]=prevQ; }
+    else QUOTES = QUOTES.filter(x=>x.id!==qid);
+    if(isNew) QUOTE_ID--;
+    CQ = prevQ || null;
+    toast('Save failed — check connection and retry','err');
+    console.warn('[saveQ] failed:', e.message);
+  } finally {
+    _qSaving = false;
+    saveBtns.forEach(b=>{ b.disabled=false; b.textContent=b._orig||'💾 Save'; });
   }
-  toast('Saved ('+qid+')','ok');
 }
 
 // ── DELETE / SAVED ──
-function deleteQ(numberId) {
+async function deleteQ(numberId) {
   if(!confirm('Delete quote '+numberId+'?')) return;
+  const removed = QUOTES.find(q=>q.id===numberId);
   QUOTES = QUOTES.filter(q=>q.id!==numberId);
-  if(typeof sbDeleteQuote==='function') sbDeleteQuote(numberId);
-  if(typeof sbAuditLog==='function') sbAuditLog('quote_delete','quotes',{quote_id:numberId});
-  closeModal(); showSaved();
-  toast('Quote deleted','ok');
+  try {
+    if(typeof sbDeleteQuote==='function'){
+      const ok = await sbDeleteQuote(numberId);
+      if(!ok) throw new Error('DB delete returned false');
+    }
+    if(typeof sbAuditLog==='function') sbAuditLog('quote_delete','quotes',{quote_id:numberId});
+    closeModal(); showSaved();
+    toast('Quote deleted','ok');
+  } catch(e) {
+    if(removed) QUOTES.push(removed);
+    closeModal(); showSaved();
+    toast('Delete failed — quote restored','err');
+    console.warn('[deleteQ] failed:', e.message);
+  }
 }
 
 // Duplicate an existing saved quote — clones line items, blanks the project
@@ -7453,18 +7507,34 @@ function _aiNotReadyHint(){
   return 'AI requires your Anthropic API key — add it in Settings → API Keys.';
 }
 
-// ── BOOT (v6.9.6) ──
-// 1. Try to restore an authenticated session from the stored JWT.
-// 2. If restored: hydrate Supabase data and show the app.
+// ── BOOT (v6.10.76) ──
+// 1. Try to restore an authenticated session from the stored JWT (12s timeout).
+// 2. If restored: hydrate Supabase data and show the app (30s timeout).
 // 3. Otherwise: leave the login screen visible and wait for doLogin().
 window.addEventListener('DOMContentLoaded', async () => {
-  const restored = await tryRestoreSession();
+  let restored = false;
+  try {
+    restored = await Promise.race([
+      tryRestoreSession(),
+      new Promise((_,rej) => setTimeout(() => rej(new Error('Session restore timed out')), 12000))
+    ]);
+  } catch(e) {
+    console.warn('[boot] session restore:', e.message);
+  }
   if(!restored){
     // Login screen is shown by default (no #app.on). Nothing else to do.
     return;
   }
   activateApp();
-  await hydrateFromSupabase();
+  try {
+    await Promise.race([
+      hydrateFromSupabase(),
+      new Promise((_,rej) => setTimeout(() => rej(new Error('Hydration timed out')), 30000))
+    ]);
+  } catch(e) {
+    console.warn('[boot] hydration:', e.message);
+    if(typeof toast === 'function') toast('Some data failed to load — refresh if anything looks missing', '');
+  }
   if(typeof applyModuleModesAfterHydrate === 'function'){
     try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[boot] module modes init failed:', e.message); }
   }
