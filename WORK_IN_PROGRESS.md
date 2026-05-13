@@ -1,44 +1,51 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-12 — accent-work session 2: KPI scheduler + dashboard pinning + csvDownload cleanup.
-**Branch:** `accent-work`
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-13 — BigCommerce Integration Runway (BIGCOMMERCE_INTEGRATION_RUNWAY_V1)
+**Branch:** `claude/bigcommerce-integration-setup-fio8z`
+**Resume trigger:** "continue BC runway" or "M04 done" (wire token and run first sync)
 
 ---
 
 ## STATUS
 
-6 items shipped across 2 sessions on `accent-work`. Tree is clean, docs committed.
+5 phases shipped across 1 session on `claude/bigcommerce-integration-setup-fio8z`. Tree is clean, docs committed.
 
-**Session 1 (MODULE_REGISTRY + analytics + auto-derive):**
-- ✅ MODULE_REGISTRY refactor — sidebar/PAGE_META/dispatcher driven by single registry array (1cb015a)
-- ✅ Pipeline analytics — `openPipelineAnalytics()` implemented (funnel, win/loss, loss reasons, by-source, health) (b9a65d9)
-- ✅ Auto-derived deal source — company field auto-fills Source + Segment from CRM on match (832d7e6)
+**BIGCOMMERCE_INTEGRATION_RUNWAY_V1:**
+- ✅ Phase 1 — Integration Audit (`docs/integrations/BIGCOMMERCE_INTEGRATION_AUDIT.md`) — store hash, API shape, webhook catalog, data surfaces, blockers
+- ✅ Phase 2 — Read-Only Adapter (`js/bigcommerce_adapter.js`) — BC V3 API client, rate limiting, paginated fetch, `BC.*` namespace (products/categories/brands/priceLists/health/syncLog/opportunity)
+- ✅ Phase 3 — Ecommerce Opportunity Engine (`js/ecommerce_intelligence.js`) — 4-tab UI page: Overview / Products / Opportunities / Integration
+- ✅ Phase 4 — Observability + Safety — baked into adapter: `BC.health.ping()`, `BC.health.status()`, `BC.syncLog.freshness()`, rate-limit backoff, graceful 401/429/network degrade
+- ✅ Phase 5 — Operational Roadmap (`docs/integrations/BIGCOMMERCE_RUNWAY.md`) — 7-step next-integration sequence, write-risk catalog, M-task summary
+- ✅ Schema — `sql/M45_bigcommerce_schema.sql` — `bc_products_cache`, `bc_categories_cache`, `bc_brands_cache`, `bc_sync_log` with full RLS
+- ✅ Wired — MODULE_REGISTRY entry (`ecommerce`, INTELLIGENCE section, Owner/Admin/Manager) + script tags in index.html
 
-**Session 2 (KPI + pinning + cleanup):**
-- ✅ KPI auto-snapshot scheduler — daily Owner capture at hydration end, no manual click needed (5a48639)
-- ✅ Per-user dashboard pinning — 📌 Pins button, localStorage v1, MODULE_REGISTRY-driven picker (3a29a97)
-- ✅ csvDownload dead-fallback cleanup — removed 4 unreachable else branches in module files (1daada6)
+**Opportunity scanner flags (8 types):**
+- missing_description, missing_image, missing_keywords, no_category
+- low_margin (<10%), high_traffic_low_conversion (<0.5% conv rate)
+- hidden_with_stock, low_stock
 
-**Live DB state:** in sync with M41–M44. All clean.
+## NEXT (BLOCKED — waiting on Michael)
 
-## NEXT
+- **M04** — Michael creates BC read-only API token → paste to Claude
+- **M45** — Michael runs `sql/M45_bigcommerce_schema.sql` in Supabase SQL Editor
+- After M04: Claude wires token via Ecommerce Intel → Integration → Configure Token
+- After M45: First full catalog sync → opportunity flag triage
 
-Remaining unblocked items (no M-task dependency):
-- `typeof` guard cleanup — `savedFiltersBar`/`bulkSelBar`/`bulkSelRegister` calls in ~8 modules are wrapped in dead `typeof` guards (both scripts confirmed always loaded). Low priority cosmetic refactor.
-- Saved Filter Sets — cross-cutting persisted filter combos on every list page (js/saved_filters.js already ships `savedFiltersBar()` — wire remaining modules that don't use it yet).
-- Bulk action bars — multi-select + bulk delete/status (js/bulk_select.js ships `bulkSelBar()` — wire remaining modules).
-- My Tasks widget — personal task queue on dashboard (BUILD_PLAN item, no schema needed).
-- OKR progress auto-compute — derive OKR % from live data globals instead of manual entry.
-
-Blocked until Michael acts: M03/M04/M05/M06/M09/M10/M18.
-Stale Cloudflare Worker: GitHub Actions workflow created (.github/workflows/deploy-worker.yml). Needs CF_API_TOKEN + CF_ACCOUNT_ID secrets added to GitHub repo before first auto-deploy can fire. Michael to add secrets — see docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md.
+## AFTER M04 + M45 LAND
+- First sync run + opportunity flag review
+- Wire `bc_products_cache.price` into competitive_pricing.js `our_price` fallback
+- Wire `bc_products_cache.inventory_level` into inventory.js as live data source
+- Add `/bc-webhook` route to Cloudflare Worker for real-time events
+- Upgrade `bc-business-review` skill from deals table → BC orders
 
 ## MERGE READINESS
 
-`accent-work` is ahead of `main` by 6 feature commits. When ready to merge:
-- All changes are additive (new functions, new registry entries, dead-code removal)
-- No schema changes required
-- Rollback: revert the 6 commits individually or `git revert` range
-- Affected systems: sidebar rendering (MODULE_REGISTRY), pipeline modal, new deal form, dashboard card, all CSV import flows
+`claude/bigcommerce-integration-setup-fio8z` contains:
+- 2 new JS modules (adapter + intelligence UI)
+- 1 new SQL schema (M45)
+- 2 new integration docs
+- 1 MODULE_REGISTRY entry + 2 script tags in index.html
+
+All changes are additive. No existing functionality modified.
+Rollback: remove 2 script tags from index.html, remove MODULE_REGISTRY entry.
