@@ -5902,7 +5902,7 @@ function renderLI() {
       <td><input value="${esc(li.desc)}" onchange="LI[${i}].desc=this.value;LI[${i}].status='pending';updatePreview()" placeholder="Description">${flagHint}${reasonHint}</td>
       <td><input type="number" value="${li.qty}" onchange="LI[${i}].qty=parseFloat(this.value)||0;LI[${i}].status='pending';renderLI();updatePreview()" style="text-align:center;"></td>
       <td><input type="number" value="${li.price}" onchange="LI[${i}].price=parseFloat(this.value)||0;LI[${i}].status='pending';renderLI();updatePreview()"></td>
-      <td class="mono" style="font-weight:600;">$${(li.qty*li.price).toFixed(2)}</td>
+      <td class="mono" style="font-weight:600;">$${((Number(li.qty)||0)*(Number(li.price)||0)).toFixed(2)}</td>
       <td><select onchange="LI[${i}].cat=this.value" style="border:1.5px solid var(--border);border-radius:4px;padding:3px;font-family:'Outfit',sans-serif;font-size:12px;width:100%;">${['LED Fixtures','Controls','Emergency','Track','Outdoor','Other'].map(c=>`<option ${li.cat===c?'selected':''}>${c}</option>`).join('')}</select></td>
       <td style="white-space:nowrap;">
         <button onclick="LI[${i}].status='approved';renderLI();updatePreview()" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;cursor:pointer;font-size:11px;padding:2px 7px;margin-right:3px;" title="Approve row">✓</button>
@@ -5948,7 +5948,7 @@ function approveAllRows() {
 
 // ── UPDATE PREVIEW ──
 function updatePreview() {
-  const sub = LI.reduce((s,l)=>s+l.qty*l.price, 0);
+  const sub = LI.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0), 0);
   $('q-sub')  && ($('q-sub').textContent  = '$'+sub.toFixed(2));
   $('pv-pr')  && ($('pv-pr').textContent  = $('q-pr')?.value||'Project');
   $('pv-cu')  && ($('pv-cu').textContent  = $('q-cu')?.value||'Customer');
@@ -6180,7 +6180,7 @@ function addTrackLinesToQuote() {
 // ── SAVE QUOTE ──
 function saveQ() {
   const proj = $('q-pr')?.value?.trim(); if(!proj){toast('Add project name first','err');return;}
-  const sub = LI.reduce((s,l)=>s+l.qty*l.price, 0);
+  const sub = LI.reduce((s,l)=>s+(Number(l.qty)||0)*(Number(l.price)||0), 0);
   const qid = CQ?CQ.id:'QT-'+String(QUOTE_ID++).padStart(4,'0');
   const q = { id:qid, _uuid:CQ?._uuid, date:new Date().toLocaleDateString(), customer:$('q-cu')?.value||'', contact:$('q-co')?.value||'', project:proj, type:$('q-ty')?.value||'', address:$('q-addr')?.value||'', sqft:'', budget:$('q-bu')?.value||'', notes:$('q-no')?.value||'', lineItems:[...LI], total:sub };
   const ex = QUOTES.findIndex(x=>x.id===qid);
