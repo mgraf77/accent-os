@@ -699,7 +699,9 @@ async function hydrateFromSupabase(){
     try { await maybeAutoSnapshotKPIs(); } catch(e){ console.warn('[kpi] auto-snapshot:', e.message); }
   }
   window.__AOS_HYDRATE_MS__ = Math.round(performance.now() - _hydrateT0);
-  console.info('[aos-boot] hydration complete', { ms: window.__AOS_HYDRATE_MS__, ts: new Date().toISOString() });
+  const _hydrateTs = new Date().toISOString();
+  window.__AOS_RUNTIME__.hydrate = { ms: window.__AOS_HYDRATE_MS__, ts: _hydrateTs };
+  console.info('[aos-boot] hydration complete', { ms: window.__AOS_HYDRATE_MS__, ts: _hydrateTs });
   if(!sbCatRows){
     try { if(typeof applyPrefillVendorCats==='function') applyPrefillVendorCats(); } catch(e){}
   }
@@ -803,6 +805,16 @@ const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 // so we can prove which build is live without making an Anthropic call.
 const AOS_WORKER_BASE = 'https://accentos-anthropic-proxy.mgraf77.workers.dev';
 const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
+// Canonical runtime registry — single source of truth for runtime state.
+// Readers: _runtimeHealth(), health.js, dashboard System Status, operators.
+// Schema: docs/canonical/RUNTIME_REGISTRY_CONTRACT.md
+window.__AOS_RUNTIME__ = {
+  worker:  { state: 'probing', version: null, build: null, probe_ms: null, env_key: null },
+  hydrate: { ms: null, ts: null },
+  module_errors: [],
+  boot_ts: new Date().toISOString(),
+  degraded: false,
+};
 // On startup, fetch a worker version probe and log diagnostics. Helps ops
 // pinpoint stale-deploy / wrong-route issues without Anthropic round-trips.
 (async () => {
@@ -815,12 +827,20 @@ const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
       let j = null;
       try { j = JSON.parse(raw); } catch {}
       if (r.ok && j && typeof j === 'object') {
-        window.__AOS_WORKER_PROBE_MS__ = Math.round(performance.now() - _probeT0);
-        console.log('[aos-worker]', { path, ...j, probe_ms: window.__AOS_WORKER_PROBE_MS__ });
+        const probe_ms = Math.round(performance.now() - _probeT0);
+        window.__AOS_WORKER_PROBE_MS__ = probe_ms;
         window.__AOS_WORKER_VERSION__ = j.version || 'unknown';
         // env_key_set is emitted by v3+. false=deployed but secret not bound.
         // Absent field means old worker (v1/v2) that requires x-api-key from client.
         window.__AOS_WORKER_ENV_KEY_READY__ = j.env_key_set === true;
+        window.__AOS_RUNTIME__.worker = {
+          state: j.env_key_set === true ? 'healthy' : j.env_key_set === false ? 'deployed-no-secret' : 'stale',
+          version: j.version || 'unknown',
+          build: j.build || j.WORKER_BUILD || null,
+          probe_ms,
+          env_key: j.env_key_set === true,
+        };
+        console.log('[aos-worker]', { path, ...j, probe_ms });
         if (!j.env_key_set) console.warn('[aos-worker] ANTHROPIC_API_KEY not bound — AI features require user-supplied key. Fix: cd worker && wrangler secret put ANTHROPIC_API_KEY');
         return;
       }
@@ -830,12 +850,12 @@ const AOS_WORKER_URL = AOS_WORKER_BASE + '/v1/messages';
     }
   }
   // All probes returned non-JSON — stale worker (v1/v2) or unreachable.
-  // v1/v2 returns "Method not allowed" for GET; POST requires x-api-key from client.
-  // Fix: cd worker && wrangler deploy, then wrangler secret put ANTHROPIC_API_KEY.
-  window.__AOS_WORKER_PROBE_MS__ = Math.round(performance.now() - _probeT0);
+  const probe_ms = Math.round(performance.now() - _probeT0);
+  window.__AOS_WORKER_PROBE_MS__ = probe_ms;
   window.__AOS_WORKER_VERSION__ = 'stale';
   window.__AOS_WORKER_ENV_KEY_READY__ = null;
-  console.warn('[aos-worker] stale or unreachable — deploy worker/anthropic-proxy.js and bind ANTHROPIC_API_KEY. POST /v1/messages will require a user-supplied key until redeployed.');
+  window.__AOS_RUNTIME__.worker = { state: 'stale', version: 'stale', build: null, probe_ms, env_key: null };
+  console.warn('[aos-worker] stale or unreachable — deploy worker/anthropic-proxy.js and bind ANTHROPIC_API_KEY.');
 })();
 function v(id,prop='value'){return $(id)?.[prop]?.trim()??'';}
 // CSV utilities — RFC 4180 quoting (only quote when value contains comma, quote, or newline; double embedded quotes).
@@ -971,6 +991,7 @@ function goTo(page){
     try{ fn($('pg-content'),$('pg-actions')); }
     catch(e){
       console.error('[goTo] render error for',page,e);
+      if(window.__AOS_RUNTIME__) window.__AOS_RUNTIME__.module_errors.push({ page, msg: e.message||String(e), ts: new Date().toISOString() });
       const c=$('pg-content');
       if(c) c.innerHTML=`<div class="card" style="padding:24px;"><div style="color:var(--accent);font-weight:700;margin-bottom:8px;">⚠ Module render error</div><div style="font-size:13px;color:var(--text-2);font-family:'DM Mono',monospace;">${esc(e.message||String(e))}</div><div style="margin-top:12px;font-size:12px;color:var(--text-3);">Open DevTools console for stack trace · <button class="btn btn-outline btn-sm" onclick="goTo('${page}')">Retry</button></div></div>`;
     }
@@ -6696,19 +6717,32 @@ function renderRoleSpecificDashboard(role, allDeals, tv, scoredV, avgScore){
       ${sRow('Auth','live','Supabase Auth · 5 roles · audit_log')}
       ${sRow('Data','live',`${VD.length} vendors · ${(CUSTOMERS||[]).length} customers · ${(QUOTES||[]).length} quotes`)}
       ${(()=>{
-        const ver=window.__AOS_WORKER_VERSION__,env=window.__AOS_WORKER_ENV_KEY_READY__,ms=window.__AOS_WORKER_PROBE_MS__;
+        const rt=window.__AOS_RUNTIME__?.worker;
+        const ver=rt?.version||window.__AOS_WORKER_VERSION__;
+        const env=rt?.env_key??window.__AOS_WORKER_ENV_KEY_READY__;
+        const ms=rt?.probe_ms||window.__AOS_WORKER_PROBE_MS__;
+        const build=rt?.build;
         const msNote=ms?` · ${ms}ms`:'';
-        if(ver==='stale'||ver==='error'||env===null) return sRow('AI Worker','pending',`Stale — redeploy needed${msNote}`);
-        if(env===false)               return sRow('AI Worker','pending',`v3 deployed · secret missing${msNote}`);
-        if(env===true)                return sRow('AI Worker','live',`${ver}${msNote} · env key bound`);
-        return sRow('AI Worker','pending',`Probing…`);
+        const buildNote=build?` · built ${build}`:'';
+        if(!rt||rt.state==='probing') return sRow('AI Worker','pending','Probing…');
+        if(rt.state==='stale') return sRow('AI Worker','pending',`Stale — redeploy needed${msNote}`);
+        if(rt.state==='deployed-no-secret') return sRow('AI Worker','pending',`v3 deployed · secret missing${msNote}`);
+        if(rt.state==='healthy') return sRow('AI Worker','live',`${ver}${buildNote}${msNote} · env key bound`);
+        return sRow('AI Worker','pending',`Unknown state${msNote}`);
       })()}
       ${(()=>{
-        const userKey=getS('aos-api'),env=window.__AOS_WORKER_ENV_KEY_READY__;
+        const userKey=getS('aos-api'),env=window.__AOS_RUNTIME__?.worker?.env_key??window.__AOS_WORKER_ENV_KEY_READY__;
+        const errs=(window.__AOS_RUNTIME__?.module_errors||[]).length;
+        const errNote=errs?` · ${errs} module error${errs>1?'s':''}`:'' ;
         if(userKey)      return sRow('AI Auth','live','User key configured');
         if(env===true)   return sRow('AI Auth','live','Env key bound (no config needed)');
         if(env===false||env===null) return sRow('AI Auth','pending','Add key in Settings → API Keys');
         return sRow('AI Auth','pending','Checking…');
+      })()}
+      ${(()=>{
+        const errs=window.__AOS_RUNTIME__?.module_errors||[];
+        if(!errs.length) return '';
+        return sRow('Module Errors','pending',`${errs.length} render error${errs.length>1?'s':''} · open DevTools for details`);
       })()}
       ${window.__AOS_HYDRATE_MS__?sRow('Hydration','live',`${window.__AOS_HYDRATE_MS__}ms · all modules loaded`):''}
     </div></div>
@@ -7752,13 +7786,18 @@ function _runtimeHealth(){
     : env===true  ? 'env-key'
     : 'unavailable';
   const degraded = workerState !== 'healthy' && aiState === 'unavailable';
-  return {
-    worker:  { state: workerState, version: ver||null, probe_ms: window.__AOS_WORKER_PROBE_MS__||null },
+  const h = {
+    worker:  { state: workerState, version: ver||null, build: window.__AOS_RUNTIME__?.worker?.build||null, probe_ms: window.__AOS_WORKER_PROBE_MS__||null },
     ai:      { state: aiState },
-    hydrate: { ms: window.__AOS_HYDRATE_MS__||null },
+    hydrate: { ms: window.__AOS_HYDRATE_MS__||null, ts: window.__AOS_RUNTIME__?.hydrate?.ts||null },
+    module_errors: window.__AOS_RUNTIME__?.module_errors||[],
     degraded,
+    boot_ts: window.__AOS_RUNTIME__?.boot_ts||null,
     ts:      new Date().toISOString(),
   };
+  // Keep __AOS_RUNTIME__ in sync with the latest computed state.
+  if(window.__AOS_RUNTIME__){ window.__AOS_RUNTIME__.degraded = degraded; }
+  return h;
 }
 // Returns true when an AI POST call is expected to succeed without a user-supplied key.
 // false only when the probe has confirmed stale worker (null) or missing env binding (false).
@@ -7779,18 +7818,27 @@ function _aiNotReadyHint(){
 // 2. If restored: hydrate Supabase data and show the app.
 // 3. Otherwise: leave the login screen visible and wait for doLogin().
 window.addEventListener('DOMContentLoaded', async () => {
-  const restored = await tryRestoreSession();
-  if(!restored){
-    // Login screen is shown by default (no #app.on). Nothing else to do.
-    return;
+  try {
+    const restored = await tryRestoreSession();
+    if(!restored){
+      // Login screen is shown by default (no #app.on). Nothing else to do.
+      return;
+    }
+    activateApp();
+    await hydrateFromSupabase();
+    if(typeof applyModuleModesAfterHydrate === 'function'){
+      try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[boot] module modes init failed:', e.message); }
+    }
+    sbAuditLog('session_resume', 'auth');
+    goTo('dashboard');
+  } catch(e) {
+    console.error('[boot] fatal startup error:', e);
+    const s = document.getElementById('login-screen');
+    if(s && s.style.display === 'none') {
+      // App was activating — show a recovery message instead of blank screen.
+      document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;"><div style="text-align:center;max-width:420px;padding:32px;"><div style="font-size:20px;font-weight:700;margin-bottom:8px;">AccentOS — Startup Error</div><div style="font-size:13px;color:#666;margin-bottom:16px;">${String(e.message||e).slice(0,200)}</div><button onclick="location.reload()" style="padding:8px 20px;border:1px solid #ccc;border-radius:6px;cursor:pointer;background:#fff;">Reload</button></div></div>`;
+    }
   }
-  activateApp();
-  await hydrateFromSupabase();
-  if(typeof applyModuleModesAfterHydrate === 'function'){
-    try{ await applyModuleModesAfterHydrate(); }catch(e){ console.warn('[boot] module modes init failed:', e.message); }
-  }
-  sbAuditLog('session_resume', 'auth');
-  goTo('dashboard');
 });
 </script>
 <!-- Module files extracted during file split (v6.10.12). Loaded after main inline script

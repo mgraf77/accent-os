@@ -1,19 +1,19 @@
 # AccentOS — System State
 _Overwritten on major state transitions. Not append-only._
-_Last updated: 2026-05-13 — operational hardening session_
+_Last updated: 2026-05-13 — RUNTIME_CONSOLIDATION_V1_
 
 ---
 
 ## Runtime State
 
-| Layer | State | Version/Detail |
+| Layer | State | Version / Detail |
 |---|---|---|
 | **SPA** | LIVE | v6.10.75 · accent-os.pages.dev |
-| **Cloudflare Worker** | PENDING DEPLOY | v3-env-fallback in repo; stale v1/v2 live until integration/reconcile → main merge |
-| **AI Auth** | PARTIAL | env_key_set=true on secrets; worker not yet redeployed |
+| **Cloudflare Worker** | LIVE | v3-env-fallback · env_key_set=true confirmed |
+| **AI Auth** | LIVE | ANTHROPIC_API_KEY bound · env key active |
 | **Supabase** | LIVE | hsyjcrrazrzqngwkqsqa · RLS active |
-| **GitHub Actions** | CONFIGURED | deploy-worker.yml present; secrets confirmed |
-| **integration/reconcile** | READY | 13 commits ahead of main; awaiting Michael approval to merge |
+| **GitHub Actions** | LIVE | deploy-worker.yml · CF_API_TOKEN + CF_ACCOUNT_ID set |
+| **integration/reconcile** | MERGED/OBSOLETE | Worker v3 active; branch fully integrated |
 
 ---
 
@@ -21,9 +21,7 @@ _Last updated: 2026-05-13 — operational hardening session_
 
 | Branch | Commits ahead of main | Status |
 |---|---|---|
-| `claude/audit-repository-Fg9xI` (remote: accent-work) | 12 | Active dev — operational hardening |
-| `integration/reconcile` | 13 | Merge-ready; awaiting approval |
-| `accent-work-514226236373803311` (Jules) | 1 | Integrated via cherry-pick into reconcile |
+| `claude/audit-repository-Fg9xI` (remote: accent-work) | ~17 | Active dev — runtime consolidation |
 | `main` | 0 | Production — protected |
 
 ---
@@ -44,12 +42,10 @@ _Last updated: 2026-05-13 — operational hardening session_
 | Field | Value |
 |---|---|
 | WORKER_VERSION | v3-env-fallback |
-| WORKER_BUILD | 2026-05-11 |
-| Repository worker | `worker/anthropic-proxy.js` |
-| Deployed worker | v1/v2 (stale) — until integration/reconcile merges |
-| CF_API_TOKEN | Set in GitHub repo secrets |
-| CF_ACCOUNT_ID | Set in GitHub repo secrets |
-| ANTHROPIC_API_KEY | Bound in Cloudflare (confirmed) |
+| WORKER_BUILD | 2026-05-11 (hardcoded — KI-002) |
+| env_key_set | true (ANTHROPIC_API_KEY bound) |
+| Deployed | LIVE — GitHub Actions workflow active |
+| Probe URL | GET https://accentos-anthropic-proxy.mgraf77.workers.dev/ |
 
 ---
 
@@ -57,7 +53,7 @@ _Last updated: 2026-05-13 — operational hardening session_
 
 See `module_modes.json` for per-module rollout status.
 
-Active modules: Dashboard, Pipeline, Customers, Quotes, Jobs, POs, Trade Partners, Warranty, Showrooms, Labels, Deliveries, Decision Engine, Competitive Pricing, Demand Forecast, Alerts, My Tasks, Knowledge Engine, Vendor Ranking, Change Log, Calendar, Marketing Hub, Activity Feed, Reports, Portal Preview, Health Check, Roadmap, Mgmt Dashboard, Rep Outreach, Internal Meetings, Settings.
+Active: Dashboard, Pipeline, Customers, Quotes, Jobs, POs, Trade Partners, Warranty, Showrooms, Labels, Deliveries, Decision Engine, Competitive Pricing, Demand Forecast, Alerts, My Tasks, Knowledge Engine, Vendor Ranking, Change Log, Calendar, Marketing Hub, Activity Feed, Reports, Portal Preview, Health Check, Roadmap, Mgmt Dashboard, Rep Outreach, Internal Meetings, Settings.
 
 Blocked on M-tasks: E-Commerce (M04+M05), GA4 (M06), Klaviyo (M09), Windward (M03+M10).
 
@@ -65,18 +61,18 @@ Blocked on M-tasks: E-Commerce (M04+M05), GA4 (M06), Klaviyo (M09), Windward (M0
 
 ## Performance Baseline
 
-| Metric | Baseline | Captured |
+| Metric | Baseline | Signal |
 |---|---|---|
-| Hydration time | ~1,500–2,500ms (typical) | Via `window.__AOS_HYDRATE_MS__` |
-| Worker probe | ~200–600ms (typical) | Via `window.__AOS_WORKER_PROBE_MS__` |
-| index.html size | ~750 KB | Split trigger at 900 KB |
-| External modules | 36 files, ~14,000 lines | Grows with each extraction |
+| Hydration time | ~1,500–2,500ms | `window.__AOS_RUNTIME__.hydrate.ms` |
+| Worker probe | ~200–600ms | `window.__AOS_RUNTIME__.worker.probe_ms` |
+| index.html size | ~756 KB | Split trigger at 900 KB |
+| External modules | 37 files | Verified by scripts/status.sh |
 
 ---
 
 ## Known Issues
 
-See `KNOWN_ISSUES.md` for the current issue register.
+See `KNOWN_ISSUES.md` for the active register.
 
 ---
 
@@ -84,7 +80,6 @@ See `KNOWN_ISSUES.md` for the current issue register.
 
 | Transition | Trigger | Expected result |
 |---|---|---|
-| Merge integration/reconcile → main | Michael approves PR | Worker redeployed; SPA updated; AI fully operational |
 | Run M01 + M02 SQL | Michael runs in Supabase | RLS + 18 core tables live |
 | Run M29 SQL | Michael runs in Supabase | Marketing schema live |
-| Add CF secrets (done) | Already complete | GitHub Actions can deploy |
+| Module extraction | index.html approaches 850 KB | Decomp plan in docs/decomp/ |

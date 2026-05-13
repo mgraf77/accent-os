@@ -5,13 +5,13 @@ _Append-only. Add new issues at top. Mark resolved with [RESOLVED date]._
 
 ## Active Issues
 
-### KI-004 — Worker v3 not deployed to production
-**Severity:** WARN  
-**Discovered:** 2026-05-12  
-**Symptom:** Live worker is v1/v2. Returns "Method Not Allowed" on GET. AI features work only with user-supplied key.  
-**Root cause:** `worker/anthropic-proxy.js` v3 has never been deployed. `integration/reconcile` branch contains v3 but hasn't merged to main.  
-**Remediation:** Merge `integration/reconcile` → `main` via GitHub PR. GitHub Actions workflow will auto-deploy.  
-**Blocker:** Michael approval to merge.
+> **Verification:** Run `bash scripts/status.sh` for live git/module/worker/quote status. Run `bash scripts/health-check.sh` for parallel Supabase/worker/pages probes.
+
+
+### KI-R004 — [RESOLVED 2026-05-13] Worker v3 not deployed
+**Was:** Live worker was v1/v2. AI features required user-supplied key.  
+**Resolution:** Worker v3-env-fallback deployed. ANTHROPIC_API_KEY bound. env_key_set=true confirmed via probe.  
+**Verification:** `bash scripts/status.sh` → Live Worker Probe section.
 
 ### KI-003 — M01, M02, M29 SQL migrations not run
 **Severity:** WARN  
