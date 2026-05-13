@@ -1610,47 +1610,39 @@ async function sbSaveQuote(q){
       : null);
     const headerBody = {
       number: q.id,
-      customer_id: custId,
-      customer_name: q.customer || null,
-      project_name: q.project || null,
+      customer_id: custId || '',
+      customer_name: q.customer || '',
+      project_name: q.project || '',
       status: 'draft',
-      subtotal, tax: 0, total: q.total || subtotal,
+      subtotal: subtotal,
+      tax: 0,
+      total: q.total || subtotal,
       notes: JSON.stringify(extra)
     };
-    // Upsert header by number; need the UUID back to write lines.
-    const headerRes = await sbFetch('/quotes?on_conflict=number', {
-      method: 'POST',
-      headers: {'Prefer':'resolution=merge-duplicates,return=representation'},
-      body: JSON.stringify(headerBody)
-    });
-    const uuid = Array.isArray(headerRes) && headerRes[0] ? headerRes[0].id : q._uuid;
-    if(!uuid) throw new Error('No UUID returned from quotes upsert');
-    q._uuid = uuid;
-    // Replace all line items: delete then insert.
-    await sbFetch(`/quote_lines?quote_id=eq.${uuid}`, {
-      method: 'DELETE',
-      headers: {'Prefer':'return=minimal'}
-    });
     const lineRows = (q.lineItems||[]).map((l,i) => ({
-      quote_id: uuid,
       line_no: i + 1,
-      vendor_id: l.vendorId || null,
-      vendor_name: l.vendorName || null,
-      description: l.desc || null,
+      vendor_id: l.vendorId || '',
+      vendor_name: l.vendorName || '',
+      description: l.desc || '',
       qty: Number(l.qty)||0,
       unit_price: Number(l.price)||0,
       ext_price: (Number(l.qty)||0) * (Number(l.price)||0),
-      notes: l.cat || null
+      notes: l.cat || ''
     }));
-    if(lineRows.length){
-      await sbFetch('/quote_lines', {
-        method: 'POST',
-        headers: {'Prefer':'return=minimal'},
-        body: JSON.stringify(lineRows)
-      });
-    }
+    // Single atomic RPC: header upsert + delete existing lines + insert new lines
+    // all run inside one Postgres transaction (M45). Any failure rolls back all three.
+    const rpcRes = await sbFetch('/rpc/upsert_quote_with_lines', {
+      method: 'POST',
+      body: JSON.stringify({ p_header: headerBody, p_lines: lineRows })
+    });
+    const uuid = rpcRes?.quote_id || q._uuid;
+    if(!uuid) throw new Error('No UUID returned from upsert_quote_with_lines');
+    q._uuid = uuid;
     return true;
-  }catch(e){ console.warn('[sb] Save quote failed:', e.message); return false; }
+  }catch(e){
+    console.warn('[sb] Save quote failed:', e.message);
+    throw e; // re-throw so saveQ can surface the message to the operator
+  }
 }
 
 async function sbDeleteQuote(numberId){
@@ -5950,7 +5942,7 @@ window.addEventListener('beforeunload', e => {
   }
 });
 async function saveQ() {
-  if(_qSaving) return;
+  if(_qSaving){ toast('Save already in progress…','warn'); return; }
   const proj = $('q-pr')?.value?.trim(); if(!proj){toast('Add project name first','err');return;}
   _qSaving = true;
   const saveBtns = document.querySelectorAll('[onclick="saveQ()"]');
@@ -5963,23 +5955,24 @@ async function saveQ() {
   const prevQ = prevIdx>=0 ? {...QUOTES[prevIdx]} : null;
   if(prevIdx>=0) QUOTES[prevIdx]=q; else QUOTES.push(q);
   CQ = q;
+  if(typeof sbSaveQuote!=='function'){ _qDirty=false; log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now'); toast('Saved locally ('+qid+')','ok'); _qSaving=false; saveBtns.forEach(b=>{b.disabled=false;b.textContent=b._orig||'💾 Save';}); return; }
+  toast('Saving…','');
   try {
-    if(typeof sbSaveQuote==='function'){
-      const ok = await sbSaveQuote(q);
-      if(!ok) throw new Error('DB write returned false');
-      if(typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
-    }
+    await sbSaveQuote(q);
+    if(typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
     _qDirty = false;
     log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');
     toast('Saved ('+qid+')','ok');
   } catch(e) {
-    // Rollback local state so QUOTES stays in sync with DB
+    // RPC failed atomically — DB unchanged. Rollback local state.
     if(prevQ){ const i=QUOTES.findIndex(x=>x.id===qid); if(i>=0) QUOTES[i]=prevQ; }
     else QUOTES = QUOTES.filter(x=>x.id!==qid);
     if(isNew) QUOTE_ID--;
     CQ = prevQ || null;
-    toast('Save failed — check connection and retry','err');
-    console.warn('[saveQ] failed:', e.message);
+    const msg = e?.message || 'network error';
+    const shortMsg = msg.length > 80 ? msg.slice(0,77)+'…' : msg;
+    toast('Save failed — ' + shortMsg + '. Press Save to retry.','err');
+    console.error('[saveQ] DB write failed:', msg);
   } finally {
     _qSaving = false;
     saveBtns.forEach(b=>{ b.disabled=false; b.textContent=b._orig||'💾 Save'; });
