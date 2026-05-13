@@ -105,12 +105,10 @@ async function bcFetch(path, opts = {}) {
   if (!bcConfigured()) throw new Error('BC_NOT_CONFIGURED');
   await _bcRateCheck();
 
-  // Prepend /v3 to paths that don't already carry a version segment.
-  // /v2/* paths are passed as-is; all other BC paths are v3 by default.
-  // This matches the original BC_API_BASE which baked in /v3.
+  // Route through Worker proxy — Worker injects X-Auth-Token server-side
+  // Prepend /v3 to non-versioned BC paths.
   const versionedPath = path.startsWith('/v2/') ? path : '/v3' + path;
   const url = _bcProxyBase() + versionedPath;
-
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
