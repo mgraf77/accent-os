@@ -678,12 +678,13 @@ async function eiRenderIntegration(el) {
       <ol style="font-size:13px;line-height:1.8;margin:10px 0 0 0;padding-left:20px;">
         <li>BC Admin → <strong>Settings → API → Store API accounts</strong></li>
         <li>Create API account → name: <em>"AccentOS Read"</em> → type: V2/V3 token</li>
-        <li>Scopes: <strong>Products, Orders, Customers, Information &amp; Settings</strong> → all Read</li>
-        <li>Save → copy token → click <strong>Connect BC</strong> above → paste token</li>
-        <li>Then run <code>sql/M45_bigcommerce_schema.sql</code> + <code>sql/M46_ecommerce_v2_schema.sql</code> in Supabase</li>
-        <li>Return here → <strong>Full Sync</strong> → opportunity flags populate</li>
+        <li>Scopes: Products, Orders, Customers, Information &amp; Settings → all <strong>Read-only</strong></li>
+        <li>Save → copy the Access Token (shown only once)</li>
+        <li>In your terminal: <code>wrangler secret put BC_STORE_HASH</code> → enter your store hash</li>
+        <li>Then: <code>wrangler secret put BC_ACCESS_TOKEN</code> → paste the token</li>
+        <li>Return here → click <strong>↓ Sync</strong> → catalog populates in 30–60s</li>
       </ol>
-      <div class="muted sm" style="margin-top:8px;">Store hash pre-set: <code>${typeof BC_STORE_HASH !== 'undefined' ? BC_STORE_HASH : 'store-cwqiwcjxes'}</code></div>
+      <div class="muted sm" style="margin-top:8px;">Credentials are stored in Cloudflare Worker secrets — never in the browser.</div>
     </div>` : ''}
   `;
 }

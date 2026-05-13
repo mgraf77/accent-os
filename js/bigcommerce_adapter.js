@@ -170,7 +170,7 @@ let _bcSyncBuffer = [];
 async function bcSyncLog(event, payload = {}) {
   const entry = {
     event,
-    store_hash: BC_STORE_HASH,
+    store_hash: '(Worker)',
     payload,
     occurred_at: new Date().toISOString()
   };
