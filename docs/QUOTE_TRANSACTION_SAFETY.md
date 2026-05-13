@@ -81,15 +81,57 @@ If `line_count = 0` for a quote that should have lines, the user should reload a
 
 ---
 
+---
+
+## V2 Additions (M46)
+
+### Stale-edit detection
+
+`sbLoadQuotes` now fetches `updated_at` and stores it as `q._updatedAt`. Each save passes `p_expected_updated_at: q._updatedAt` to the RPC. If the DB row is newer, the RPC raises `CONFLICT: …`. `_doSaveQuote` catches the prefix and shows a confirm dialog:
+
+- **Overwrite:** clears `q._updatedAt`, retries without the stale guard.
+- **Cancel → Reload:** calls `reloadQuoteFromDB(id)`, replaces in-memory quote, re-renders with the authoritative DB version.
+
+On success the RPC returns `updated_at` and the client stores it back into `q._updatedAt` so the next save has a fresh baseline.
+
+### Local draft recovery
+
+- `_saveQuoteDraft()` writes current form state to `localStorage['accent_quote_draft']` on: (a) any save failure, (b) `beforeunload`.
+- Recovery banner shown at the top of the Quotes page if a draft < 24 h exists.
+- **Restore draft** repopulates `CQ`, `LI`, and all form fields. **Discard** clears the slot.
+- Single slot — cleared on successful save.
+
+### Observability (`_quoteObs`)
+
+In-session counters: `attempts`, `successes`, `failures`, `conflicts`, `retries`, `lastMs`, `totalMs`, `lastError`. Each successful save routes `{ timing_ms, line_count, retries }` into `sbAuditLog('quote_save', 'quotes', …)`.
+
+### Reload affordance
+
+`reloadQuoteFromDB(numberId)` fetches a single quote from DB with fresh `_updatedAt`, merges into `QUOTES[]`. Called automatically on conflict-cancel; also available for manual use.
+
+---
+
 ## Migration
 
-Apply `sql/M45_quote_save_rpc.sql` in the Supabase SQL Editor before deploying the updated `index.html`. The client will fall back to a clear error if the function doesn't exist yet (PostgREST returns 404 on unknown RPC routes → `sbFetch` throws → `saveQ` shows error toast).
+Apply in order:
 
-**Verification after migration:**
+1. `sql/M45_quote_save_rpc.sql` — creates `upsert_quote_with_lines(p_header, p_lines)`
+2. `sql/M46_quote_stale_guard.sql` — `CREATE OR REPLACE` adds `p_expected_updated_at` + `updated_at` in response
+
+M46 is idempotent. If only M45 is applied, the stale guard is silently skipped (NULL baseline always passes).
+
+**Verification:**
 
 ```sql
 SELECT routine_name, security_type
 FROM information_schema.routines
 WHERE routine_name = 'upsert_quote_with_lines';
 -- Expected: security_type = 'INVOKER'
+
+-- Stale guard smoke test (should raise CONFLICT):
+SELECT upsert_quote_with_lines(
+  '{"number":"QT-TEST","project_name":"Test","status":"draft","subtotal":0,"tax":0,"total":0}'::jsonb,
+  '[]'::jsonb,
+  '2020-01-01 00:00:00+00'::timestamptz
+);
 ```
