@@ -1597,47 +1597,39 @@ async function sbSaveQuote(q){
       : null);
     const headerBody = {
       number: q.id,
-      customer_id: custId,
-      customer_name: q.customer || null,
-      project_name: q.project || null,
+      customer_id: custId || '',
+      customer_name: q.customer || '',
+      project_name: q.project || '',
       status: 'draft',
-      subtotal, tax: 0, total: q.total || subtotal,
+      subtotal: subtotal,
+      tax: 0,
+      total: q.total || subtotal,
       notes: JSON.stringify(extra)
     };
-    // Upsert header by number; need the UUID back to write lines.
-    const headerRes = await sbFetch('/quotes?on_conflict=number', {
-      method: 'POST',
-      headers: {'Prefer':'resolution=merge-duplicates,return=representation'},
-      body: JSON.stringify(headerBody)
-    });
-    const uuid = Array.isArray(headerRes) && headerRes[0] ? headerRes[0].id : q._uuid;
-    if(!uuid) throw new Error('No UUID returned from quotes upsert');
-    q._uuid = uuid;
-    // Replace all line items: delete then insert.
-    await sbFetch(`/quote_lines?quote_id=eq.${uuid}`, {
-      method: 'DELETE',
-      headers: {'Prefer':'return=minimal'}
-    });
     const lineRows = (q.lineItems||[]).map((l,i) => ({
-      quote_id: uuid,
       line_no: i + 1,
-      vendor_id: l.vendorId || null,
-      vendor_name: l.vendorName || null,
-      description: l.desc || null,
+      vendor_id: l.vendorId || '',
+      vendor_name: l.vendorName || '',
+      description: l.desc || '',
       qty: Number(l.qty)||0,
       unit_price: Number(l.price)||0,
       ext_price: (Number(l.qty)||0) * (Number(l.price)||0),
-      notes: l.cat || null
+      notes: l.cat || ''
     }));
-    if(lineRows.length){
-      await sbFetch('/quote_lines', {
-        method: 'POST',
-        headers: {'Prefer':'return=minimal'},
-        body: JSON.stringify(lineRows)
-      });
-    }
+    // Single atomic RPC: header upsert + delete existing lines + insert new lines
+    // all run inside one Postgres transaction (M45). Any failure rolls back all three.
+    const rpcRes = await sbFetch('/rpc/upsert_quote_with_lines', {
+      method: 'POST',
+      body: JSON.stringify({ p_header: headerBody, p_lines: lineRows })
+    });
+    const uuid = rpcRes?.quote_id || q._uuid;
+    if(!uuid) throw new Error('No UUID returned from upsert_quote_with_lines');
+    q._uuid = uuid;
     return true;
-  }catch(e){ console.warn('[sb] Save quote failed:', e.message); return false; }
+  }catch(e){
+    console.warn('[sb] Save quote failed:', e.message);
+    throw e; // re-throw so saveQ can surface the message to the operator
+  }
 }
 
 async function sbDeleteQuote(numberId){
@@ -5927,7 +5919,11 @@ function addTrackLinesToQuote() {
 }
 
 // ── SAVE QUOTE ──
-function saveQ() {
+// Guard: prevents concurrent saves from duplicate-clicks or Cmd+S mashing.
+let _quoteSaving = false;
+
+async function saveQ() {
+  if(_quoteSaving){ toast('Save already in progress…','warn'); return; }
   const proj = $('q-pr')?.value?.trim(); if(!proj){toast('Add project name first','err');return;}
   const sub = LI.reduce((s,l)=>s+l.qty*l.price, 0);
   const qid = CQ?CQ.id:'QT-'+String(QUOTE_ID++).padStart(4,'0');
@@ -5935,12 +5931,23 @@ function saveQ() {
   const ex = QUOTES.findIndex(x=>x.id===qid);
   if(ex>=0)QUOTES[ex]=q;else QUOTES.push(q);
   CQ=null; log('acc','◻',`Quote: ${proj} — $${sub.toFixed(2)}`,'Just now');
-  if(typeof sbSaveQuote==='function'){
-    sbSaveQuote(q).then(ok=>{
-      if(ok && typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
-    });
+  if(typeof sbSaveQuote!=='function'){ toast('Saved locally ('+qid+')','ok'); return; }
+  _quoteSaving = true;
+  toast('Saving…','');
+  try{
+    await sbSaveQuote(q);
+    if(typeof sbAuditLog==='function') sbAuditLog('quote_save','quotes',{quote_id:qid,total:sub});
+    toast('Saved ('+qid+')','ok');
+  }catch(e){
+    // In-memory state is already updated; DB write failed atomically — no partial corruption.
+    // User can retry: the RPC is idempotent on the same quote number.
+    const msg = e?.message || 'network error';
+    const shortMsg = msg.length > 80 ? msg.slice(0,77)+'…' : msg;
+    toast('Save failed — ' + shortMsg + '. Press Save to retry.','err');
+    console.error('[saveQ] DB write failed:', msg);
+  }finally{
+    _quoteSaving = false;
   }
-  toast('Saved ('+qid+')','ok');
 }
 
 // ── DELETE / SAVED ──
