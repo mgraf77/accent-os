@@ -216,7 +216,8 @@ function renderOverview(container) {
         <div class="stat-value">${withScores}</div>
         <div class="stat-sub">${(withScores/VD.length*100).toFixed(0)}% have scores</div>
       </div>
-      <div class="stat-label">Total 5-Yr Sales</div>
+      <div class="card stat-card">
+        <div class="stat-label">Total 5-Yr Sales</div>
         <div class="stat-value">${fmt$(totalSales)}</div>
         <div class="stat-sub">All vendors combined</div>
       </div>

@@ -918,7 +918,7 @@ const MODULE_REGISTRY = [
   {section:'INTELLIGENCE'},
   {key:'ecommerce',      icon:'◈', label:'Ecommerce Intel',     roles:'Owner,Admin,Manager',                 t:'Ecommerce Intelligence', s:'BigCommerce · Catalog analysis · Opportunities'},
   {key:'knowledge',      icon:'⚡', label:'Knowledge Engine',   roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Knowledge Engine',      s:'AI-Powered Lighting Intelligence'},
-  {key:'vendors',        icon:'◇', label:'Vendor Ranking',      roles:'Owner,Admin,Manager,Sales',           t:'Vendor Ranking',        s:'Vendor Ranking 2026'},
+  {key:'vendors',        icon:'◇', label:'Vendor Ranking',      roles:'Owner,Admin,Manager,Sales',           t:'Vendor Command Center', s:'Operational intelligence · rankings · terms'},
   {key:'changelog',      icon:'◑', label:'Change Log',          roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Change Log',            s:'Vendor Ranking 2026'},
   {key:'calendar',       icon:'▦', label:'Company Calendar',    roles:'Owner,Admin,Manager,Sales,Warehouse', t:'Company Calendar',      s:'Trade shows · Training · Deadlines'},
   {section:'ADMIN', roles:'Owner,Admin,Manager'},
@@ -2265,7 +2265,7 @@ function heatTextColor(s){
 function dispScore(s){if(s===null)return`<span class="na">—</span>`;if(s==='na')return`<span class="na">N/A</span>`;return s;}
 function fmt$(n){if(!n||isNaN(n))return'—';return'$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:0});}
 
-let vFilter='',vTier='All',vRep='All',vScoredOnly=false,vSection='scores';
+let vFilter='',vTier='All',vRep='All',vScoredOnly=false,vSection='commandcenter';
 let vGroupByParent=false;
 
 
@@ -2469,6 +2469,7 @@ function renderVendors(container){
 
   // Navigation tabs
   const tabs = [
+    {id:'commandcenter',label:'Command Center'},
     {id:'overview',label:'Overview'},
     {id:'scores',label:'Scores'},
     {id:'replist',label:'Rep List'},
@@ -2506,7 +2507,9 @@ function renderVendors(container){
 
   const sectionContent = $('vendor-section-content');
 
-  if (vSection === 'overview') {
+  if (vSection === 'commandcenter') {
+    renderCommandCenter(sectionContent);
+  } else if (vSection === 'overview') {
     renderOverview(sectionContent);
   } else if (vSection === 'scores') {
     renderScores(sectionContent);
@@ -7769,5 +7772,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/klaviyo_adapter.js?v=6.11.1"></script>
 <script src="js/gmc_adapter.js?v=6.11.1"></script>
 <script src="js/ecommerce_intelligence.js?v=6.11.1"></script>
+<script src="js/vendor_command_center.js?v=1.0.0"></script>
 </body>
 </html>
