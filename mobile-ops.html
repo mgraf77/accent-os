@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1a1a">
+<title>AccentOS · Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Outfit',sans-serif;background:#f4f4f2;color:#1a1a1a;
+       min-height:100vh;-webkit-tap-highlight-color:transparent;}
+  .mono{font-family:'DM Mono',monospace;}
+  .topbar{background:#1a1a1a;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;
+          position:sticky;top:0;z-index:10;}
+  .topbar h1{font-size:15px;font-weight:600;letter-spacing:.5px;}
+  .topbar .dot{width:8px;height:8px;border-radius:50%;background:#16a34a;}
+  .topbar .meta{margin-left:auto;font-size:11px;opacity:.65;font-family:'DM Mono',monospace;}
+  #signalMobileFeed{padding-bottom:env(safe-area-inset-bottom);}
+  button{font-family:inherit;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="dot" id="hb"></span>
+  <h1>AccentOS · Operations</h1>
+  <span class="meta" id="meta"></span>
+</div>
+
+<!-- Mounts -->
+<div id="signalMobileFeed"></div>
+
+<!-- Supabase shim placeholder. In production this page is served alongside the main app
+     and inherits the same auth/sbFetch globals. For standalone access, the page falls
+     back to in-memory mode (engine emits local signals; no persistence). -->
+<script>
+  // Tag this page for the signal modules: no Supabase shim => in-memory feed.
+  window.AUTH_ROLE = 'owner';
+</script>
+
+<script src="js/signal_runtime.js?v=6.12.0"></script>
+<script src="js/signal_engine.js?v=6.12.0"></script>
+<script src="js/signal_rules_phase1.js?v=6.12.0"></script>
+<script src="js/signal_command_surface.js?v=6.12.1"></script>
+<script>
+  // Demo data wiring for standalone mode — replaced by real hydrators in-app.
+  // If main app globals aren't present, seed a tiny INVENTORY so the feed isn't empty
+  // on first phone load. Remove or guard once Supabase hydration is wired here.
+  if (!window.INVENTORY) {
+    window.INVENTORY = [
+      { sku:'DEMO-A', on_hand:0,  demand_30d:30, lead_time_days:10, name:'Demo SKU A' },
+      { sku:'DEMO-B', on_hand:5,  demand_30d:30, lead_time_days:10, name:'Demo SKU B' },
+    ];
+  }
+  if (!window.INTEGRATION_HEARTBEATS) window.INTEGRATION_HEARTBEATS = [];
+
+  (async () => {
+    try { await SignalEngine.hydrate(); } catch(e){}
+    try { await SignalRulesPhase1.runAll(); } catch(e){}
+    SignalCommandSurface.renderMobileFeed('signalMobileFeed');
+    const meta = document.getElementById('meta');
+    if (meta) meta.textContent = `${SignalEngine._state().open} open · ${SignalEngine._state().rules} rules`;
+  })();
+</script>
+</body>
+</html>

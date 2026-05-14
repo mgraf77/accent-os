@@ -20,7 +20,9 @@ This is **scaffolding**, not a final system. Additive only. No invasive rewrites
 | `js/signal_engine.js` | Lifecycle: emit → dedupe → cooldown → persist → ack/dismiss/resolve |
 | `js/signal_rules_phase1.js` | Phase 1 rule implementations + registry seeding |
 | `js/signal_feed.js` | Operator-facing feed (full + mobile 5-card) |
-| `index.html` | Script includes for the four JS modules (additive) |
+| `js/signal_command_surface.js` | Vendor rail, exec summary, clusters, pulse bars, mobile feed |
+| `mobile-ops.html` | Standalone touch-first mobile operations page |
+| `index.html` | Script includes (additive) + one-line `injectVendorRail` hook in `renderVendors` |
 
 ## Wire-up
 

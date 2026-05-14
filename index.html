@@ -2537,6 +2537,12 @@ function renderVendors(container){
   } else if (vSection === 'bulkops') {
     renderBulkVendorOps(sectionContent);
   }
+
+  // ── Signal command surface overlay (additive; safe no-op if module absent) ──
+  if (typeof SignalCommandSurface !== 'undefined' && SignalCommandSurface.injectVendorRail) {
+    try { SignalCommandSurface.injectVendorRail(container, vSection); }
+    catch(e){ console.warn('[signals] rail inject failed', e); }
+  }
 }
 
 // ── v6.9 PARENT GROUPING HELPERS ───────────────────────────
@@ -7774,5 +7780,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 <script src="js/signal_engine.js?v=6.12.0"></script>
 <script src="js/signal_rules_phase1.js?v=6.12.0"></script>
 <script src="js/signal_feed.js?v=6.12.0"></script>
+<script src="js/signal_command_surface.js?v=6.12.1"></script>
 </body>
 </html>
