@@ -99,3 +99,19 @@
 ### 2026-05-06 — efficiency-monitor skill (always-on session observer)
 **Prompt:** "build a skill that is always on starting at a session start. what this skill does is monitor my process and back and forth with claude code and flags ineffeciencies and and things that should be made into a skill. lets plan this out together, then finalize the v1 plan, then build" → answered planning questions (signals: agreed; surface: end-of-session + log; threshold: my call; interrupt: only at boundaries) → "Go" → fixed Stop-hook untracked-files complaint → chose option 3 (suppress timestamp-only diffs) → "Do whatever is needed" (project hygiene + reliability hardening).
 **Context:** Built `skills/efficiency-monitor/` — always-on observer that flags 6 signal types (retry-loops, redundant reads, recurring multi-step sequences, skill-bypass, clarification loops, redone WIP) and runs a promotion ladder (OBSERVED → CANDIDATE → PROMOTE → BUILT) for patterns that should become real skills. Surfaces ONLY at session boundaries (boot replay + Stop hook wrap-up) — never interrupts mid-flow per Michael's constraint. Hybrid design: Path A SKILL.md instructs Claude to journal silently to `_session-scratch.md` (gitignored, crash-safe); Path B `scripts/efficiency-aggregate.sh` runs on Stop hook, rebuilds `skill-candidates.md` with cross-session counts, promotes per `_thresholds.md`. Aggregator skips rewrite when no semantic change (timestamp diff suppressed). Smoke-tested with synthetic 3-session log: pattern correctly promoted at 9 occurrences × 4 steps × 0.5 = 18 min savings. Wired into `.claude/CLAUDE.md` step 1.j (boot) + step 8 (wrap-up), `.claude/settings.json` Stop hook, `skills/_index.md` registry. Companion of `skill-forge` (efficiency-monitor flags candidates, skill-forge ships them). Commits: 508a27c (build) → db533b2 (gitignore + aggregator output) → 74adbb5 (semantic-diff suppression) → this commit (project hygiene + crash-safe scratch journal).
+
+### 2026-05-14 — OPERATIONAL_DATA_ARCHITECTURE_V1
+**Prompt:** ENTER OPERATIONAL_DATA_ARCHITECTURE_V1
+
+Mission: Design the foundational operational data architecture for AccentOS using a thin-cache / orchestration-first model.
+
+Critical architectural rule: AccentOS is NOT a replica ERP/ecommerce platform.
+
+AccentOS should: orchestrate, enrich, cache selectively, provide intelligence/workflows.
+NOT: duplicate entire operational systems.
+
+Current operational systems: Windward System Five (ERP), BigCommerce (ecommerce), Data52/Lights America (catalog), Supabase (AccentOS intelligence), Cowork (automation).
+
+Objectives: 5 production-grade architectural docs — OPERATIONAL_DATA_OWNERSHIP_MAP.md, WINDWARD_EXPORT_STRATEGY.md, THIN_CACHE_RULES.md, COWORK_AUTOMATION_ARCHITECTURE.md, VENDOR_RANKING_UI_VISION.md.
+
+**Context:** New architecture phase — establishing data authority, integration philosophy, and UI vision for operational intelligence layer on top of existing systems.
