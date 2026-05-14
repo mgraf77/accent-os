@@ -146,6 +146,8 @@ async function bcFetch(path, opts = {}) {
   return res.json();
 }
 
+const BC_FETCH_MAX_ITEMS = 50000;
+
 // Paginated fetch — returns full array across all pages (V3 pagination)
 async function bcFetchAll(path, params = {}) {
   const allItems = [];
@@ -159,6 +161,11 @@ async function bcFetchAll(path, params = {}) {
 
     const items = data.data || data || [];
     allItems.push(...(Array.isArray(items) ? items : []));
+
+    if (allItems.length > BC_FETCH_MAX_ITEMS) {
+      console.warn(`[bc] bcFetchAll: hard cap reached (${allItems.length} items). Truncating at ${BC_FETCH_MAX_ITEMS}.`);
+      throw new Error(`BC_CATALOG_TOO_LARGE: fetched ${allItems.length} records (cap: ${BC_FETCH_MAX_ITEMS}). Use BC.products.list with a filter or reduce catalog size.`);
+    }
 
     const pagination = data.meta?.pagination;
     if (!pagination || page >= pagination.total_pages) break;
@@ -262,7 +269,7 @@ const BC = {
         ...opts
       };
       const products = await bcFetchAll('/catalog/products', params);
-      await bcSyncLog('sync_products', { count: products.length });
+      await bcSyncLog('sync_products_fetched', { count: products.length });
       return products;
     },
 
@@ -732,13 +739,17 @@ const BC = {
 async function bcSyncCatalogToSupabase(products, categories, brands) {
   if (!sbConfigured()) return { ok: false, reason: 'supabase_not_configured' };
 
+  if (products.length > BC_FETCH_MAX_ITEMS) {
+    throw new Error(`BC_CATALOG_TOO_LARGE: ${products.length} products exceeds hard cap of ${BC_FETCH_MAX_ITEMS}. Sync aborted.`);
+  }
+
   const batchUpsert = async (table, rows, onConflict) => {
     if (!rows.length) return 0;
-    const chunks = [];
-    for (let i = 0; i < rows.length; i += 100) chunks.push(rows.slice(i, i + 100));
     const endpoint = onConflict ? `/${table}?on_conflict=${onConflict}` : `/${table}`;
     let count = 0;
-    for (const chunk of chunks) {
+    let chunkFails = 0;
+    for (let i = 0; i < rows.length; i += 250) {
+      const chunk = rows.slice(i, i + 250);
       try {
         await sbFetch(endpoint, {
           method: 'POST',
@@ -747,19 +758,30 @@ async function bcSyncCatalogToSupabase(products, categories, brands) {
         });
         count += chunk.length;
       } catch(e) {
-        console.warn(`[bc] cache upsert ${table} failed:`, e.message);
+        chunkFails++;
+        await bcSyncLog('sync_products_chunk_failed', {
+          table,
+          chunk_start: i,
+          chunk_size: chunk.length,
+          error: e.message
+        });
+        console.warn(`[bc] cache upsert ${table} chunk @${i} failed:`, e.message);
       }
+    }
+    if (count === 0 && rows.length > 0) {
+      throw new Error(`batchUpsert(${table}): 0 of ${rows.length} rows persisted — ${chunkFails} chunk(s) failed. Check bc_sync_log for sync_products_chunk_failed entries.`);
     }
     return count;
   };
 
   const now = new Date().toISOString();
 
+  // description_html excluded: large HTML field not used by opportunity scanners,
+  // causes per-chunk POST bodies to exceed PostgREST's 4MB body limit.
   const productRows = products.map(p => ({
     bc_product_id: p.id,
     sku: p.sku || null,
     name: p.name || '',
-    description_html: p.description || null,
     price: p.price || null,
     cost_price: p.cost_price || null,
     retail_price: p.retail_price || null,
@@ -779,7 +801,6 @@ async function bcSyncCatalogToSupabase(products, categories, brands) {
     thumbnail_url: p.images?.[0]?.url_thumbnail || null,
     custom_fields: p.custom_fields || [],
     bc_date_modified: p.date_modified || null,
-    // V2 SEO + GMC fields (M46)
     page_title: p.page_title || null,
     meta_description: p.meta_description || null,
     meta_keywords: p.meta_keywords || null,
@@ -806,15 +827,11 @@ async function bcSyncCatalogToSupabase(products, categories, brands) {
     synced_at: now
   }));
 
-  const [pCount, cCount, bCount] = await Promise.all([
-    batchUpsert('bc_products_cache', productRows, 'bc_product_id'),
-    batchUpsert('bc_categories_cache', categoryRows, 'bc_category_id'),
-    batchUpsert('bc_brands_cache', brandRows, 'bc_brand_id')
-  ]);
+  const pCount = await batchUpsert('bc_products_cache', productRows, 'bc_product_id');
+  const cCount = await batchUpsert('bc_categories_cache', categoryRows, 'bc_category_id');
+  const bCount = await batchUpsert('bc_brands_cache', brandRows, 'bc_brand_id');
 
-  await bcSyncLog('catalog_cache_sync', {
-    products: pCount, categories: cCount, brands: bCount, synced_at: now
-  });
+  await bcSyncLog('sync_products_persisted', { products: pCount, categories: cCount, brands: bCount, synced_at: now });
 
   return { ok: true, products: pCount, categories: cCount, brands: bCount };
 }
@@ -824,7 +841,7 @@ async function bcLoadCachedProducts(limit = 500) {
   if (!sbConfigured()) return [];
   try {
     const rows = await sbFetch(
-      `/bc_products_cache?order=name.asc&limit=${limit}&select=bc_product_id,sku,name,price,cost_price,retail_price,sale_price,inventory_level,inventory_warning_level,inventory_tracking,categories,brand_id,is_visible,is_featured,availability,total_sold,view_count,search_keywords,image_count,thumbnail_url,description_html,page_title,meta_description,meta_keywords,condition,has_related_products,custom_fields,bc_date_modified,synced_at`
+      `/bc_products_cache?order=name.asc&limit=${limit}&select=bc_product_id,sku,name,price,cost_price,retail_price,sale_price,inventory_level,inventory_warning_level,inventory_tracking,categories,brand_id,is_visible,is_featured,availability,total_sold,view_count,search_keywords,image_count,thumbnail_url,page_title,meta_description,meta_keywords,condition,has_related_products,custom_fields,bc_date_modified,synced_at`
     );
     return Array.isArray(rows) ? rows : [];
   } catch(e) {
