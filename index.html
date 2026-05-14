@@ -2488,7 +2488,8 @@ function renderVendors(container){
   ];
 
   container.innerHTML = `
-    <div class="card" style="margin-bottom:16px;">
+    ${typeof vccMobileNavSelect === 'function' ? vccMobileNavSelect(tabs, vSection) : ''}
+    <div class="card vcc-tabs-desktop" style="margin-bottom:16px;">
       <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);overflow-x:auto;">
         ${tabs.map(tab => `
           <div class="tab ${vSection === tab.id ? 'active' : ''}"
@@ -3787,6 +3788,9 @@ async function openVendorDetail(vendorId) {
     </div>
 
     <div style="padding:20px 24px;">
+
+      <!-- VENDOR INTELLIGENCE PANEL (Phase 2) -->
+      ${typeof vccVendorIntelPanel === 'function' ? vccVendorIntelPanel(v) : ''}
 
       ${(()=>{
         if(typeof getSisterVendors !== 'function') return '';
