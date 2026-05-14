@@ -128,10 +128,14 @@ async function bcFetch(path, opts = {}) {
     throw new Error('BC_AUTH_FAILED: token invalid or expired');
   }
   if (res.status === 429) {
-    bcSyncLog('rate_limit', { path, status: 429 });
-    const retry = parseInt(res.headers.get('X-Rate-Limit-Time-Reset-Ms') || '5000');
-    await new Promise(r => setTimeout(r, retry + 500));
-    return bcFetch(path, opts); // one retry after backoff
+    const retries = opts._retry429 || 0;
+    if (retries >= 3) {
+      throw new Error('BC API rate limited after 3 retries — try again in 60s');
+    }
+    bcSyncLog('rate_limit', { path, status: 429, retry: retries + 1 });
+    const wait = parseInt(res.headers.get('X-Rate-Limit-Time-Reset-Ms') || '10000');
+    await new Promise(r => setTimeout(r, wait + 500));
+    return bcFetch(path, { ...opts, _retry429: retries + 1 });
   }
   if (!res.ok) {
     const body = await res.text().catch(() => '');
@@ -732,10 +736,11 @@ async function bcSyncCatalogToSupabase(products, categories, brands) {
     if (!rows.length) return 0;
     const chunks = [];
     for (let i = 0; i < rows.length; i += 100) chunks.push(rows.slice(i, i + 100));
+    const endpoint = onConflict ? `/${table}?on_conflict=${onConflict}` : `/${table}`;
     let count = 0;
     for (const chunk of chunks) {
       try {
-        await sbFetch(`/${table}`, {
+        await sbFetch(endpoint, {
           method: 'POST',
           headers: { 'Prefer': `resolution=merge-duplicates,return=minimal` },
           body: JSON.stringify(chunk)

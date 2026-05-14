@@ -769,11 +769,9 @@ async function eiFullSync() {
   toast('Syncing catalog from BigCommerce…', 'info');
 
   try {
-    const [products, categories, brands] = await Promise.all([
-      BC.products.list({ include: 'images,custom_fields' }),
-      BC.categories.list(),
-      BC.brands.list()
-    ]);
+    const products   = await BC.products.list({ include: 'images,custom_fields' });
+    const categories = await BC.categories.list();
+    const brands     = await BC.brands.list();
 
     await bcSyncCatalogToSupabase(products, categories, brands);
 
