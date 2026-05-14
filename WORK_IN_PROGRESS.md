@@ -1,44 +1,58 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-12 — accent-work session 2: KPI scheduler + dashboard pinning + csvDownload cleanup.
-**Branch:** `accent-work`
+**Last updated:** 2026-05-14 — VENDOR_COMMAND_CENTER_IMPLEMENTATION_V2
+**Branch:** `claude/design-operational-data-arch-Tn3tJ`
 **Resume trigger:** "continue last session"
 
 ---
 
 ## STATUS
 
-6 items shipped across 2 sessions on `accent-work`. Tree is clean, docs committed.
+### Session: OPERATIONAL_DATA_ARCHITECTURE_V1 + VENDOR_COMMAND_CENTER_IMPLEMENTATION_V2
 
-**Session 1 (MODULE_REGISTRY + analytics + auto-derive):**
-- ✅ MODULE_REGISTRY refactor — sidebar/PAGE_META/dispatcher driven by single registry array (1cb015a)
-- ✅ Pipeline analytics — `openPipelineAnalytics()` implemented (funnel, win/loss, loss reasons, by-source, health) (b9a65d9)
-- ✅ Auto-derived deal source — company field auto-fills Source + Segment from CRM on match (832d7e6)
+**Architecture docs shipped (commit 73fa332):**
+- ✅ docs/OPERATIONAL_DATA_OWNERSHIP_MAP.md — authority map for 13 entities
+- ✅ docs/WINDWARD_EXPORT_STRATEGY.md — export-first integration philosophy
+- ✅ docs/THIN_CACHE_RULES.md — 8 rules governing what AccentOS caches
+- ✅ docs/COWORK_AUTOMATION_ARCHITECTURE.md — full pipeline design
+- ✅ docs/VENDOR_RANKING_UI_VISION.md — phase roadmap for vendor intelligence UI
 
-**Session 2 (KPI + pinning + cleanup):**
-- ✅ KPI auto-snapshot scheduler — daily Owner capture at hydration end, no manual click needed (5a48639)
-- ✅ Per-user dashboard pinning — 📌 Pins button, localStorage v1, MODULE_REGISTRY-driven picker (3a29a97)
-- ✅ csvDownload dead-fallback cleanup — removed 4 unreachable else branches in module files (1daada6)
-
-**Live DB state:** in sync with M41–M44. All clean.
+**Vendor Command Center v1 shipped (commit d7c6ed3):**
+- ✅ js/vendor_command_center.js — 670-line additive intelligence layer
+  - 12 signal types computed from existing data (no new schema)
+  - computeVendorHealth() → green/yellow/red composite health
+  - computeScoreTrend() → up/down/stable from changelog deltas
+  - computePortfolioSignals() → portfolio-level signal aggregation
+  - New renderOverview() — full Command Center surface replaces static stats page
+  - Enhanced _vendorVitals() — health dot + trend arrow in scores table rows
+  - openVendorDetail() wrapper — injects insight panel + leverage card into vendor profile
+  - CSS injection (self-contained, no index.html style edits)
+  - Mobile-responsive grid layout
+- ✅ index.html — script tag wired; Overview tab renamed to ⚡ Command
 
 ## NEXT
 
-Remaining unblocked items (no M-task dependency):
-- `typeof` guard cleanup — `savedFiltersBar`/`bulkSelBar`/`bulkSelRegister` calls in ~8 modules are wrapped in dead `typeof` guards (both scripts confirmed always loaded). Low priority cosmetic refactor.
-- Saved Filter Sets — cross-cutting persisted filter combos on every list page (js/saved_filters.js already ships `savedFiltersBar()` — wire remaining modules that don't use it yet).
-- Bulk action bars — multi-select + bulk delete/status (js/bulk_select.js ships `bulkSelBar()` — wire remaining modules).
-- My Tasks widget — personal task queue on dashboard (BUILD_PLAN item, no schema needed).
-- OKR progress auto-compute — derive OKR % from live data globals instead of manual entry.
+Recommended next implementation lanes (per VENDOR_RANKING_UI_VISION.md Phase 2+):
 
-Blocked until Michael acts: M03/M04/M05/M06/M09/M10/M18.
-Stale Cloudflare Worker: GitHub Actions workflow created (.github/workflows/deploy-worker.yml). Needs CF_API_TOKEN + CF_ACCOUNT_ID secrets added to GitHub repo before first auto-deploy can fire. Michael to add secrets — see docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md.
+1. **Phase 2: PO data integration** — Windward PO export → Supabase purchase_orders →
+   fill rate + lead time computed per vendor → surfaced in vendor profile.
+   Requires: Windward export + Cowork pipeline (M-task for Windward access).
 
-## MERGE READINESS
+2. **Trend sparkline in Portfolio Health Scan** — vccTrendSparkline() is built
+   but needs historic score data (multiple changelog entries per vendor over time)
+   to render meaningfully. Will auto-activate as changelog accumulates.
 
-`accent-work` is ahead of `main` by 6 feature commits. When ready to merge:
-- All changes are additive (new functions, new registry entries, dead-code removal)
-- No schema changes required
-- Rollback: revert the 6 commits individually or `git revert` range
-- Affected systems: sidebar rendering (MODULE_REGISTRY), pipeline modal, new deal form, dashboard card, all CSV import flows
+3. **Vendor profile score breakdown: delta badges** — wire vccDeltaBadge() into
+   the per-category score rows inside openVendorDetail modal.
+
+4. **Signal dismissal / snooze** — let users dismiss a signal with a note
+   (e.g. "acknowledged — rep call scheduled"). Requires new Supabase table.
+
+5. **Phase 3: Full vendor profile upgrade** — relationship timeline (combining
+   changelog + alerts + notes), operational health from PO data.
+
+## ACTIVE SIGNALS AT BUILD TIME
+- Branch is ahead of main by 8 commits (6 from accent-work session + 2 from this session)
+- Michael needs to create PR and merge accent-work + this branch
+- No schema changes in this session — no M-task required
