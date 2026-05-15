@@ -331,6 +331,7 @@
     host.style.cssText = 'margin-bottom:16px;';
     host.innerHTML = `
       <div id="signal-vendor-critstrip"></div>
+      <div id="signal-vendor-trust" style="margin-bottom:12px;"></div>
       <div id="signal-vendor-execsummary"></div>
       <div id="signal-vendor-pulse" style="background:#fff;border:1px solid #e8e8e4;border-radius:8px;padding:12px;margin-bottom:12px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#64748b;margin-bottom:10px;">SIGNAL PULSE — VENDORS &amp; PURCHASING</div>
@@ -350,6 +351,9 @@
     else { container.appendChild(host); }
 
     renderCriticalStrip('signal-vendor-critstrip');
+    if(global.SignalTrust && global.SignalTrust.renderPanel){
+      try{ global.SignalTrust.renderPanel('signal-vendor-trust'); }catch(_){}
+    }
     renderExecSummary('signal-vendor-execsummary');
     renderClusters('signal-vendor-clusters');
     _renderPulseRow();

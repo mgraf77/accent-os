@@ -319,6 +319,21 @@
     },
   });
 
+  // Baseline refresh "rule": owned by the scheduler at daily cadence.
+  // Not a signal-emitting rule — returns []. Keeps refresh inside the
+  // existing dispatch loop so heartbeat reflects it.
+  SE.registerRule({
+    id: 'rule.baselines.refresh_daily',
+    cadence: 'daily',
+    async evaluate(){
+      if(global.SignalBaselines && typeof global.SignalBaselines.refreshAll === 'function'){
+        try{ await global.SignalBaselines.refreshAll(); }
+        catch(e){ console.warn('[signals] baseline refresh failed', e.message||e); }
+      }
+      return [];
+    },
+  });
+
   // ─── 4. Convenience runner ───
   global.SignalRulesPhase1 = {
     defs: PHASE1_DEFS.map(d => d.signal_name),
