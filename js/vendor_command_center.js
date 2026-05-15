@@ -551,6 +551,7 @@
 
   function renderCommandCenter(container) {
     _injectStyles();
+    _injectStylesP4();
 
     const allScores = VD.map(v => weightedScore(v)).filter(s => s !== null);
     const vendors   = _enrichVendors(allScores);
@@ -615,6 +616,11 @@
     const volatileCats = categoryHealth.filter(c => c.flags.includes('volatile'));
     const decliningRev = declining.reduce((s, v) => s + Math.max(0, (v.sales2024 || 0) - (v.sales2025 || 0)), 0);
 
+    // ── Phase 4 data ─────────────────────────────────────────────────────────
+    const p4Drift = _computeDrift(vendors, 90);
+    const p4Expo  = _computeExposure(vendors, categoryHealth);
+    const p4Opps  = _buildOpportunities(vendors, bench, p4Drift);
+
     // ── KPI computations ────────────────────────────────────────────────────
     const tieredVendors = vendors.filter(v => v.tier !== null);
     const aTierCount    = tieredVendors.filter(v => v.tier === 'A').length;
@@ -652,6 +658,9 @@
     container.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:16px;padding-bottom:28px;">
 
+        <!-- EXECUTIVE DAILY BRIEF -->
+        ${_execBriefCard(vendors, categoryHealth, bench, allScores)}
+
         ${alerts.length > 0 ? `
           <div style="display:flex;flex-direction:column;gap:6px;">
             ${alerts.map(a => _alertBar(a.type, a.icon, a.msg)).join('')}
@@ -666,8 +675,27 @@
           ${_kpi('5-Yr Revenue', salesStr, 'all vendors combined')}
         </div>
 
+        <!-- PORTFOLIO EXPOSURE (full width) -->
+        ${_exposureCard(vendors, categoryHealth, p4Expo)}
+
         <!-- ACTION QUEUE (full width) -->
         ${_actionQueueCard(vendors, categoryHealth, bench)}
+
+        <!-- OPPORTUNITY RADAR | WATCHLIST -->
+        <div class="vcc-2col">
+          <div class="card">
+            <div class="card-hd" style="padding-bottom:4px;">
+              <div>
+                <div class="card-title">◉ Opportunity Radar</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:3px;">Fast movers · underutilized talent · leverage windows · click to act</div>
+              </div>
+            </div>
+            <div style="padding:8px 16px 12px;">
+              ${p4Opps.length > 0 ? p4Opps.map(_oppRow).join('') : _green('No standout opportunities detected — portfolio is well-optimized')}
+            </div>
+          </div>
+          ${_watchlistCard(vendors)}
+        </div>
 
         <!-- ROW 1: Top Performers | Top Movers -->
         <div class="vcc-2col">
@@ -856,6 +884,9 @@
 
         </div>
 
+        <!-- NARRATIVE (full width) -->
+        ${_narrativeCard(vendors, categoryHealth, bench, p4Expo, p4Drift)}
+
       </div>
     `;
   }
@@ -958,18 +989,22 @@
 
     const flagCount = weakChips.length + strongChips.length + leverChips.length + (confChip ? 1 : 0) + (coopChip ? 1 : 0);
 
-    // Compare button state
-    const cmpIds = _getCompareIds();
+    // Compare + watchlist button state
+    const cmpIds    = _getCompareIds();
     const inCompare = cmpIds.includes(v.id);
-    const cmpLabel = inCompare ? '✓ In compare' : '+ Compare';
+    const cmpLabel  = inCompare ? '✓ In compare' : '+ Compare';
+    const wlEntry   = _getWatchlist().find(e => e.id === v.id);
+    const wlLabel   = wlEntry ? ({ pin:'📌 Pinned', watch:'👁 Watching', strategic:'⭐ Strategic' }[wlEntry.type] || '⭐') : '+ Watchlist';
 
     return `<div class="vcc-intel">
       ${_scoreRing(ws, 'Weighted')}
       <div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
           ${_trustBadge(trust)}
           <button class="vcc-add-cmp${inCompare ? ' on' : ''}" data-vid="${v.id}"
             onclick="vccToggleCompare(${v.id})">${cmpLabel}</button>
+          <button class="vcc-aq-btn" style="font-size:11px;padding:4px 10px;border-radius:14px;"
+            onclick="${wlEntry ? `vccWatchlistRemove(${v.id})` : `vccWatchlistPin(${v.id},'watch')`}">${wlLabel}</button>
         </div>
         <div class="vcc-intel-stats">
           <div class="vcc-intel-stat">
@@ -1585,6 +1620,477 @@
   window.vccClearCompare     = _clearCompare;
   window.vccOpenCompareModal = _openCompareModal;
   window.vccRefreshDrawer    = _refreshCompareDrawer;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ─── PHASE 4: PORTFOLIO INTELLIGENCE LAYER ───────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function _injectStylesP4() {
+    if (document.getElementById('vcc-styles-p4')) return;
+    const s = document.createElement('style');
+    s.id = 'vcc-styles-p4';
+    s.textContent = `
+      /* Executive Daily Brief */
+      .vcc-brief     { display:grid; grid-template-columns:repeat(5,1fr); gap:0; background:var(--text); border-radius:var(--radius); overflow:hidden; }
+      .vcc-brief-item{ display:flex; flex-direction:column; gap:2px; padding:13px 16px; border-right:1px solid rgba(255,255,255,.08); }
+      .vcc-brief-item:last-child { border-right:none; }
+      .vcc-brief-lbl { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.45); }
+      .vcc-brief-val { font-family:'DM Mono',monospace; font-size:17px; font-weight:700; line-height:1.2; color:#fff; }
+      .vcc-brief-sub { font-size:10.5px; color:rgba(255,255,255,.5); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .vcc-brief-ok  { color:#4ade80 !important; }
+      .vcc-brief-warn{ color:#fbbf24 !important; }
+      .vcc-brief-err { color:#f87171 !important; }
+
+      /* Portfolio Exposure */
+      .vcc-expo-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px 32px; }
+      .vcc-expo-item { display:flex; flex-direction:column; gap:6px; }
+      .vcc-expo-lbl  { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-3); }
+      .vcc-expo-bar  { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+      .vcc-expo-fill { height:100%; border-radius:4px; transition:width .5s; }
+      .vcc-expo-val  { font-family:'DM Mono',monospace; font-size:13px; font-weight:700; color:var(--text); }
+      .vcc-expo-sub  { font-size:11px; color:var(--text-3); }
+      .vcc-expo-band { display:flex; gap:0; height:10px; border-radius:5px; overflow:hidden; margin-top:4px; }
+      .vcc-expo-seg  { height:100%; transition:width .5s; }
+      .vcc-conc-row  { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border-light); cursor:pointer; }
+      .vcc-conc-row:last-child { border-bottom:none; }
+      .vcc-conc-row:hover { background:var(--bg); margin:0 -14px; padding:7px 14px; border-radius:6px; }
+      .vcc-conc-name { flex:1; font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .vcc-conc-pct  { font-family:'DM Mono',monospace; font-size:12px; font-weight:700; min-width:44px; text-align:right; }
+      .vcc-conc-bar  { width:70px; height:5px; background:var(--border); border-radius:3px; overflow:hidden; flex-shrink:0; }
+      .vcc-conc-fill { height:100%; border-radius:3px; }
+
+      /* Opportunity Radar */
+      .vcc-opp-row   { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-light); cursor:pointer; }
+      .vcc-opp-row:last-child { border-bottom:none; }
+      .vcc-opp-row:hover { background:var(--bg); margin:0 -14px; padding:10px 14px; border-radius:6px; }
+      .vcc-opp-icon  { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+      .vcc-opp-body  { flex:1; min-width:0; }
+      .vcc-opp-title { font-size:13px; font-weight:600; color:var(--text); }
+      .vcc-opp-sub   { font-size:11px; color:var(--text-3); margin-top:2px; }
+      .vcc-opp-val   { font-family:'DM Mono',monospace; font-size:12px; font-weight:700; flex-shrink:0; }
+
+      /* Strategic Watchlist */
+      .vcc-wl-row    { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border-light); }
+      .vcc-wl-row:last-child { border-bottom:none; }
+      .vcc-wl-tag    { display:inline-flex; align-items:center; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; flex-shrink:0; white-space:nowrap; }
+      .vcc-wl-pin    { background:var(--accent); color:#fff; }
+      .vcc-wl-watch  { background:var(--blue-bg); color:var(--blue); }
+      .vcc-wl-strat  { background:var(--purple-bg); color:var(--purple); }
+      .vcc-wl-name   { flex:1; font-size:13px; font-weight:600; cursor:pointer; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .vcc-wl-name:hover { color:var(--accent); }
+      .vcc-wl-rm     { background:none; border:none; cursor:pointer; color:var(--text-3); font-size:14px; padding:2px 6px; border-radius:4px; flex-shrink:0; }
+      .vcc-wl-rm:hover { color:var(--accent); background:var(--red-bg); }
+      .vcc-wl-empty  { padding:24px 0; text-align:center; color:var(--text-3); font-size:12.5px; line-height:1.6; }
+
+      /* Operational Narrative */
+      .vcc-narr      { display:flex; flex-direction:column; gap:8px; }
+      .vcc-narr-item { display:flex; align-items:flex-start; gap:10px; padding:11px 14px; background:var(--surface2); border-radius:var(--radius-sm); border-left:3px solid transparent; }
+      .vcc-narr-err  { border-color:var(--accent); }
+      .vcc-narr-warn { border-color:#f59e0b; }
+      .vcc-narr-ok   { border-color:var(--green); }
+      .vcc-narr-info { border-color:var(--blue); }
+      .vcc-narr-ico  { font-size:14px; flex-shrink:0; margin-top:1px; }
+      .vcc-narr-txt  { font-size:13px; color:var(--text); line-height:1.55; }
+
+      /* Rep header row */
+      .vcc-rep-hdr   { display:grid; grid-template-columns:1fr auto auto auto; gap:14px; padding:4px 0 8px; font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-3); border-bottom:1px solid var(--border-light); }
+      .vcc-rep-hdr > div { text-align:right; }
+      .vcc-rep-hdr > div:first-child { text-align:left; }
+
+      /* Responsive P4 */
+      @media (max-width:900px) {
+        .vcc-brief    { grid-template-columns:1fr 1fr 1fr !important; }
+        .vcc-expo-grid{ grid-template-columns:1fr !important; }
+      }
+      @media (max-width:560px) {
+        .vcc-brief    { grid-template-columns:1fr 1fr !important; }
+        .vcc-brief-val{ font-size:14px !important; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // ─── Executive Daily Brief ────────────────────────────────────────────────────
+  function _execBriefCard(vendors, categoryHealth, bench, allScores) {
+    const criticalCats = categoryHealth.filter(c => c.flags.includes('critical') || c.flags.includes('systemic'));
+    const p0Count = _buildActionQueue(vendors, categoryHealth, bench).filter(a => a.severity === 0).length;
+    const avg = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : null;
+    const declining = vendors.filter(v => v.yoy !== null && v.yoy < -0.05 && v.sales5yr > 8000)
+      .sort((a, b) => a.yoy - b.yoy);
+    const improving = vendors.filter(v => v.yoy !== null && v.yoy > 0.12 && v.sales5yr > 3000)
+      .sort((a, b) => b.yoy - a.yoy);
+    const worstDecline = declining[0];
+    const bestMover    = improving[0];
+
+    const items = [
+      {
+        lbl: 'Portfolio Score',
+        val: avg !== null ? avg.toFixed(1) : '—',
+        sub: `${allScores.length} vendors ranked`,
+        cls: avg === null ? '' : avg >= 6.5 ? 'vcc-brief-ok' : avg >= 5 ? 'vcc-brief-warn' : 'vcc-brief-err'
+      },
+      {
+        lbl: 'P0 Actions',
+        val: p0Count,
+        sub: p0Count === 0 ? 'queue clear' : 'critical · needs attention',
+        cls: p0Count === 0 ? 'vcc-brief-ok' : 'vcc-brief-err'
+      },
+      {
+        lbl: 'Critical Categories',
+        val: criticalCats.length,
+        sub: criticalCats.length > 0 ? criticalCats.map(c => c.label).slice(0, 2).join(', ') : 'all stable',
+        cls: criticalCats.length === 0 ? 'vcc-brief-ok' : 'vcc-brief-err'
+      },
+      {
+        lbl: 'Biggest Risk',
+        val: worstDecline ? `↓${Math.abs(Math.round(worstDecline.yoy * 100))}%` : '—',
+        sub: worstDecline ? esc(worstDecline.name) : 'no YoY declines detected',
+        cls: worstDecline ? 'vcc-brief-err' : 'vcc-brief-ok'
+      },
+      {
+        lbl: 'Best Mover',
+        val: bestMover ? `↑${Math.round(bestMover.yoy * 100)}%` : '—',
+        sub: bestMover ? esc(bestMover.name) : 'no standout growth',
+        cls: bestMover ? 'vcc-brief-ok' : ''
+      }
+    ];
+
+    return `<div class="vcc-brief">
+      ${items.map(it => `<div class="vcc-brief-item">
+        <div class="vcc-brief-lbl">${it.lbl}</div>
+        <div class="vcc-brief-val ${it.cls}">${it.val}</div>
+        <div class="vcc-brief-sub" title="${it.sub}">${it.sub}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // ─── Portfolio Exposure ───────────────────────────────────────────────────────
+  function _computeExposure(vendors, categoryHealth) {
+    const totalSales  = vendors.reduce((s, v) => s + v.sales5yr, 0) || 1;
+    const byRevenue   = [...vendors].filter(v => v.sales5yr > 0).sort((a, b) => b.sales5yr - a.sales5yr);
+    const top1Pct     = byRevenue.length > 0 ? (byRevenue[0].sales5yr / totalSales) * 100 : 0;
+    const top3Pct     = byRevenue.slice(0, 3).reduce((s, v) => s + v.sales5yr, 0) / totalSales * 100;
+    const top5Pct     = byRevenue.slice(0, 5).reduce((s, v) => s + v.sales5yr, 0) / totalSales * 100;
+
+    const repGroups   = _aggregateByRep(vendors);
+    const topRep      = repGroups.sort((a, b) => b.sales - a.sales)[0];
+    const topRepPct   = topRep ? (topRep.sales / totalSales) * 100 : 0;
+    const topRepName  = topRep ? topRep.name : '—';
+
+    const fragileCats = categoryHealth.filter(c => {
+      const above5 = vendors.filter(v => typeof v.scores?.[c.key] === 'number' && v.scores[c.key] >= 5);
+      return c.coverage > 0 && above5.length < 3;
+    });
+
+    const confRiskRev  = vendors.filter(v => v.confRisk > 0.33).reduce((s, v) => s + v.sales5yr, 0);
+    const confRiskPct  = (confRiskRev / totalSales) * 100;
+    const dominated    = byRevenue.filter(v => (v.sales5yr / totalSales) > 0.15);
+    const riskLevel    = top3Pct > 60 ? 'high' : top3Pct > 45 ? 'medium' : 'low';
+
+    return { totalSales, byRevenue, top1Pct, top3Pct, top5Pct, topRepPct, topRepName, repCount: repGroups.length, fragileCats, confRiskPct, dominated, riskLevel };
+  }
+
+  function _exposureCard(vendors, categoryHealth, expo) {
+    const { totalSales, byRevenue, top1Pct, top3Pct, top5Pct, topRepPct, topRepName, repCount, fragileCats, confRiskPct, dominated, riskLevel } = expo;
+    const next2Pct   = top3Pct - top1Pct;
+    const next5Pct   = top5Pct - top3Pct;
+    const restPct    = Math.max(0, 100 - top5Pct);
+    const riskColor  = riskLevel === 'high' ? 'var(--accent)' : riskLevel === 'medium' ? '#f59e0b' : 'var(--green)';
+    const riskBg     = riskLevel === 'high' ? 'var(--red-bg)' : riskLevel === 'medium' ? 'var(--yellow-bg)' : 'var(--green-bg)';
+
+    const concRows = byRevenue.slice(0, 6).map(v => {
+      const pct = (v.sales5yr / totalSales * 100).toFixed(1);
+      const fc  = pct > 20 ? 'var(--accent)' : pct > 12 ? '#f59e0b' : 'var(--blue)';
+      return `<div class="vcc-conc-row" onclick="openVendorDetail(${v.id})">
+        <div class="vcc-conc-name">${esc(v.name)}</div>
+        <div class="vcc-conc-bar"><div class="vcc-conc-fill" style="width:${Math.min(pct, 100)}%;background:${fc};"></div></div>
+        <div class="vcc-conc-pct" style="color:${fc};">${pct}%</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="card">
+      <div class="card-hd" style="padding-bottom:12px;">
+        <div>
+          <div class="card-title">⬡ Portfolio Exposure</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:3px;">Revenue concentration · dependency risk · fragility indicators</div>
+        </div>
+        <span style="padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;background:${riskBg};color:${riskColor};">${riskLevel.toUpperCase()} CONCENTRATION</span>
+      </div>
+      <div style="padding:0 20px 16px;">
+        <div style="margin-bottom:16px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px;">Revenue Concentration Band</div>
+          <div class="vcc-expo-band">
+            <div class="vcc-expo-seg" style="width:${top1Pct.toFixed(1)}%;background:var(--accent);" title="Top vendor: ${top1Pct.toFixed(0)}%"></div>
+            <div class="vcc-expo-seg" style="width:${next2Pct.toFixed(1)}%;background:#f59e0b;" title="#2–3: ${next2Pct.toFixed(0)}%"></div>
+            <div class="vcc-expo-seg" style="width:${next5Pct.toFixed(1)}%;background:#3b82f6;" title="#4–5: ${next5Pct.toFixed(0)}%"></div>
+            <div class="vcc-expo-seg" style="width:${restPct.toFixed(1)}%;background:var(--border);" title="Rest: ${restPct.toFixed(0)}%"></div>
+          </div>
+          <div style="display:flex;gap:14px;margin-top:7px;font-size:10px;color:var(--text-3);flex-wrap:wrap;">
+            <span><span style="color:var(--accent);">■</span> #1 ${top1Pct.toFixed(0)}%</span>
+            <span><span style="color:#f59e0b;">■</span> #2–3 ${next2Pct.toFixed(0)}%</span>
+            <span><span style="color:#3b82f6;">■</span> #4–5 ${next5Pct.toFixed(0)}%</span>
+            <span><span style="color:var(--text-3);">■</span> Rest ${restPct.toFixed(0)}%</span>
+          </div>
+        </div>
+        <div class="vcc-expo-grid">
+          <div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+              ${[
+                { lbl:'Top 1', val:top1Pct.toFixed(0)+'%', risk:top1Pct > 20 },
+                { lbl:'Top 3', val:top3Pct.toFixed(0)+'%', risk:top3Pct > 45 },
+                { lbl:'Top 5', val:top5Pct.toFixed(0)+'%', risk:top5Pct > 60 }
+              ].map(m => `<div style="padding:10px 12px;background:var(--surface2);border-radius:6px;text-align:center;">
+                <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);">${m.lbl}</div>
+                <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:${m.risk ? 'var(--accent)' : 'var(--text)'};">${m.val}</div>
+              </div>`).join('')}
+            </div>
+            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Top Revenue Vendors</div>
+            ${concRows}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="vcc-expo-item">
+              <div class="vcc-expo-lbl">Rep Concentration</div>
+              <div class="vcc-expo-bar"><div class="vcc-expo-fill" style="width:${Math.min(topRepPct, 100).toFixed(1)}%;background:${topRepPct > 35 ? 'var(--accent)' : topRepPct > 20 ? '#f59e0b' : 'var(--green)'};"></div></div>
+              <div style="display:flex;justify-content:space-between;">
+                <div class="vcc-expo-sub">${topRepName !== '—' ? esc(topRepName) + ' · ' : ''}${repCount} total reps</div>
+                <div class="vcc-expo-val" style="color:${topRepPct > 35 ? 'var(--accent)' : topRepPct > 20 ? '#f59e0b' : 'var(--green)'};">${topRepPct.toFixed(0)}%</div>
+              </div>
+            </div>
+            <div class="vcc-expo-item">
+              <div class="vcc-expo-lbl">Category Fragility</div>
+              <div class="vcc-expo-val" style="color:${fragileCats.length > 3 ? 'var(--accent)' : fragileCats.length > 1 ? '#f59e0b' : 'var(--green)'};">${fragileCats.length} fragile</div>
+              <div class="vcc-expo-sub">${fragileCats.length > 0 ? fragileCats.map(c => c.label).slice(0, 3).join(', ') : 'all categories have multiple strong vendors'}</div>
+            </div>
+            <div class="vcc-expo-item">
+              <div class="vcc-expo-lbl">Unverified Revenue Exposure</div>
+              <div class="vcc-expo-bar"><div class="vcc-expo-fill" style="width:${Math.min(confRiskPct, 100).toFixed(1)}%;background:${confRiskPct > 30 ? 'var(--accent)' : confRiskPct > 15 ? '#f59e0b' : 'var(--green)'};"></div></div>
+              <div style="display:flex;justify-content:space-between;">
+                <div class="vcc-expo-sub">revenue in low-confidence scored vendors</div>
+                <div class="vcc-expo-val" style="color:${confRiskPct > 30 ? 'var(--accent)' : confRiskPct > 15 ? '#f59e0b' : 'var(--green)'};">${confRiskPct.toFixed(0)}%</div>
+              </div>
+            </div>
+            ${dominated.length > 0 ? `<div style="padding:10px 12px;background:var(--red-bg);border-radius:6px;border:1px solid #fecaca;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:4px;">Single-Vendor Risk</div>
+              <div style="font-size:12.5px;color:var(--text);line-height:1.4;">${dominated.map(v => `<strong>${esc(v.name)}</strong> (${(v.sales5yr / totalSales * 100).toFixed(0)}%)`).join(', ')} represent${dominated.length === 1 ? 's' : ''} &gt;15% of revenue individually.</div>
+            </div>` : `<div style="padding:10px 12px;background:var(--green-bg);border-radius:6px;border:1px solid #bbf7d0;">
+              <div style="font-size:11px;font-weight:600;color:var(--green);">✓ No single vendor exceeds 15% of total revenue.</div>
+            </div>`}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ─── Opportunity Radar ────────────────────────────────────────────────────────
+  function _buildOpportunities(vendors, bench, drift) {
+    const opps = [];
+    const medianSales = (() => {
+      const s = vendors.filter(v => v.sales5yr > 0).map(v => v.sales5yr).sort((a, b) => a - b);
+      return s[Math.floor(s.length / 2)] || 0;
+    })();
+
+    vendors.filter(v => v.yoy !== null && v.yoy > 0.12 && v.sales5yr > 3000)
+      .sort((a, b) => b.yoy - a.yoy).slice(0, 3)
+      .forEach(v => opps.push({ type:'improving', icon:'📈', color:'var(--green)', bg:'var(--green-bg)', vendorId:v.id,
+        title:`${v.name} — rapid growth`, sub:`↑${Math.round(v.yoy*100)}% YoY · ${_sfmt(v.sales5yr)||''} 5yr · Tier ${v.tier||'—'}`,
+        val:`+${Math.round(v.yoy*100)}%`, impact:v.sales5yr * v.yoy }));
+
+    vendors.filter(v => v.ws !== null && v.ws >= 7.5 && v.sales5yr < medianSales && v.sales5yr > 0)
+      .sort((a, b) => b.ws - a.ws).slice(0, 3)
+      .forEach(v => opps.push({ type:'underutilized', icon:'💎', color:'#7c3aed', bg:'var(--purple-bg)', vendorId:v.id,
+        title:`${v.name} — underutilized`, sub:`Score ${v.ws}/10 · ${_sfmt(v.sales5yr)||''} 5yr · below-median revenue for this rating`,
+        val:`${v.ws}/10`, impact:(medianSales - v.sales5yr) * 0.4 }));
+
+    if (bench.avgRebate !== null) {
+      vendors.filter(v => v.sales5yr > 15000 && v.rebateScore !== null && v.rebateScore < bench.avgRebate - 1.5)
+        .sort((a, b) => b.sales5yr - a.sales5yr).slice(0, 2)
+        .forEach(v => opps.push({ type:'leverage', icon:'◈', color:'var(--purple)', bg:'var(--purple-bg)', vendorId:v.id,
+          title:`${v.name} — rebate leverage`, sub:`Rebate ${v.rebateScore}/10 vs avg ${bench.avgRebate.toFixed(1)} · ${_sfmt(v.sales5yr)||''}`,
+          val:`${(bench.avgRebate - v.rebateScore).toFixed(1)} gap`, impact:v.sales5yr * 0.02 }));
+    }
+    if (bench.avgFreight !== null) {
+      vendors.filter(v => v.sales5yr > 12000 && v.freightScore !== null && v.freightScore < bench.avgFreight - 1.5)
+        .sort((a, b) => b.sales5yr - a.sales5yr).slice(0, 2)
+        .forEach(v => opps.push({ type:'freight', icon:'🚚', color:'#0891b2', bg:'#ecfeff', vendorId:v.id,
+          title:`${v.name} — freight terms gap`, sub:`Freight ${v.freightScore}/10 vs avg ${bench.avgFreight.toFixed(1)} · ${_sfmt(v.sales5yr)||''}`,
+          val:`${(bench.avgFreight - v.freightScore).toFixed(1)} gap`, impact:v.sales5yr * 0.01 }));
+    }
+
+    if (drift && drift.length > 0) {
+      drift.filter(d => d.weighted > 0 && d.vendor.sales5yr > 5000)
+        .sort((a, b) => b.weighted - a.weighted).slice(0, 2)
+        .forEach(d => opps.push({ type:'trending', icon:'⬆', color:'var(--green)', bg:'var(--green-bg)', vendorId:d.vendor.id,
+          title:`${d.vendor.name} — score improving`, sub:`+${d.netDelta.toFixed(1)} net · ${d.changes} change${d.changes>1?'s':''} · led by ${d.biggestCat||'—'}`,
+          val:`+${d.weighted.toFixed(0)} wt`, impact:d.vendor.sales5yr * 0.05 }));
+    }
+
+    const seen = new Set();
+    return opps
+      .sort((a, b) => b.impact - a.impact)
+      .filter(o => { if (seen.has(o.vendorId)) return false; seen.add(o.vendorId); return true; })
+      .slice(0, 8);
+  }
+
+  function _oppRow(o) {
+    return `<div class="vcc-opp-row" onclick="openVendorDetail(${o.vendorId})">
+      <div class="vcc-opp-icon" style="background:${o.bg};color:${o.color};">${o.icon}</div>
+      <div class="vcc-opp-body">
+        <div class="vcc-opp-title">${esc(o.title)}</div>
+        <div class="vcc-opp-sub">${o.sub}</div>
+      </div>
+      <div class="vcc-opp-val" style="color:${o.color};">${o.val}</div>
+    </div>`;
+  }
+
+  // ─── Strategic Watchlist ──────────────────────────────────────────────────────
+  const LS_WATCHLIST = 'vcc-watchlist-v1';
+
+  function _getWatchlist()     { return _lsGet(LS_WATCHLIST, []); }
+  function _setWatchlist(list) { _lsSet(LS_WATCHLIST, list); }
+  function _addToWatchlist(id, type) {
+    const list = _getWatchlist().filter(e => e.id !== id);
+    list.push({ id, type, added: Date.now() });
+    _setWatchlist(list);
+  }
+  function _removeFromWatchlist(id) { _setWatchlist(_getWatchlist().filter(e => e.id !== id)); }
+  function _isWatched(id) { return _getWatchlist().some(e => e.id === id); }
+
+  function _watchlistCard(vendors) {
+    const list = _getWatchlist();
+    const tagMeta = { pin:{ lbl:'Pinned', cls:'vcc-wl-pin' }, watch:{ lbl:'Watch', cls:'vcc-wl-watch' }, strategic:{ lbl:'Strategic', cls:'vcc-wl-strat' } };
+    const rows = list.map(entry => {
+      const v = vendors.find(x => x.id === entry.id);
+      if (!v) return '';
+      const tag = tagMeta[entry.type] || tagMeta.watch;
+      return `<div class="vcc-wl-row">
+        <span class="vcc-wl-tag ${tag.cls}">${tag.lbl}</span>
+        <span class="vcc-wl-name" onclick="openVendorDetail(${v.id})">${esc(v.name)}</span>
+        ${v.ws !== null ? _scorePill(v.ws) : ''}
+        ${v.yoy !== null ? _trendBadge(v.yoy) : ''}
+        <button class="vcc-wl-rm" onclick="vccWatchlistRemove(${v.id})" title="Remove">✕</button>
+      </div>`;
+    }).filter(Boolean);
+
+    return `<div class="card">
+      <div class="card-hd" style="padding-bottom:4px;">
+        <div>
+          <div class="card-title">⭐ Strategic Watchlist</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:3px;">Pinned · monitoring · key relationships</div>
+        </div>
+        <button class="vcc-aq-btn" onclick="vccWatchlistOpenAdd()">+ Add</button>
+      </div>
+      <div style="padding:8px 16px 12px;">
+        ${rows.length > 0 ? rows.join('') : `<div class="vcc-wl-empty">No vendors on watchlist yet.<br>Open a vendor detail or click <strong>+ Add</strong> to begin tracking.</div>`}
+      </div>
+    </div>`;
+  }
+
+  // ─── Operational Narrative ────────────────────────────────────────────────────
+  function _generateNarrative(vendors, categoryHealth, bench, expo, drift) {
+    const narratives = [];
+    const scored = vendors.filter(v => v.ws !== null);
+    const avg    = bench.avgScore;
+    const above7 = scored.filter(v => v.ws >= 7).length;
+
+    narratives.push({
+      cls: avg === null ? 'vcc-narr-info' : avg >= 6.5 ? 'vcc-narr-ok' : avg >= 5 ? 'vcc-narr-warn' : 'vcc-narr-err',
+      ico: avg === null ? '◍' : avg >= 6.5 ? '✓' : avg >= 5 ? '~' : '⚠',
+      txt: `Portfolio average score is ${avg !== null ? avg.toFixed(1) : '—'}/10 across ${scored.length} ranked vendors — ${above7} vendors score 7 or above, representing the A/B performance tier.`
+    });
+
+    if (expo.top3Pct > 45) {
+      const top3names = expo.byRevenue.slice(0, 3).map(v => v.name).join(', ');
+      narratives.push({ cls: expo.riskLevel === 'high' ? 'vcc-narr-err' : 'vcc-narr-warn', ico: '⬡',
+        txt: `Revenue concentration is ${expo.riskLevel}: ${top3names} account for ${expo.top3Pct.toFixed(0)}% of 5-year sales. Consider additional contractual protections or diversification.` });
+    }
+
+    const declining = vendors.filter(v => v.yoy !== null && v.yoy < -0.05 && v.sales5yr > 8000).sort((a, b) => a.yoy - b.yoy);
+    if (declining.length > 0) {
+      const worst = declining[0];
+      let txt = `${worst.name} is deteriorating YoY (${Math.round(worst.yoy * 100)}%)`;
+      if (worst.weakCats && worst.weakCats.length > 0) {
+        const cats = worst.weakCats.map(k => CAT_DEFS.find(c => c.key === k)?.label).filter(Boolean);
+        if (cats.length > 0) txt += `, primarily weak in ${cats.slice(0, 2).join(' and ')}`;
+      }
+      txt += declining.length > 1 ? `. ${declining.length - 1} additional vendor${declining.length > 2 ? 's' : ''} also declining.` : '.';
+      narratives.push({ cls: 'vcc-narr-err', ico: '↓', txt });
+    }
+
+    const criticalCats = categoryHealth.filter(c => c.flags.includes('critical') || c.flags.includes('systemic'));
+    if (criticalCats.length > 0) {
+      narratives.push({ cls: 'vcc-narr-err', ico: '⚠',
+        txt: `Category-wide weakness in ${criticalCats.map(c => c.label).join(', ')}. Low avg scores across the vendor base suggest a systemic gap — portfolio-level renegotiation likely more effective than individual vendor action.` });
+    }
+
+    const emerging = vendors.filter(v => v.ws !== null && v.ws >= 7 && v.yoy !== null && v.yoy > 0.08 && v.sales5yr > 3000)
+      .sort((a, b) => (b.ws + b.yoy * 5) - (a.ws + a.yoy * 5)).slice(0, 2);
+    emerging.forEach(v => narratives.push({ cls: 'vcc-narr-ok', ico: '↑',
+      txt: `${v.name} is emerging as a high-value partner — score ${v.ws}/10 with ${Math.round(v.yoy * 100)}% YoY revenue growth. Consider deepening the relationship or expanding category placement.` }));
+
+    if (expo.topRepPct > 30) {
+      narratives.push({ cls: 'vcc-narr-warn', ico: '◉',
+        txt: `Rep concentration risk: ${esc(expo.topRepName)}'s vendor portfolio represents ${expo.topRepPct.toFixed(0)}% of total revenue — key-person dependency for this revenue line.` });
+    }
+
+    if (expo.fragileCats.length > 2) {
+      narratives.push({ cls: 'vcc-narr-warn', ico: '◎',
+        txt: `${expo.fragileCats.length} categories have fewer than 3 vendors scoring above 5/10: ${expo.fragileCats.map(c => c.label).slice(0, 4).join(', ')}. Limited competitive alternatives reduces negotiating leverage.` });
+    }
+
+    if (drift && drift.length > 0) {
+      const bestDrift  = drift.filter(d => d.weighted > 3).sort((a, b) => b.weighted - a.weighted)[0];
+      const worstDrift = drift.filter(d => d.weighted < -3).sort((a, b) => a.weighted - b.weighted)[0];
+      if (bestDrift)  narratives.push({ cls: 'vcc-narr-ok',   ico: '◷', txt: `${bestDrift.vendor.name}'s score improved most in the last 90 days (+${bestDrift.netDelta.toFixed(1)} net · ${bestDrift.changes} change${bestDrift.changes>1?'s':''}), led by ${bestDrift.biggestCat||'multiple categories'}.` });
+      if (worstDrift) narratives.push({ cls: 'vcc-narr-warn', ico: '◷', txt: `${worstDrift.vendor.name}'s score has declined most recently (${worstDrift.netDelta.toFixed(1)} net), with ${worstDrift.biggestCat||'an unknown category'} as the primary driver.` });
+    }
+
+    return narratives.slice(0, 8);
+  }
+
+  function _narrativeCard(vendors, categoryHealth, bench, expo, drift) {
+    const items = _generateNarrative(vendors, categoryHealth, bench, expo, drift);
+    return `<div class="card">
+      <div class="card-hd" style="padding-bottom:12px;">
+        <div>
+          <div class="card-title">◍ Portfolio Intelligence Narrative</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:3px;">Deterministic signal-driven summaries · template-based · no LLM</div>
+        </div>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <div class="vcc-narr">
+          ${items.map(n => `<div class="vcc-narr-item ${n.cls}">
+            <span class="vcc-narr-ico">${n.ico}</span>
+            <span class="vcc-narr-txt">${n.txt}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ─── Phase 4 Window Exports ───────────────────────────────────────────────────
+  window.vccWatchlistOpenAdd = function () {
+    const existing = new Set(_getWatchlist().map(e => e.id));
+    const available = VD.filter(v => !existing.has(v.id)).sort((a, b) => a.name.localeCompare(b.name));
+    const body = `
+      <div style="margin-bottom:12px;">
+        <input id="vcc-wl-srch" type="text" placeholder="Search vendors…"
+          style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box;"
+          oninput="document.querySelectorAll('.vcc-wl-pick').forEach(r=>{r.style.display=r.dataset.name.toLowerCase().includes(this.value.toLowerCase())?'':'none';})">
+      </div>
+      <div style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+        ${available.map(v => `<div class="vcc-wl-pick" data-name="${esc(v.name)}"
+            style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);">
+          <span style="flex:1;font-size:13px;font-weight:600;">${esc(v.name)}</span>
+          <button class="vcc-aq-btn" onclick="vccWatchlistPin(${v.id},'pin');closeModal();renderVendors($('pg-content'))">📌 Pin</button>
+          <button class="vcc-aq-btn" onclick="vccWatchlistPin(${v.id},'watch');closeModal();renderVendors($('pg-content'))">👁 Watch</button>
+          <button class="vcc-aq-btn" onclick="vccWatchlistPin(${v.id},'strategic');closeModal();renderVendors($('pg-content'))">⭐ Strategic</button>
+        </div>`).join('')}
+      </div>`;
+    openModal('Add to Strategic Watchlist', body);
+    setTimeout(() => { const el = document.getElementById('vcc-wl-srch'); if (el) el.focus(); }, 80);
+  };
+  window.vccWatchlistPin    = function (id, type)  { _addToWatchlist(id, type); };
+  window.vccWatchlistRemove = function (id)         { _removeFromWatchlist(id); renderVendors($('pg-content')); };
 
   // ─── EXPORTS ─────────────────────────────────────────────────────────────────
   window.renderCommandCenter = renderCommandCenter;
