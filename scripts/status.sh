@@ -95,6 +95,18 @@ if [[ -x scripts/check-signal-ownership.sh ]]; then
 else
   dim "  scripts/check-signal-ownership.sh missing or not executable"
 fi
+if [[ -x scripts/check-runtime-emitters.sh ]]; then
+  em_out=$(bash scripts/check-runtime-emitters.sh 2>/dev/null || true)
+  em_emit=$(echo  "$em_out" | awk -F'emitter sites:    *' '/emitter sites:/ {print $2; exit}'    | awk '{print $1}')
+  em_orph=$(echo  "$em_out" | awk -F'orphan emitters:  *' '/orphan emitters:/ {print $2; exit}'  | awk '{print $1}')
+  em_olis=$(echo  "$em_out" | awk -F'orphan listeners: *' '/orphan listeners:/ {print $2; exit}' | awk '{print $1}')
+  em_mism=$(echo  "$em_out" | awk -F'owner mismatches: *' '/owner mismatches:/ {print $2; exit}' | awk '{print $1}')
+  em_find=$(echo  "$em_out" | awk -F'findings: '          '/findings:/ {print $2; exit}'        | awk '{print $1}')
+  echo "  emitter ownership:        ${em_emit:-?} emit / ${em_olis:-?} orphan-listen / ${em_orph:-?} orphan-emit / ${em_mism:-?} mismatch  (bash scripts/check-runtime-emitters.sh)"
+  echo "  emitter findings:         ${em_find:-?}"
+else
+  dim "  scripts/check-runtime-emitters.sh missing or not executable"
+fi
 echo
 
 hr
