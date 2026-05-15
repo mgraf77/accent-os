@@ -1,0 +1,61 @@
+{
+  "packet_version": "1.0",
+  "id": "REL-2026-05-15-007",
+  "from_agent": "claude-code",
+  "to_agent": "claude-code",
+  "intent": "implement",
+  "branch": "claude/canon-enforcement-scripts-wp0M4",
+  "base_commit": "812ea61fc909c41b81453701864c1772962c05c1",
+  "files_owned": [
+    "scripts/status.sh",
+    ".orchestration/lanes.json",
+    ".orchestration/README.md",
+    "docs/examples/relay_packet_session7_to_session9.md"
+  ],
+  "files_readonly": [
+    "CANON.md",
+    "scripts/check-canon-drift.sh",
+    "scripts/check-lane-claims.sh",
+    "scripts/check-relay-packet.sh",
+    "docs/RELAY_PACKET_TEMPLATE.md",
+    "docs/LANE_REGISTRY.md",
+    "AUTONOMOUS_HANDOFF_PROTOCOL_V1.md",
+    "AGENT_MEMORY_AND_CONTEXT_STRATEGY.md",
+    "PARALLEL_EXECUTION_GOVERNANCE.md"
+  ],
+  "execution_corridor": "docs-only",
+  "preconditions": [
+    "Session 7 commit 812ea61 is HEAD of claude/canon-enforcement-scripts-wp0M4",
+    "scripts/check-canon-drift.sh exits 0 against current tree",
+    "scripts/check-lane-claims.sh exits 0 against current tree",
+    "scripts/check-relay-packet.sh available for self-validation"
+  ],
+  "definition_of_done": [
+    "scripts/status.sh prints a Governance section listing canon-drift, lane-claims, relay-packet results",
+    "scripts/status.sh exit code is unaffected by check failures (report-only)",
+    ".orchestration/lanes.json contains the Session-7 seed lane in clean_pause state",
+    ".orchestration/README.md documents lane registration, claim semantics, collision visibility, stale policy",
+    "docs/examples/relay_packet_session7_to_session9.md exists and references this packet",
+    "scripts/check-relay-packet.sh validates this packet successfully",
+    "commit pushed to claude/canon-enforcement-scripts-wp0M4"
+  ],
+  "escalation_triggers": [
+    "any change to worker/** or wrangler.toml",
+    "any change to sql/** deployed migrations",
+    "any change to a canonical file listed in CANON.md §1 without an accompanying hash refresh",
+    "scripts/status.sh propagating a non-zero exit from a governance check",
+    "spec ambiguity with more than one reasonable interpretation"
+  ],
+  "context_refs": [
+    "CANON.md",
+    "AUTONOMOUS_HANDOFF_PROTOCOL_V1.md",
+    "PARALLEL_EXECUTION_GOVERNANCE.md",
+    "docs/RELAY_PACKET_TEMPLATE.md",
+    "docs/LANE_REGISTRY.md"
+  ],
+  "expires_at": "2026-05-22T00:00:00Z",
+  "human_required": false,
+  "signature": "claude-code@812ea61fc909c41b81453701864c1772962c05c1",
+  "state": "completed",
+  "notes": "Example packet — also the live packet authorizing the Session-9 status-wiring work. Documented at docs/examples/relay_packet_session7_to_session9.md."
+}

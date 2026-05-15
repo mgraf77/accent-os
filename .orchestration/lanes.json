@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "lanes": [
+    {
+      "lane_id": "LANE-session-7-canon-enforcement",
+      "session": "session-7",
+      "agent": "claude-code",
+      "branch": "claude/canon-enforcement-scripts-wp0M4",
+      "relay_id": null,
+      "files_owned": [
+        "CANON.md",
+        "scripts/check-canon-drift.sh",
+        "scripts/check-lane-claims.sh",
+        "scripts/check-relay-packet.sh",
+        "docs/RELAY_PACKET_TEMPLATE.md",
+        "docs/LANE_REGISTRY.md"
+      ],
+      "files_readonly": [
+        "AUTONOMOUS_HANDOFF_PROTOCOL_V1.md",
+        "AGENT_MEMORY_AND_CONTEXT_STRATEGY.md",
+        "PARALLEL_EXECUTION_GOVERNANCE.md",
+        "OPERATOR_BOTTLENECK_REDUCTION_PLAN.md",
+        "ACCENTOS_DEVELOPMENT_CONTROL_PLANE.md"
+      ],
+      "corridor": "docs-only",
+      "started_at": "2026-05-15T15:30:00Z",
+      "ended_at": "2026-05-15T17:00:00Z",
+      "depends_on": [],
+      "status": "clean_pause",
+      "notes": "Seed lane entry written retroactively in Session 9. Records the canon-enforcement build as the first registered lane. Terminal state 'clean_pause' is treated as inactive by check-lane-claims.sh."
+    }
+  ]
+}

@@ -77,5 +77,50 @@ if [[ -f SESSION_LOG.md ]]; then
 fi
 echo
 
+# Governance visibility (Session 9 wiring — report-only, never blocks status)
+# Each check runs in a subshell with its own error handling; non-zero exit codes
+# are captured and surfaced but DO NOT propagate to this script's exit code.
+bold "Governance (visibility-only)"
+
+run_check() {
+  local label="$1"
+  local cmd="$2"
+  local out rc
+  out=$(bash -c "$cmd" 2>&1) && rc=0 || rc=$?
+  case "$rc" in
+    0) printf "  %-22s OK\n" "$label" ;;
+    *) printf "  %-22s rc=%d (report-only, not blocking)\n" "$label" "$rc" ;;
+  esac
+  # One-line summary from the check's own output (last non-empty line)
+  local summary
+  summary=$(echo "$out" | awk 'NF{line=$0} END{print line}')
+  [[ -n "$summary" ]] && echo "    └─ $summary"
+}
+
+if [[ -x scripts/check-canon-drift.sh ]]; then
+  run_check "canon-drift"   "scripts/check-canon-drift.sh"
+else
+  echo "  canon-drift            (script not found)"
+fi
+
+if [[ -x scripts/check-lane-claims.sh ]]; then
+  run_check "lane-claims"   "scripts/check-lane-claims.sh"
+else
+  echo "  lane-claims            (script not found)"
+fi
+
+# Relay-packet check only runs when packets exist — avoids noise pre-bootstrap.
+if [[ -x scripts/check-relay-packet.sh ]]; then
+  if compgen -G ".orchestration/relays/*.json" >/dev/null; then
+    run_check "relay-packet"  "scripts/check-relay-packet.sh"
+  else
+    echo "  relay-packet           skipped (no .orchestration/relays/*.json yet)"
+  fi
+else
+  echo "  relay-packet           (script not found)"
+fi
+echo
+
 hr
 dim "Tip: read SESSION_LOG.md priority queue for the next prompt to paste."
+dim "Governance checks above are visibility-only — they never block commits or CI."
