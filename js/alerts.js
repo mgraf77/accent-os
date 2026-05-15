@@ -54,14 +54,24 @@ async function sbInsertAlert(rec){
   }catch(e){ console.warn('[sb] Insert alert failed:', e.message); return false; }
 }
 
-async function sbUpdateAlertStatus(id, status){
+// Low-level PATCH transport for Signals. Generic so transitionSignal() can
+// write {status, read_at, payload} in one round trip. This is the ONLY
+// function permitted to PATCH /alerts — verified by scripts/check-signal-lifecycle.sh.
+// All callers MUST go through transitionSignal() (js/signals.js) so the
+// lifecycle DAG is enforced before any write reaches here.
+async function sbPatchAlert(id, patch){
   if(!sbConfigured()) return false;
+  if(!patch || typeof patch !== 'object') return false;
   try{
-    const body = {status, read_at: status === 'read' || status === 'actioned' ? new Date().toISOString() : null};
-    await sbFetch(`/alerts?id=eq.${encodeURIComponent(id)}`, {method:'PATCH', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(body)});
+    await sbFetch(`/alerts?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {'Prefer': 'return=minimal'},
+      body: JSON.stringify(patch)
+    });
     return true;
-  }catch(e){ console.warn('[sb] Update alert failed:', e.message); return false; }
+  }catch(e){ console.warn('[sb] Patch alert failed:', e.message); return false; }
 }
+if(typeof window !== 'undefined') window.sbPatchAlert = sbPatchAlert;
 
 // Dedupe key for a Signal. Canonical form: "type:source_id" (matches
 // signalDedupeKey in js/signals.js). Retained here for in-memory scan
@@ -302,14 +312,14 @@ async function markAllAlertsRead(){
   const unread = ALERTS.filter(a => a.status === 'unread');
   if(!unread.length){ toast('Nothing to mark','ok'); return; }
   if(!confirm(`Mark ${unread.length} unread alert(s) as read?`)) return;
+  let ok = 0;
   for(const a of unread){
-    await sbUpdateAlertStatus(a.id, 'read');
-    a.status = 'read';
-    a.read_at = new Date().toISOString();
+    const res = await transitionSignal(a.id, 'read');
+    if(res) ok++;
   }
-  if(typeof sbAuditLog==='function') sbAuditLog('alerts_mark_all_read', 'alerts', {count: unread.length});
+  if(typeof sbAuditLog==='function') sbAuditLog('alerts_mark_all_read', 'alerts', {count: ok});
   renderAlerts($('pg-content'));
-  toast('Marked read','ok');
+  toast(`Marked ${ok} read`,'ok');
 }
 
 function renderAlerts(el){
@@ -405,22 +415,26 @@ function renderAlerts(el){
 async function alertSetStatus(alertId, newStatus){
   const a = ALERTS.find(x => x.id === alertId);
   if(!a) return;
-  const ok = await sbUpdateAlertStatus(alertId, newStatus);
-  if(!ok){ toast('Update failed','err'); return; }
-  a.status = newStatus;
-  if(newStatus === 'read' || newStatus === 'actioned') a.read_at = new Date().toISOString();
+  const updated = await transitionSignal(alertId, newStatus);
+  if(!updated){
+    // Either transport failed, the transition was disallowed by the DAG, or
+    // the Signal is already in a terminal state. transitionSignal() has
+    // already logged the rejection reason; surface a generic failure to the
+    // operator so the bell doesn't desync from the DB.
+    toast('Update failed or not allowed','err');
+    return;
+  }
   if(typeof sbAuditLog==='function') sbAuditLog('alert_status', 'alerts', {alert_id: alertId, new_status: newStatus, type: a.type});
   renderAlerts($('pg-content'));
   toast(`Marked ${newStatus}`,'ok');
 }
 
 async function alertGoTo(alertId, page){
-  // Mark read on click-through
+  // Mark read on click-through. transitionSignal() is idempotent and replay-
+  // safe, so calling it when the Signal is already non-unread is a no-op.
   const a = ALERTS.find(x => x.id === alertId);
   if(a && a.status === 'unread'){
-    await sbUpdateAlertStatus(alertId, 'read');
-    a.status = 'read';
-    a.read_at = new Date().toISOString();
+    await transitionSignal(alertId, 'read');
   }
   goTo(page);
 }
