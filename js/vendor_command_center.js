@@ -123,6 +123,85 @@
       .vcc-mnav-lbl { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); flex-shrink:0; }
       .vcc-mnav select { flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'Outfit',sans-serif; font-size:14px; background:var(--surface); color:var(--text); }
 
+      /* ── Action Queue (Phase 3) ── */
+      .vcc-aq        { display:flex; flex-direction:column; gap:6px; }
+      .vcc-aq-row    { display:flex; align-items:center; gap:12px; padding:11px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); transition:transform .12s, box-shadow .12s; }
+      .vcc-aq-row:hover { transform:translateY(-1px); box-shadow:var(--shadow-md); }
+      .vcc-aq-sev    { width:4px; height:36px; border-radius:2px; flex-shrink:0; }
+      .vcc-aq-sev-p0 { background:var(--accent); }
+      .vcc-aq-sev-p1 { background:#f59e0b; }
+      .vcc-aq-sev-p2 { background:var(--blue); }
+      .vcc-aq-sev-p3 { background:var(--text-3); }
+      .vcc-aq-body   { flex:1; min-width:0; }
+      .vcc-aq-title  { font-size:13px; font-weight:600; color:var(--text); line-height:1.3; }
+      .vcc-aq-sub    { font-size:11px; color:var(--text-3); margin-top:3px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+      .vcc-aq-chip   { display:inline-flex; align-items:center; padding:1px 8px; border-radius:10px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+      .vcc-aq-actions{ display:flex; gap:4px; flex-shrink:0; }
+      .vcc-aq-btn    { padding:5px 10px; border:1px solid var(--border); background:var(--surface); border-radius:5px; font-size:11px; font-weight:600; cursor:pointer; color:var(--text-2); transition:all .12s; font-family:inherit; }
+      .vcc-aq-btn:hover { background:var(--bg); border-color:var(--text-3); color:var(--text); }
+      .vcc-aq-btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+      .vcc-aq-btn-primary:hover { background:var(--accent-dark); }
+      .vcc-aq-empty  { padding:24px; text-align:center; color:var(--text-3); font-size:13px; }
+      .vcc-aq-empty-ok { color:var(--green); font-weight:600; }
+      .vcc-aq-filter { display:flex; gap:6px; flex-wrap:wrap; }
+
+      /* ── Trust Score Badge ── */
+      .vcc-trust       { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; }
+      .vcc-trust-high  { background:var(--green-bg); color:var(--green); }
+      .vcc-trust-med   { background:var(--yellow-bg); color:#92400e; }
+      .vcc-trust-low   { background:var(--red-bg);    color:var(--accent); }
+      .vcc-trust-dot   { width:6px; height:6px; border-radius:50%; }
+
+      /* ── Drift surface ── */
+      .vcc-drift-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border-light); cursor:pointer; }
+      .vcc-drift-row:last-child { border-bottom:none; }
+      .vcc-drift-row:hover { background:var(--bg); margin:0 -14px; padding:9px 14px; border-radius:6px; }
+      .vcc-drift-delta { font-family:'DM Mono',monospace; font-size:13px; font-weight:700; padding:3px 9px; border-radius:5px; flex-shrink:0; min-width:54px; text-align:center; }
+      .vcc-drift-up    { background:var(--green-bg); color:var(--green); }
+      .vcc-drift-dn    { background:var(--red-bg);   color:var(--accent); }
+
+      /* ── Rep Intel ── */
+      .vcc-rep-row   { display:grid; grid-template-columns:1fr auto auto auto; gap:14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-light); cursor:pointer; }
+      .vcc-rep-row:last-child { border-bottom:none; }
+      .vcc-rep-row:hover { background:var(--bg); margin:0 -14px; padding:10px 14px; border-radius:6px; }
+      .vcc-rep-name  { font-size:13px; font-weight:600; color:var(--text); }
+      .vcc-rep-sub   { font-size:11px; color:var(--text-3); margin-top:2px; }
+      .vcc-rep-stat  { font-family:'DM Mono',monospace; font-size:12px; font-weight:600; text-align:right; min-width:50px; }
+
+      /* ── Compare Drawer ── */
+      .vcc-cdrawer {
+        position:fixed; bottom:0; left:0; right:0; z-index:400;
+        background:var(--text); color:#fff;
+        padding:12px 18px; box-shadow:0 -6px 24px rgba(0,0,0,.25);
+        display:none; align-items:center; gap:14px; flex-wrap:wrap;
+      }
+      .vcc-cdrawer.on { display:flex; }
+      .vcc-cdrawer-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,.5); }
+      .vcc-cdrawer-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:rgba(255,255,255,.1); border-radius:14px; font-size:12px; font-weight:500; }
+      .vcc-cdrawer-x { background:none; border:none; color:rgba(255,255,255,.7); cursor:pointer; font-size:14px; padding:0; line-height:1; }
+      .vcc-cdrawer-x:hover { color:#fff; }
+      .vcc-cdrawer-spacer { flex:1; }
+      .vcc-cdrawer-go { background:var(--accent); color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer; font-family:inherit; font-size:13px; }
+      .vcc-cdrawer-go:hover { background:var(--accent-dark); }
+      .vcc-cdrawer-clear { background:transparent; color:rgba(255,255,255,.7); border:1px solid rgba(255,255,255,.2); padding:8px 14px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px; }
+      .vcc-cdrawer-clear:hover { color:#fff; border-color:rgba(255,255,255,.4); }
+
+      /* ── Compare Modal ── */
+      .vcc-cmp-wrap { overflow-x:auto; padding:4px; }
+      .vcc-cmp-grid { display:grid; gap:0; min-width:max-content; }
+      .vcc-cmp-col  { padding:14px 16px; border-right:1px solid var(--border); min-width:200px; }
+      .vcc-cmp-col:last-child { border-right:none; }
+      .vcc-cmp-col.label { background:var(--surface2); min-width:160px; position:sticky; left:0; z-index:1; }
+      .vcc-cmp-row-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); padding:10px 16px; border-top:1px solid var(--border-light); background:var(--surface2); position:sticky; left:0; z-index:1; }
+      .vcc-cmp-cell { padding:10px 16px; border-top:1px solid var(--border-light); border-right:1px solid var(--border); font-size:13px; }
+      .vcc-cmp-cell:last-child { border-right:none; }
+      .vcc-cmp-name { font-size:14px; font-weight:700; padding:14px 16px; background:var(--surface2); border-bottom:1px solid var(--border); }
+
+      /* ── Compare-add button ── */
+      .vcc-add-cmp { padding:5px 11px; font-size:11px; border:1px solid var(--border); background:var(--surface); border-radius:14px; cursor:pointer; color:var(--text-2); font-weight:600; font-family:inherit; transition:all .12s; }
+      .vcc-add-cmp:hover { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+      .vcc-add-cmp.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+
       /* ── Responsive ── */
       @media (max-width:900px) {
         .vcc-kpi    { grid-template-columns:1fr 1fr !important; }
@@ -133,6 +212,8 @@
         .vcc-risk-strip { grid-template-columns:1fr 1fr !important; }
         .vcc-mnav   { display:flex !important; }
         .vcc-tabs-desktop { display:none !important; }
+        .vcc-aq-actions { flex-direction:column; }
+        .vcc-rep-row { grid-template-columns:1fr auto; row-gap:4px; }
       }
       @media (max-width:560px) {
         .vcc-kpi    { grid-template-columns:1fr 1fr !important; }
@@ -585,6 +666,9 @@
           ${_kpi('5-Yr Revenue', salesStr, 'all vendors combined')}
         </div>
 
+        <!-- ACTION QUEUE (full width) -->
+        ${_actionQueueCard(vendors, categoryHealth, bench)}
+
         <!-- ROW 1: Top Performers | Top Movers -->
         <div class="vcc-2col">
 
@@ -709,6 +793,40 @@
           </div>
         </div>
 
+        <!-- ROW 2b: Drift | Rep Intel -->
+        ${(() => {
+          const drift = _computeDrift(vendors, 90).sort((a, b) => Math.abs(b.weighted) - Math.abs(a.weighted)).slice(0, 8);
+          const reps  = _aggregateByRep(vendors).filter(g => g.vendors.length > 1).sort((a, b) => b.sales - a.sales).slice(0, 12);
+          const driftCard = `<div class="card">
+            <div class="card-hd" style="padding-bottom:4px;">
+              <div>
+                <div class="card-title">◷ Score Drift (90-day)</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:3px;">Net score movement from CHANGELOG · click to investigate</div>
+              </div>
+            </div>
+            <div style="padding:8px 16px 12px;">
+              ${drift.length > 0 ? drift.map(_driftRow).join('') : _empty('No score changes logged in the last 90 days')}
+            </div>
+          </div>`;
+          const repCard = `<div class="card">
+            <div class="card-hd" style="padding-bottom:8px;">
+              <div>
+                <div class="card-title">◉ Rep Group Intelligence</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:3px;">Sales rep portfolio performance · click to filter</div>
+              </div>
+            </div>
+            <div style="padding:0 16px 4px;">
+              <div class="vcc-rep-hdr">
+                <div>Rep</div><div>Ranked</div><div>Avg</div><div>5-Yr Sales</div>
+              </div>
+            </div>
+            <div style="padding:0 16px 12px;">
+              ${reps.length > 0 ? reps.map(_repRow).join('') : _empty('No rep assignments found')}
+            </div>
+          </div>`;
+          return `<div class="vcc-2col">${driftCard}${repCard}</div>`;
+        })()}
+
         <!-- ROW 3: Leverage | Confidence -->
         <div class="vcc-2col">
 
@@ -757,6 +875,7 @@
     const ws = enriched.ws;
     const rank = ws !== null ? (allScores.indexOf(ws) + 1) : null;
     const totalRanked = allScores.length;
+    const trust = _computeTrust(v);
 
     // Trend formatting
     let trendBlock;
@@ -839,9 +958,19 @@
 
     const flagCount = weakChips.length + strongChips.length + leverChips.length + (confChip ? 1 : 0) + (coopChip ? 1 : 0);
 
+    // Compare button state
+    const cmpIds = _getCompareIds();
+    const inCompare = cmpIds.includes(v.id);
+    const cmpLabel = inCompare ? '✓ In compare' : '+ Compare';
+
     return `<div class="vcc-intel">
       ${_scoreRing(ws, 'Weighted')}
       <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+          ${_trustBadge(trust)}
+          <button class="vcc-add-cmp${inCompare ? ' on' : ''}" data-vid="${v.id}"
+            onclick="vccToggleCompare(${v.id})">${cmpLabel}</button>
+        </div>
         <div class="vcc-intel-stats">
           <div class="vcc-intel-stat">
             <div class="vcc-intel-stat-lbl">Rank</div>
@@ -882,9 +1011,591 @@
     </div>`;
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ─── PHASE 3: DECISION ACCELERATION LAYER ────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ─── State persistence (localStorage, versioned) ─────────────────────────────
+  const LS_SNOOZE   = 'vcc-snooze-v1';
+  const LS_DISMISS  = 'vcc-dismiss-v1';
+  const LS_COMPARE  = 'vcc-compare-v1';
+
+  function _lsGet(key, fallback) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+    catch (e) { return fallback; }
+  }
+  function _lsSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+
+  function _getSnoozed() {
+    const map = _lsGet(LS_SNOOZE, {});
+    const now = Date.now();
+    // Auto-purge expired snoozes
+    let changed = false;
+    Object.keys(map).forEach(k => { if (map[k] < now) { delete map[k]; changed = true; } });
+    if (changed) _lsSet(LS_SNOOZE, map);
+    return map;
+  }
+  function _snooze(actionId, days) {
+    const map = _getSnoozed();
+    map[actionId] = Date.now() + days * 86400000;
+    _lsSet(LS_SNOOZE, map);
+  }
+  function _getDismissed() { return new Set(_lsGet(LS_DISMISS, [])); }
+  function _dismiss(actionId) {
+    const arr = _lsGet(LS_DISMISS, []);
+    if (!arr.includes(actionId)) { arr.push(actionId); _lsSet(LS_DISMISS, arr); }
+  }
+  function _undismissAll() { _lsSet(LS_DISMISS, []); _lsSet(LS_SNOOZE, {}); }
+
+  function _getCompareIds() { return _lsGet(LS_COMPARE, []); }
+  function _setCompareIds(ids) { _lsSet(LS_COMPARE, ids); }
+  function _toggleCompare(id) {
+    const ids = _getCompareIds();
+    const idx = ids.indexOf(id);
+    if (idx >= 0) ids.splice(idx, 1);
+    else if (ids.length < 4) ids.push(id);
+    _setCompareIds(ids);
+    _refreshCompareDrawer();
+  }
+  function _clearCompare() { _setCompareIds([]); _refreshCompareDrawer(); }
+
+  // ─── Trust Score ─────────────────────────────────────────────────────────────
+  // Derives a 0–100 trust score per vendor from existing signals:
+  //   • Coverage          (max 30): how many of 14 categories are scored
+  //   • Provenance quality(max 30): justification length + non-AI source presence
+  //   • Freshness         (max 25): days since last score change (CHANGELOG)
+  //   • Confidence inverse(max 15): inverse of low-confidence rate
+  function _computeTrust(v) {
+    const sc = scoredCount(v.scores);
+    const coverage = Math.min(30, Math.round((sc / CAT_DEFS.length) * 30));
+
+    // Provenance: scan VD_RAW
+    let provScore = 0;
+    let totalEntries = 0;
+    let humanSourceCount = 0;
+    const raw = (typeof VD_RAW !== 'undefined') ? VD_RAW.find(r => r.id === v.id) : null;
+    if (raw && raw.s) {
+      CAT_DEFS.forEach(c => {
+        const entry = raw.s[c.key];
+        if (entry && typeof entry === 'object' && entry.j) {
+          totalEntries++;
+          const j = entry.j.toLowerCase();
+          // Long justification + non-AI source = high provenance
+          const len = entry.j.length;
+          let pts = 0;
+          if (len > 60) pts += 1.0;
+          else if (len > 25) pts += 0.5;
+          if (!j.includes('chatgpt') && !j.includes('assumed') && !j.includes('deferred') && !j.includes('source: ai')) {
+            pts += 1.5;
+            humanSourceCount++;
+          }
+          provScore += pts;
+        }
+      });
+    }
+    const provenance = totalEntries > 0 ? Math.min(30, Math.round((provScore / (totalEntries * 2.5)) * 30)) : 0;
+
+    // Freshness from CHANGELOG (uses vendor NAME)
+    let freshness = 0;
+    if (typeof CHANGELOG !== 'undefined' && Array.isArray(CHANGELOG)) {
+      const my = CHANGELOG
+        .filter(c => c.vendor === v.name && c.cat && CAT_DEFS.some(cd => cd.key === c.cat))
+        .map(c => new Date(c.ts).getTime())
+        .filter(t => !isNaN(t));
+      if (my.length > 0) {
+        const days = Math.floor((Date.now() - Math.max(...my)) / 86400000);
+        if (days <= 30)      freshness = 25;
+        else if (days <= 90) freshness = 18;
+        else if (days <= 180)freshness = 10;
+        else if (days <= 365)freshness = 5;
+        else                 freshness = 2;
+      }
+    } else {
+      freshness = 8; // unknown — neutral-low
+    }
+
+    // Confidence inverse
+    let confInv = 0;
+    if (totalEntries > 0) {
+      // count low-conf entries
+      let low = 0;
+      if (raw && raw.s) {
+        CAT_DEFS.forEach(c => {
+          const entry = raw.s[c.key];
+          if (entry && typeof entry === 'object' && entry.j) {
+            const j = entry.j.toLowerCase();
+            if (j.includes('confidence: low') || j.includes('chatgpt') && !j.includes('confidence: high') || j.includes('assumed 0') || j.includes('deferred')) low++;
+          }
+        });
+      }
+      const lowRate = low / totalEntries;
+      confInv = Math.round((1 - lowRate) * 15);
+    }
+
+    const total = coverage + provenance + freshness + confInv;
+    return { total, coverage, provenance, freshness, confInv, humanSourceCount, totalEntries };
+  }
+
+  function _trustBadge(trust) {
+    const s = trust.total;
+    const cls = s >= 70 ? 'vcc-trust-high' : s >= 45 ? 'vcc-trust-med' : 'vcc-trust-low';
+    const dotBg = s >= 70 ? 'var(--green)' : s >= 45 ? '#92400e' : 'var(--accent)';
+    return `<span class="vcc-trust ${cls}" title="Coverage:${trust.coverage}/30 · Provenance:${trust.provenance}/30 · Freshness:${trust.freshness}/25 · Confidence:${trust.confInv}/15">
+      <span class="vcc-trust-dot" style="background:${dotBg};"></span>Trust ${s}
+    </span>`;
+  }
+
+  // ─── Historical Drift (from CHANGELOG) ───────────────────────────────────────
+  // For each vendor, compute net weighted score change over the last N days.
+  function _computeDrift(vendors, days) {
+    if (typeof CHANGELOG === 'undefined' || !Array.isArray(CHANGELOG) || CHANGELOG.length === 0) return [];
+    const cutoff = Date.now() - days * 86400000;
+    const catByKey = Object.fromEntries(CAT_DEFS.map(c => [c.key, c]));
+    const vendorByName = Object.fromEntries(vendors.map(v => [v.name, v]));
+    const drift = {};
+
+    CHANGELOG.forEach(c => {
+      const ts = new Date(c.ts).getTime();
+      if (isNaN(ts) || ts < cutoff) return;
+      const cat = catByKey[c.cat];
+      if (!cat) return;
+      const oldN = Number(c.oldVal);
+      const newN = Number(c.newVal);
+      if (isNaN(oldN) || isNaN(newN)) return;
+      const v = vendorByName[c.vendor];
+      if (!v) return;
+      if (!drift[v.id]) drift[v.id] = { vendor: v, netDelta: 0, weighted: 0, changes: 0, biggestCat: null, biggestDelta: 0 };
+      const delta = newN - oldN;
+      drift[v.id].netDelta += delta;
+      drift[v.id].weighted += delta * cat.weight;
+      drift[v.id].changes += 1;
+      if (Math.abs(delta) > Math.abs(drift[v.id].biggestDelta)) {
+        drift[v.id].biggestDelta = delta;
+        drift[v.id].biggestCat = cat.label;
+      }
+    });
+
+    return Object.values(drift).filter(d => d.changes > 0);
+  }
+
+  function _driftRow(d) {
+    const v = d.vendor;
+    const up = d.weighted > 0;
+    const sign = up ? '+' : '';
+    return `<div class="vcc-drift-row" onclick="openVendorDetail(${v.id})">
+      <div style="flex:1;min-width:0;">
+        <div class="vcc-row-name">${esc(v.name)}</div>
+        <div class="vcc-row-meta">
+          ${v.tier ? tierBadge(v.tier) : ''}
+          <span>${d.changes} change${d.changes > 1 ? 's' : ''}</span>
+          ${d.biggestCat ? `<span style="color:var(--text-3);">biggest: ${esc(d.biggestCat)} ${d.biggestDelta > 0 ? '+' : ''}${d.biggestDelta}</span>` : ''}
+        </div>
+      </div>
+      <span class="vcc-drift-delta ${up ? 'vcc-drift-up' : 'vcc-drift-dn'}">${sign}${d.netDelta.toFixed(1)}</span>
+    </div>`;
+  }
+
+  // ─── Rep Group Intelligence ──────────────────────────────────────────────────
+  function _aggregateByRep(vendors) {
+    const groups = {};
+    vendors.forEach(v => {
+      const rep = (v.rep || '').trim();
+      if (!rep) return;
+      if (!groups[rep]) groups[rep] = { name: rep, vendors: [], sales: 0, scoreSum: 0, scoreCount: 0, weakCount: 0, declineCount: 0, gapCount: 0 };
+      const g = groups[rep];
+      g.vendors.push(v);
+      g.sales += v.sales5yr || 0;
+      if (v.ws !== null) { g.scoreSum += v.ws; g.scoreCount += 1; }
+      if (v.ws !== null && v.ws < 5) g.weakCount += 1;
+      if (v.yoy !== null && v.yoy < -0.05) g.declineCount += 1;
+      if (v.sc < 5) g.gapCount += 1;
+    });
+    return Object.values(groups).map(g => ({
+      ...g,
+      avgScore: g.scoreCount > 0 ? g.scoreSum / g.scoreCount : null,
+      weakRate: g.vendors.length > 0 ? g.weakCount / g.vendors.length : 0,
+      declineRate: g.vendors.length > 0 ? g.declineCount / g.vendors.length : 0
+    }));
+  }
+
+  function _repRow(g) {
+    const salesStr = _sfmt(g.sales) || '—';
+    const avgColor = g.avgScore === null ? 'var(--text-3)' : g.avgScore >= 7 ? 'var(--green)' : g.avgScore >= 5 ? '#f59e0b' : 'var(--accent)';
+    const flags = [];
+    if (g.weakCount >= 2)    flags.push(`<span style="color:var(--accent);font-weight:600;">${g.weakCount} weak</span>`);
+    if (g.declineCount >= 2) flags.push(`<span style="color:var(--accent);font-weight:600;">${g.declineCount} declining</span>`);
+    if (g.gapCount >= 3)     flags.push(`<span style="color:var(--yellow);">${g.gapCount} unscored</span>`);
+    return `<div class="vcc-rep-row" onclick="vRep='${esc(g.name).replace(/'/g, "\\'")}';vSection='replist';renderVendors($('pg-content'))" title="Open rep list filtered to ${esc(g.name)}">
+      <div>
+        <div class="vcc-rep-name">${esc(g.name)}</div>
+        <div class="vcc-rep-sub">${g.vendors.length} vendor${g.vendors.length > 1 ? 's' : ''} · ${salesStr} 5yr${flags.length ? ' · ' + flags.join(' · ') : ''}</div>
+      </div>
+      <div class="vcc-rep-stat" style="color:var(--text-3);">${g.scoreCount}/${g.vendors.length}</div>
+      <div class="vcc-rep-stat" style="color:${avgColor};">${g.avgScore !== null ? g.avgScore.toFixed(1) : '—'}</div>
+      <div class="vcc-rep-stat">${salesStr}</div>
+    </div>`;
+  }
+
+  // ─── Operational Action Queue ────────────────────────────────────────────────
+  // Aggregates all signals into a sorted, persistent action queue.
+  // Each action: { id, severity (0-3), type, owner, title, sub, vendorId?, primaryAction? }
+  function _buildActionQueue(vendors, categoryHealth, bench) {
+    const snoozed = _getSnoozed();
+    const dismissed = _getDismissed();
+    const actions = [];
+
+    vendors.forEach(v => {
+      // P0: significant revenue + low score (portfolio misalignment)
+      if (v.ws !== null && v.ws < 5 && v.sales5yr > 30000) {
+        actions.push({
+          id: `misalign:${v.id}`,
+          severity: 0,
+          type: 'misalignment',
+          owner: 'Owner',
+          title: `${v.name}: ${v.ws}/10 score on $${Math.round(v.sales5yr / 1000)}K revenue`,
+          sub: 'Portfolio misalignment — review for replacement or terms reset',
+          vendorId: v.id,
+          primaryLabel: 'Open vendor',
+          primaryFn: `openVendorDetail(${v.id})`
+        });
+      }
+      // P0: significant YoY decline
+      if (v.yoy !== null && v.yoy < -0.15 && v.sales5yr > 20000) {
+        const pct = Math.round(Math.abs(v.yoy) * 100);
+        actions.push({
+          id: `decline:${v.id}`,
+          severity: 0,
+          type: 'decline',
+          owner: 'Manager',
+          title: `${v.name}: ${pct}% YoY decline`,
+          sub: `Investigate revenue drop on a $${Math.round(v.sales5yr / 1000)}K vendor`,
+          vendorId: v.id,
+          primaryLabel: 'Open vendor',
+          primaryFn: `openVendorDetail(${v.id})`
+        });
+      }
+      // P1: leverage opportunity
+      if (v.sales5yr > 25000 && (
+        (v.rebateScore !== null && v.rebateScore < 4) ||
+        (v.freightScore !== null && v.freightScore < 4)
+      )) {
+        actions.push({
+          id: `leverage:${v.id}`,
+          severity: 1,
+          type: 'leverage',
+          owner: 'Owner',
+          title: `${v.name}: weak terms on high-spend vendor`,
+          sub: `Rebates ${v.rebateScore ?? '?'}/10 · Freight ${v.freightScore ?? '?'}/10 — open negotiation window`,
+          vendorId: v.id,
+          primaryLabel: 'Open vendor',
+          primaryFn: `openVendorDetail(${v.id})`
+        });
+      }
+      // P1: revenue vendor with scoring gaps
+      if (v.sales5yr > 15000 && v.sc < 5) {
+        actions.push({
+          id: `gap:${v.id}`,
+          severity: 1,
+          type: 'gap',
+          owner: 'Manager',
+          title: `${v.name}: only ${v.sc}/${CAT_DEFS.length} categories scored`,
+          sub: `$${Math.round(v.sales5yr / 1000)}K revenue with incomplete intelligence`,
+          vendorId: v.id,
+          primaryLabel: 'Score vendor',
+          primaryFn: `openVendorScoreEntry(${v.id})`
+        });
+      }
+      // P2: low confidence on revenue vendor
+      if (v.confRisk > 0.5 && v.lowConfCount >= 3 && v.sales5yr > 10000) {
+        actions.push({
+          id: `conf:${v.id}`,
+          severity: 2,
+          type: 'confidence',
+          owner: 'Sales',
+          title: `${v.name}: verify ${v.lowConfCount} low-confidence scores`,
+          sub: `${Math.round(v.confRisk * 100)}% of scored categories use estimated data`,
+          vendorId: v.id,
+          primaryLabel: 'Open scores',
+          primaryFn: `openVendorScoreEntry(${v.id})`
+        });
+      }
+    });
+
+    // Portfolio-level: critical categories
+    categoryHealth.forEach(cat => {
+      if (cat.flags && cat.flags.includes('critical')) {
+        actions.push({
+          id: `catcrit:${cat.key}`,
+          severity: 0,
+          type: 'category',
+          owner: 'Owner',
+          title: `Portfolio: critical weakness in ${cat.label}`,
+          sub: `Average score ${cat.avg !== null ? cat.avg.toFixed(1) : '—'}/10 across ${cat.coverage} vendors`,
+          primaryLabel: 'View category',
+          primaryFn: `vSortCol='${cat.key}';vSortDir=-1;vSection='scores';renderVendors($('pg-content'))`
+        });
+      } else if (cat.flags && cat.flags.includes('systemic')) {
+        actions.push({
+          id: `catsys:${cat.key}`,
+          severity: 1,
+          type: 'category',
+          owner: 'Owner',
+          title: `Systemic weakness in ${cat.label}`,
+          sub: `Avg ${cat.avg !== null ? cat.avg.toFixed(1) : '—'}/10 across portfolio — strategic gap`,
+          primaryLabel: 'View category',
+          primaryFn: `vSortCol='${cat.key}';vSortDir=-1;vSection='scores';renderVendors($('pg-content'))`
+        });
+      }
+      if (cat.flags && cat.flags.includes('gap') && cat.total > 20) {
+        actions.push({
+          id: `catgap:${cat.key}`,
+          severity: 2,
+          type: 'category',
+          owner: 'Manager',
+          title: `Low coverage on ${cat.label}: ${Math.round(cat.covPct * 100)}%`,
+          sub: `Only ${cat.coverage} of ${cat.total} vendors have this dimension scored`,
+          primaryLabel: 'View category',
+          primaryFn: `vSortCol='${cat.key}';vSortDir=1;vSection='scores';renderVendors($('pg-content'))`
+        });
+      }
+    });
+
+    // Filter snoozed/dismissed, then sort by severity, then by vendor sales (higher = higher priority)
+    return actions
+      .filter(a => !dismissed.has(a.id) && !snoozed[a.id])
+      .map(a => {
+        const v = a.vendorId ? vendors.find(x => x.id === a.vendorId) : null;
+        return { ...a, _sales: v ? v.sales5yr : 0 };
+      })
+      .sort((a, b) => a.severity - b.severity || (b._sales - a._sales));
+  }
+
+  function _ownerColor(owner) {
+    return owner === 'Owner' ? 'background:var(--purple-bg);color:var(--purple);'
+         : owner === 'Manager' ? 'background:var(--blue-bg);color:var(--blue);'
+         : 'background:var(--green-bg);color:var(--green);';
+  }
+  function _typeIcon(t) {
+    return { misalignment: '⚠', decline: '↓', leverage: '◈', gap: '○', confidence: '◑', category: '◎' }[t] || '•';
+  }
+
+  function _actionRow(a) {
+    return `<div class="vcc-aq-row" data-aid="${a.id}">
+      <div class="vcc-aq-sev vcc-aq-sev-p${a.severity}"></div>
+      <div class="vcc-aq-body">
+        <div class="vcc-aq-title">${_typeIcon(a.type)} ${esc(a.title)}</div>
+        <div class="vcc-aq-sub">
+          <span class="vcc-aq-chip" style="${_ownerColor(a.owner)}">${a.owner}</span>
+          <span class="vcc-aq-chip" style="background:var(--surface2);color:var(--text-3);">P${a.severity}</span>
+          <span>${esc(a.sub)}</span>
+        </div>
+      </div>
+      <div class="vcc-aq-actions">
+        <button class="vcc-aq-btn vcc-aq-btn-primary" onclick="${a.primaryFn}">${esc(a.primaryLabel)}</button>
+        <button class="vcc-aq-btn" onclick="vccActionSnooze('${a.id}', 7)" title="Snooze 7 days">⏰ 7d</button>
+        <button class="vcc-aq-btn" onclick="vccActionDismiss('${a.id}')" title="Dismiss">✕</button>
+      </div>
+    </div>`;
+  }
+
+  // Per-render state for action queue filter
+  let _aqFilter = 'all'; // 'all' | 'p0' | 'p1' | 'mine'
+  function _filteredActions(actions, filter) {
+    if (filter === 'p0') return actions.filter(a => a.severity === 0);
+    if (filter === 'p1') return actions.filter(a => a.severity <= 1);
+    return actions;
+  }
+
+  function _actionQueueCard(vendors, categoryHealth, bench) {
+    const actions = _buildActionQueue(vendors, categoryHealth, bench);
+    const filtered = _filteredActions(actions, _aqFilter);
+    const counts = {
+      all: actions.length,
+      p0: actions.filter(a => a.severity === 0).length,
+      p1: actions.filter(a => a.severity <= 1).length
+    };
+    const filterBtn = (key, label, count) => `
+      <button class="vcc-aq-btn ${_aqFilter === key ? 'vcc-aq-btn-primary' : ''}"
+        onclick="vccActionFilter('${key}')">${label}${count !== undefined ? ` <span style="opacity:.7;">${count}</span>` : ''}</button>`;
+
+    return `<div class="card">
+      <div class="card-hd" style="padding-bottom:12px;">
+        <div>
+          <div class="card-title">⚡ Operational Action Queue</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:3px;">Aggregated signals · ranked by severity · snooze or dismiss to clear</div>
+        </div>
+        <div class="vcc-aq-filter">
+          ${filterBtn('all', 'All', counts.all)}
+          ${filterBtn('p0', 'P0 only', counts.p0)}
+          ${filterBtn('p1', 'P0–P1', counts.p1)}
+          <button class="vcc-aq-btn" onclick="vccActionResetAll()" title="Restore all dismissed and snoozed actions">↻ Reset</button>
+        </div>
+      </div>
+      <div style="padding:0 16px 16px;">
+        ${filtered.length > 0
+          ? `<div class="vcc-aq">${filtered.slice(0, 12).map(_actionRow).join('')}</div>${filtered.length > 12 ? `<div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:10px;">+ ${filtered.length - 12} more · adjust filter or take action to surface</div>` : ''}`
+          : `<div class="vcc-aq-empty ${actions.length === 0 ? 'vcc-aq-empty-ok' : ''}">${actions.length === 0 ? '✓ No outstanding operational actions — clean queue.' : 'No actions match this filter. Try All or click ↻ Reset.'}</div>`}
+      </div>
+    </div>`;
+  }
+
+  // Window-exposed handlers (called from inline onclick)
+  window.vccActionSnooze   = function (id, days) { _snooze(id, days); renderVendors($('pg-content')); };
+  window.vccActionDismiss  = function (id)       { _dismiss(id); renderVendors($('pg-content')); };
+  window.vccActionResetAll = function ()         { _undismissAll(); renderVendors($('pg-content')); };
+  window.vccActionFilter   = function (key)      { _aqFilter = key; renderVendors($('pg-content')); };
+
+  // ─── Compare Mode ────────────────────────────────────────────────────────────
+  function _refreshCompareDrawer() {
+    let drawer = document.getElementById('vcc-compare-drawer');
+    if (!drawer) {
+      drawer = document.createElement('div');
+      drawer.id = 'vcc-compare-drawer';
+      drawer.className = 'vcc-cdrawer';
+      document.body.appendChild(drawer);
+    }
+    const ids = _getCompareIds();
+    if (ids.length === 0) { drawer.classList.remove('on'); drawer.innerHTML = ''; return; }
+    const vendors = ids.map(id => VD.find(v => v.id === id)).filter(Boolean);
+    drawer.innerHTML = `
+      <span class="vcc-cdrawer-lbl">Compare</span>
+      ${vendors.map(v => `
+        <span class="vcc-cdrawer-chip">
+          ${esc(v.name)}
+          <button class="vcc-cdrawer-x" onclick="vccToggleCompare(${v.id})" title="Remove">✕</button>
+        </span>
+      `).join('')}
+      <div class="vcc-cdrawer-spacer"></div>
+      <span style="font-size:11px;color:rgba(255,255,255,.5);">${vendors.length} / 4</span>
+      <button class="vcc-cdrawer-clear" onclick="vccClearCompare()">Clear</button>
+      <button class="vcc-cdrawer-go" onclick="vccOpenCompareModal()" ${vendors.length < 2 ? 'disabled style="opacity:.4;cursor:not-allowed;"' : ''}>Open Comparison →</button>
+    `;
+    drawer.classList.add('on');
+
+    // Refresh any "Add to compare" buttons on the page (mark selected)
+    document.querySelectorAll('.vcc-add-cmp[data-vid]').forEach(btn => {
+      const vid = Number(btn.getAttribute('data-vid'));
+      if (ids.includes(vid)) { btn.classList.add('on'); btn.textContent = '✓ In compare'; }
+      else { btn.classList.remove('on'); btn.textContent = '+ Compare'; }
+    });
+  }
+
+  function _openCompareModal() {
+    const ids = _getCompareIds();
+    if (ids.length < 2) return;
+    const vendors = ids.map(id => VD.find(v => v.id === id)).filter(Boolean);
+    const allScores = VD.map(vx => weightedScore(vx)).filter(s => s !== null);
+    const enriched = vendors.map(v => {
+      const en = _enrichVendors(allScores).find(x => x.id === v.id);
+      const trust = _computeTrust(v);
+      return { ...en, trust };
+    });
+    const bench = _computeBenchmarks(_enrichVendors(allScores));
+
+    const cols = enriched.length;
+    const gridCols = `160px repeat(${cols}, 1fr)`;
+
+    const cellFmt = {
+      tier: v => v.tier ? tierBadge(v.tier) : '<span style="color:var(--text-3);">unranked</span>',
+      score: v => v.ws !== null ? `<span class="mono fw6" style="color:${scoreColor(v.ws)};font-size:16px;">${v.ws}</span><span style="color:var(--text-3);font-size:11px;"> /10</span>` : '<span style="color:var(--text-3);">—</span>',
+      trust: v => _trustBadge(v.trust),
+      sales5yr: v => `<span class="mono">${_sfmt(v.sales5yr) || '—'}</span>`,
+      yoy: v => {
+        if (v.yoy === null) return '<span style="color:var(--text-3);">—</span>';
+        const pct = Math.round(v.yoy * 100);
+        const c = v.yoy > 0.03 ? 'var(--green)' : v.yoy < -0.03 ? 'var(--accent)' : 'var(--text-3)';
+        return `<span class="mono fw6" style="color:${c};">${v.yoy >= 0 ? '+' : ''}${pct}%</span>`;
+      },
+      sc: v => `<span class="mono">${v.sc}/${CAT_DEFS.length}</span>`,
+      conf: v => v.lowConfCount > 0 ? `<span style="color:var(--yellow);">${v.lowConfCount} low-conf</span>` : '<span style="color:var(--green);">clean</span>'
+    };
+
+    const benchDelta = (val, avg) => {
+      if (val === null || val === undefined || avg === null) return '';
+      const d = val - avg;
+      const c = d > 0.3 ? 'var(--green)' : d < -0.3 ? 'var(--accent)' : 'var(--text-3)';
+      return ` <span style="color:${c};font-size:10px;">(${d >= 0 ? '+' : ''}${d.toFixed(1)})</span>`;
+    };
+
+    const catRows = CAT_DEFS.map(c => `
+      <div class="vcc-cmp-row-lbl">${c.label} <span style="color:var(--text-3);font-weight:500;">(wt ${c.weight})</span></div>
+      ${enriched.map(v => {
+        const s = v.scores?.[c.key];
+        if (s === undefined || s === null) return `<div class="vcc-cmp-cell"><span style="color:var(--text-3);">—</span></div>`;
+        if (s === 'na') return `<div class="vcc-cmp-cell"><span class="na">N/A</span></div>`;
+        const color = scoreColor(s);
+        const cellBg = heatColor(s);
+        return `<div class="vcc-cmp-cell" style="padding:8px 12px;">
+          <span style="display:inline-block;padding:4px 10px;background:${cellBg};color:${heatTextColor(s)};border-radius:4px;font-family:'DM Mono',monospace;font-weight:700;font-size:13px;min-width:30px;text-align:center;">${s}</span>
+          ${benchDelta(s, bench.catAvg[c.key])}
+        </div>`;
+      }).join('')}
+    `).join('');
+
+    const body = `
+      <div class="vcc-cmp-wrap">
+        <div class="vcc-cmp-grid" style="grid-template-columns:${gridCols};">
+          <div class="vcc-cmp-name" style="background:var(--surface2);">Vendor</div>
+          ${enriched.map(v => `<div class="vcc-cmp-name">
+            ${esc(v.name)}
+            <button class="vcc-aq-btn" style="margin-left:8px;font-size:10px;padding:2px 8px;" onclick="closeModal();openVendorDetail(${v.id})">Detail →</button>
+          </div>`).join('')}
+
+          <div class="vcc-cmp-row-lbl">Tier</div>
+          ${enriched.map(v => `<div class="vcc-cmp-cell">${cellFmt.tier(v)}</div>`).join('')}
+
+          <div class="vcc-cmp-row-lbl">Weighted Score</div>
+          ${enriched.map(v => `<div class="vcc-cmp-cell">${cellFmt.score(v)}${benchDelta(v.ws, bench.avgScore)}</div>`).join('')}
+
+          <div class="vcc-cmp-row-lbl">Trust Score</div>
+          ${enriched.map(v => `<div class="vcc-cmp-cell">${cellFmt.trust(v)}</div>`).join('')}
+
+          <div class="vcc-cmp-row-lbl">YoY Trend</div>
+          ${enriched.map(v => `<div class="vcc-cmp-cell">${cellFmt.yoy(v)}</div>`).join('')}
+
+          <div class="vcc-cmp-row-lbl">5-Yr Revenue</div>
+          ${enriched.map(v => `<div class="vcc-cmp-cell">${cellFmt.sales5yr(v)}</div>`).join('')}
+
+          <div class="vcc-cmp-row-lbl">Coverage</div>
+          ${enriched.map(v => `<div class="vcc-cmp-cell">${cellFmt.sc(v)}</div>`).join('')}
+
+          <div class="vcc-cmp-row-lbl">Confidence</div>
+          ${enriched.map(v => `<div class="vcc-cmp-cell">${cellFmt.conf(v)}</div>`).join('')}
+
+          ${catRows}
+        </div>
+      </div>
+      <div style="padding:14px 18px;font-size:11px;color:var(--text-3);border-top:1px solid var(--border);display:flex;gap:18px;flex-wrap:wrap;">
+        <span>Numbers in parens show <strong>delta vs portfolio average</strong></span>
+        <span style="color:var(--green);">green = above avg</span>
+        <span style="color:var(--accent);">red = below avg</span>
+      </div>
+    `;
+    openModal(`Compare ${enriched.length} Vendors`, body);
+    // Widen the modal for comparison
+    setTimeout(() => {
+      const m = document.querySelector('.overlay.on .modal');
+      if (m) { m.style.maxWidth = '1100px'; m.style.width = '95%'; }
+    }, 30);
+  }
+
+  window.vccToggleCompare    = _toggleCompare;
+  window.vccClearCompare     = _clearCompare;
+  window.vccOpenCompareModal = _openCompareModal;
+  window.vccRefreshDrawer    = _refreshCompareDrawer;
+
   // ─── EXPORTS ─────────────────────────────────────────────────────────────────
   window.renderCommandCenter = renderCommandCenter;
   window.vccVendorIntelPanel  = vccVendorIntelPanel;
   window.vccMobileNavSelect   = vccMobileNavSelect;
+
+  // Initialize compare drawer on load (idempotent)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _refreshCompareDrawer);
+  } else {
+    setTimeout(_refreshCompareDrawer, 0);
+  }
 
 })();
