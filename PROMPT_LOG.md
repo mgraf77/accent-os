@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-15 — Session 40: operational proving + failure simulation
+**Prompt:** "ENTER SESSION 40 — OPERATIONAL PROVING + FAILURE SIMULATION [...] prepare AccentOS for safe long-term autonomous runtime operation."
+**Context:** M49 signal runtime is live but unproven under failure. Mission: ship proving infra (4 sim + 4 check scripts) and operational docs (safety model, proving strategy, recovery playbook, degradation hierarchy) without expanding runtime scope. Posture: prove the invariants we already enforce; surface degradation more clearly; no new tables, no new orchestration, no test frameworks.
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"

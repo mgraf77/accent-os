@@ -4,6 +4,16 @@
 
 <!-- ci-pipeline-validation: 2026-05-11 -->
 
+### 2026-05-15 — Session 40: Operational proving + failure simulation
+**Branch:** `claude/accentos-operational-resilience-sWcZI`
+**Built/Changed:**
+- **4 simulation scripts** (`scripts/simulate-*.sh`): replay-storm, runtime-outage, dead-letter-load, stale-leases. Each emits operator-paste browser-console + SQL snippets. Non-destructive (unique idempotency keys; runtime tables only).
+- **4 static check scripts** (`scripts/check-*.sh`): runtime-recovery, fallback-integrity, replay-integrity, runtime-degradation. All 42 assertions pass against current code. CI-ready.
+- **Panel hardening** (`js/signals_panel.js`): added `replay-skip` and `last-err` rows — replay barrier activity and worker errors are now visible without leaving the panel.
+- **4 operational docs** under `docs/runtime/proving/`: `AUTONOMOUS_RUNTIME_SAFETY_MODEL.md` (10 invariants the runtime preserves), `OPERATIONAL_PROVING_STRATEGY.md` (two-layer proving cadence), `FAILURE_RECOVERY_PLAYBOOK.md` (10-row diagnose→recover table), `RUNTIME_DEGRADATION_HIERARCHY.md` (5 tiers, each with counter+panel+SQL surface).
+**Posture:** Proving over expansion. No new runtime code paths added. No new tables. Runtime remains 3 tables, 6 RPCs, 1 worker loop.
+**Open loops:** None new. Existing M-task blockers unchanged.
+
 ### 2026-05-12 — KPI auto-snapshot + dashboard pinning + csvDownload cleanup
 **Branch:** `accent-work`
 **Commits:** 5a48639 (KPI scheduler), 3a29a97 (dashboard pinning), 1daada6 (csvDownload cleanup)

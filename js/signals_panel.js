@@ -87,12 +87,17 @@
     const runColor = live.worker_running ? '#86efac' : '#fca5a5';
     const deadColor = (typeof dead === 'number' && dead > 0) ? '#fbbf24' : '#eaeaea';
 
+    const skipped = live.effects_skipped_replay | 0;
+    const skipColor = skipped > 0 ? '#86efac' : '#999';
+    const lastErr = live.last_error ? String(live.last_error).slice(0, 36) : '';
     body.innerHTML = [
       _row('pending', pending),
       _row('oldest', oldest),
       _row('dead', dead, deadColor),
       _row('worker', running, runColor),
       _row('enq/ok/fail', `${live.enqueued|0}/${live.succeeded|0}/${live.failed|0}`),
+      _row('replay-skip', skipped, skipColor),
+      lastErr ? _row('last-err', lastErr, '#fbbf24') : '',
       snap.error ? _row('rpc', String(snap.error).slice(0,32), '#fbbf24') : '',
     ].filter(Boolean).join('');
   }
