@@ -735,7 +735,7 @@ If built as off-the-shelf tools, AccentOS would cost **$8,300+/month** in softwa
 ---
 
 ### 2026-05-15 — Executive surface philosophy finalized
-**Shipped:** Five foundational documentation files defining the AccentOS Executive Operational Surface (EXECUTIVE_COMMAND_CENTER_V1.md, DAILY_EXECUTIVE_SCAN_FLOW.md, SIGNAL_PRIORITY_VISUAL_SYSTEM.md, MOBILE_EXECUTIVE_RAIL.md, OPERATIONAL_ATTENTION_MODEL.md). Codified the "Attention Tax" rule, the 30-second mobile triage loop, and DM Mono typography standards for business data.
+**Shipped:** Ten foundational documentation files defining the AccentOS Executive Operational Surface and Attention Compression philosophy. Codified the "Attention Tax" rule, the 30-second mobile triage loop, DM Mono typography standards, and aggressive noise reduction patterns (EXECUTIVE_COMMAND_CENTER_V1.md, DAILY_EXECUTIVE_SCAN_FLOW.md, SIGNAL_PRIORITY_VISUAL_SYSTEM.md, MOBILE_EXECUTIVE_RAIL.md, OPERATIONAL_ATTENTION_MODEL.md, ATTENTION_COMPRESSION_RULES.md, SIGNAL_VISIBILITY_HIERARCHY.md, EXECUTIVE_NOISE_REDUCTION_PATTERNS.md, MOBILE_ATTENTION_BUDGETS.md, WHAT_NOT_TO_SHOW.md).
 **Open loops:** Implementation of the Executive Strip (6 dots) and Mobile Rail in index.html.
 **Next:** UI implementation of the executive signal surface.
 

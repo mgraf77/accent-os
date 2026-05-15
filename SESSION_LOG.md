@@ -13,6 +13,11 @@
 - **SIGNAL_PRIORITY_VISUAL_SYSTEM.md:** Formalized the 0-5 severity hierarchy and visual encoding (DM Mono for data, pulsing dots for critical risks).
 - **MOBILE_EXECUTIVE_RAIL.md:** Codified the "Operational Rail" UX and the "Rule of One" for glanceable mobile metrics.
 - **OPERATIONAL_ATTENTION_MODEL.md:** Set the attention filters for what earns executive eyes vs. what stays invisible ("Attention Tax").
+- **ATTENTION_COMPRESSION_RULES.md:** Defined foundational rules for aggressive reduction of attention load.
+- **SIGNAL_VISIBILITY_HIERARCHY.md:** Mapped out escalation/compression tiers (Tiers I–V) for operational signals.
+- **EXECUTIVE_NOISE_REDUCTION_PATTERNS.md:** Codified specific patterns like "Dimension Compression" and "Confidence-Based Dimming."
+- **MOBILE_ATTENTION_BUDGETS.md:** Established cognitive and temporal limits (30-second check-in) for mobile surfaces.
+- **WHAT_NOT_TO_SHOW.md:** Explicitly listed data types (raw ERP tables, stable metrics) that must remain invisible by design.
 **Open loops:** UI implementation of the Rail and Signal cards in index.html; integration of the 6-dot executive strip into the dashboard.
 **Next:** UI implementation of the Executive Strip (6 dots) and the mobile-first Signal Feed.
 
