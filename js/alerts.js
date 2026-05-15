@@ -87,6 +87,17 @@ async function generateAlertsFromData(){
   const day = 86400000;
   const proposed = [];
 
+  // Pre-compute per-key duplicate counts across the whole alerts cache so
+  // generators can pass duplicateCount into evaluateConfidence(). A signal
+  // that has fired (and been dismissed) repeatedly on the same source is
+  // less trustworthy.
+  const dupCounts = {};
+  ALERTS.forEach(a => {
+    const k = alertKey(a.type, a.payload);
+    dupCounts[k] = (dupCounts[k]||0) + 1;
+  });
+  const _conf = (typeof evaluateConfidence === 'function') ? evaluateConfidence : (() => 0.7);
+
   // 1. deal_stale
   if(typeof DEALS !== 'undefined'){
     Object.keys(DEALS).forEach(stage => {
@@ -97,11 +108,22 @@ async function generateAlertsFromData(){
         if(ageDays < 14) return;
         const key = `deal_stale:${d.id}`;
         if(activeKeys.has(key)) return;
+        const missing = [];
+        if(!d.owner) missing.push('owner');
+        if(d.value == null) missing.push('value');
+        const confidence = _conf({
+          sourceTs: d.updated_at,
+          missingFields: missing,
+          heuristicQuality: ageDays >= 30 ? 0.8 : 0.6,
+          hasBaseline: true,
+          duplicateCount: dupCounts[key] || 0,
+          generatorReliability: 0.75
+        });
         proposed.push({
           type:'deal_stale', severity: ageDays >= 30 ? 'urgent' : 'warn',
           title: `Stale deal: ${d.name}`,
           body: `${ageDays}d since last update · $${Math.round(d.value).toLocaleString()} · stage: ${stage}`,
-          link: 'pipeline', payload: {deal_id: d.id, stage, value: d.value, age_days: ageDays}
+          link: 'pipeline', payload: {deal_id: d.id, stage, value: d.value, age_days: ageDays, confidence, source_ts: d.updated_at}
         });
       });
     });
@@ -132,11 +154,22 @@ async function generateAlertsFromData(){
       if(ageDays < 21 || (Number(q.total)||0) < 500) return;
       const key = `quote_cold:${q._uuid||q.id}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!q.customer) missing.push('customer');
+      if(!q.total) missing.push('total');
+      const confidence = _conf({
+        sourceTs: q.date,
+        missingFields: missing,
+        heuristicQuality: ageDays >= 45 ? 0.85 : 0.55,
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.7
+      });
       proposed.push({
         type:'quote_cold', severity: 'warn',
         title: `Cold quote: ${q.id}`,
         body: `${ageDays}d old · ${q.customer||'(no customer)'} · $${Math.round(Number(q.total)||0).toLocaleString()}`,
-        link: 'quotes', payload: {quote_id: q._uuid || q.id, age_days: ageDays}
+        link: 'quotes', payload: {quote_id: q._uuid || q.id, age_days: ageDays, confidence, source_ts: q.date}
       });
     });
   }
@@ -245,12 +278,32 @@ async function generateAlertsFromData(){
       if(delta > -3) return;   // only flag drops of 3+ points
       const key = `score_dropped:${c.vendor}:${c.cat}:${c.ts}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!c.user) missing.push('user');
+      const confidence = _conf({
+        sourceTs: c.ts,
+        missingFields: missing,
+        heuristicQuality: delta <= -5 ? 0.9 : 0.65,
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.85
+      });
       proposed.push({
         type:'score_dropped', severity: delta <= -5 ? 'urgent' : 'warn',
         title: `Score drop: ${c.vendor}`,
         body: `${c.cat}: ${oldN} → ${newN} (${delta}) · by ${c.user||'?'}`,
-        link: 'vendors', payload: {vendor_name: c.vendor, category: c.cat, old: oldN, new: newN, ts: c.ts}
+        link: 'vendors', payload: {vendor_name: c.vendor, category: c.cat, old: oldN, new: newN, ts: c.ts, confidence, source_ts: c.ts}
       });
+    });
+  }
+
+  // Count duplicate suppressions (keys that hit activeKeys are not in proposed)
+  if(typeof trackSignal === 'function'){
+    Object.entries(dupCounts).forEach(([k, n]) => {
+      if(n > 1){
+        const type = k.split(':')[0];
+        for(let i=1;i<n;i++) trackSignal('duplicate', { type });
+      }
     });
   }
 
@@ -261,6 +314,7 @@ async function generateAlertsFromData(){
     const saved = await sbInsertAlert(p);
     if(saved){
       if(typeof saved === 'object' && saved.id) ALERTS.unshift(saved);
+      if(typeof trackSignal === 'function') trackSignal('generated', p);
       inserted++;
     }
   }
@@ -361,15 +415,20 @@ function renderAlerts(el){
       </div>
       <div style="max-height:calc(100vh - 360px);overflow-y:auto;">
         ${filtered.length === 0 ? `<div style="padding:40px;text-align:center;color:var(--text-3);">${total===0?'No alerts yet. Click ↻ Refresh to run the heuristics over your current data.':'No alerts match the current filter.'}</div>` : filtered.map(a => {
-          const sevColor = {urgent:'var(--accent)', warn:'var(--yellow)', info:'var(--blue)'}[a.severity] || 'var(--text-3)';
-          const sevIcon = {urgent:'!', warn:'⚠', info:'ⓘ'}[a.severity] || '•';
+          const v = _signalVisual(a);
+          const sevColor = (v && v.color) || ({urgent:'var(--accent)', warn:'var(--yellow)', info:'var(--blue)'}[a.severity] || 'var(--text-3)');
+          const sevIcon = (v && v.badge) || ({urgent:'!', warn:'⚠', info:'ⓘ'}[a.severity] || '•');
+          const dim = !!(v && v.dim);
+          const conf = (a.payload && typeof a.payload.confidence === 'number') ? a.payload.confidence : null;
           const isUnread = a.status === 'unread';
-          return `<div style="padding:14px 18px;border-bottom:1px solid var(--border);${isUnread?'background:rgba(59,130,246,0.04);':''}display:flex;align-items:flex-start;gap:14px;">
+          return `<div style="padding:14px 18px;border-bottom:1px solid var(--border);${isUnread?'background:rgba(59,130,246,0.04);':''}${dim?'opacity:0.55;':''}display:flex;align-items:flex-start;gap:14px;">
             <span style="width:30px;height:30px;border-radius:50%;background:${sevColor};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">${sevIcon}</span>
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <strong style="font-size:13px;${isUnread?'':'color:var(--text-2);'}">${esc(a.title)}</strong>
                 <span class="badge bg-gray" style="font-size:9px;text-transform:capitalize;">${esc((a.type||'').replace(/_/g,' '))}</span>
+                ${conf !== null ? `<span class="badge bg-gray" title="signal confidence" style="font-size:9px;">conf ${(conf*100).toFixed(0)}%</span>` : ''}
+                ${dim ? `<span class="badge bg-gray" title="stale or low-confidence source" style="font-size:9px;color:var(--text-3);">stale</span>` : ''}
                 ${a.status !== 'unread' ? `<span class="badge bg-gray" style="font-size:9px;text-transform:capitalize;">${esc(a.status)}</span>` : ''}
               </div>
               <div class="muted sm" style="margin-top:3px;">${esc(a.body||'')}</div>
@@ -388,6 +447,13 @@ function renderAlerts(el){
   `;
 }
 
+// Render-time enrichment: map a signal through the canonical normalizer.
+// Visual-only — never alters status, never hides the row.
+function _signalVisual(a){
+  if(typeof normalizeSeverity !== 'function') return null;
+  try { return normalizeSeverity(a); } catch { return null; }
+}
+
 async function alertSetStatus(alertId, newStatus){
   const a = ALERTS.find(x => x.id === alertId);
   if(!a) return;
@@ -395,6 +461,7 @@ async function alertSetStatus(alertId, newStatus){
   if(!ok){ toast('Update failed','err'); return; }
   a.status = newStatus;
   if(newStatus === 'read' || newStatus === 'actioned') a.read_at = new Date().toISOString();
+  if(newStatus === 'dismissed' && typeof trackSignal === 'function') trackSignal('dismissed', a);
   if(typeof sbAuditLog==='function') sbAuditLog('alert_status', 'alerts', {alert_id: alertId, new_status: newStatus, type: a.type});
   renderAlerts($('pg-content'));
   toast(`Marked ${newStatus}`,'ok');
