@@ -1,44 +1,54 @@
 ## WORK IN PROGRESS
 > Overwritten after every discrete build step.
 
-**Last updated:** 2026-05-12 — accent-work session 2: KPI scheduler + dashboard pinning + csvDownload cleanup.
-**Branch:** `accent-work`
-**Resume trigger:** "continue last session"
+**Last updated:** 2026-05-15 — Session 36 (autonomous consolidation + forward-track build).
+**Branch:** `claude/consolidate-forward-track-ykHmh`
+**Resume trigger:** "continue session 36" / "resume forward-track"
 
 ---
 
 ## STATUS
 
-6 items shipped across 2 sessions on `accent-work`. Tree is clean, docs committed.
+Session 36 complete. Phases 1–4 landed; Phase 5 intentionally deferred (doctrine: stabilize > expand). Single commit on the working branch covers all deliverables.
 
-**Session 1 (MODULE_REGISTRY + analytics + auto-derive):**
-- ✅ MODULE_REGISTRY refactor — sidebar/PAGE_META/dispatcher driven by single registry array (1cb015a)
-- ✅ Pipeline analytics — `openPipelineAnalytics()` implemented (funnel, win/loss, loss reasons, by-source, health) (b9a65d9)
-- ✅ Auto-derived deal source — company field auto-fills Source + Segment from CRM on match (832d7e6)
+**Phase 1 — Sidecar reconciliation (analysis-only):**
+- ✅ `SIDECAR_RECONCILIATION_REPORT.md`
+- ✅ `RUNTIME_CONFLICT_RESOLUTION_NOTES.md`
+- ✅ `OBSOLETE_BRANCH_REGISTRY.md`
+- 🚫 No sidecar merges performed (per session doctrine).
 
-**Session 2 (KPI + pinning + cleanup):**
-- ✅ KPI auto-snapshot scheduler — daily Owner capture at hydration end, no manual click needed (5a48639)
-- ✅ Per-user dashboard pinning — 📌 Pins button, localStorage v1, MODULE_REGISTRY-driven picker (3a29a97)
-- ✅ csvDownload dead-fallback cleanup — removed 4 unreachable else branches in module files (1daada6)
+**Phase 2 — Operational proving prep (additive):**
+- ✅ `scripts/check-runtime-health.sh` (31/31 ✓)
+- ✅ `scripts/check-runtime-replay.sh` (6/6 ✓)
+- ✅ `scripts/check-dead-letter-health.sh` (5/5 ✓)
+- ✅ `js/signals_runtime_health.js` → `window.__SIGNAL_RUNTIME_HEALTH__()` + `index.html` wiring
 
-**Live DB state:** in sync with M41–M44. All clean.
+**Phase 3 — Forward track:**
+- ✅ `RUNTIME_REGISTRY_PLAN.md` / `SIGNAL_NAME_CANON.md` / `RUNTIME_CONSTANTS_MAP.md` / `FUTURE_MERGE_FRICTION_REDUCTION.md`
 
-## NEXT
+**Phase 4 — Train acceleration:**
+- ✅ `AUTONOMOUS_EXECUTION_ACCELERATION.md` / `MERGE_AUTOMATION_SAFETY_MODEL.md` / `RUNTIME_VERIFICATION_EXPANSION.md`
+- ✅ `scripts/status.sh` expanded with runtime-health + merge-readiness + branch-entropy blocks
 
-Remaining unblocked items (no M-task dependency):
-- `typeof` guard cleanup — `savedFiltersBar`/`bulkSelBar`/`bulkSelRegister` calls in ~8 modules are wrapped in dead `typeof` guards (both scripts confirmed always loaded). Low priority cosmetic refactor.
-- Saved Filter Sets — cross-cutting persisted filter combos on every list page (js/saved_filters.js already ships `savedFiltersBar()` — wire remaining modules that don't use it yet).
-- Bulk action bars — multi-select + bulk delete/status (js/bulk_select.js ships `bulkSelBar()` — wire remaining modules).
-- My Tasks widget — personal task queue on dashboard (BUILD_PLAN item, no schema needed).
-- OKR progress auto-compute — derive OKR % from live data globals instead of manual entry.
+**Phase 5 — DEFERRED.** No behavioral changes attempted (doctrine).
 
-Blocked until Michael acts: M03/M04/M05/M06/M09/M10/M18.
-Stale Cloudflare Worker: GitHub Actions workflow created (.github/workflows/deploy-worker.yml). Needs CF_API_TOKEN + CF_ACCOUNT_ID secrets added to GitHub repo before first auto-deploy can fire. Michael to add secrets — see docs/runtime/CLOUDFLARE_DEPLOYMENT_FLOW.md.
+## Verification
 
-## MERGE READINESS
+All 5 runtime verifiers green:
+- `scripts/check-runtime-wiring.sh` ✓
+- `scripts/check-runtime-health.sh` ✓
+- `scripts/check-runtime-replay.sh` ✓
+- `scripts/check-dead-letter-health.sh` ✓
+- `scripts/check-pricing-runtime-path.sh` ✓
 
-`accent-work` is ahead of `main` by 6 feature commits. When ready to merge:
-- All changes are additive (new functions, new registry entries, dead-code removal)
-- No schema changes required
-- Rollback: revert the 6 commits individually or `git revert` range
-- Affected systems: sidebar rendering (MODULE_REGISTRY), pipeline modal, new deal form, dashboard card, all CSV import flows
+## Open loops (next session)
+
+1. **Sidecar #3 cherry-pick** (`emitter-ownership-visibility-QfOTG`): patch script targets to `signals_runtime.js` + companions, then cherry-pick. ~1 short branch.
+2. **`js/signals_registry.js`**: declarative registry per `RUNTIME_REGISTRY_PLAN.md`. Removes hard-coded lists from 5+ verifiers.
+3. **`js/runtime_loader.js`**: collapse `index.html` `<script>` block per `FUTURE_MERGE_FRICTION_REDUCTION.md` §1. Reduces #1 merge-conflict zone.
+4. **Sidecars #1 + #2 re-author**: convert salvageable content (docs, verifiers, escalation taxonomy) into additive commits on canonical runtime; mark original branches OBSOLETE.
+5. **Branch-cleanup pass**: Michael ack required, then prune the 7 OBSOLETE branches.
+
+## Env note
+
+In-environment commit-signer rejects replay of old commits during rebase (returns 400 missing source). Rebase-then-push of original sidecar commits is blocked. Workaround: re-author content as fresh commits on a new branch off main. Fresh commits sign normally.

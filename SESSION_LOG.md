@@ -4,6 +4,35 @@
 
 <!-- ci-pipeline-validation: 2026-05-11 -->
 
+### 2026-05-15 — Session 36: sidecar reconciliation + forward-track build
+**Branch:** `claude/consolidate-forward-track-ykHmh`
+**Baseline:** `main@d4966c7` (canonical Wave 1A runtime)
+**Built/Changed:**
+- **Phase 1 — Sidecar reconciliation (analysis-only, no merges):**
+  - `SIDECAR_RECONCILIATION_REPORT.md` — disposition for the 3 approved sidecars. Findings: `harden-signal-dedupe-CsO6N` and `harden-runtime-escalation-eYOqF` both re-introduce a deleted `js/signals.js` (HIGH semantic conflict — do not merge); `emitter-ownership-visibility-QfOTG` is mostly additive (LOW conflict — cherry-pick after small script target patches).
+  - `RUNTIME_CONFLICT_RESOLUTION_NOTES.md` — per-file resolution recipes.
+  - `OBSOLETE_BRANCH_REGISTRY.md` — classified runtime-lineage branches; 7 marked OBSOLETE, several SUPERSEDED-PENDING-SALVAGE.
+  - **Env limitation observed:** in-environment git commit-signer returns 400 when replaying old commits during rebase; blocks rebase-then-push of the original sidecar commits. Fresh commits authored in this session sign normally.
+- **Phase 2 — Operational proving prep (additive):**
+  - `scripts/check-runtime-health.sh` (31/31 ✓): canonical files, SIGNALS surface, counter block, heartbeat, metrics().
+  - `scripts/check-runtime-replay.sh` (6/6 ✓): idem-key composer, 23505 path, replay counter, signal_effect_log barrier.
+  - `scripts/check-dead-letter-health.sh` (5/5 ✓): dead-letter wiring, counter, panel surface, bypass detection.
+  - `js/signals_runtime_health.js` — exposes `window.__SIGNAL_RUNTIME_HEALTH__()` async snapshot. Wired into `index.html` after `signals_panel.js`.
+- **Phase 3 — Forward track:**
+  - `RUNTIME_REGISTRY_PLAN.md` — target shape for `js/signals_registry.js` (declarative; not implemented).
+  - `SIGNAL_NAME_CANON.md` — naming rules + canonical 3 signal types, 8 RPCs, 12 counters, 4 globals, forbidden names.
+  - `RUNTIME_CONSTANTS_MAP.md` — lifecycle states, replay semantics, magic numbers, table names (`signal_effect_log` confirmed via source).
+  - `FUTURE_MERGE_FRICTION_REDUCTION.md` — 5 friction sources + remediation plan.
+- **Phase 4 — Train acceleration:**
+  - `AUTONOMOUS_EXECUTION_ACCELERATION.md` — 7 levers (5 landed, 5 deferred); throughput model.
+  - `MERGE_AUTOMATION_SAFETY_MODEL.md` — 4-tier sidecar-merge policy.
+  - `RUNTIME_VERIFICATION_EXPANSION.md` — verifier coverage matrix + 6 gap-fillers.
+  - `scripts/status.sh` expanded: runtime health block, merge-readiness block, branch-entropy block. All 5 runtime verifiers reported as a single ✓/✗ matrix in boot output.
+- **Phase 5 — NOT EXECUTED.** Doctrine: stabilization > expansion; no behavioral changes attempted.
+**Verification:** all 5 `scripts/check-*.sh` runtime verifiers green. `index.html` load order preserved.
+**Open loops:** sidecar #3 cherry-pick (next-session lane). `js/signals_registry.js` + `js/runtime_loader.js` deferred.
+**Risks remaining:** sidecars #1/#2 still drift each session — recommended TTL: convert or supersede within 2 sessions.
+
 ### 2026-05-12 — KPI auto-snapshot + dashboard pinning + csvDownload cleanup
 **Branch:** `accent-work`
 **Commits:** 5a48639 (KPI scheduler), 3a29a97 (dashboard pinning), 1daada6 (csvDownload cleanup)

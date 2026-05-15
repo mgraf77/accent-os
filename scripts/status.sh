@@ -77,5 +77,55 @@ if [[ -f SESSION_LOG.md ]]; then
 fi
 echo
 
+# Runtime health (Session 36 additive block — non-blocking, summary only)
+bold "Runtime health"
+if [[ -f js/signals_runtime.js && -f js/signals_producers.js && -f js/signals_panel.js ]]; then
+  echo "  canonical files: ✓ (runtime + producers + panel)"
+else
+  echo "  canonical files: ✗ MISSING ONE OF runtime/producers/panel"
+fi
+if [[ -f js/signals_runtime_health.js ]]; then
+  echo "  health surface:  ✓ js/signals_runtime_health.js (window.__SIGNAL_RUNTIME_HEALTH__)"
+else
+  echo "  health surface:  ✗ missing"
+fi
+# Cheap static checks (do not fail status.sh on red)
+for s in check-runtime-wiring.sh check-runtime-health.sh check-runtime-replay.sh check-dead-letter-health.sh check-pricing-runtime-path.sh; do
+  if [[ -x scripts/$s || -f scripts/$s ]]; then
+    if bash scripts/$s >/dev/null 2>&1; then
+      printf "  %-34s ✓\n" "$s"
+    else
+      printf "  %-34s ✗ (run for detail)\n" "$s"
+    fi
+  fi
+done
+echo
+
+# Merge readiness (sidecar reconciliation lane — Session 36)
+bold "Merge readiness (sidecars)"
+if [[ -f SIDECAR_RECONCILIATION_REPORT.md ]]; then
+  for b in claude/harden-signal-dedupe-CsO6N claude/harden-runtime-escalation-eYOqF claude/emitter-ownership-visibility-QfOTG; do
+    if git show-ref --quiet "refs/remotes/origin/$b"; then
+      ahead=$(git rev-list --count "origin/main..origin/$b" 2>/dev/null || echo "?")
+      printf "  %-50s %s commits ahead of main\n" "$b" "$ahead"
+    fi
+  done
+  echo "  (see SIDECAR_RECONCILIATION_REPORT.md for disposition)"
+else
+  echo "  no reconciliation report present"
+fi
+echo
+
+# Branch entropy (Session 36)
+bold "Branch entropy"
+total=$(git branch -r 2>/dev/null | grep -v HEAD | wc -l | tr -d ' ')
+unmerged=$(git branch -r --no-merged origin/main 2>/dev/null | grep -v HEAD | grep -v 'origin/main$' | wc -l | tr -d ' ')
+echo "  remote branches: $total total / $unmerged unmerged-vs-main"
+if [[ -f OBSOLETE_BRANCH_REGISTRY.md ]]; then
+  obsolete=$(grep -c '^| `[^`]*` | OBSOLETE ' OBSOLETE_BRANCH_REGISTRY.md 2>/dev/null || echo 0)
+  echo "  registered OBSOLETE: $obsolete (see OBSOLETE_BRANCH_REGISTRY.md)"
+fi
+echo
+
 hr
 dim "Tip: read SESSION_LOG.md priority queue for the next prompt to paste."

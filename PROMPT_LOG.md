@@ -1,6 +1,10 @@
 ## PROMPT LOG
 > Every prompt Michael sends is logged here immediately before any build work begins.
 
+### 2026-05-15 — Session 36 autonomous consolidation + forward-track build
+**Prompt:** "ENTER SESSION 36 — AUTONOMOUS CONSOLIDATION + FORWARD TRACK BUILD ... maximize long-run operational leverage and future execution runway WITHOUT introducing architectural chaos ... 5 phases (sidecar reconciliation, operational proving prep, future track building, train acceleration, safe implementation advancement) ... continue executing autonomously until natural safe stopping point."
+**Authority:** HIGH. Forbidden: Wave 1B, Supabase SQL apply, prod deploy assumptions, orchestration engines, broad rewrites.
+
 ### 2026-05-05 — vibe-speak meta-skill buildout (v0 → v9)
 **Prompts (chronological, this session):**
 1. "Look into Caveman. But customize it so that the focus is communicating to a vibe coder in native English. It leaves out unneeded coding jargon, translates to conversational English, it is token usage aware and increases efficiency and speed of the terminal. Look into the caveman repo and any forks or different versions of caveman and the concept I am discussing"
