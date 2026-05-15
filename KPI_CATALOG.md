@@ -220,7 +220,7 @@ Schema infrastructure already deployed (via M02) that's catalog-relevant:
 | X9 | Time-to-resolution (warranty) | `avg(claim → resolved)` | `warranty` | monthly |
 | X10 | Repeat-claim rate by vendor | `vendors with > N claims/90d` | `warranty` + `vendors` | monthly |
 | X11 | Customer complaint rate | `complaints / orders` | service log ⚠ | weekly |
-| X12 | Issue escalation rate | `% tickets escalated` | service log ⚠ | weekly |
+| X12 | Issue escalation rate | `COUNT(alerts WHERE severity='urgent' AND status='unread' AND age(created_at) > 24h) / COUNT(alerts WHERE severity='urgent')` (canonical predicate per CANONICAL_SIGNAL_RUNTIME_V1 §6: urgent AND unread AND age > 24h) | `alerts` | weekly |
 
 ## Group O — Operations / Warehouse / Delivery / Install (15)
 

@@ -63,19 +63,31 @@ async function sbUpdateAlertStatus(id, status){
   }catch(e){ console.warn('[sb] Update alert failed:', e.message); return false; }
 }
 
-// Build dedupe key for an alert. Returns "type:source_id" so re-running the
-// generator skips already-emitted alerts. We only dedupe within unread + read
-// statuses; dismissed alerts can be re-emitted (user said "remind me later").
+// Dedupe key for a Signal. Canonical form: "type:source_id" (matches
+// signalDedupeKey in js/signals.js). Retained here for in-memory scan
+// suppression alongside shouldSuppress(). Falls back to legacy domain
+// fields for backward-compatibility with rows emitted before payload.source_id
+// was mandatory.
 function alertKey(type, payload){
+  if(typeof signalSourceId === 'function'){
+    const sid = signalSourceId(type, payload);
+    return sid ? `${type}:${sid}` : type;
+  }
   if(!payload) return type;
-  const id = payload.deal_id || payload.coop_id || payload.quote_id || payload.inv_id || payload.delivery_id || payload.warranty_id || payload.showroom_id || payload.po_id || payload.vendor_id;
+  const id = payload.source_id || payload.deal_id || payload.coop_id || payload.quote_id || payload.inv_id || payload.delivery_id || payload.warranty_id || payload.showroom_id || payload.po_id || payload.vendor_id;
   return id ? `${type}:${id}` : type;
 }
 
-// Walk existing data, propose new alerts, skip ones that already exist (by key).
+// Walk existing data, propose new Signals, route each through createSignal()
+// which enforces source_id, dedupe, and type/severity validation.
 async function generateAlertsFromData(){
   if(!sbConfigured()) return 0;
-  // Build set of currently-active keys to skip
+  if(typeof createSignal !== 'function'){
+    console.warn('[alerts] createSignal() unavailable — js/signals.js must load before js/alerts.js');
+    return 0;
+  }
+  // Build set of currently-active keys for fast in-memory pre-check
+  // (createSignal also calls shouldSuppress, which is the authoritative check).
   const activeKeys = new Set();
   ALERTS.forEach(a => {
     if(['dismissed','actioned'].includes(a.status)) return;
@@ -101,7 +113,7 @@ async function generateAlertsFromData(){
           type:'deal_stale', severity: ageDays >= 30 ? 'urgent' : 'warn',
           title: `Stale deal: ${d.name}`,
           body: `${ageDays}d since last update · $${Math.round(d.value).toLocaleString()} · stage: ${stage}`,
-          link: 'pipeline', payload: {deal_id: d.id, stage, value: d.value, age_days: ageDays}
+          link: 'pipeline', payload: {source_id: String(d.id), deal_id: d.id, stage, value: d.value, age_days: ageDays}
         });
       });
     });
@@ -119,7 +131,7 @@ async function generateAlertsFromData(){
         type:'coop_deadline', severity: daysLeft <= 7 ? 'urgent' : 'warn',
         title: `Co-op fund deadline ≤${daysLeft}d`,
         body: `${c.fund_type} · $${Number(c.amount||0).toLocaleString()} · expires ${c.deadline}`,
-        link: 'vendors', payload: {coop_id: c.id, vendor_id: c.vendor_id, amount: c.amount, days_left: daysLeft}
+        link: 'vendors', payload: {source_id: String(c.id), coop_id: c.id, vendor_id: c.vendor_id, amount: c.amount, days_left: daysLeft}
       });
     });
   }
@@ -136,7 +148,7 @@ async function generateAlertsFromData(){
         type:'quote_cold', severity: 'warn',
         title: `Cold quote: ${q.id}`,
         body: `${ageDays}d old · ${q.customer||'(no customer)'} · $${Math.round(Number(q.total)||0).toLocaleString()}`,
-        link: 'quotes', payload: {quote_id: q._uuid || q.id, age_days: ageDays}
+        link: 'quotes', payload: {source_id: String(q._uuid || q.id), quote_id: q._uuid || q.id, age_days: ageDays}
       });
     });
   }
@@ -154,7 +166,7 @@ async function generateAlertsFromData(){
         type:'inventory_low', severity: avail === 0 ? 'urgent' : 'warn',
         title: `Low stock: ${r.sku}`,
         body: `${avail} on hand vs ${reorder} reorder point · ${r.vendor_name||''}${r.location?' · '+r.location:''}`,
-        link: 'vendors', payload: {inv_id: r.id, sku: r.sku, qty: avail, reorder}
+        link: 'vendors', payload: {source_id: String(r.id), inv_id: r.id, sku: r.sku, qty: avail, reorder}
       });
     });
   }
@@ -172,7 +184,7 @@ async function generateAlertsFromData(){
         type:'delivery_overdue', severity: 'urgent',
         title: `Overdue delivery: ${d.delivery_number||d.id}`,
         body: `${overdueDays}d past schedule · ${d.customer_name||''} · status: ${d.status}`,
-        link: 'deliveries', payload: {delivery_id: d.id, customer_name: d.customer_name, overdue_days: overdueDays}
+        link: 'deliveries', payload: {source_id: String(d.id), delivery_id: d.id, customer_name: d.customer_name, overdue_days: overdueDays}
       });
     });
   }
@@ -190,7 +202,7 @@ async function generateAlertsFromData(){
         type:'warranty_expiring', severity: daysLeft <= 7 ? 'urgent' : 'warn',
         title: `Warranty expires ≤${daysLeft}d: ${w.claim_number||w.id}`,
         body: `${w.vendor_name||''} · ${w.sku||'(no SKU)'} · status: ${w.status}`,
-        link: 'warranty', payload: {warranty_id: w.id, days_left: daysLeft}
+        link: 'warranty', payload: {source_id: String(w.id), warranty_id: w.id, days_left: daysLeft}
       });
     });
   }
@@ -208,7 +220,7 @@ async function generateAlertsFromData(){
         type:'showroom_expiring', severity: daysLeft <= 7 ? 'warn' : 'info',
         title: `Display expiring ≤${daysLeft}d: ${s.display_name}`,
         body: `${s.vendor_name||''} · ${s.location||''} · expires ${s.expires_date}`,
-        link: 'showrooms', payload: {showroom_id: s.id, days_left: daysLeft}
+        link: 'showrooms', payload: {source_id: String(s.id), showroom_id: s.id, days_left: daysLeft}
       });
     });
   }
@@ -226,7 +238,7 @@ async function generateAlertsFromData(){
         type:'po_overdue', severity: overdueDays >= 14 ? 'urgent' : 'warn',
         title: `PO overdue: ${p.po_number||p.id}`,
         body: `${overdueDays}d past expected · ${p.vendor_name||''} · $${Math.round(Number(p.total)||0).toLocaleString()}`,
-        link: 'purchaseorders', payload: {po_id: p.id, vendor_id: p.vendor_id, overdue_days: overdueDays}
+        link: 'purchaseorders', payload: {source_id: String(p.id), po_id: p.id, vendor_id: p.vendor_id, overdue_days: overdueDays}
       });
     });
   }
@@ -249,16 +261,18 @@ async function generateAlertsFromData(){
         type:'score_dropped', severity: delta <= -5 ? 'urgent' : 'warn',
         title: `Score drop: ${c.vendor}`,
         body: `${c.cat}: ${oldN} → ${newN} (${delta}) · by ${c.user||'?'}`,
-        link: 'vendors', payload: {vendor_name: c.vendor, category: c.cat, old: oldN, new: newN, ts: c.ts}
+        link: 'vendors', payload: {source_id: `${c.vendor}:${c.cat}:${c.ts}`, vendor_name: c.vendor, category: c.cat, old: oldN, new: newN, ts: c.ts}
       });
     });
   }
 
-  // Persist proposed alerts (parallel — RLS allows authed insert)
+  // Persist proposed Signals through createSignal() — the sanctioned writer.
+  // It re-checks suppression (in case ALERTS changed mid-scan) and rejects
+  // any payload missing source_id.
   if(proposed.length === 0) return 0;
   let inserted = 0;
   for(const p of proposed){
-    const saved = await sbInsertAlert(p);
+    const saved = await createSignal(p);
     if(saved){
       if(typeof saved === 'object' && saved.id) ALERTS.unshift(saved);
       inserted++;
