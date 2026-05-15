@@ -461,10 +461,155 @@ async function commitInventoryCell(input){
     item.updated_at = res.updated_at || item.updated_at;
   }
   if(typeof sbAuditLog==='function') sbAuditLog(`inventory_${field}_edit`, 'inventory', {item_id: id, sku: item.sku, field, from: prev, to: next});
+  // ── Pricing runtime conversion (M50, session 28) ──────────────────────────
+  // Narrow path: inventory.list_price inline edit → enqueue pricing.update
+  // signal so downstream mirrors (bc_products_cache) stay coherent via the
+  // replay-safe queue. Direct PATCH above is the durable source-of-truth
+  // write; this enqueue is additive and degrades silently when:
+  //   - feature flag off (default)
+  //   - SIGNALS runtime unavailable
+  //   - enqueue throws
+  if(field === 'list_price' && item.sku){
+    try { _signalEnqueuePricingUpdate(item.sku, next, prev); }
+    catch(e){ /* never break the inline edit UX */ }
+  }
   const displayPrev = isCurrency && prev != null ? '$'+Number(prev).toFixed(2) : (prev==null?'—':prev);
   const displayNext = isCurrency && next != null ? '$'+Number(next).toFixed(2) : (next==null?'—':next);
   toast(`${item.sku} · ${field.replace(/_/g,' ')}: ${displayPrev} → ${displayNext}`, 'ok');
 }
+
+// ── Pricing-path runtime conversion helpers (M50) ───────────────────────────
+// Feature-gated, additive. Tracks producer-side outcomes on a dedicated global
+// (window.__SIGNAL_RUNTIME_METRICS__) so verification scripts and the runtime
+// debug panel can observe enqueue latency, fallback rate, and replay skips
+// without touching the SIGNALS runtime's internal counters.
+window.__SIGNAL_RUNTIME_METRICS__ = window.__SIGNAL_RUNTIME_METRICS__ || {
+  pricing: {
+    enqueue_attempts: 0,
+    enqueue_success: 0,
+    enqueue_fallback: 0,      // flag off OR runtime unavailable
+    enqueue_error: 0,         // producer threw / returned !queued
+    replay_skipped: 0,        // duplicate idempotency_key in same 30s bucket
+    last_latency_ms: null,
+    avg_latency_ms: null,
+    last_sku: null,
+    last_status: null,
+    last_error: null,
+    last_at: null,
+  }
+};
+
+function _signalEnqueuePricingUpdate(sku, price, prev){
+  const M = window.__SIGNAL_RUNTIME_METRICS__.pricing;
+  M.enqueue_attempts++;
+  M.last_sku = sku;
+  M.last_at = new Date().toISOString();
+
+  // ── Feature flag (default OFF, opt-in per session) ─────────────────────
+  const flagOn = window.__SIGNALS_PRODUCER_PRICING__ === true;
+  const producerReady = typeof window.queuePricingUpdate === 'function';
+  if(!flagOn || !producerReady){
+    M.enqueue_fallback++;
+    M.last_status = !flagOn ? 'flag_off' : 'producer_unavailable';
+    if(window.__SIGNALS_TRACE__){
+      try{
+        console.groupCollapsed('[signals.pricing] fallback (direct-only)');
+        console.log({sku, price, prev, reason: M.last_status});
+        console.groupEnd();
+      }catch(_){}
+    }
+    return;
+  }
+
+  const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  // 30s-bucket idempotency: a rapid double-commit on the same SKU/price is
+  // dedupe-skipped by the runtime. Distinct prices always produce new keys.
+  const bucket = Math.floor(Date.now() / 30000);
+  const idem = `inv.list_price:${sku}:${price == null ? 'null' : String(price)}:${bucket}`;
+
+  Promise.resolve(window.queuePricingUpdate(sku, price == null ? 0 : price, {
+    idempotency_key: idem,
+    currency: 'USD',
+  })).then((out) => {
+    const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const dt = Math.round(t1 - t0);
+    M.last_latency_ms = dt;
+    M.avg_latency_ms = M.avg_latency_ms == null ? dt : Math.round((M.avg_latency_ms * 0.7) + (dt * 0.3));
+    if(out && out.queued){
+      M.enqueue_success++;
+      M.last_status = out.status || 'pending';
+      if(out.status === 'dead'){
+        M.enqueue_error++;
+        M.last_error = 'dead_letter_unknown_type';
+      }
+      try{
+        if(window.__SIGNALS_TRACE__ || window.__SIGNALS_PRICING_DEBUG__){
+          console.groupCollapsed(`[signals.pricing] enqueued sku=${sku} price=${price} (${dt}ms)`);
+          console.log({idem, result: out, prev, latency_ms: dt});
+          console.groupEnd();
+        }
+      }catch(_){}
+    } else {
+      // Producer returned non-queued — runtime down / Supabase off / enqueue error.
+      // Direct PATCH already succeeded above; this is a clean fallback.
+      M.enqueue_fallback++;
+      M.last_status = (out && out.reason) || 'unknown';
+      M.last_error = (out && out.error) || null;
+      try{
+        if(window.__SIGNALS_TRACE__ || window.__SIGNALS_PRICING_DEBUG__){
+          console.groupCollapsed(`[signals.pricing] fallback (runtime unavailable) sku=${sku}`);
+          console.log({idem, result: out, prev});
+          console.groupEnd();
+        }
+      }catch(_){}
+    }
+  }).catch((err) => {
+    M.enqueue_error++;
+    M.last_status = 'error';
+    M.last_error = String(err && err.message || err);
+    try{ console.warn('[signals.pricing] enqueue threw:', err && err.message); }catch(_){}
+  });
+}
+
+// Effect-completion + replay-skip observer. Wraps the runtime's pricing effect
+// (window.pricingUpdateFromSignal, installed by signals_producers.js) so each
+// completion increments observable metrics here and emits a debug log. This is
+// the consumer-side counterpart of _signalEnqueuePricingUpdate above.
+(function _installPricingEffectObserver(){
+  if(window.__pricingEffectObserverInstalled){ return; }
+  window.__pricingEffectObserverInstalled = true;
+  // Defer installation until producers script has run.
+  const tryInstall = () => {
+    const orig = window.pricingUpdateFromSignal;
+    if(typeof orig !== 'function') return false;
+    window.pricingUpdateFromSignal = async function(payload){
+      const M = window.__SIGNAL_RUNTIME_METRICS__.pricing;
+      const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      try{
+        const out = await orig.call(this, payload);
+        const dt = Math.round(((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) - t0);
+        if(out && out.skipped){ M.replay_skipped++; }
+        try{
+          if(window.__SIGNALS_TRACE__ || window.__SIGNALS_PRICING_DEBUG__){
+            console.groupCollapsed(`[signals.pricing] effect complete sku=${payload && payload.sku} (${dt}ms)`);
+            console.log({payload, out, latency_ms: dt});
+            console.groupEnd();
+          }
+        }catch(_){}
+        return out;
+      }catch(e){
+        try{ console.warn('[signals.pricing] effect failed:', e && e.message); }catch(_){}
+        throw e;
+      }
+    };
+    return true;
+  };
+  if(!tryInstall()){
+    // Retry once after producers script likely finishes loading.
+    setTimeout(tryInstall, 0);
+    setTimeout(tryInstall, 500);
+  }
+})();
 
 // Backwards-compat alias — v6.10.43 used commitInventoryQty
 function commitInventoryQty(input){ return commitInventoryCell(input); }
