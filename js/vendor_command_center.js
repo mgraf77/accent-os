@@ -1115,13 +1115,227 @@ function vccBuildInsightPanel(v) {
   </div>`;
 }
 
+// ─── CATEGORY DELTA INTELLIGENCE ─────────────────────────────────────────────
+// CHANGELOG entries use c.label (not c.key) as the cat field.
+// logChange(v.name, c.label, oldVal, newVal) — confirmed index.html:3509.
+
+// Raw changelog entries for one vendor+category within a time window, sorted asc.
+function _catLog(v, catLabel, windowDays) {
+  if (typeof CHANGELOG === 'undefined' || !Array.isArray(CHANGELOG)) return [];
+  const cutoff = Date.now() - windowDays * 86400000;
+  return CHANGELOG
+    .filter(c =>
+      c.vendor === v.name &&
+      c.cat === catLabel &&
+      !isNaN(parseFloat(c.newVal)) &&
+      !isNaN(parseFloat(c.oldVal)) &&
+      new Date(c.ts).getTime() >= cutoff
+    )
+    .sort((a, b) => new Date(a.ts) - new Date(b.ts));
+}
+
+// Delta for a category over a window: { delta, from, to, count } | null
+function computeCategoryDelta(v, catLabel, windowDays) {
+  const entries = _catLog(v, catLabel, windowDays);
+  if (!entries.length) return null;
+  const from = parseFloat(entries[0].oldVal);
+  const to   = parseFloat(entries[entries.length - 1].newVal);
+  if (isNaN(from) || isNaN(to)) return null;
+  return { delta: parseFloat((to - from).toFixed(2)), from, to, count: entries.length };
+}
+
+// Full movement classification for one category.
+// Returns: { movement, delta30, delta60, delta90, daysSinceLast, unstable, hasHistory }
+function computeCategoryMovement(v, catKey) {
+  const cat = CAT_DEFS.find(c => c.key === catKey);
+  if (!cat) return { movement: 'unknown', delta60: null, delta90: null, hasHistory: false };
+
+  const allLog = (typeof CHANGELOG !== 'undefined' ? CHANGELOG : [])
+    .filter(c => c.vendor === v.name && c.cat === cat.label);
+  const hasHistory = allLog.length > 0;
+
+  const tss = allLog.map(c => new Date(c.ts).getTime()).filter(t => !isNaN(t));
+  const daysSinceLast = tss.length ? Math.floor((Date.now() - Math.max(...tss)) / 86400000) : null;
+
+  const d30 = computeCategoryDelta(v, cat.label, 30);
+  const d60 = computeCategoryDelta(v, cat.label, 60);
+  const d90 = computeCategoryDelta(v, cat.label, 90);
+
+  const log90 = _catLog(v, cat.label, 90);
+  const posChanges = log90.filter(c => parseFloat(c.newVal) > parseFloat(c.oldVal)).length;
+  const negChanges = log90.filter(c => parseFloat(c.newVal) < parseFloat(c.oldVal)).length;
+  const unstable = posChanges > 0 && negChanges > 0 && log90.length >= 3;
+
+  let movement = 'unknown';
+  const hasScore = typeof v.scores[catKey] === 'number';
+
+  if (!hasHistory && hasScore)                              movement = 'untracked';
+  else if (hasHistory && daysSinceLast > 90 && hasScore)   movement = 'stale';
+  else if (unstable)                                        movement = 'unstable';
+  else if (d60 !== null && d60.delta >  0.5)               movement = 'improving';
+  else if (d60 !== null && d60.delta < -0.5)               movement = 'deteriorating';
+  else if (d60 !== null)                                    movement = 'stable';
+  else if (hasHistory && daysSinceLast <= 30)               movement = 'fresh';
+
+  return {
+    movement,
+    delta30: d30 ? d30.delta : null,
+    delta60: d60 ? d60.delta : null,
+    delta90: d90 ? d90.delta : null,
+    daysSinceLast,
+    unstable,
+    hasHistory,
+  };
+}
+
+// Portfolio-level category risk: weakest, deteriorating, unstable, confidence gaps
+function computeCategoryRisk(v) {
+  const scored = CAT_DEFS.filter(c => typeof v.scores[c.key] === 'number');
+
+  const weakest = [...scored]
+    .sort((a, b) => v.scores[a.key] - v.scores[b.key])
+    .slice(0, 3);
+
+  const deteriorating = scored
+    .map(c => ({ c, m: computeCategoryMovement(v, c.key) }))
+    .filter(({ m }) => m.delta60 !== null && m.delta60 < -0.3)
+    .sort((a, b) => (a.m.delta60 || 0) - (b.m.delta60 || 0))
+    .map(({ c }) => c);
+
+  const unstable = scored
+    .filter(c => computeCategoryMovement(v, c.key).unstable);
+
+  const confidenceGaps = scored
+    .filter(c => { const ds = getDataState(v, c.key); return ds !== 'verified' && ds !== 'na'; })
+    .sort((a, b) => v.scores[a.key] - v.scores[b.key]);
+
+  return { weakest, deteriorating, unstable, confidenceGaps };
+}
+
+// ─── CATEGORY DELTA RENDERERS ─────────────────────────────────────────────────
+
+function vccMovementChip(movement) {
+  const map = {
+    improving:     ['green',  '↑ Impr'],
+    deteriorating: ['red',    '↓ Drop'],
+    unstable:      ['orange', '⇅ Unstbl'],
+    stale:         ['gray',   '○ Stale'],
+    stable:        ['gray',   '→'],
+    fresh:         ['blue',   '● Fresh'],
+    untracked:     ['gray',   '— No hist'],
+    unknown:       ['', ''],
+  };
+  const [cls, label] = map[movement] || ['', ''];
+  if (!cls || movement === 'stable') return '';
+  return `<span class="vcc-chip ${cls}" style="font-size:9px;padding:1px 5px;">${label}</span>`;
+}
+
+// Inline delta strip injected into each category score card
+function vccCategoryDeltaStrip(v, catKey) {
+  const m = computeCategoryMovement(v, catKey);
+  if (!m.hasHistory && m.delta60 === null) return '';
+
+  const parts = [];
+
+  if (m.delta60 !== null) {
+    parts.push(`${vccDeltaBadge(m.delta60)}<span style="font-size:9px;color:var(--text-3);margin-left:1px;">60d</span>`);
+  }
+  // Show 90d context only when it tells a meaningfully different story
+  if (m.delta90 !== null && m.delta60 !== null && Math.abs(m.delta90 - m.delta60) > 0.4) {
+    parts.push(`<span style="margin-left:4px;">${vccDeltaBadge(m.delta90)}<span style="font-size:9px;color:var(--text-3);margin-left:1px;">90d</span></span>`);
+  }
+  // 30d badge only if it diverges sharply from 60d (acceleration signal)
+  if (m.delta30 !== null && m.delta60 !== null && Math.abs(m.delta30 - m.delta60) > 0.5) {
+    parts.push(`<span class="vcc-chip orange" style="font-size:9px;padding:1px 5px;" title="30d delta diverges from 60d — possible acceleration">⚡ accel</span>`);
+  }
+
+  const chip = vccMovementChip(m.movement);
+  if (chip) parts.push(chip);
+
+  if (m.daysSinceLast !== null && m.daysSinceLast > 60 && !['improving','deteriorating'].includes(m.movement)) {
+    parts.push(`<span class="vcc-chip gray" style="font-size:9px;padding:1px 5px;">${m.daysSinceLast}d ago</span>`);
+  }
+
+  if (!parts.length) return '';
+  return `<div class="vcc-delta-strip" style="display:flex;align-items:center;gap:4px;margin-top:6px;flex-wrap:wrap;">${parts.join('')}</div>`;
+}
+
+// Category risk summary panel — injected after scoring breakdown grid
+function vccCategoryRiskPanel(v) {
+  const risk = computeCategoryRisk(v);
+  const hasData = risk.weakest.length || risk.deteriorating.length || risk.unstable.length;
+  if (!hasData) return '';
+
+  const catRow = (c, showDelta, accent) => {
+    const s = v.scores[c.key];
+    const m = computeCategoryMovement(v, c.key);
+    const ds = getDataState(v, c.key);
+    const confDot = ds === 'verified' ? `<span style="color:#16a34a;font-size:9px;" title="Verified">●</span>`
+                  : ds === 'na'       ? `<span style="color:#cbd5e1;font-size:9px;" title="N/A">⊙</span>`
+                  : `<span style="color:#e2e8f0;font-size:9px;" title="Unverified">○</span>`;
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border-light,#f0f0ec);">
+      <span style="font-size:11px;font-weight:600;flex:1;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.label)}</span>
+      ${confDot}
+      <span class="mono" style="font-size:12px;font-weight:700;color:${scoreColor(s)};min-width:18px;text-align:right;">${s}</span>
+      ${showDelta && m.delta60 !== null ? vccDeltaBadge(m.delta60) : ''}
+    </div>`;
+  };
+
+  const col = (title, color, items, showDelta) => !items.length ? '' : `<div>
+    <div style="font-size:9px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">${title} · ${items.length}</div>
+    ${items.slice(0, 4).map(c => catRow(c, showDelta, color)).join('')}
+  </div>`;
+
+  const cols = [
+    col('Weakest', 'var(--text-3)', risk.weakest, false),
+    col('↓ Deteriorating', '#dc2626', risk.deteriorating, true),
+    col('⇅ Unstable', '#d97706', risk.unstable, true),
+  ].filter(Boolean);
+
+  if (!cols.length) return '';
+
+  return `<div id="vcc-cat-risk-panel" style="margin-top:16px;padding:14px 16px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+    <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">📊 Category Intelligence</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;">
+      ${cols.join('')}
+    </div>
+  </div>`;
+}
+
+// DOM injection: wires delta strips into category score cards + appends risk panel
+function vccInjectCategoryDeltas(v, content) {
+  // Find the scoring breakdown grid: gap:12px grid with exactly CAT_DEFS.length children
+  let scoreGrid = null;
+  const grids = content.querySelectorAll('div[style*="gap:12px"]');
+  for (const g of grids) {
+    if (g.children.length === CAT_DEFS.length) { scoreGrid = g; break; }
+  }
+  if (!scoreGrid) return;
+
+  // Inject delta strip into each category card
+  CAT_DEFS.forEach((cat, i) => {
+    const card = scoreGrid.children[i];
+    if (!card || card.querySelector('.vcc-delta-strip')) return;
+    const strip = vccCategoryDeltaStrip(v, cat.key);
+    if (!strip) return;
+    const el = document.createElement('div');
+    el.innerHTML = strip;
+    card.appendChild(el.firstChild);
+  });
+
+  // Inject risk panel after the scoring grid (skip if already present)
+  if (!document.getElementById('vcc-cat-risk-panel')) {
+    const panelHtml = vccCategoryRiskPanel(v);
+    if (panelHtml) scoreGrid.insertAdjacentHTML('afterend', panelHtml);
+  }
+}
+
 // ─── openVendorDetail WRAPPER ─────────────────────────────────────────────────
 
 const _vccOrigOpenVendorDetail = window.openVendorDetail;
 window.openVendorDetail = async function(vendorId) {
   await _vccOrigOpenVendorDetail(vendorId);
   setTimeout(() => {
-    if (document.getElementById('vcc-insight-panel')) return;
     const overlay = document.getElementById('vendor-detail-modal');
     if (!overlay) return;
     const modal = overlay.firstElementChild;
@@ -1130,10 +1344,18 @@ window.openVendorDetail = async function(vendorId) {
     if (!content) return;
     const v = VD.find(x => x.id === vendorId);
     if (!v) return;
-    const html = vccBuildInsightPanel(v);
-    if (!html) return;
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = html;
-    content.insertBefore(wrapper.firstChild, content.firstChild);
+
+    // Insight panel (top of content)
+    if (!document.getElementById('vcc-insight-panel')) {
+      const html = vccBuildInsightPanel(v);
+      if (html) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        content.insertBefore(wrapper.firstChild, content.firstChild);
+      }
+    }
+
+    // Category delta intelligence (into scoring breakdown section)
+    vccInjectCategoryDeltas(v, content);
   }, 30);
 };
