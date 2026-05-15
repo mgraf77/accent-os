@@ -1,5 +1,5 @@
 # ACCENT LIGHTING — MASTER PROJECT REFERENCE
-> **Version:** 2.0 | **Last updated:** 2026-05-04  
+> **Version:** 2.1 | **Last updated:** 2026-05-15
 > **Maintainer:** Michael Graf | **Scope:** AccentOS + Ecommerce + Website + All Ops  
 > **Location:** `github.com/mgraf77/accent-os/MASTER.md` (source of truth)  
 > **Rule:** This file is updated at the end of every working session. It replaces Notion, stale PDFs, and scattered docs.
@@ -733,6 +733,11 @@ If built as off-the-shelf tools, AccentOS would cost **$8,300+/month** in softwa
 > **Format:** Most recent at top. One entry per session. Auto-appended at session end.
 
 ---
+
+### 2026-05-15 — Executive surface philosophy finalized
+**Shipped:** Five foundational documentation files defining the AccentOS Executive Operational Surface (EXECUTIVE_COMMAND_CENTER_V1.md, DAILY_EXECUTIVE_SCAN_FLOW.md, SIGNAL_PRIORITY_VISUAL_SYSTEM.md, MOBILE_EXECUTIVE_RAIL.md, OPERATIONAL_ATTENTION_MODEL.md). Codified the "Attention Tax" rule, the 30-second mobile triage loop, and DM Mono typography standards for business data.
+**Open loops:** Implementation of the Executive Strip (6 dots) and Mobile Rail in index.html.
+**Next:** UI implementation of the executive signal surface.
 
 ### 2026-05-04 — Master project reference file created
 **Shipped:** MASTER.md — complete aggregate of all project knowledge, architecture, build plan, accounts, open loops, and vision. Covers AccentOS v6.9.5 state, file split completion, all 15 sections. Proposed for repo root at `mgraf77/accent-os/MASTER.md` alongside `SESSION_LOG.md`.  
