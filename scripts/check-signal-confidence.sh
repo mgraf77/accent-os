@@ -25,12 +25,18 @@ else
   miss "confidence clamp Math.max(0,Math.min(1,...)) not found"
 fi
 
-# 3. payload.confidence written by priority generators
-for gen in deal_stale quote_cold score_dropped; do
-  if grep -B2 -A20 "type:'$gen'" "$ALR" | grep -q "confidence"; then
+# 3. payload.confidence + source_ts written by all generators
+for gen in deal_stale coop_deadline quote_cold inventory_low delivery_overdue warranty_expiring showroom_expiring po_overdue score_dropped; do
+  block="$(awk -v t="type:'$gen'" 'index($0,t){flag=1} flag{print; if(/^\s*\}\);\s*$/){flag=0}}' "$ALR")"
+  if printf '%s' "$block" | grep -q "confidence"; then
     pass "$gen writes payload.confidence"
   else
     miss "$gen does not write payload.confidence"
+  fi
+  if printf '%s' "$block" | grep -q "source_ts"; then
+    pass "$gen writes payload.source_ts"
+  else
+    miss "$gen does not write payload.source_ts"
   fi
 done
 
@@ -73,7 +79,51 @@ else
   miss "trackSignal not wired on generated/dismissed paths"
 fi
 
-# 8. Doctrine guard — no banned subsystems were added
+# 8. Bell render parity — bell dropdown uses normalizeSeverity + dim + conf badge
+bell_block="$(awk '/function renderAlertBell/{flag=1} flag{print; if(/^\}$/){flag=0; exit}}' "$ALR")"
+if printf '%s' "$bell_block" | grep -q "_signalVisual"; then
+  pass "bell dropdown invokes normalizeSeverity (via _signalVisual)"
+else
+  miss "bell dropdown does not invoke normalizeSeverity"
+fi
+if printf '%s' "$bell_block" | grep -q "opacity:0.55"; then
+  pass "bell dropdown applies stale dimming"
+else
+  miss "bell dropdown missing stale dimming"
+fi
+if printf '%s' "$bell_block" | grep -q "confidence"; then
+  pass "bell dropdown renders confidence badge"
+else
+  miss "bell dropdown missing confidence badge"
+fi
+
+# 9. Historical accuracy reducer active
+if grep -q "computeHistoricalAccuracy" "$SIG"; then
+  pass "computeHistoricalAccuracy defined in signals.js"
+else
+  miss "computeHistoricalAccuracy not defined"
+fi
+if grep -q "computeHistoricalAccuracy(ALERTS)" "$ALR" && grep -q "historicalAccuracy:" "$ALR"; then
+  pass "historicalAccuracy path wired into generators"
+else
+  miss "historicalAccuracy path not wired into generators"
+fi
+
+# 10. Low-confidence spike reporter wired
+if grep -q "maybeReportLowConfidenceSpike" "$ALR"; then
+  pass "low-confidence spike reporter wired"
+else
+  miss "low-confidence spike reporter not wired"
+fi
+
+# 11. snapshot() debug surface
+if grep -q "snapshot:\s*function" "$SIG"; then
+  pass "__SIGNAL_RUNTIME_HEALTH__.snapshot() exposed"
+else
+  miss "__SIGNAL_RUNTIME_HEALTH__.snapshot() missing"
+fi
+
+# 12. Doctrine guard — no banned subsystems were added
 if grep -nE "tensorflow|onnxruntime|openai|gpt-|ml-engine|workflow-engine|queue-redesign" "$SIG" "$ALR" 2>/dev/null; then
   miss "banned subsystem reference detected"
 else

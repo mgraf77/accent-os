@@ -183,11 +183,59 @@
     }
   }
 
+  // ── 6. Historical accuracy reducer ──
+  // Deterministic per-type reliability from the alerts cache.
+  //   actioned   → operator confirmed the signal was real
+  //   dismissed  → operator rejected it as noise
+  //   read/unread→ undecided, ignored
+  // Returns map: { [type]: 0..1 }. Types with < MIN_SAMPLES of decided signals
+  // are omitted (undefined → no nudge applied by evaluateConfidence).
+  function computeHistoricalAccuracy(alerts){
+    const MIN_SAMPLES = 3;
+    const acc = {};
+    if(!Array.isArray(alerts)) return acc;
+    const tally = {};
+    for(const a of alerts){
+      if(!a || !a.type) continue;
+      if(a.status !== 'actioned' && a.status !== 'dismissed') continue;
+      const t = tally[a.type] || (tally[a.type] = { actioned:0, dismissed:0 });
+      if(a.status === 'actioned') t.actioned++;
+      else t.dismissed++;
+    }
+    for(const [type, t] of Object.entries(tally)){
+      const total = t.actioned + t.dismissed;
+      if(total < MIN_SAMPLES) continue;
+      acc[type] = t.actioned / total;
+    }
+    return acc;
+  }
+
+  // ── 7. Low-confidence spike reporter ──
+  // Optional, opt-in console line if low-confidence rate crosses a threshold
+  // since the last report. Never throws, never blocks.
+  let _lastReport = { generated: 0, lowConf: 0 };
+  function maybeReportLowConfidenceSpike(threshold){
+    const h = window.__SIGNAL_RUNTIME_HEALTH__;
+    if(!h) return;
+    const dGen = h.generated - _lastReport.generated;
+    const dLow = h.lowConfidence - _lastReport.lowConf;
+    if(dGen < 5) return; // need a sample
+    const rate = dLow / dGen;
+    if(rate >= (threshold || 0.5)){
+      try {
+        console.warn(`[signals] low-confidence spike: ${(rate*100).toFixed(0)}% of last ${dGen} signals < 0.5 confidence`);
+      } catch {}
+    }
+    _lastReport = { generated: h.generated, lowConf: h.lowConfidence };
+  }
+
   // Public surface
-  window.evaluateConfidence = evaluateConfidence;
-  window.deriveEscalation   = deriveEscalation;
-  window.normalizeSeverity  = normalizeSeverity;
-  window.shouldDimStale     = shouldDimStale;
-  window.trackSignal        = trackSignal;
+  window.evaluateConfidence       = evaluateConfidence;
+  window.deriveEscalation         = deriveEscalation;
+  window.normalizeSeverity        = normalizeSeverity;
+  window.shouldDimStale           = shouldDimStale;
+  window.trackSignal              = trackSignal;
+  window.computeHistoricalAccuracy = computeHistoricalAccuracy;
+  window.maybeReportLowConfidenceSpike = maybeReportLowConfidenceSpike;
   _initHealth();
 })();

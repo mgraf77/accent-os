@@ -97,6 +97,15 @@ async function generateAlertsFromData(){
     dupCounts[k] = (dupCounts[k]||0) + 1;
   });
   const _conf = (typeof evaluateConfidence === 'function') ? evaluateConfidence : (() => 0.7);
+  // Historical accuracy reducer: per-type actioned/(actioned+dismissed) ratio
+  // across the currently-hydrated alerts cache. Deterministic, no ML, no
+  // persistence — recomputed every generation pass from existing rows.
+  const _historicalAccuracy = (typeof computeHistoricalAccuracy === 'function')
+    ? computeHistoricalAccuracy(ALERTS) : {};
+  const _hist = (type) => {
+    const v = _historicalAccuracy[type];
+    return (typeof v === 'number') ? v : undefined;
+  };
 
   // 1. deal_stale
   if(typeof DEALS !== 'undefined'){
@@ -117,7 +126,8 @@ async function generateAlertsFromData(){
           heuristicQuality: ageDays >= 30 ? 0.8 : 0.6,
           hasBaseline: true,
           duplicateCount: dupCounts[key] || 0,
-          generatorReliability: 0.75
+          generatorReliability: 0.75,
+          historicalAccuracy: _hist('deal_stale')
         });
         proposed.push({
           type:'deal_stale', severity: ageDays >= 30 ? 'urgent' : 'warn',
@@ -137,11 +147,24 @@ async function generateAlertsFromData(){
       if(daysLeft < 0 || daysLeft > 14) return;
       const key = `coop_deadline:${c.id}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!c.vendor_id) missing.push('vendor_id');
+      if(c.amount == null) missing.push('amount');
+      const sourceTs = c.updated_at || c.created_at || c.deadline;
+      const confidence = _conf({
+        sourceTs,
+        missingFields: missing,
+        heuristicQuality: daysLeft <= 7 ? 0.85 : 0.65,
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.8,
+        historicalAccuracy: _hist('coop_deadline')
+      });
       proposed.push({
         type:'coop_deadline', severity: daysLeft <= 7 ? 'urgent' : 'warn',
         title: `Co-op fund deadline ≤${daysLeft}d`,
         body: `${c.fund_type} · $${Number(c.amount||0).toLocaleString()} · expires ${c.deadline}`,
-        link: 'vendors', payload: {coop_id: c.id, vendor_id: c.vendor_id, amount: c.amount, days_left: daysLeft}
+        link: 'vendors', payload: {coop_id: c.id, vendor_id: c.vendor_id, amount: c.amount, days_left: daysLeft, confidence, source_ts: sourceTs}
       });
     });
   }
@@ -163,7 +186,8 @@ async function generateAlertsFromData(){
         heuristicQuality: ageDays >= 45 ? 0.85 : 0.55,
         hasBaseline: true,
         duplicateCount: dupCounts[key] || 0,
-        generatorReliability: 0.7
+        generatorReliability: 0.7,
+        historicalAccuracy: _hist('quote_cold')
       });
       proposed.push({
         type:'quote_cold', severity: 'warn',
@@ -183,11 +207,25 @@ async function generateAlertsFromData(){
       if(avail >= reorder) return;
       const key = `inventory_low:${r.id}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!r.sku) missing.push('sku');
+      if(!r.vendor_name) missing.push('vendor_name');
+      const sourceTs = r.updated_at || r.last_counted_at || r.created_at || null;
+      const ratio = reorder > 0 ? avail/reorder : 1;
+      const confidence = _conf({
+        sourceTs,
+        missingFields: missing,
+        heuristicQuality: avail === 0 ? 0.9 : (ratio < 0.5 ? 0.75 : 0.55),
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.85,
+        historicalAccuracy: _hist('inventory_low')
+      });
       proposed.push({
         type:'inventory_low', severity: avail === 0 ? 'urgent' : 'warn',
         title: `Low stock: ${r.sku}`,
         body: `${avail} on hand vs ${reorder} reorder point · ${r.vendor_name||''}${r.location?' · '+r.location:''}`,
-        link: 'vendors', payload: {inv_id: r.id, sku: r.sku, qty: avail, reorder}
+        link: 'vendors', payload: {inv_id: r.id, sku: r.sku, qty: avail, reorder, confidence, source_ts: sourceTs}
       });
     });
   }
@@ -201,11 +239,24 @@ async function generateAlertsFromData(){
       if(overdueDays <= 0) return;
       const key = `delivery_overdue:${d.id}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!d.customer_name) missing.push('customer_name');
+      if(!d.status) missing.push('status');
+      const sourceTs = d.updated_at || d.scheduled_date;
+      const confidence = _conf({
+        sourceTs,
+        missingFields: missing,
+        heuristicQuality: overdueDays >= 3 ? 0.9 : 0.7,
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.9,
+        historicalAccuracy: _hist('delivery_overdue')
+      });
       proposed.push({
         type:'delivery_overdue', severity: 'urgent',
         title: `Overdue delivery: ${d.delivery_number||d.id}`,
         body: `${overdueDays}d past schedule · ${d.customer_name||''} · status: ${d.status}`,
-        link: 'deliveries', payload: {delivery_id: d.id, customer_name: d.customer_name, overdue_days: overdueDays}
+        link: 'deliveries', payload: {delivery_id: d.id, customer_name: d.customer_name, overdue_days: overdueDays, confidence, source_ts: sourceTs}
       });
     });
   }
@@ -219,11 +270,24 @@ async function generateAlertsFromData(){
       if(daysLeft < 0 || daysLeft > 30) return;
       const key = `warranty_expiring:${w.id}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!w.vendor_name) missing.push('vendor_name');
+      if(!w.sku) missing.push('sku');
+      const sourceTs = w.updated_at || w.created_at || w.warranty_expires;
+      const confidence = _conf({
+        sourceTs,
+        missingFields: missing,
+        heuristicQuality: daysLeft <= 7 ? 0.85 : 0.6,
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.8,
+        historicalAccuracy: _hist('warranty_expiring')
+      });
       proposed.push({
         type:'warranty_expiring', severity: daysLeft <= 7 ? 'urgent' : 'warn',
         title: `Warranty expires ≤${daysLeft}d: ${w.claim_number||w.id}`,
         body: `${w.vendor_name||''} · ${w.sku||'(no SKU)'} · status: ${w.status}`,
-        link: 'warranty', payload: {warranty_id: w.id, days_left: daysLeft}
+        link: 'warranty', payload: {warranty_id: w.id, days_left: daysLeft, confidence, source_ts: sourceTs}
       });
     });
   }
@@ -237,11 +301,24 @@ async function generateAlertsFromData(){
       if(daysLeft < 0 || daysLeft > 14) return;
       const key = `showroom_expiring:${s.id}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!s.vendor_name) missing.push('vendor_name');
+      if(!s.location) missing.push('location');
+      const sourceTs = s.updated_at || s.created_at || s.expires_date;
+      const confidence = _conf({
+        sourceTs,
+        missingFields: missing,
+        heuristicQuality: daysLeft <= 7 ? 0.8 : 0.55,
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.75,
+        historicalAccuracy: _hist('showroom_expiring')
+      });
       proposed.push({
         type:'showroom_expiring', severity: daysLeft <= 7 ? 'warn' : 'info',
         title: `Display expiring ≤${daysLeft}d: ${s.display_name}`,
         body: `${s.vendor_name||''} · ${s.location||''} · expires ${s.expires_date}`,
-        link: 'showrooms', payload: {showroom_id: s.id, days_left: daysLeft}
+        link: 'showrooms', payload: {showroom_id: s.id, days_left: daysLeft, confidence, source_ts: sourceTs}
       });
     });
   }
@@ -255,11 +332,24 @@ async function generateAlertsFromData(){
       if(overdueDays <= 0) return;
       const key = `po_overdue:${p.id}`;
       if(activeKeys.has(key)) return;
+      const missing = [];
+      if(!p.vendor_name && !p.vendor_id) missing.push('vendor');
+      if(p.total == null) missing.push('total');
+      const sourceTs = p.updated_at || p.created_at || p.expected_date;
+      const confidence = _conf({
+        sourceTs,
+        missingFields: missing,
+        heuristicQuality: overdueDays >= 14 ? 0.9 : (overdueDays >= 3 ? 0.7 : 0.55),
+        hasBaseline: true,
+        duplicateCount: dupCounts[key] || 0,
+        generatorReliability: 0.85,
+        historicalAccuracy: _hist('po_overdue')
+      });
       proposed.push({
         type:'po_overdue', severity: overdueDays >= 14 ? 'urgent' : 'warn',
         title: `PO overdue: ${p.po_number||p.id}`,
         body: `${overdueDays}d past expected · ${p.vendor_name||''} · $${Math.round(Number(p.total)||0).toLocaleString()}`,
-        link: 'purchaseorders', payload: {po_id: p.id, vendor_id: p.vendor_id, overdue_days: overdueDays}
+        link: 'purchaseorders', payload: {po_id: p.id, vendor_id: p.vendor_id, overdue_days: overdueDays, confidence, source_ts: sourceTs}
       });
     });
   }
@@ -286,7 +376,8 @@ async function generateAlertsFromData(){
         heuristicQuality: delta <= -5 ? 0.9 : 0.65,
         hasBaseline: true,
         duplicateCount: dupCounts[key] || 0,
-        generatorReliability: 0.85
+        generatorReliability: 0.85,
+        historicalAccuracy: _hist('score_dropped')
       });
       proposed.push({
         type:'score_dropped', severity: delta <= -5 ? 'urgent' : 'warn',
@@ -319,6 +410,9 @@ async function generateAlertsFromData(){
     }
   }
   console.log(`[alerts] Generated ${inserted} new alerts (${proposed.length} proposed)`);
+  if(typeof maybeReportLowConfidenceSpike === 'function'){
+    try { maybeReportLowConfidenceSpike(0.5); } catch {}
+  }
   return inserted;
 }
 
@@ -506,11 +600,18 @@ function renderAlertBell(){
       </div>
       <div style="overflow-y:auto;flex:1;">
         ${top.length === 0 ? '<div style="padding:30px 14px;text-align:center;color:var(--text-3);font-size:12px;">No unread alerts.</div>' : top.map(a => {
-          const sevColor = {urgent:'var(--accent)', warn:'var(--yellow)', info:'var(--blue)'}[a.severity] || 'var(--text-3)';
-          return `<div onclick="bellHandleClick('${a.id}','${esc(a.link||'alerts')}')" style="padding:10px 14px;border-bottom:1px solid var(--border-light);cursor:pointer;display:flex;gap:10px;align-items:flex-start;">
+          const v = _signalVisual(a);
+          const sevColor = (v && v.color) || ({urgent:'var(--accent)', warn:'var(--yellow)', info:'var(--blue)'}[a.severity] || 'var(--text-3)');
+          const dim = !!(v && v.dim);
+          const conf = (a.payload && typeof a.payload.confidence === 'number') ? a.payload.confidence : null;
+          return `<div onclick="bellHandleClick('${a.id}','${esc(a.link||'alerts')}')" style="padding:10px 14px;border-bottom:1px solid var(--border-light);cursor:pointer;display:flex;gap:10px;align-items:flex-start;${dim?'opacity:0.55;':''}">
             <span style="width:8px;height:8px;border-radius:50%;background:${sevColor};margin-top:5px;flex-shrink:0;"></span>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:12px;font-weight:600;line-height:1.3;">${esc(a.title)}</div>
+              <div style="font-size:12px;font-weight:600;line-height:1.3;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span>${esc(a.title)}</span>
+                ${conf !== null ? `<span class="badge bg-gray" title="signal confidence" style="font-size:9px;">${(conf*100).toFixed(0)}%</span>` : ''}
+                ${dim ? `<span class="badge bg-gray" title="stale source" style="font-size:9px;color:var(--text-3);">stale</span>` : ''}
+              </div>
               <div class="muted sm" style="font-size:11px;line-height:1.3;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.body||'')}</div>
             </div>
           </div>`;
