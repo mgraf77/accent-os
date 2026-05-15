@@ -77,5 +77,25 @@ if [[ -f SESSION_LOG.md ]]; then
 fi
 echo
 
+# Runtime governance visibility (report-only, non-blocking)
+bold "Runtime governance"
+if [[ -x scripts/check-runtime-boundaries.sh ]]; then
+  rb_findings=$(bash scripts/check-runtime-boundaries.sh 2>/dev/null \
+                | awk -F'findings: ' '/findings:/ {print $2; exit}' \
+                | awk '{print $1}')
+  echo "  boundary findings: ${rb_findings:-?}  (bash scripts/check-runtime-boundaries.sh)"
+else
+  dim "  scripts/check-runtime-boundaries.sh missing or not executable"
+fi
+if [[ -x scripts/check-signal-ownership.sh ]]; then
+  so_findings=$(bash scripts/check-signal-ownership.sh 2>/dev/null \
+                | awk -F'findings: ' '/findings:/ {print $2; exit}' \
+                | awk '{print $1}')
+  echo "  signal ownership findings: ${so_findings:-?}  (bash scripts/check-signal-ownership.sh)"
+else
+  dim "  scripts/check-signal-ownership.sh missing or not executable"
+fi
+echo
+
 hr
 dim "Tip: read SESSION_LOG.md priority queue for the next prompt to paste."

@@ -1,0 +1,68 @@
+{
+  "_doc": "Seed list of patterns that must NOT appear inside core runtime files. Visibility-first: detection is report-only. Per RUNTIME_BOUNDARY_ENFORCEMENT.md, runtime stays small, signal-driven, and free of feature-specific branches.",
+  "version": 1,
+  "runtime_files": [
+    "js/health.js",
+    "js/module_modes.js",
+    "js/decision_engine.js",
+    "scripts/runtime-health.js",
+    "worker/anthropic-proxy.js"
+  ],
+  "forbidden_phrases": [
+    "orchestration",
+    "workflow engine",
+    "policy engine",
+    "rules engine",
+    "state machine",
+    "saga",
+    "choreography"
+  ],
+  "forbidden_feature_nouns": [
+    "vendor",
+    "invoice",
+    "quote",
+    "showroom",
+    "klaviyo",
+    "bigcommerce",
+    "ga4",
+    "gmc",
+    "gsc",
+    "warranty",
+    "commission",
+    "purchase_order",
+    "delivery",
+    "knowledge_hub",
+    "marketing",
+    "deal_optimizer"
+  ],
+  "forbidden_runtime_imports": [
+    "ecommerce_intelligence",
+    "klaviyo_adapter",
+    "bigcommerce_adapter",
+    "ga4_adapter",
+    "gmc_adapter",
+    "gsc_adapter",
+    "vendor_score_import",
+    "deal_optimizer",
+    "demand_forecast",
+    "competitive_pricing"
+  ],
+  "lifecycle_branch_threshold": 6,
+  "lifecycle_branch_files": [
+    "js/module_modes.js",
+    "js/health.js",
+    "js/decision_engine.js"
+  ],
+  "signal_synonym_families": [
+    ["module_loaded", "module_ready", "module_init", "modules_loaded"],
+    ["user_signin", "user_login", "auth_ready", "user_authenticated"],
+    ["data_changed", "data_updated", "data_refresh", "data_sync"],
+    ["render_done", "render_complete", "view_rendered", "ui_ready"],
+    ["task_done", "task_complete", "job_finished", "work_complete"]
+  ],
+  "signal_owners": {
+    "module_loaded": "js/module_modes.js",
+    "health_check": "js/health.js",
+    "decision_made": "js/decision_engine.js"
+  }
+}
