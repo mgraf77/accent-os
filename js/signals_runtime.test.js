@@ -112,12 +112,18 @@
       assert(calls === 1, 'first attempt happened');
 
       // Force the row visible immediately so we can drain attempt #2.
-      // (We do this by directly resetting next_visible_at.)
+      // We use Unix epoch (1970-01-01) instead of `new Date(Date.now()-1000)`
+      // because the browser clock can drift from the Supabase server clock
+      // by tens of seconds. sig_claim compares next_visible_at <= now()
+      // against the SERVER clock, so a "1 second ago" client timestamp can
+      // be tens of seconds in the server's future and silently make the
+      // row unclaimable. Epoch zero is always in the past for any sane
+      // server clock — clock-skew-immune.
       await sbFetch(`/signal_queue?signal_type=eq.${encodeURIComponent(TYPE)}`
         + `&idempotency_key=eq.${encodeURIComponent(idem)}`,
         { method: 'PATCH',
           headers: { 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ next_visible_at: new Date(Date.now()-1000).toISOString() }) });
+          body: JSON.stringify({ next_visible_at: new Date(0).toISOString() }) });
 
       await SIGNALS.runOnce({ batch_size: 5 });
       assert(calls === 2, 'second attempt happened');
