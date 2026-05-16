@@ -114,31 +114,48 @@ DROP POLICY IF EXISTS "signal_queue_rw"       ON signal_queue;
 DROP POLICY IF EXISTS "signal_effect_log_rw"  ON signal_effect_log;
 DROP POLICY IF EXISTS "signal_dead_letter_rw" ON signal_dead_letter;
 
+-- NOTE (Session 46 / M51): policies below use `user_profiles.user_id`
+-- (PK column on user_profiles). The original M49 used unqualified `id`,
+-- which Postgres bound to the outer table's `id` column (no `id` exists
+-- on user_profiles) and produced a tautology-false WITH CHECK → 403 on
+-- every direct INSERT/UPDATE from a user JWT. See sql/M51_signal_rls_fix.sql.
 CREATE POLICY "signal_queue_rw" ON signal_queue
   FOR ALL TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role IN ('Owner','Admin'))
+    EXISTS (SELECT 1 FROM user_profiles up
+             WHERE up.user_id = auth.uid()
+               AND up.role IN ('Owner','Admin'))
   )
   WITH CHECK (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role IN ('Owner','Admin'))
+    EXISTS (SELECT 1 FROM user_profiles up
+             WHERE up.user_id = auth.uid()
+               AND up.role IN ('Owner','Admin'))
   );
 
 CREATE POLICY "signal_effect_log_rw" ON signal_effect_log
   FOR ALL TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role IN ('Owner','Admin'))
+    EXISTS (SELECT 1 FROM user_profiles up
+             WHERE up.user_id = auth.uid()
+               AND up.role IN ('Owner','Admin'))
   )
   WITH CHECK (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role IN ('Owner','Admin'))
+    EXISTS (SELECT 1 FROM user_profiles up
+             WHERE up.user_id = auth.uid()
+               AND up.role IN ('Owner','Admin'))
   );
 
 CREATE POLICY "signal_dead_letter_rw" ON signal_dead_letter
   FOR ALL TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role IN ('Owner','Admin'))
+    EXISTS (SELECT 1 FROM user_profiles up
+             WHERE up.user_id = auth.uid()
+               AND up.role IN ('Owner','Admin'))
   )
   WITH CHECK (
-    EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role IN ('Owner','Admin'))
+    EXISTS (SELECT 1 FROM user_profiles up
+             WHERE up.user_id = auth.uid()
+               AND up.role IN ('Owner','Admin'))
   );
 
 -- ─────────────────────────────────────────────────────────────────────────────

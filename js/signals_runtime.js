@@ -119,9 +119,15 @@
   }
 
   // ── Effect idempotency barrier ────────────────────────────────────────────
-  // Returns true if the effect should run; false if it is already recorded
-  // (i.e. a replay). The unique index on (idempotency_key, effect_type)
-  // makes the start-claim atomic.
+  // Returns true if the effect should run; false only when it has already
+  // SUCCEEDED. The unique index on (idempotency_key, effect_type) makes the
+  // start-claim atomic. On 23505 we MUST inspect the existing row: only
+  // outcome='success' is a true replay. 'failure' / 'started' rows are from
+  // a prior attempt that did not durably commit its side effect, so the
+  // retry path is allowed to re-run apply(). This preserves single-success
+  // semantics (we never re-run an effect that already succeeded) while
+  // letting transient failures actually recover instead of silently
+  // finalizing as 'succeeded' with no work done.
   async function _claimEffect(signal, effect_type, detail){
     try{
       await sbFetch('/signal_effect_log', {
@@ -137,12 +143,25 @@
       });
       return true;
     }catch(e){
-      // 23505 unique violation => already done. Treat as inert replay.
-      if(/23505|duplicate key|already exists/i.test(e.message||'')){
+      if(!/23505|duplicate key|already exists/i.test(e.message||'')) throw e;
+      // Existing row — could be a true replay or a recoverable prior attempt.
+      let existing = null;
+      try{
+        const qs = `?idempotency_key=eq.${encodeURIComponent(signal.idempotency_key)}`
+                 + `&effect_type=eq.${encodeURIComponent(effect_type)}`
+                 + `&select=outcome&limit=1`;
+        existing = await sbFetch('/signal_effect_log' + qs);
+      }catch(_){ /* fall through with null */ }
+      const prior = existing && existing[0] && existing[0].outcome;
+      if(prior === 'success'){
         COUNTERS.effects_skipped_replay++;
-        return false;
+        return false; // True replay — never re-run a successful effect.
       }
-      throw e;
+      // Recoverable prior attempt: reset the marker to 'started' so the
+      // retry is observable and any downstream listeners see the new attempt.
+      // _markEffect swallows errors; if the reset fails the apply still runs.
+      await _markEffect(signal, effect_type, 'started', detail || {});
+      return true;
     }
   }
 
