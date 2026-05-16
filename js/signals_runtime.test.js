@@ -26,11 +26,13 @@
   }
 
   // ── 1. enqueue + dedup ────────────────────────────────────────────────────
+  // Payload carries `run_id` so this row is filterable from later tests'
+  // batch claims (runOnce drains *all* pending rows, not just the test's own).
   async function testEnqueueDedup(){
     const type = 'pricing.update.requested';
     const idem = `${RUN_ID}_dedup`;
-    const r1 = await SIGNALS.enqueue(type, { sku:'X' }, idem);
-    const r2 = await SIGNALS.enqueue(type, { sku:'X' }, idem);
+    const r1 = await SIGNALS.enqueue(type, { sku:'X', run_id: RUN_ID }, idem);
+    const r2 = await SIGNALS.enqueue(type, { sku:'X', run_id: RUN_ID }, idem);
     assert(r1.id && r2.id, 'enqueue should return ids');
     assert(r1.id === r2.id, 'dedup: same idempotency_key returns same row');
     log('OK enqueue dedup', r1.id);
@@ -45,27 +47,36 @@
   }
 
   // ── 3. claim → dispatch → finalize ────────────────────────────────────────
+  // Override scopes its counter to *this run's* signal (matched on run_id +
+  // sku in payload). runOnce's batch claim may also drain test 1's dedup row
+  // and any pre-existing pollution; those rows are accepted as inert
+  // successes so they don't trip this test's exactly-once invariant.
   async function testClaimDispatchFinalize(){
     const TYPE = 'pricing.update.requested';
     const idem = `${RUN_ID}_happy`;
+    const MARK = { run_id: RUN_ID, sku: 'SKU-1' };
     let appliedCount = 0;
 
-    // Hijack the pricing handler effect for the duration of the test.
     const origFn = window.pricingUpdateFromSignal;
     window.pricingUpdateFromSignal = async (payload) => {
-      appliedCount++;
-      return { applied: true, sku: payload.sku };
+      if(payload && payload.run_id === MARK.run_id && payload.sku === MARK.sku){
+        appliedCount++;
+        return { applied: true, sku: payload.sku };
+      }
+      // Foreign row (test 1's dedup, or pollution from prior runs) —
+      // succeed quietly so the queue drains.
+      return { skipped: true, reason: 'not_our_run' };
     };
 
     try{
-      await SIGNALS.enqueue(TYPE, { sku:'SKU-1' }, idem);
+      await SIGNALS.enqueue(TYPE, { sku: MARK.sku, run_id: MARK.run_id }, idem);
       const processed = await SIGNALS.runOnce({ batch_size: 5 });
       assert(processed >= 1, 'runOnce should process at least 1 signal');
       assert(appliedCount === 1, 'effect should run exactly once');
 
       // Re-running with same idempotency_key must NOT re-run effect.
       // (signal is already succeeded; even if re-enqueued, effect log blocks.)
-      await SIGNALS.enqueue(TYPE, { sku:'SKU-1' }, idem);
+      await SIGNALS.enqueue(TYPE, { sku: MARK.sku, run_id: MARK.run_id }, idem);
       await SIGNALS.runOnce({ batch_size: 5 });
       assert(appliedCount === 1, 'replay must be inert via effect log barrier');
       log('OK happy path + replay barrier');
@@ -75,19 +86,27 @@
   }
 
   // ── 4. retry on failure with backoff, then dead-letter ────────────────────
+  // Override scopes its throw + counter to *this run's* signal (matched on
+  // run_id in payload). Foreign rows succeed quietly so unrelated pollution
+  // doesn't inflate the call counter or interfere with the dead-letter path.
   async function testRetryThenDeadLetter(){
     const TYPE = 'inventory.level.sync.requested';
     const idem = `${RUN_ID}_retry`;
+    const MARK = { run_id: RUN_ID, sku: 'BOOM' };
     let calls = 0;
 
     const orig = window.inventoryLevelSyncFromSignal;
-    window.inventoryLevelSyncFromSignal = async () => {
-      calls++;
-      throw new Error('simulated boom');
+    window.inventoryLevelSyncFromSignal = async (payload) => {
+      if(payload && payload.run_id === MARK.run_id && payload.sku === MARK.sku){
+        calls++;
+        throw new Error('simulated boom');
+      }
+      return { skipped: true, reason: 'not_our_run' };
     };
 
     try{
-      await SIGNALS.enqueue(TYPE, { sku:'BOOM' }, idem, { max_attempts: 2 });
+      await SIGNALS.enqueue(TYPE, { sku: MARK.sku, run_id: MARK.run_id }, idem,
+        { max_attempts: 2 });
       // First run: claim+attempt=1, fail, retry scheduled in future.
       await SIGNALS.runOnce({ batch_size: 5 });
       assert(calls === 1, 'first attempt happened');
