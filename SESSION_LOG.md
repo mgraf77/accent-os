@@ -4,6 +4,23 @@
 
 <!-- ci-pipeline-validation: 2026-05-11 -->
 
+### 2026-05-15 — Executive Operational Surface Finalization
+**Branch:** `executive-surface-v1`
+**Commits:** (pending)
+**Built/Changed:**
+- **EXECUTIVE_COMMAND_CENTER_V1.md:** Established the Phase 1 philosophy for the executive command center, focusing on the "Three-Second Rule" and situational awareness.
+- **DAILY_EXECUTIVE_SCAN_FLOW.md:** Defined the 30-second mobile triage flow (Scan → Review → Triage → Confirm).
+- **SIGNAL_PRIORITY_VISUAL_SYSTEM.md:** Formalized the 0-5 severity hierarchy and visual encoding (DM Mono for data, pulsing dots for critical risks).
+- **MOBILE_EXECUTIVE_RAIL.md:** Codified the "Operational Rail" UX and the "Rule of One" for glanceable mobile metrics.
+- **OPERATIONAL_ATTENTION_MODEL.md:** Set the attention filters for what earns executive eyes vs. what stays invisible ("Attention Tax").
+- **ATTENTION_COMPRESSION_RULES.md:** Defined foundational rules for aggressive reduction of attention load.
+- **SIGNAL_VISIBILITY_HIERARCHY.md:** Mapped out escalation/compression tiers (Tiers I–V) for operational signals.
+- **EXECUTIVE_NOISE_REDUCTION_PATTERNS.md:** Codified specific patterns like "Dimension Compression" and "Confidence-Based Dimming."
+- **MOBILE_ATTENTION_BUDGETS.md:** Established cognitive and temporal limits (30-second check-in) for mobile surfaces.
+- **WHAT_NOT_TO_SHOW.md:** Explicitly listed data types (raw ERP tables, stable metrics) that must remain invisible by design.
+**Open loops:** UI implementation of the Rail and Signal cards in index.html; integration of the 6-dot executive strip into the dashboard.
+**Next:** UI implementation of the Executive Strip (6 dots) and the mobile-first Signal Feed.
+
 ### 2026-05-12 — KPI auto-snapshot + dashboard pinning + csvDownload cleanup
 **Branch:** `accent-work`
 **Commits:** 5a48639 (KPI scheduler), 3a29a97 (dashboard pinning), 1daada6 (csvDownload cleanup)
